@@ -774,18 +774,28 @@ if(BUILD_FORTRAN)
     set(libadiosreadf_nompi_a_CFLAGS "${ADIOSLIB_CFLAGS}")
   endif(HAVE_NSSI)
 
-  set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${MACRODEFFLAG}_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSREADLIB_CPPFLAGS}")
-  set(libadiosreadf_nompi_a_SOURCES ${libadiosreadf_nompi_a_SOURCES} ${FortranReadSeqLibSource} core/adiosf_read.c)
-  set(libadiosreadf_nompi_v1_a_SOURCES ${FortranReadSeqLibSource} core/adiosf_read_v1.c)
-  set(libadiosreadf_nompi_v1_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS}")
-  set(libadiosreadf_nompi_v1_a_CFLAGS "${libadiosreadf_nompi_a_CFLAGS}")
+    if(HAVE_NSSI)
+        set(dist_libadiosreadf_nompi_a_SOURCES nssi/adios_nssi_args.x)
+        set(nodist_libadiosreadf_nompi_a_SOURCES adios_nssi_args.c adios_nssi_args.h)
+        set(libadiosreadf_nompi_a_SOURCES ${libadiosreadf_nompi_a_SOURCES} ${dist_libadiosreadf_nompi_a_SOURCES} ${nodist_libadiosreadf_nompi_a_SOURCES})
+        set(FortranReadSeqLibSource ${FortranReadSeqLibSource} nssi/adios_nssi_config.c read/read_nssi.c)
+        set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${MACRODEFFLAG}PTL_IFACE_CLIENT=CRAY_USER_NAL ${MACRODEFFLAG}PTL_IFACE_SERVER=CRAY_USER_NAL")
+        set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS}")
+        set(libadiosreadf_nompi_a_CFLAGS "${ADIOSLIB_CFLAGS}")
+    endif(HAVE_NSSI)
 
-  #add library adiosreadf_nompi and adiosreadf_nompi_v1
-  add_library(adiosreadf_nompi ${libadiosreadf_nompi_a_SOURCES})
-  set_target_properties(adiosreadf_nompi  PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${libadiosreadf_nompi_a_CFLAGS}")
+    set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${MACRODEFFLAG}_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSREADLIB_CPPFLAGS}")
+    set(libadiosreadf_nompi_a_SOURCES ${libadiosreadf_nompi_a_SOURCES} ${FortranReadSeqLibSource} core/adiosf_read.c)
+    set(libadiosreadf_nompi_v1_a_SOURCES ${FortranReadSeqLibSource} core/adiosf_read_v1.c)
+    set(libadiosreadf_nompi_v1_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS}")
+    set(libadiosreadf_nompi_v1_a_CFLAGS "${libadiosreadf_nompi_a_CFLAGS}")
 
-  add_library(adiosreadf_nompi_v1 ${libadiosreadf_nompi_v1_a_SOURCES})
-  set_target_properties(adiosreadf_nompi_v1 PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_v1_a_CPPFLAGS} ${libadiosreadf_nompi_v1_a_CFLAGS}")
+#add library adiosreadf_nompi and adiosreadf_nompi_v1
+    add_library(adiosreadf_nompi ${libadiosreadf_nompi_a_SOURCES})
+    set_target_properties(adiosreadf_nompi  PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${libadiosreadf_nompi_a_CFLAGS}")
+
+    add_library(adiosreadf_nompi_v1 ${libadiosreadf_nompi_v1_a_SOURCES})
+    set_target_properties(adiosreadf_nompi_v1 PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_v1_a_CPPFLAGS} ${libadiosreadf_nompi_v1_a_CFLAGS}")
 
 endif(BUILD_FORTRAN)
 

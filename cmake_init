@@ -518,26 +518,22 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     # Mac #
     #######
     echo "Configure on Mac"
-    # Installed MacPorts and GCC4.4 and OpenMPI 1.4.2 ports 
+    # Installed Homebrew, gfortran and OpenMPI 1.6.5 in /usr/local
     # But should work with default mpicc and gcc, using --disable-fortran
-#    export CC=/opt/local/bin/gcc-mp-4.4
-#    export FC=/opt/local/bin/gfortran-mp-4.4
-#    export CXX=/opt/local/bin/g++-mp-4.4
-#    export CC=/opt/local/bin/openmpicc
-#    export FC=/opt/local/bin/openmpif90
-#    export CXX=/opt/local/bin/openmpicxx
     export CC=/usr/local/bin/mpicc
-#    export FC=/usr/local/bin/mpif90
+    export FC=/usr/local/bin/mpif90
     export CXX=/usr/local/bin/mpicxx
-    CFLAGS="-g -DO_LARGEFILE=0 -fno-common" 
+    export CFLAGS="-g -Wall -DO_LARGEFILE=0 -fno-common" 
     export BUILD_WRITE=ON
-    export BUILD_FORTRAN=OFF
+    export BUILD_FORTRAN=ON
     export adios_timers=ON
+    export MXML_DIR=/opt/mxml
     export INSTALL_PREFIX="/opt/adios"
+    export SEQ_HDF5_DIR=/usr/local
+    export SEQ_HDF5_LIBS="-L/usr/local/lib -lhdf5_hl -lhdf5 -lm"
 #        --with-mxml=/opt/mxml \
 #        --with-netcdf=/opt/netcdf \
 #        --with-phdf5=/opt/hdf5 \
-#        --with-hdf5=/opt/hdf5.seq
 
 
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then

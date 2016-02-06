@@ -1,0 +1,818 @@
+==19361== Memcheck, a memory error detector
+==19361== Copyright (C) 2002-2015, and GNU GPL'd, by Julian Seward et al.
+==19361== Using Valgrind-3.11.0 and LibVEX; rerun with -h for copyright info
+==19361== Command: ./query_minmax 1 3
+==19361== 
+--19361-- run: /usr/bin/dsymutil "./query_minmax"
+WARN : adios_allocate_buffer is not supported anymore. Use adios_set_max_buffer_size(size_in_MB) to set the maximum allowed buffer size for each adios_open()...adios_close() operation.
+[rank=000, line 186]: Write step 0 to query_minmax.bp
+[rank=000, line 190]:   groupsize calculated = 24
+[rank=000, line 192]:   groupsize calculated = 124
+[rank=000, line 195]:   groupsize 124, totalsize 1198
+==19361== Conditional jump or move depends on uninitialised value(s)
+==19361==    at 0x100011C98: adios_generate_var_characteristics_v1 (adios_internals.c:5226)
+==19361==    by 0x100003FB0: common_adios_write (common_adios.c:552)
+==19361==    by 0x100004B6E: common_adios_write_byid (common_adios.c:791)
+==19361==    by 0x100063268: adios_write_timing_variables (adios_timing.c:260)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Uninitialised value was created by a heap allocation
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063101: adios_write_timing_variables (adios_timing.c:248)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== Conditional jump or move depends on uninitialised value(s)
+==19361==    at 0x100011E2D: adios_generate_var_characteristics_v1 (math.h:211)
+==19361==    by 0x100003FB0: common_adios_write (common_adios.c:552)
+==19361==    by 0x100004B6E: common_adios_write_byid (common_adios.c:791)
+==19361==    by 0x100063268: adios_write_timing_variables (adios_timing.c:260)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Uninitialised value was created by a heap allocation
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063101: adios_write_timing_variables (adios_timing.c:248)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== Conditional jump or move depends on uninitialised value(s)
+==19361==    at 0x100011E66: adios_generate_var_characteristics_v1 (adios_internals.c:5226)
+==19361==    by 0x100003FB0: common_adios_write (common_adios.c:552)
+==19361==    by 0x100004B6E: common_adios_write_byid (common_adios.c:791)
+==19361==    by 0x100063268: adios_write_timing_variables (adios_timing.c:260)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Uninitialised value was created by a heap allocation
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063101: adios_write_timing_variables (adios_timing.c:248)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== Conditional jump or move depends on uninitialised value(s)
+==19361==    at 0x100012196: adios_generate_var_characteristics_v1 (adios_internals.c:5226)
+==19361==    by 0x100003FB0: common_adios_write (common_adios.c:552)
+==19361==    by 0x100004B6E: common_adios_write_byid (common_adios.c:791)
+==19361==    by 0x100063268: adios_write_timing_variables (adios_timing.c:260)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Uninitialised value was created by a heap allocation
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063101: adios_write_timing_variables (adios_timing.c:248)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== Conditional jump or move depends on uninitialised value(s)
+==19361==    at 0x1000121D4: adios_generate_var_characteristics_v1 (adios_internals.c:5226)
+==19361==    by 0x100003FB0: common_adios_write (common_adios.c:552)
+==19361==    by 0x100004B6E: common_adios_write_byid (common_adios.c:791)
+==19361==    by 0x100063268: adios_write_timing_variables (adios_timing.c:260)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Uninitialised value was created by a heap allocation
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063101: adios_write_timing_variables (adios_timing.c:248)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== Syscall param write(buf) points to uninitialised byte(s)
+==19361==    at 0x100489C22: write (in /usr/lib/system/libsystem_kernel.dylib)
+==19361==    by 0x100078ADC: adios_posix_write_pg (adios_posix.c:697)
+==19361==    by 0x100078C77: adios_posix_close (adios_posix.c:910)
+==19361==    by 0x100005866: common_adios_close (common_adios.c:1190)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Address 0x100ed32d5 is 661 bytes inside a block of size 16,777,223 alloc'd
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000B41CC: realloc (vg_replace_malloc.c:789)
+==19361==    by 0x100041947: adios_databuffer_resize (buffer.c:67)
+==19361==    by 0x100003BBE: common_adios_open (common_adios.c:346)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Uninitialised value was created by a heap allocation
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063101: adios_write_timing_variables (adios_timing.c:248)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== Syscall param write(buf) points to uninitialised byte(s)
+==19361==    at 0x100489C22: write (in /usr/lib/system/libsystem_kernel.dylib)
+==19361==    by 0x100079DB4: adios_posix_write_index (adios_posix.c:737)
+==19361==    by 0x100079357: adios_posix_close (adios_posix.c:1052)
+==19361==    by 0x100005866: common_adios_close (common_adios.c:1190)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Address 0x100afeb5f is 847 bytes inside a block of size 1,000,020 alloc'd
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000B41CC: realloc (vg_replace_malloc.c:789)
+==19361==    by 0x10000A8D4: buffer_write (adios_internals.c:2064)
+==19361==    by 0x10000E468: adios_write_index_v1 (adios_internals.c:3893)
+==19361==    by 0x100078CF0: adios_posix_close (adios_posix.c:925)
+==19361==    by 0x100005866: common_adios_close (common_adios.c:1190)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Uninitialised value was created by a heap allocation
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063101: adios_write_timing_variables (adios_timing.c:248)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+[rank=000, line 227]:   Write time for step 0 was  0.218 seconds
+[rank=000, line 186]: Write step 1 to query_minmax.bp
+[rank=000, line 190]:   groupsize calculated = 24
+[rank=000, line 192]:   groupsize calculated = 124
+[rank=000, line 195]:   groupsize 124, totalsize 1198
+==19361== Syscall param write(buf) points to uninitialised byte(s)
+==19361==    at 0x100489C22: write (in /usr/lib/system/libsystem_kernel.dylib)
+==19361==    by 0x100078ADC: adios_posix_write_pg (adios_posix.c:697)
+==19361==    by 0x1000793FE: adios_posix_close (adios_posix.c:1078)
+==19361==    by 0x100005866: common_adios_close (common_adios.c:1190)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Address 0x101ed42d5 is 661 bytes inside a block of size 16,777,223 alloc'd
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000B41CC: realloc (vg_replace_malloc.c:789)
+==19361==    by 0x100041947: adios_databuffer_resize (buffer.c:67)
+==19361==    by 0x100003BBE: common_adios_open (common_adios.c:346)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Uninitialised value was created by a heap allocation
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063101: adios_write_timing_variables (adios_timing.c:248)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== Syscall param write(buf) points to uninitialised byte(s)
+==19361==    at 0x100489C22: write (in /usr/lib/system/libsystem_kernel.dylib)
+==19361==    by 0x100079DB4: adios_posix_write_index (adios_posix.c:737)
+==19361==    by 0x100079C24: adios_posix_close (adios_posix.c:1245)
+==19361==    by 0x100005866: common_adios_close (common_adios.c:1190)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Address 0x100c256a0 is 1,344 bytes inside a block of size 1,000,020 alloc'd
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000B41CC: realloc (vg_replace_malloc.c:789)
+==19361==    by 0x10000A8D4: buffer_write (adios_internals.c:2064)
+==19361==    by 0x10000E468: adios_write_index_v1 (adios_internals.c:3893)
+==19361==    by 0x1000794C6: adios_posix_close (adios_posix.c:1097)
+==19361==    by 0x100005866: common_adios_close (common_adios.c:1190)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Uninitialised value was created by a heap allocation
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063101: adios_write_timing_variables (adios_timing.c:248)
+==19361==    by 0x10000559D: common_adios_close (common_adios.c:1120)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+[rank=000, line 227]:   Write time for step 1 was  0.031 seconds
+[rank=000, line 186]: Write step 2 to query_minmax.bp
+[rank=000, line 190]:   groupsize calculated = 24
+[rank=000, line 192]:   groupsize calculated = 124
+[rank=000, line 195]:   groupsize 124, totalsize 1198
+==19361== Invalid read of size 1
+==19361==    at 0x10058E056: _platform_memmove$VARIANT$Unknown (in /usr/lib/system/libsystem_platform.dylib)
+==19361==    by 0x1003C32C1: __memcpy_chk (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10000A964: buffer_write (adios_internals.c:2078)
+==19361==    by 0x100010848: adios_write_index_v1 (adios_internals.c:4550)
+==19361==    by 0x1000794C6: adios_posix_close (adios_posix.c:1097)
+==19361==    by 0x100005866: common_adios_close (common_adios.c:1190)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Address 0x100bfa810 is 0 bytes inside a block of size 4 free'd
+==19361==    at 0x1000B388D: free (vg_replace_malloc.c:534)
+==19361==    by 0x100003992: common_adios_open (common_adios.c:293)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Block was alloc'd at
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100006E4A: adios_parse_scalar_string (adios_internals.c:722)
+==19361==    by 0x1000039B0: common_adios_open (common_adios.c:294)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== Invalid read of size 1
+==19361==    at 0x10058E064: _platform_memmove$VARIANT$Unknown (in /usr/lib/system/libsystem_platform.dylib)
+==19361==    by 0x1003C32C1: __memcpy_chk (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10000A964: buffer_write (adios_internals.c:2078)
+==19361==    by 0x100010848: adios_write_index_v1 (adios_internals.c:4550)
+==19361==    by 0x1000794C6: adios_posix_close (adios_posix.c:1097)
+==19361==    by 0x100005866: common_adios_close (common_adios.c:1190)
+==19361==    by 0x10000266E: adios_close (adios.c:201)
+==19361==    by 0x10000158B: write_file (query_minmax.c:223)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Address 0x100bfa811 is 1 bytes inside a block of size 4 free'd
+==19361==    at 0x1000B388D: free (vg_replace_malloc.c:534)
+==19361==    by 0x100003992: common_adios_open (common_adios.c:293)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361==  Block was alloc'd at
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100006E4A: adios_parse_scalar_string (adios_internals.c:722)
+==19361==    by 0x1000039B0: common_adios_open (common_adios.c:294)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+[rank=000, line 227]:   Write time for step 2 was  0.018 seconds
+[rank=000, line 280]: Query data in query_minmax.bp
+[rank=000, line 288]: ==19361== Conditional jump or move depends on uninitialised value(s)
+==19361==    at 0x100385849: __vfprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003AD806: __v2printf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003ADA9B: __xvprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003839C9: vfprintf_l (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10037C457: fprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100001A4A: query_as_file (query_minmax.c:288)
+==19361==    by 0x1000011F2: main (query_minmax.c:151)
+==19361==  Uninitialised value was created by a stack allocation
+==19361==    at 0x100001880: query_as_file (query_minmax.c:264)
+==19361== 
+==19361== Conditional jump or move depends on uninitialised value(s)
+==19361==    at 0x100385973: __vfprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003AD806: __v2printf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003ADA9B: __xvprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003839C9: vfprintf_l (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10037C457: fprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100001A4A: query_as_file (query_minmax.c:288)
+==19361==    by 0x1000011F2: main (query_minmax.c:151)
+==19361==  Uninitialised value was created by a stack allocation
+==19361==    at 0x100001880: query_as_file (query_minmax.c:264)
+==19361== 
+==19361== Conditional jump or move depends on uninitialised value(s)
+==19361==    at 0x1003883AD: __ultoa (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003859B6: __vfprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003AD806: __v2printf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003ADA9B: __xvprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003839C9: vfprintf_l (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10037C457: fprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100001A4A: query_as_file (query_minmax.c:288)
+==19361==    by 0x1000011F2: main (query_minmax.c:151)
+==19361==  Uninitialised value was created by a stack allocation
+==19361==    at 0x100001880: query_as_file (query_minmax.c:264)
+==19361== 
+==19361== Syscall param write(buf) points to uninitialised byte(s)
+==19361==    at 0x10048897A: write$NOCANCEL (in /usr/lib/system/libsystem_kernel.dylib)
+==19361==    by 0x100382844: _swrite (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10037B2FE: __sflush (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003ADAAD: __xvprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003839C9: vfprintf_l (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10037C457: fprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100001A4A: query_as_file (query_minmax.c:288)
+==19361==    by 0x1000011F2: main (query_minmax.c:151)
+==19361==  Address 0x1048ae07d is on thread 1's stack
+==19361==  in frame #3, created by __xvprintf (???:)
+==19361==  Uninitialised value was created by a stack allocation
+==19361==    at 0x100001880: query_as_file (query_minmax.c:264)
+==19361== 
+  File opening time for step 0 was  0.098s
+[rank=000, line 290]:   Check variable definitions... query_minmax.bp
+[rank=000, line 308]:   Query variable content...
+[rank=000, line 315]:     set upper limit to total number of blocks in array  = 1
+[rank=000, line 331]:     Query returned 0 blocks as result
+[rank=000, line 337]:   Processing time for step 0 was  0.090s, query evaluation was  0.087s
+[rank=000, line 315]:     set upper limit to total number of blocks in array  = 1
+[rank=000, line 331]:     Query returned 0 blocks as result
+[rank=000, line 337]:   Processing time for step 1 was  0.012s, query evaluation was  0.012s
+[rank=000, line 315]:     set upper limit to total number of blocks in array  = 1
+[rank=000, line 331]:     Query returned 1 blocks as result
+[rank=000, line 337]:   Processing time for step 2 was  0.005s, query evaluation was  0.004s
+==19361== 
+==19361== HEAP SUMMARY:
+==19361==     in use at exit: 63,048 bytes in 509 blocks
+==19361==   total heap usage: 2,518 allocs, 2,009 frees, 53,666,356 bytes allocated
+==19361== 
+==19361== 0 bytes in 1 blocks are definitely lost in loss record 1 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000567BA: common_read_get_attrs_for_variable (common_read.c:837)
+==19361==    by 0x1000563B1: common_read_inq_var_raw_byid (common_read.c:885)
+==19361==    by 0x100056246: common_read_inq_var_byid (common_read.c:810)
+==19361==    by 0x1000560A5: common_read_inq_var (common_read.c:766)
+==19361==    by 0x100053DBC: adios_inq_var (adios_read.c:67)
+==19361==    by 0x100001AD8: query_as_file (query_minmax.c:291)
+==19361==    by 0x1000011F2: main (query_minmax.c:151)
+==19361== 
+==19361== 0 bytes in 3 blocks are definitely lost in loss record 2 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000567BA: common_read_get_attrs_for_variable (common_read.c:837)
+==19361==    by 0x1000563B1: common_read_inq_var_raw_byid (common_read.c:885)
+==19361==    by 0x100056246: common_read_inq_var_byid (common_read.c:810)
+==19361==    by 0x1000560A5: common_read_inq_var (common_read.c:766)
+==19361==    by 0x10003E90A: adios_check_query_at_timestep (common_query.c:173)
+==19361==    by 0x10003EAA9: adios_check_query_at_timestep (common_query.c:200)
+==19361==    by 0x10003ECB8: common_query_evaluate (common_query.c:792)
+==19361==    by 0x10004183A: adios_query_evaluate (adios_query.c:47)
+==19361==    by 0x100001ECF: query_as_file (query_minmax.c:318)
+==19361==    by 0x1000011F2: main (query_minmax.c:151)
+==19361== 
+==19361== 0 bytes in 3 blocks are definitely lost in loss record 3 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000567BA: common_read_get_attrs_for_variable (common_read.c:837)
+==19361==    by 0x1000563B1: common_read_inq_var_raw_byid (common_read.c:885)
+==19361==    by 0x100056246: common_read_inq_var_byid (common_read.c:810)
+==19361==    by 0x1000560A5: common_read_inq_var (common_read.c:766)
+==19361==    by 0x10003E90A: adios_check_query_at_timestep (common_query.c:173)
+==19361==    by 0x10003EABC: adios_check_query_at_timestep (common_query.c:201)
+==19361==    by 0x10003ECB8: common_query_evaluate (common_query.c:792)
+==19361==    by 0x10004183A: adios_query_evaluate (adios_query.c:47)
+==19361==    by 0x100001ECF: query_as_file (query_minmax.c:318)
+==19361==    by 0x1000011F2: main (query_minmax.c:151)
+==19361== 
+==19361== 3 bytes in 3 blocks are definitely lost in loss record 4 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10007770A: adios_posix_open (adios_posix.c:133)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 5 bytes in 1 blocks are indirectly lost in loss record 5 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000671E5: genkey (qhashtbl.c:196)
+==19361==    by 0x1000668D2: put2 (qhashtbl.c:293)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x10000181F: define_vars (query_minmax.c:171)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 6 bytes in 1 blocks are indirectly lost in loss record 6 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000671E5: genkey (qhashtbl.c:196)
+==19361==    by 0x1000668D2: put2 (qhashtbl.c:293)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x100001684: define_vars (query_minmax.c:163)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 6 bytes in 1 blocks are indirectly lost in loss record 7 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000671E5: genkey (qhashtbl.c:196)
+==19361==    by 0x1000668D2: put2 (qhashtbl.c:293)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x1000016C4: define_vars (query_minmax.c:164)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 6 bytes in 1 blocks are indirectly lost in loss record 8 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000671E5: genkey (qhashtbl.c:196)
+==19361==    by 0x1000668D2: put2 (qhashtbl.c:293)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x100001704: define_vars (query_minmax.c:165)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 6 bytes in 1 blocks are indirectly lost in loss record 9 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000671E5: genkey (qhashtbl.c:196)
+==19361==    by 0x1000668D2: put2 (qhashtbl.c:293)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x100001744: define_vars (query_minmax.c:166)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 6 bytes in 1 blocks are indirectly lost in loss record 10 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000671E5: genkey (qhashtbl.c:196)
+==19361==    by 0x1000668D2: put2 (qhashtbl.c:293)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x100001784: define_vars (query_minmax.c:167)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 6 bytes in 1 blocks are indirectly lost in loss record 11 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000671E5: genkey (qhashtbl.c:196)
+==19361==    by 0x1000668D2: put2 (qhashtbl.c:293)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x1000017C4: define_vars (query_minmax.c:168)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 6 bytes in 1 blocks are definitely lost in loss record 12 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100045082: adios_parse_attributes_index_v1 (adios_bp_v1.c:945)
+==19361==    by 0x100078487: adios_posix_open (adios_posix.c:483)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 8 bytes in 2 blocks are definitely lost in loss record 14 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000450CF: adios_parse_attributes_index_v1 (adios_bp_v1.c:951)
+==19361==    by 0x100078487: adios_posix_open (adios_posix.c:483)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 20 bytes in 1 blocks are indirectly lost in loss record 21 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000671E5: genkey (qhashtbl.c:196)
+==19361==    by 0x1000668D2: put2 (qhashtbl.c:293)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x100063907: adios_add_timing_variables (adios_timing.c:362)
+==19361==    by 0x100003A77: common_adios_open (common_adios.c:307)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 21 bytes in 1 blocks are still reachable in loss record 22 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100399DDE: strdup (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1000640CC: adios_read_hooks_init (adios_read_hooks.c:52)
+==19361==    by 0x1000543E6: common_read_init_method (common_read.c:93)
+==19361==    by 0x100053C00: adios_read_init_method (adios_read.c:24)
+==19361==    by 0x1000010D7: main (query_minmax.c:132)
+==19361== 
+==19361== 26 bytes in 1 blocks are indirectly lost in loss record 33 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000671E5: genkey (qhashtbl.c:196)
+==19361==    by 0x1000668D2: put2 (qhashtbl.c:293)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x100063BB1: adios_add_timing_variables (adios_timing.c:394)
+==19361==    by 0x100003A77: common_adios_open (common_adios.c:307)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 32 bytes in 1 blocks are still reachable in loss record 45 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10035F637: __Balloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035C38B: __rv_alloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035C992: __dtoa (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100384BAA: __vfprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003AD806: __v2printf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003ADA9B: __xvprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003839C9: vfprintf_l (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10037C457: fprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1000015FB: write_file (query_minmax.c:227)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 32 bytes in 1 blocks are still reachable in loss record 46 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10035F637: __Balloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100362EB5: __strtodg (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100364110: __strtopx (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003A5EC9: strtold (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100041404: compare_values (query_minmax.c:164)
+==19361==    by 0x100040E36: minmax_evaluate_node (query_minmax.c:274)
+==19361==    by 0x10004061C: minmax_process_rec (query_minmax.c:321)
+==19361==    by 0x100040676: minmax_process_rec (query_minmax.c:329)
+==19361==    by 0x10004059F: minmax_process (query_minmax.c:388)
+==19361==    by 0x10003FF5F: do_evaluate_now (query_minmax.c:555)
+==19361==    by 0x10003FFE2: adios_query_minmax_evaluate (query_minmax.c:625)
+==19361== 
+==19361== 32 bytes in 1 blocks are indirectly lost in loss record 49 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100067500: qhput (qhashtbl.c:231)
+==19361==    by 0x1000668E6: put2 (qhashtbl.c:295)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x100001684: define_vars (query_minmax.c:163)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 32 bytes in 1 blocks are indirectly lost in loss record 50 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100067500: qhput (qhashtbl.c:231)
+==19361==    by 0x1000668E6: put2 (qhashtbl.c:295)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x1000016C4: define_vars (query_minmax.c:164)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 32 bytes in 1 blocks are indirectly lost in loss record 51 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100067500: qhput (qhashtbl.c:231)
+==19361==    by 0x1000668E6: put2 (qhashtbl.c:295)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x100001704: define_vars (query_minmax.c:165)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 32 bytes in 1 blocks are indirectly lost in loss record 52 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100067500: qhput (qhashtbl.c:231)
+==19361==    by 0x1000668E6: put2 (qhashtbl.c:295)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x100001744: define_vars (query_minmax.c:166)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 32 bytes in 1 blocks are indirectly lost in loss record 53 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100067500: qhput (qhashtbl.c:231)
+==19361==    by 0x1000668E6: put2 (qhashtbl.c:295)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x100001784: define_vars (query_minmax.c:167)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 32 bytes in 1 blocks are indirectly lost in loss record 54 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100067500: qhput (qhashtbl.c:231)
+==19361==    by 0x1000668E6: put2 (qhashtbl.c:295)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x1000017C4: define_vars (query_minmax.c:168)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 32 bytes in 1 blocks are indirectly lost in loss record 55 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100067500: qhput (qhashtbl.c:231)
+==19361==    by 0x1000668E6: put2 (qhashtbl.c:295)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x1000029A8: adios_define_var (adios.c:300)
+==19361==    by 0x10000181F: define_vars (query_minmax.c:171)
+==19361==    by 0x100001198: main (query_minmax.c:141)
+==19361== 
+==19361== 32 bytes in 1 blocks are indirectly lost in loss record 56 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100067500: qhput (qhashtbl.c:231)
+==19361==    by 0x1000668E6: put2 (qhashtbl.c:295)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x100063907: adios_add_timing_variables (adios_timing.c:362)
+==19361==    by 0x100003A77: common_adios_open (common_adios.c:307)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 32 bytes in 1 blocks are indirectly lost in loss record 57 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100067500: qhput (qhashtbl.c:231)
+==19361==    by 0x1000668E6: put2 (qhashtbl.c:295)
+==19361==    by 0x10000980B: adios_append_var (adios_internals.c:1261)
+==19361==    by 0x10000956E: adios_common_define_var (adios_internals.c:2006)
+==19361==    by 0x100063BB1: adios_add_timing_variables (adios_timing.c:394)
+==19361==    by 0x100003A77: common_adios_open (common_adios.c:307)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 36 bytes in 1 blocks are still reachable in loss record 58 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10035F637: __Balloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035FEAD: __d2b_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035C6C3: __dtoa (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100384BAA: __vfprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003AD806: __v2printf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003ADA9B: __xvprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003839C9: vfprintf_l (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10037C457: fprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1000015FB: write_file (query_minmax.c:227)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 36 bytes in 1 blocks are still reachable in loss record 59 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10035F637: __Balloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100362EE4: __strtodg (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100364110: __strtopx (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003A5EC9: strtold (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100041404: compare_values (query_minmax.c:164)
+==19361==    by 0x100040E36: minmax_evaluate_node (query_minmax.c:274)
+==19361==    by 0x10004061C: minmax_process_rec (query_minmax.c:321)
+==19361==    by 0x100040676: minmax_process_rec (query_minmax.c:329)
+==19361==    by 0x10004059F: minmax_process (query_minmax.c:388)
+==19361==    by 0x10003FF5F: do_evaluate_now (query_minmax.c:555)
+==19361==    by 0x10003FFE2: adios_query_minmax_evaluate (query_minmax.c:625)
+==19361== 
+==19361== 36 bytes in 1 blocks are still reachable in loss record 60 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10035F637: __Balloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035F876: __i2b_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100362F27: __strtodg (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100364110: __strtopx (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003A5EC9: strtold (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100041404: compare_values (query_minmax.c:164)
+==19361==    by 0x100040E36: minmax_evaluate_node (query_minmax.c:274)
+==19361==    by 0x10004061C: minmax_process_rec (query_minmax.c:321)
+==19361==    by 0x100040676: minmax_process_rec (query_minmax.c:329)
+==19361==    by 0x10004059F: minmax_process (query_minmax.c:388)
+==19361==    by 0x10003FF5F: do_evaluate_now (query_minmax.c:555)
+==19361== 
+==19361== 44 bytes in 1 blocks are still reachable in loss record 61 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10035F637: __Balloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035FB3C: __lshift_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100363003: __strtodg (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100364110: __strtopx (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003A5EC9: strtold (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100041404: compare_values (query_minmax.c:164)
+==19361==    by 0x100040E36: minmax_evaluate_node (query_minmax.c:274)
+==19361==    by 0x10004061C: minmax_process_rec (query_minmax.c:321)
+==19361==    by 0x100040676: minmax_process_rec (query_minmax.c:329)
+==19361==    by 0x10004059F: minmax_process (query_minmax.c:388)
+==19361==    by 0x10003FF5F: do_evaluate_now (query_minmax.c:555)
+==19361== 
+==19361== 44 bytes in 1 blocks are still reachable in loss record 62 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10035F637: __Balloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035FB3C: __lshift_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100363057: __strtodg (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100364110: __strtopx (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003A5EC9: strtold (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100041404: compare_values (query_minmax.c:164)
+==19361==    by 0x100040E36: minmax_evaluate_node (query_minmax.c:274)
+==19361==    by 0x10004061C: minmax_process_rec (query_minmax.c:321)
+==19361==    by 0x100040676: minmax_process_rec (query_minmax.c:329)
+==19361==    by 0x10004059F: minmax_process (query_minmax.c:388)
+==19361==    by 0x10003FF5F: do_evaluate_now (query_minmax.c:555)
+==19361== 
+==19361== 44 bytes in 1 blocks are still reachable in loss record 63 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10035F637: __Balloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035FB3C: __lshift_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003638FC: __strtodg (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100364110: __strtopx (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003A5EC9: strtold (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100041404: compare_values (query_minmax.c:164)
+==19361==    by 0x100040E36: minmax_evaluate_node (query_minmax.c:274)
+==19361==    by 0x10004061C: minmax_process_rec (query_minmax.c:321)
+==19361==    by 0x100040676: minmax_process_rec (query_minmax.c:329)
+==19361==    by 0x10004059F: minmax_process (query_minmax.c:388)
+==19361==    by 0x10003FF5F: do_evaluate_now (query_minmax.c:555)
+==19361== 
+==19361== 72 bytes in 3 blocks are definitely lost in loss record 79 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10003EB93: common_query_evaluate (common_query.c:780)
+==19361==    by 0x10004183A: adios_query_evaluate (adios_query.c:47)
+==19361==    by 0x100001ECF: query_as_file (query_minmax.c:318)
+==19361==    by 0x1000011F2: main (query_minmax.c:151)
+==19361== 
+==19361== 80 bytes in 1 blocks are still reachable in loss record 81 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x10035F58E: __Balloc_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035FEAD: __d2b_D2A (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10035C6C3: __dtoa (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x100384BAA: __vfprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003AD806: __v2printf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003ADA9B: __xvprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1003839C9: vfprintf_l (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x10037C457: fprintf (in /usr/lib/system/libsystem_c.dylib)
+==19361==    by 0x1000015FB: write_file (query_minmax.c:227)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 87 bytes in 8 blocks are indirectly lost in loss record 82 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063F27: adios_timing_create (adios_timing.c:521)
+==19361==    by 0x10007790C: adios_posix_open (adios_posix.c:175)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 144 bytes in 1 blocks are still reachable in loss record 85 of 126
+==19361==    at 0x1000B3CB7: calloc (vg_replace_malloc.c:715)
+==19361==    by 0x10003F96F: adios_query_hooks_init (adios_query_hooks.c:27)
+==19361==    by 0x10003D38F: common_query_init (common_query.c:52)
+==19361==    by 0x1000547FE: common_read_init_method (common_read.c:171)
+==19361==    by 0x100053C00: adios_read_init_method (adios_read.c:24)
+==19361==    by 0x1000010D7: main (query_minmax.c:132)
+==19361== 
+==19361== 192 bytes in 1 blocks are indirectly lost in loss record 90 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063EC4: adios_timing_create (adios_timing.c:514)
+==19361==    by 0x1000778D2: adios_posix_open (adios_posix.c:172)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 192 bytes in 1 blocks are indirectly lost in loss record 91 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063EE4: adios_timing_create (adios_timing.c:515)
+==19361==    by 0x1000778D2: adios_posix_open (adios_posix.c:172)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 192 bytes in 3 blocks are definitely lost in loss record 92 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000777FF: adios_posix_open (adios_posix.c:155)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 261 bytes in 24 blocks are indirectly lost in loss record 97 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063F27: adios_timing_create (adios_timing.c:521)
+==19361==    by 0x1000778D2: adios_posix_open (adios_posix.c:172)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 279 (192 direct, 87 indirect) bytes in 1 blocks are definitely lost in loss record 98 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063EC4: adios_timing_create (adios_timing.c:514)
+==19361==    by 0x10007790C: adios_posix_open (adios_posix.c:175)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 558 (384 direct, 174 indirect) bytes in 2 blocks are definitely lost in loss record 104 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063EC4: adios_timing_create (adios_timing.c:514)
+==19361==    by 0x1000778D2: adios_posix_open (adios_posix.c:172)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== 1,512 bytes in 1 blocks are still reachable in loss record 117 of 126
+==19361==    at 0x1000B3CB7: calloc (vg_replace_malloc.c:715)
+==19361==    by 0x1000640B9: adios_read_hooks_init (adios_read_hooks.c:50)
+==19361==    by 0x1000543E6: common_read_init_method (common_read.c:93)
+==19361==    by 0x100053C00: adios_read_init_method (adios_read.c:24)
+==19361==    by 0x1000010D7: main (query_minmax.c:132)
+==19361== 
+==19361== 8,000 bytes in 1 blocks are indirectly lost in loss record 124 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000666F7: qhashtbl (qhashtbl.c:146)
+==19361==    by 0x100007E42: adios_common_declare_group (adios_internals.c:1359)
+==19361==    by 0x1000028D2: adios_declare_group (adios.c:266)
+==19361==    by 0x10000116B: main (query_minmax.c:137)
+==19361== 
+==19361== 8,479 (104 direct, 8,375 indirect) bytes in 1 blocks are definitely lost in loss record 125 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x1000666A0: qhashtbl (qhashtbl.c:138)
+==19361==    by 0x100007E42: adios_common_declare_group (adios_internals.c:1359)
+==19361==    by 0x1000028D2: adios_declare_group (adios.c:266)
+==19361==    by 0x10000116B: main (query_minmax.c:137)
+==19361== 
+==19361== 16,895 (16,424 direct, 471 indirect) bytes in 1 blocks are definitely lost in loss record 126 of 126
+==19361==    at 0x1000B32E1: malloc (vg_replace_malloc.c:303)
+==19361==    by 0x100063E9D: adios_timing_create (adios_timing.c:511)
+==19361==    by 0x1000778D2: adios_posix_open (adios_posix.c:172)
+==19361==    by 0x1000035F2: common_adios_open (common_adios.c:230)
+==19361==    by 0x1000022D4: adios_open (adios.c:81)
+==19361==    by 0x1000012E9: write_file (query_minmax.c:187)
+==19361==    by 0x1000011C8: main (query_minmax.c:146)
+==19361== 
+==19361== LEAK SUMMARY:
+==19361==    definitely lost: 17,385 bytes in 24 blocks
+==19361==    indirectly lost: 9,107 bytes in 53 blocks
+==19361==      possibly lost: 0 bytes in 0 blocks
+==19361==    still reachable: 2,061 bytes in 12 blocks
+==19361==         suppressed: 34,495 bytes in 420 blocks
+==19361== 
+==19361== For counts of detected and suppressed errors, rerun with: -v
+==19361== ERROR SUMMARY: 641 errors from 27 contexts (suppressed: 18 from 18)

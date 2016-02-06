@@ -20,9 +20,9 @@
   </adios-group>
 
   <method group="restart" method="SIRIUS">
-  method=MPI;parameters="";path=level0;
-  method=POSIX;parameters="";path=level1;
-  method=MPI_AGGREGATE;parameters=num_ost=1;path=level2
+      method=MPI;           parameters="";                            path=level0;
+      method=POSIX;         parameters="";                            path=level1;
+      method=MPI_AGGREGATE; parameters="num_ost=1;num_aggregators=2"; path=level2
   </method>
 
   <buffer max-size-MB="0"/>
