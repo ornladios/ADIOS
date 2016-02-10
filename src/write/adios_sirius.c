@@ -498,11 +498,11 @@ void adios_sirius_write (struct adios_file_struct * fd
                 {
                     alldims[i] = ldims[i];                                        
                 }
-                for( i = 0; i < ndims && i < 16; i ++)
+                for( int i = 0; i < ndims && i < 16; i ++)
                 {
                     alldims[i+ndims] = gdims[i];                                        
                 }
-                for( i = 0; i < ndims && i < 16; i ++)
+                for( int i = 0; i < ndims && i < 16; i ++)
                 {
                     alldims[i+ndims*2] = offsets[i];                                        
                 }
@@ -524,7 +524,7 @@ void adios_sirius_write (struct adios_file_struct * fd
                     
 
                     //now get the top byte array
-                    var->data = get_split_top(splithandle, nelems);
+                    var->data = get_split_top(splithandle, &nelems);
                     
                     /* End of decomposition code */
         
@@ -539,7 +539,7 @@ void adios_sirius_write (struct adios_file_struct * fd
                     var->size = varsize;
                     
                     //now get the top byte array
-                    var->data = get_split_bot(splithandle, nelems);
+                    var->data = get_split_bot(splithandle, &nelems);
                     
                 }
                 else
