@@ -32,6 +32,7 @@ static uint64_t get_blocksize_bytes (int ndim, uint64_t *dims, enum ADIOS_DATATY
 }
 */
 
+/* Traverse the tree to find a varinfo structure for the variable. Return NULL if not found. */
 static ADIOS_VARINFO * adios_query_find_varinfo (ADIOS_FILE *f, ADIOS_QUERY *q, const char *varname)
 {
     if (!q->left && !q->right) {

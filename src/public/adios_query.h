@@ -175,7 +175,7 @@ ADIOS_QUERY_RESULT * adios_query_evaluate (
  * Reading functions
  */
 
-/* Read in data of 'varname' for all selections in 'selections' for timesteps
+/* Read in data of 'varname' for all selections in 'selections' for timestep
  * and copy them into 'data' which has a bounding box selection.
  * If a data point falls outside the bounding box, it will not be copied.
  * Memory for each query selection is allocated and freed automatically in this function.
