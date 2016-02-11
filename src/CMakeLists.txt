@@ -150,7 +150,7 @@ if(BUILD_WRITE)
     ${transforms_read_SOURCES} 
     ${transforms_write_SOURCES} 
     ${query_C_SOURCES}
-    core/util.c 
+    core/util.c core/strutil.c 
     core/qhashtbl.c 
     read/read_bp.c 
     read/read_bp_staged.c 
@@ -191,7 +191,7 @@ if(BUILD_WRITE)
     core/adios_transport_hooks.c 
     core/adios_socket.c 
     core/adios_logger.c 
-    core/util.c 
+    core/util.c core/strutil.c 
     core/qhashtbl.c 
     read/read_bp.c 
     read/read_bp_staged.c 
@@ -223,7 +223,7 @@ if(BUILD_WRITE)
       core/adios_transport_hooks.c 
       core/adios_socket.c 
       core/adios_logger.c 
-      core/util.c 
+      core/util.c core/strutil.c 
       core/qhashtbl.c 
       read/read_bp.c 
       read/read_bp_staged.c 
@@ -495,7 +495,7 @@ set(libadiosread_a_SOURCES core/adios_bp_v1.c
   core/globals.c 
   core/adios_read_hooks.c 
   core/adios_logger.c 
-  core/util.c 
+  core/util.c core/strutil.c 
   core/qhashtbl.c 
   read/read_bp.c 
   read/read_bp_staged.c 
@@ -560,7 +560,7 @@ if(BUILD_FORTRAN)
     core/globals.c 
     core/adios_read_hooks.c 
     core/adios_logger.c 
-    core/util.c 
+    core/util.c core/strutil.c 
     core/qhashtbl.c 
     read/read_bp.c 
     read/read_bp_staged.c 
@@ -681,7 +681,7 @@ set(libadiosread_nompi_a_SOURCES core/mpidummy.c
   core/globals.c 
   core/adios_read_hooks.c 
   #                      core/adios_transport_hooks.c 
-  core/util.c 
+  core/util.c core/strutil.c 
   core/qhashtbl.c 
   read/read_bp.c)
 
@@ -741,7 +741,7 @@ if(BUILD_FORTRAN)
     ${query_F_SOURCES}
     core/globals.c 
     core/adios_read_hooks.c 
-    core/util.c 
+    core/util.c core/strutil.c 
     core/qhashtbl.c 
     read/read_bp.c)
   if(HAVE_DATASPACES)
@@ -774,28 +774,28 @@ if(BUILD_FORTRAN)
     set(libadiosreadf_nompi_a_CFLAGS "${ADIOSLIB_CFLAGS}")
   endif(HAVE_NSSI)
 
-    if(HAVE_NSSI)
-        set(dist_libadiosreadf_nompi_a_SOURCES nssi/adios_nssi_args.x)
-        set(nodist_libadiosreadf_nompi_a_SOURCES adios_nssi_args.c adios_nssi_args.h)
-        set(libadiosreadf_nompi_a_SOURCES ${libadiosreadf_nompi_a_SOURCES} ${dist_libadiosreadf_nompi_a_SOURCES} ${nodist_libadiosreadf_nompi_a_SOURCES})
-        set(FortranReadSeqLibSource ${FortranReadSeqLibSource} nssi/adios_nssi_config.c read/read_nssi.c)
-        set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${MACRODEFFLAG}PTL_IFACE_CLIENT=CRAY_USER_NAL ${MACRODEFFLAG}PTL_IFACE_SERVER=CRAY_USER_NAL")
-        set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS}")
-        set(libadiosreadf_nompi_a_CFLAGS "${ADIOSLIB_CFLAGS}")
-    endif(HAVE_NSSI)
+  if(HAVE_NSSI)
+    set(dist_libadiosreadf_nompi_a_SOURCES nssi/adios_nssi_args.x)
+    set(nodist_libadiosreadf_nompi_a_SOURCES adios_nssi_args.c adios_nssi_args.h)
+    set(libadiosreadf_nompi_a_SOURCES ${libadiosreadf_nompi_a_SOURCES} ${dist_libadiosreadf_nompi_a_SOURCES} ${nodist_libadiosreadf_nompi_a_SOURCES})
+    set(FortranReadSeqLibSource ${FortranReadSeqLibSource} nssi/adios_nssi_config.c read/read_nssi.c)
+    set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${MACRODEFFLAG}PTL_IFACE_CLIENT=CRAY_USER_NAL ${MACRODEFFLAG}PTL_IFACE_SERVER=CRAY_USER_NAL")
+    set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS}")
+    set(libadiosreadf_nompi_a_CFLAGS "${ADIOSLIB_CFLAGS}")
+  endif(HAVE_NSSI)
 
-    set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${MACRODEFFLAG}_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSREADLIB_CPPFLAGS}")
-    set(libadiosreadf_nompi_a_SOURCES ${libadiosreadf_nompi_a_SOURCES} ${FortranReadSeqLibSource} core/adiosf_read.c)
-    set(libadiosreadf_nompi_v1_a_SOURCES ${FortranReadSeqLibSource} core/adiosf_read_v1.c)
-    set(libadiosreadf_nompi_v1_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS}")
-    set(libadiosreadf_nompi_v1_a_CFLAGS "${libadiosreadf_nompi_a_CFLAGS}")
+  set(libadiosreadf_nompi_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${MACRODEFFLAG}_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSREADLIB_CPPFLAGS}")
+  set(libadiosreadf_nompi_a_SOURCES ${libadiosreadf_nompi_a_SOURCES} ${FortranReadSeqLibSource} core/adiosf_read.c)
+  set(libadiosreadf_nompi_v1_a_SOURCES ${FortranReadSeqLibSource} core/adiosf_read_v1.c)
+  set(libadiosreadf_nompi_v1_a_CPPFLAGS "${libadiosreadf_nompi_a_CPPFLAGS}")
+  set(libadiosreadf_nompi_v1_a_CFLAGS "${libadiosreadf_nompi_a_CFLAGS}")
 
-#add library adiosreadf_nompi and adiosreadf_nompi_v1
-    add_library(adiosreadf_nompi ${libadiosreadf_nompi_a_SOURCES})
-    set_target_properties(adiosreadf_nompi  PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${libadiosreadf_nompi_a_CFLAGS}")
+  #add library adiosreadf_nompi and adiosreadf_nompi_v1
+  add_library(adiosreadf_nompi ${libadiosreadf_nompi_a_SOURCES})
+  set_target_properties(adiosreadf_nompi  PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${libadiosreadf_nompi_a_CFLAGS}")
 
-    add_library(adiosreadf_nompi_v1 ${libadiosreadf_nompi_v1_a_SOURCES})
-    set_target_properties(adiosreadf_nompi_v1 PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_v1_a_CPPFLAGS} ${libadiosreadf_nompi_v1_a_CFLAGS}")
+  add_library(adiosreadf_nompi_v1 ${libadiosreadf_nompi_v1_a_SOURCES})
+  set_target_properties(adiosreadf_nompi_v1 PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_v1_a_CPPFLAGS} ${libadiosreadf_nompi_v1_a_CFLAGS}")
 
 endif(BUILD_FORTRAN)
 
@@ -813,7 +813,7 @@ set(libadios_internal_nompi_a_SOURCES core/mpidummy.c
   core/adios_error.c 
   core/adios_logger.c 
   core/adios_timing.c 
-  core/util.c 
+  core/util.c core/strutil.c 
   core/qhashtbl.c 
   core/futils.c 
   core/adios_transport_hooks.c)
@@ -855,8 +855,17 @@ if(BUILD_WRITE)
   endif()
 endif()
 
+
 message("setting sirius link/include paths")
-target_link_libraries(adios libsplitdoubles.a ${SIRIUS_LIB})
+add_library(splitdoubles STATIC IMPORTED)
+set_target_properties(splitdoubles PROPERTIES
+  IMPORTED_LOCATION ${SIRIUS_LIB}
+  IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
+  )
+target_link_libraries(adios splitdoubles)
+target_link_libraries(adiosf splitdoubles)
+target_link_libraries(adios_nompi splitdoubles)
+target_link_libraries(adiosf_nompi splitdoubles)
 #link_directories(${SIRIUS_LIB})
 include_directories(${SIRIUS_INC})
 

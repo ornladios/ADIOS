@@ -15,6 +15,9 @@ if(BUILD_WRITE)
   endif(BUILD_FORTRAN)
 endif(BUILD_WRITE)
 
+set_property(DIRECTORY
+  PROPERTY LINKER_LANGUAGE CXX)
+
 #find_library(ADIOS_LIB adios ${PROJECT_BINARY_DIR}/src)
 #if(${ADIOS_LIB}-NOTFOUND)
  # message(STATUS "cannot find adios.a in ${PROJECT_BINARY_DIR}/tests makefile")

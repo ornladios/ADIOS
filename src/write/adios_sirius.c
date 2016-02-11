@@ -97,6 +97,7 @@ static int declare_group (int64_t * id, const char * name
         struct adios_group_struct * g = (struct adios_group_struct *) *id;
         g->all_unique_var_names = adios_flag_no;
     }
+    
     return ret;
 }
 
@@ -114,7 +115,7 @@ static void define_iogroups(struct adios_method_struct * method)
     int len;
     int l;
     struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *) method->method_data;
-
+    
     for (l=0; l < nlevels; l++)
     {
         len=5+strlen(method->group->name); //new groupname= tg_groupname
@@ -524,7 +525,7 @@ void adios_sirius_write (struct adios_file_struct * fd
                     
 
                     //now get the top byte array
-                    var->data = get_split_top(splithandle, &nelems);
+                    var->data = (void*)get_split_top(splithandle, nelems);
                     
                     /* End of decomposition code */
         
@@ -539,7 +540,7 @@ void adios_sirius_write (struct adios_file_struct * fd
                     var->size = varsize;
                     
                     //now get the top byte array
-                    var->data = get_split_bot(splithandle, &nelems);
+                    var->data = get_split_bot(splithandle, nelems);
                     
                 }
                 else
@@ -563,7 +564,7 @@ void adios_sirius_write (struct adios_file_struct * fd
                     var->path = strdup (v->path);
                     var->type = v->type;
                     var->size = varsize;
-                    var->data = v->data;
+                    var->data = (void*)v->data;
                     var->global_dimensions = print_dimensions (ndims, gdims);
                     var->local_dimensions  = print_dimensions (ndims, ldims);
                     var->local_offsets     = print_dimensions (ndims, offsets);

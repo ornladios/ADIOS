@@ -8,6 +8,8 @@ if(BUILD_WRITE)
   add_executable(list_methods list_methods.c)
   target_link_libraries(list_methods adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
   set_target_properties(list_methods PROPERTIES COMPILE_FLAGS "${MACRODEFFLAG}WRITE ${ADIOSLIB_CPPFLAGS} ${ADIOSLIB_CFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${MPI_C_COMPILE_FLAGS}")
+  set_property(TARGET list_methods PROPERTY LINKER_LANGUAGE CXX)
+
 
   if(MPI_LINK_FLAGS)
      set_target_properties(list_methods PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
