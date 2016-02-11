@@ -58,14 +58,14 @@ program tri2d_f_noxml
     integer*8               :: varid
     integer*4               :: comm
 
-    integer*4               :: rank, i, j, k, p, p1, ierr, adios_err
+    integer*4               :: rank, i, j, p, p1, ierr, adios_err
     integer*4               :: npoints, num_cells
     integer*4               :: ndx, ndy                            ! size of array per processor
     real*8, dimension(:), allocatable       :: N                                   ! node centered variable
     real*8, dimension(:), allocatable       :: C                                   ! cell centered variable
     real*8, dimension(:,:), allocatable     :: points                              ! X,Y coordinate
     integer*4, dimension(:,:), allocatable  :: cells
-    character(:), allocatable            :: schema_version, dimemsions
+    character(len=20)                       :: schema_version, dimemsions
 
     integer*4               :: offs_x, offs_y                      ! offset in x and y direction
     integer*4               :: nx_local, ny_local                  ! local address

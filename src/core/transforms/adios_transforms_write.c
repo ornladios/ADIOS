@@ -448,7 +448,7 @@ int adios_transform_variable_data(struct adios_file_struct * fd,
                                   int *wrote_to_shared_buffer) {
     //printf("[TRANSFORM] Would be doing transform ID %d on variable %s here, if it were implemented\n", var->transform_type, var->name);
     //printf("[TRANSFORM] Apparent type of variable is %s, but was originally %s\n", adios_type_to_string_int(var->type), adios_type_to_string_int(var->pre_transform_type));
-    //printf("[TRANSFORM] Original size of variable data is %llu\n", adios_transform_get_pre_transform_var_size(fd->group, var));
+    //printf("[TRANSFORM] Original size of variable data is %" PRIu64 "\n", adios_transform_get_pre_transform_var_size(fd->group, var));
 
     assert(fd);
     assert(var);
@@ -510,7 +510,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
         else
         {
             fprintf (stderr, "Cannot allocate memory in buffer_write.  "
-                             "Requested: %llu\n", *buffer_offset + size + 1000);
+                             "Requested: %" PRIu64 "\n", *buffer_offset + size + 1000);
 
             return;
         }

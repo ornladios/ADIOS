@@ -33,3 +33,7 @@ Note: Users may need to use the MPI-enabled Adios module, adios_mpi,
 instead of serial adios module, adios. Some Adios methods work only
 with MPI. In that case, use import "adios_mpi", not "adios".
 
+c. DataSpaces
+
+Refer job.pbs script to test with DATASPACES method.
+adios_write_mpi.py and adios_read_mpi.py communicates through DATASPACES method.

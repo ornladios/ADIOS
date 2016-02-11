@@ -32,6 +32,7 @@
 #include "core/common_read.h"
 #include "core/adios_subvolume.h"
 #include "core/adios_internals.h" // adios_get_type_size()
+#include "core/util.h"
 #include "core/adios_selection_util.h"
 #include "core/transforms/adios_patchdata.h"
 

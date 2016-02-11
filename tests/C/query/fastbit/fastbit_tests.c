@@ -673,7 +673,6 @@ int parseQueryXml(const char* xmlQueryFileName)
   mxmlDelete(tree);    
 
   adios_read_finalize_method(ADIOS_READ_METHOD_BP);
-  adios_finalize(rank);
 }
 
 /*

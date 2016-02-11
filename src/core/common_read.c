@@ -261,6 +261,12 @@ static ADIOS_FILE * common_read_link (ADIOS_FILE * fp)
     return fp;
 }
 
+int common_read_get_attr_mesh (const ADIOS_FILE * fp,
+                            const char * attrname,
+                            enum ADIOS_DATATYPES * type,
+                            int * size,
+                            void ** data);
+
 static ADIOS_FILE * common_read_mesh (ADIOS_FILE * fp)
 {
     int i;
@@ -310,17 +316,18 @@ static ADIOS_FILE * common_read_mesh (ADIOS_FILE * fp)
             {
                 enum ADIOS_DATATYPES attr_type;
                 int attr_size;
-                char * meshname = NULL;
+                void * attrdata = NULL;
                 int  read_fail = 0;
                 //check if this name refers to an external mesh
-                common_read_get_attr_mesh (fp, fp->attr_namelist[i], &attr_type, &attr_size, &meshname);
+                common_read_get_attr_mesh (fp, fp->attr_namelist[i], &attr_type, &attr_size, &attrdata);
+                char *meshname = (char*) attrdata;
                 if (attr_type == adios_string)
                 {
                     char * meshfile = malloc ( strlen("/adios_schema/")+strlen(meshname)+strlen("/mesh-file")+1 );
                     strcpy (meshfile, "/adios_schema/");
                     strcat (meshfile, meshname);
                     strcat (meshfile, "/mesh-file");
-                    char * data = NULL;
+                    void * data = NULL;
                     read_fail = common_read_get_attr_mesh (fp, meshfile, &attr_type, &attr_size, &data);
                     if (!read_fail)
                     {
@@ -828,14 +835,12 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
  */
 void common_read_get_attrs_for_variable (const ADIOS_FILE *fp, ADIOS_VARINFO *vi)
 {
-    struct common_read_internals_struct * internals;
     char * varpath;
     int i; 
     assert (vi != NULL);
     assert (fp != NULL);
     vi->nattrs = 0;
     vi->attr_ids = (int *) malloc (fp->nattrs * sizeof(int));
-    internals = (struct common_read_internals_struct *) fp->internal_data;
     varpath = fp->var_namelist [vi->varid];
     log_debug ("Look for attributes of variable %s...\n", varpath);
     int varlen = strlen (varpath);
@@ -950,25 +955,25 @@ int common_read_inq_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *v
 int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
                              int per_step_stat, int per_block_stat)
 {
-    struct common_read_internals_struct * internals;
-    int retval;
-    int group_varid;
+    if (!fp) {
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_stat()\n");
+        return adios_errno;
+    }
+    if (!varinfo) {
+        adios_error (err_invalid_argument, "Null pointer passed as varinfo to adios_inq_var_stat()\n");
+        return adios_errno;
+    }
 
     adios_errno = err_no_error;
-    if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
-        if (varinfo) {
-            /* Translate group varid presented to the user to the real varid */
-            group_varid = varinfo->varid;
-            varinfo->varid = varinfo->varid + internals->group_varid_offset;
-        }
-        retval = internals->read_hooks[internals->method].adios_inq_var_stat_fn (fp, varinfo, per_step_stat, per_block_stat);
-        /* Translate back real varid to the group varid presented to the user */
-        varinfo->varid = group_varid;
-    } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_stat()\n");
-        retval = err_invalid_file_pointer;
-    }
+    struct common_read_internals_struct * internals =
+            (struct common_read_internals_struct *) fp->internal_data;
+
+    /* Translate group varid presented to the user to the real varid */
+    int group_varid = varinfo->varid;
+    varinfo->varid = varinfo->varid + internals->group_varid_offset;
+    int retval = internals->read_hooks[internals->method].adios_inq_var_stat_fn (fp, varinfo, per_step_stat, per_block_stat);
+    /* Translate back real varid to the group varid presented to the user */
+    varinfo->varid = group_varid;
     return retval;
 }
 
@@ -976,65 +981,72 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
 //   patch the original metadata in from the transform info
 int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
-    int retval;
-	struct common_read_internals_struct *internals;
-    ADIOS_TRANSINFO *ti;
-
-    internals = (struct common_read_internals_struct *)fp->internal_data;
-
-    // If the blockinfo is already loaded, don't load it again
-    if (varinfo->blockinfo)
-    	return err_no_error;
-
-    // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
-    // If we're in logical view mode, and if this variable is transformed, use the transformed blockinfo
-    if (internals->data_view == LOGICAL_DATA_VIEW) {
-        ti = common_read_inq_transinfo(fp, varinfo);
-        if (ti && ti->transform_type != adios_transform_none) {
-            retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
-            if (retval != err_no_error)
-                return retval;
-
-            patch_varinfo_with_transform_blockinfo(varinfo, ti);
-        }
-        common_read_free_transinfo(varinfo, ti);
+    if (!fp) {
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_blockinfo()\n");
+        return adios_errno;
+    }
+    if (!varinfo) {
+        adios_error (err_invalid_argument, "Null pointer passed as varinfo to adios_inq_var_blockinfo()\n");
+        return adios_errno;
     }
 
-    // If we haven't set the blockinfo yet, either we're in physical view
-    // mode, or the variable isn't transformed. Either way, use the normal
-    // blockinfo
-    if (!varinfo->blockinfo) {
-        retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
-        if (retval != err_no_error)
-            return retval;
-   }
+    adios_errno = err_no_error;
+    struct common_read_internals_struct * internals =
+            (struct common_read_internals_struct *) fp->internal_data;
+    ADIOS_TRANSINFO *ti;
 
-    return err_no_error;
+    int retval = err_no_error;
+    // If the blockinfo is already loaded, don't load it again
+    if (!varinfo->blockinfo) {
+        // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
+        // If we're in logical view mode, and if this variable is transformed, use the transformed blockinfo
+        if (internals->data_view == LOGICAL_DATA_VIEW) {
+            ti = common_read_inq_transinfo(fp, varinfo);
+            if (ti && ti->transform_type != adios_transform_none) {
+                retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
+                if (retval != err_no_error)
+                    return retval;
+
+                patch_varinfo_with_transform_blockinfo(varinfo, ti);
+            }
+            common_read_free_transinfo(varinfo, ti);
+        }
+
+        // If we haven't set the blockinfo yet, either we're in physical view
+        // mode, or the variable isn't transformed. Either way, use the normal
+        // blockinfo
+        if (!varinfo->blockinfo) {
+            retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
+        }
+    }
+    return retval;
 }
 
 // NCSU ALACRITY-ADIOS - Renaming of common_read_inq_var_blockinfo, named 'raw'
 //   because it is oblivious to the original metadata as stored in TRANSINFO
 int common_read_inq_var_blockinfo_raw (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
-    struct common_read_internals_struct * internals;
-    int retval;
-    int group_varid;
+    if (!fp) {
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_blockinfo_raw()\n");
+        return adios_errno;
+    }
+    if (!varinfo) {
+        adios_error (err_invalid_argument, "Null pointer passed as varinfo to adios_inq_var_blockinfo_raw()\n");
+        return adios_errno;
+    }
 
     adios_errno = err_no_error;
-    if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
-        if (varinfo) {
-            /* Translate group varid presented to the user to the real varid */
-            group_varid = varinfo->varid;
-            varinfo->varid = varinfo->varid + internals->group_varid_offset;
-        }
-        retval = internals->read_hooks[internals->method].adios_inq_var_blockinfo_fn (fp, varinfo);
-        /* Translate back real varid to the group varid presented to the user */
-        varinfo->varid = group_varid;
-    } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_blockinfo()\n");
-        retval = err_invalid_file_pointer;
-    }
+    struct common_read_internals_struct * internals =
+            (struct common_read_internals_struct *) fp->internal_data;
+
+    /* Translate group varid presented to the user to the real varid */
+    int group_varid = varinfo->varid;
+    varinfo->varid = varinfo->varid + internals->group_varid_offset;
+
+    int retval = internals->read_hooks[internals->method].adios_inq_var_blockinfo_fn (fp, varinfo);
+    /* Translate back real varid to the group varid presented to the user */
+    varinfo->varid = group_varid;
+
     return retval;
 }
 
@@ -1312,7 +1324,7 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 
 static double common_check_var_type_to_double (enum ADIOS_DATATYPES * type, void * value)
 {
-    double data;
+    double data = 0.0;
 
     if (*type == adios_real)
         data = *(float *)value;
@@ -1334,7 +1346,7 @@ static double common_check_var_type_to_double (enum ADIOS_DATATYPES * type, void
         data = *(signed long long *)value;
     else if (*type == adios_unsigned_long)
         data = *(unsigned long long *)value;
-    else if (*type == adios_unknown)
+    else //if (*type == adios_unknown)
     {
         adios_error (err_mesh_unifrom_invalid_var_type,
                      "Provided var type is not supported. "
@@ -1346,7 +1358,7 @@ static double common_check_var_type_to_double (enum ADIOS_DATATYPES * type, void
 
 static uint64_t common_check_var_type_to_uint64 (enum ADIOS_DATATYPES * type, void * value)
 {
-    uint64_t data;
+    uint64_t data = 0;
 
     if (*type == adios_real)
         data = *(float *)value;
@@ -1368,7 +1380,7 @@ static uint64_t common_check_var_type_to_uint64 (enum ADIOS_DATATYPES * type, vo
         data = *(signed long long *)value;
     else if (*type == adios_unsigned_long)
         data = *(unsigned long long *)value;
-    else if (*type == adios_unknown)
+    else //if (*type == adios_unknown)
     {
         adios_error (err_mesh_unifrom_invalid_var_type,
                      "Provided var type is not supported. "
@@ -1380,7 +1392,7 @@ static uint64_t common_check_var_type_to_uint64 (enum ADIOS_DATATYPES * type, vo
 
 static int common_check_var_type_to_int (enum ADIOS_DATATYPES * type, void * value)
 {
-    int data;
+    int data = 0;
 
     if (*type == adios_real)
         data = *(float *)value;
@@ -1402,7 +1414,7 @@ static int common_check_var_type_to_int (enum ADIOS_DATATYPES * type, void * val
         data = *(signed long long *)value;
     else if (*type == adios_unsigned_long)
         data = *(unsigned long long *)value;
-    else if (*type == adios_unknown)
+    else //if (*type == adios_unknown)
     {
         adios_error (err_mesh_unifrom_invalid_var_type,
                      "Provided var type is not supported. "

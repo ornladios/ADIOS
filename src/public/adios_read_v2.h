@@ -12,6 +12,7 @@
 #define __ADIOS_READ_VER2_H__
 
 #include <stdint.h>
+#include <inttypes.h>
 
 #include "adios_version.h"
 #include "adios_mpi.h"

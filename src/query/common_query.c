@@ -17,6 +17,7 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
 
 int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2);
 
+#if 0
 static ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
 {
   if (v->ndim == 0) {
@@ -44,6 +45,7 @@ static ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v)
   ADIOS_SELECTION* result =  common_read_selection_boundingbox(v->ndim, start, count);
   return result;
 }
+#endif
 
 static int query_hooks_initialized = 0;
 void common_query_init()
@@ -70,7 +72,7 @@ void common_query_finalize()
 }
 
 int common_query_is_method_available(enum ADIOS_QUERY_METHOD method) {
-	if (method < 0 || method >= ADIOS_QUERY_METHOD_COUNT)
+	if (method >= ADIOS_QUERY_METHOD_COUNT)
 		return 0;
 	else
 		return (query_hooks[method].adios_query_evaluate_fn != 0);
@@ -190,7 +192,7 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 	return -1;
       }
 
-      log_debug("%s, raw data size=%llu\n", q->condition, dataSize);
+      log_debug("%s, raw data size=%" PRIu64 "\n", q->condition, dataSize);
       //q->dataSlice = malloc(total_byte_size);
       q->dataSlice = 0;
       q->rawDataSize = dataSize;
@@ -467,7 +469,7 @@ static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second
     const ADIOS_SELECTION_POINTS_STRUCT *pt2 = &(second->u.points);
     
     if (pt1 -> npoints != pt2->npoints) {
-      log_error("Error! point selections have different size. %llu != %llu\n", pt1->npoints, pt2->npoints);
+      log_error("Error! point selections have different size. %" PRIu64 " != %" PRIu64 "\n", pt1->npoints, pt2->npoints);
       return -1;
     }
     return 1;
@@ -777,9 +779,9 @@ int common_query_evaluate(ADIOS_QUERY* q,
 			  uint64_t batchSize, // limited by maxResult
 			  ADIOS_SELECTION** result)
 {  
-	double start = 0, end = 0;
 #ifdef BREAKDOWN
-	start = dclock();
+    double start = 0, end = 0;
+    start = dclock();
 #endif
   if (q == 0) {
     log_debug("Error: empty query will not be evaluated!");

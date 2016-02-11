@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <assert.h>
 #include <limits.h>
 
@@ -85,13 +86,13 @@ printf ("rank %d filename: %s\n", rank, filename);
 
     //uint64_t byte_test_length = 768LL * 1024 * 1024;
     uint64_t byte_test_length = 512LL * 1024 * 1024;
-if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
+if (rank == 0) printf ("Byte_test_length: %" PRIu64 "\n", byte_test_length);
 #if DO_WRITE
     char * byte_test = 0;
     byte_test = malloc (byte_test_length + 1);
     if (byte_test == 0)
     {
-        fprintf (stderr, "Error allocating memory for write byte_test: %llu\n"
+        fprintf (stderr, "Error allocating memory for write byte_test: %" PRIu64 "\n"
                 ,byte_test_length
                 );
         exit (-1);
@@ -103,7 +104,7 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
     r_byte_test = malloc (byte_test_length + 1);
     if (byte_test == 0)
     {
-        fprintf (stderr, "Error allocating memory for read byte_test: %llu\n"
+        fprintf (stderr, "Error allocating memory for read byte_test: %" PRIu64 "\n"
                 ,byte_test_length
                 );
         exit (-1);
@@ -172,10 +173,7 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
     gettimeofday (&time_start, NULL);
     adios_open (&io_handle, type_name, filename, "w", comm);
     gettimeofday (&time_open, NULL);
-#if 1
-    adios_group_size (io_handle, 4 + byte_test_length, &total);
-    gettimeofday (&time_group_size, NULL);
-#else
+
     adios_group_size (io_handle,  4 + 4
                                 + 4 * zionsize1
                                 + 4 + 4 * zionsize2 * zionsize2
@@ -199,7 +197,6 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
 
     adios_write (io_handle, "node-attr", &node);
 
-#endif
     adios_write (io_handle, "byte_test_length", &byte_test_length);
     gettimeofday (&time_write1, NULL);
     adios_write (io_handle, "byte_test", byte_test);
@@ -227,7 +224,7 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
         printf ("Proc\tSec\n");
         for (i = 0; i < size; i++)
         {
-            printf ("%06d\t%02lld.%06lld\n", i, 
+            printf ("%06d\t%02" PRId64 ".%06" PRId64 "\n", i,
                     (int64_t)time_diff_all [i].tv_sec,
                     (int64_t)time_diff_all [i].tv_usec
                    );

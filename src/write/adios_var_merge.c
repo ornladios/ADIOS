@@ -29,7 +29,6 @@
 #define FORWARD 0
 #define REVERSE 1
 
-extern struct adios_transport_struct * adios_transports;
 static int varcnt=0;
 static char io_method[16]; //the IO method for data output
 static char io_parameters[256]; //the IO method parameters
@@ -926,7 +925,7 @@ enum BUFFERING_STRATEGY adios_var_merge_should_buffer (struct adios_file_struct 
         default:
         {
             adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
-            return adios_flag_no;
+            return no_buffering;
         }
     }
 
@@ -1024,25 +1023,25 @@ void adios_var_merge_write (struct adios_file_struct * fd
             dim = get_value_for_dim (&d->dimension);
             ldims[dims_count]=dim;
             if(dims_count==0)
-                sprintf(vars->dimensions,"%llu", dim);
+                sprintf(vars->dimensions,"%" PRIu64 , dim);
             else
-                sprintf(vars->dimensions,"%s,%llu",vars->dimensions, dim);
+                sprintf(vars->dimensions,"%s,%" PRIu64 ,vars->dimensions, dim);
 
             //global dimension
             dim = get_value_for_dim (&d->global_dimension);
             gdims[dims_count]=dim;
             if(dims_count==0)
-                sprintf(vars->global_dimensions,"%llu", dim);
+                sprintf(vars->global_dimensions,"%" PRIu64 , dim);
             else
-                sprintf(vars->global_dimensions,"%s,%llu",vars->global_dimensions, dim);
+                sprintf(vars->global_dimensions,"%s,%" PRIu64 ,vars->global_dimensions, dim);
 
             //local offsets
             dim = get_value_for_dim (&d->local_offset);
             offsets[dims_count]=dim;
             if(dims_count==0)
-                sprintf(vars->local_offsets,"%llu", dim);
+                sprintf(vars->local_offsets,"%" PRIu64 , dim);
             else
-                sprintf(vars->local_offsets,"%s,%llu",vars->local_offsets, dim);
+                sprintf(vars->local_offsets,"%s,%" PRIu64 ,vars->local_offsets, dim);
 
             dims_count++;
             d=d->next;
@@ -1443,9 +1442,9 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
 
             for(i=0;i<ndims;i++) {
                 if(i==0)
-                    sprintf(new_ldims, "%llu", gdims[i]);
+                    sprintf(new_ldims, "%" PRIu64 , gdims[i]);
                 else
-                    sprintf(new_ldims, "%s,%llu", new_ldims, gdims[i]);
+                    sprintf(new_ldims, "%s,%" PRIu64 , new_ldims, gdims[i]);
             }
 
             //aggregate the chunks

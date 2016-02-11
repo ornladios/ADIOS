@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -228,10 +229,10 @@ int main (int argc, char ** argv) {
                 calcC(chunk_size, v, c);
                 strcpy(lbounds,"");
                 for(j=0; j<v->ndim; j++){
-                    sprintf(tstring, "%lld,", c[j]);
+                    sprintf(tstring, "%" PRId64 ",", c[j]);
                     strcat(lbounds, tstring);
                 }
-                printf("rank=%d, name=%s, chunk_size1=%lld c[]=%s\n",rank,g->var_namelist[i],chunk_size,lbounds);
+                printf("rank=%d, name=%s, chunk_size1=%" PRId64 " c[]=%s\n",rank,g->var_namelist[i],chunk_size,lbounds);
 
 
                 chunk_size = 1;
@@ -319,9 +320,9 @@ int main (int argc, char ** argv) {
                             strcpy(lbounds,"");
                             strcpy(offs,"");
                             for(j=0; j<v->ndim; j++){
-                                sprintf(tstring, "%lld,", ts[j]);
+                                sprintf(tstring, "%" PRId64 ",", ts[j]);
                                 strcat(offs, tstring);
-                                sprintf(tstring, "%lld,", uc[j]);
+                                sprintf(tstring, "%" PRId64 ",", uc[j]);
                                 strcat(lbounds, tstring);
                             }
 
@@ -382,7 +383,7 @@ int main (int argc, char ** argv) {
         // Now we have everything declared... now we need to write them out!!!!!!
         if (WRITEME==1) {
             // open up the file for writing....
-            if (DEBUG) printf("rank=%d, opening file = %s, with group %s, size=%lld\n",rank,argv[2],f->group_namelist[gidx],adios_groupsize);
+            if (DEBUG) printf("rank=%d, opening file = %s, with group %s, size=%" PRId64 "\n",rank,argv[2],f->group_namelist[gidx],adios_groupsize);
 
             if(TIMING==100)
                 start_time[0] = MPI_Wtime();
@@ -401,8 +402,8 @@ int main (int argc, char ** argv) {
             sb2[0] = adios_totalsize;
             MPI_Reduce(sb2,rb2,1,MPI_UNSIGNED_LONG_LONG,MPI_SUM,0, comm);
             if(rank==0){
-                printf("total adios_totalsize = %lld\n", *rb2);
-                printf("total adios_groupsize = %lld\n", *rb);
+                printf("total adios_totalsize = %" PRId64 "\n", *rb2);
+                printf("total adios_groupsize = %" PRId64 "\n", *rb);
             }
             free(sb); free(rb); free(sb2); free(rb2);
 
@@ -493,7 +494,7 @@ int main (int argc, char ** argv) {
                             }
 
                             if (DEBUG)
-                                printf ("ADIOS WRITE: rank=%d, name=%s datasize=%lld\n",rank,g->var_namelist[i],bytes_read);
+                                printf ("ADIOS WRITE: rank=%d, name=%s datasize=%" PRId64 "\n",rank,g->var_namelist[i],bytes_read);
 
 
                             if (TIMING==100) {
@@ -503,10 +504,10 @@ int main (int argc, char ** argv) {
                                 printf("rank=%d, write ts=",rank);
                                 int k;
                                 for(k=0; k<v->ndim; k++)
-                                    printf("%lld,", ts[k]);
+                                    printf("%" PRId64 ",", ts[k]);
                                 printf("  uc=");
                                 for(k=0; k<v->ndim; k++)
-                                    printf("%lld,", uc[k]);
+                                    printf("%" PRId64 ",", uc[k]);
                                 printf("\n");
                             }
 
@@ -619,7 +620,7 @@ int main (int argc, char ** argv) {
         sb[5] = sb[3]+sb[4];
         sb[6] = total_time[5]; //total
 
-        double * rb;
+        double * rb = NULL;
 
         if(rank==0)
             rb = (double *)malloc(size*7*sizeof(double));
@@ -1051,6 +1052,10 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype)
         case adios_string:
             printf ("\"%s\"", ((char *) data)+item);
             break;
+        case adios_string_array:
+            // we expect one elemet of the array here
+            printf("\"%s\"", *((char **)data+item));
+            break;
 
         case adios_unsigned_short:
             printf ("%hu", ((unsigned short *) data)[item]);
@@ -1067,10 +1072,10 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype)
             break;
 
         case adios_unsigned_long:
-            printf ("%llu", ((unsigned long long *) data)[item]);
+            printf ("%" PRIu64, ((uint64_t *) data)[item]);
             break;
         case adios_long:        
-            printf ("%lld", ((signed long long *) data)[item]);
+            printf ("%" PRId64, ((int64_t *) data)[item]);
             break;
 
         case adios_real:

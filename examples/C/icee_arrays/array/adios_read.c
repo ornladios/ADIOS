@@ -107,7 +107,7 @@ int main (int argc, char ** argv)
         }
     }
 
-    int         rank, size, i, j;
+    int         rank, size, i;
     MPI_Comm    comm = MPI_COMM_WORLD;
     ADIOS_FILE * f;
     ADIOS_VARINFO * v;
@@ -181,7 +181,7 @@ int main (int argc, char ** argv)
                 sum += *((double *)data + i);
             }
 
-            printf("Step:%d, rank=%d: sum(data[%lld:%lld]) = %.01f\n", 
+            printf("Step:%d, rank=%d: sum(data[%" PRIu64 ":%" PRId64 "]) = %.01f\n",
                    f->current_step, rank, start[0], start[0]+count[0]-1, sum);
 
             // advance to 1) next available step with 2) blocking wait

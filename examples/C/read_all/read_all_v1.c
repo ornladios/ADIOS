@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include "adios_read.h"
 
 const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx);
@@ -24,7 +26,8 @@ int main (int argc, char ** argv)
     MPI_Comm    comm_dummy = 0;  /* MPI_Comm is defined through adios_read.h */
     void      * data = NULL;
     uint64_t    start[] = {0,0,0,0,0,0,0,0,0,0};
-    uint64_t    count[10], bytes_read = 0;
+    uint64_t    count[10];
+    int64_t     bytes_read = 0;
 
     if (argc < 2) {
         printf("Usage: %s <BP-file>\n", argv[0]);
@@ -65,9 +68,9 @@ int main (int argc, char ** argv)
                     printf(" = %s\n", value_to_string(v->type, v->value, 0));
                 } else {
                     /* Arrays have to be read in from the file */
-                    printf("[%lld",v->dims[0]);
+                    printf("[%" PRIu64,v->dims[0]);
                     for (j = 1; j < v->ndim; j++)
-                        printf(", %lld",v->dims[j]);
+                        printf(", %" PRIu64,v->dims[j]);
                     //printf("] = \n");
                     if (v->type == adios_integer)
                         printf("] = min=%d  max=%d  timedim=%d\n", (*(int*)v->gmin), (*(int*)v->gmax), v->timedim);
@@ -180,11 +183,11 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
             break;
 
         case adios_long:
-            sprintf (s, "%lld", ((int64_t *) data)[idx]);
+            sprintf (s, "%" PRId64, ((int64_t *) data)[idx]);
             break;
 
         case adios_unsigned_long:
-            sprintf (s, "%llu", ((uint64_t *) data)[idx]);
+            sprintf (s, "%" PRIu64, ((uint64_t *) data)[idx]);
             break;
 
         case adios_real:
@@ -201,6 +204,10 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
 
         case adios_string:
             return (char*) ((char *)data+idx);
+            break;
+
+        case adios_string_array:
+            return (char*) *((char **)data+idx);
             break;
 
         case adios_complex:

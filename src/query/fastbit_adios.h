@@ -13,6 +13,26 @@ extern "C" {
 #include <iapi.h>
 
 #include "public/adios_query.h"
+#include "query_utils.h"
+
+#ifdef __MACH__
+#include <mach/mach_time.h>
+#define CLOCK_REALTIME 0
+#define CLOCK_MONOTONIC 0
+int clock_gettime(int clk_id, struct timespec *t){
+  mach_timebase_info_data_t timebase;
+  mach_timebase_info(&timebase);
+  uint64_t time;
+  time = mach_absolute_time();
+  double nseconds = ((double)time * (double)timebase.numer)/((double)timebase.denom);
+  double seconds = ((double)time * (double)timebase.numer)/((double)timebase.denom * 1e9);
+  t->tv_sec = seconds;
+  t->tv_nsec = nseconds;
+  return 0;
+}
+#else
+#include <time.h>
+#endif
 
 #include <math.h>
 
@@ -81,6 +101,27 @@ int fastbit_adios_util_readFromFastbitIndexFile (ADIOS_FILE* idxFile,
 					         uint32_t** bms, 
                                                  uint64_t* nb);
   
+  void casestudyLogger_print(CollectionPoint* p, const char* msg);
+  void casestudyLogger_starts(const char* ref);
+  void casestudyLogger_bms_print();
+  void casestudyLogger_idx_print();
+  void casestudyLogger_pro_print();
+  void casestudyLogger_frame_print();
+  void casestudyLogger_ends(const char* ref);
+  void casestudyLogger_getRealtime(struct timespec* spec);
+  void casestudyLogger_setPrefix(const char* prefix);
+  void casestudyLogger_frame_writeout(struct timespec* start, const char* desc);
+  void casestudyLogger_bms_writeout(struct timespec* start, const char* desc);
+  void casestudyLogger_pro_writeout(struct timespec* start, const char* desc);
+  void casestudyLogger_idx_writeout(struct timespec* start, const char* desc);
+  void casestudyLogger_init();				    
+  int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
+					   double** keys, uint64_t* nk, int64_t** offsets, uint64_t* no,
+					   uint32_t** bms, uint64_t* nb);
+
+  uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int timestep, int relativeBlockIdx);
+
+
 #ifdef __cplusplus
 }
 #endif

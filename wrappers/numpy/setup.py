@@ -14,8 +14,8 @@ from distutils.core import Command
 import subprocess
 import sys
 
-m1 = Extension('adios', 
-               sources=['adios.cpp'], 
+m1 = Extension('adios.adios',
+               sources=['adios.cpp'],
                define_macros=[('_NOMPI', None)],
                include_dirs = [np.get_include()],
                library_dirs = [],
@@ -67,10 +67,13 @@ class adios_test(Command):
         test_runner.run(test_suite)
 
 setup(name = 'adios',
-      version = '1.9.1b1',
+      version = '1.9.1b6',
       description = 'Python Module for Adios',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',
       url = 'http://www.olcf.ornl.gov/center-projects/adios/',
       cmdclass={'test': adios_test},
-      ext_modules = [m1])
+      ext_modules = [m1],
+      packages=['adios', 'adios._hl'],
+      package_dir = {'adios': 'src', 'adios._hl': '_hl'},
+      )

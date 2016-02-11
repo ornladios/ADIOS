@@ -9,6 +9,7 @@
 #define __BP_UTILS_H__
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include "public/adios_read.h" // ADIOS_FILE*
 #include "core/bp_types.h"
@@ -20,6 +21,8 @@ BP_FILE * GET_BP_FILE (const ADIOS_FILE * fp);
 void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
 void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
 int bp_get_endianness( uint32_t change_endianness );
+int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps);
+int adios_step_to_time_v1 (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * v, int from_steps);
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
                     struct adios_index_var_struct_v1 ** root,
                 uint64_t j);

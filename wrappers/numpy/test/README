@@ -1,0 +1,8 @@
+This directory contains unit test cases for Adios python binding. The
+test cases are based on Python "unittest" module
+
+Simply, run individual files as follows:
+$ python ./test_adios_unittest.py
+
+Or, you can run all the files in this directory:
+$ python -m unittest discover .
