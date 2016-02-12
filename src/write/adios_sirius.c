@@ -339,6 +339,7 @@ static int do_write (int64_t fd_p, const char * name, void * var)
     return 0;
 }
 
+
 static enum ADIOS_ERRCODES alloc_var (struct adios_sirius_data_struct * md, int level)
 {
     struct var_struct *var = (struct var_struct *) malloc (sizeof(struct var_struct));
@@ -514,33 +515,35 @@ void adios_sirius_write (struct adios_file_struct * fd
                 if(l == 0)
                 {
                     //level 0 so we write out the top
+                    //now get the top byte array
+                    var->data = (void*)get_split_top(splithandle, nelems, &var->size);
             
                     /* FIXME: decompose here the data into multiple levels */
                     // right now just write everything at every level
-                    gdims[0] = ldims[0] = offsets[0] = nelems;
+                    gdims[0] = ldims[0] = offsets[0] = var->size;
                     var->global_dimensions = print_dimensions (1, gdims);
                     var->local_dimensions  = print_dimensions (1, ldims);
                     var->local_offsets     = print_dimensions (1, offsets);
-                    var->size = varsize;
+
+                    // fprintf(stderr, "%s\n%s\n%s\n", var->global_dimensions,
+                    //         var->local_dimensions, var->local_offsets);
                     
 
-                    //now get the top byte array
-                    var->data = (void*)get_split_top(splithandle, nelems);
                     
                     /* End of decomposition code */
         
                 }
                 else if(l == 1)
                 {
+                    //now get the top byte array
+                    var->data = get_split_bot(splithandle, nelems, &var->size);
+
                     //we write out the bottom
-                    gdims[0] = ldims[0] = offsets[0] = nelems;
+                    gdims[0] = ldims[0] = offsets[0] = var->size;
                     var->global_dimensions = print_dimensions (1, gdims);
                     var->local_dimensions  = print_dimensions (1, ldims);
                     var->local_offsets     = print_dimensions (1, offsets);
-                    var->size = varsize;
                     
-                    //now get the top byte array
-                    var->data = get_split_bot(splithandle, nelems);
                     
                 }
                 else
