@@ -606,9 +606,14 @@ void adios_sirius_write (struct adios_file_struct * fd
          */
         if (ndims > 0)
             var->data = NULL;
+
+        
     }
 
-    free_splitter(splithandle);
+    
+    if(splithandle == NULL)
+        free_splitter(splithandle);
+        
 }
 
 void adios_sirius_read (struct adios_file_struct * fd

@@ -323,3 +323,6 @@
 
 /* svn revision number */
 #cmakedefine VERSION_SVNREV ${VERSION_SVNREV}
+
+/* sirius library */
+#cmakedefine HAVE_SIRIUS 0
