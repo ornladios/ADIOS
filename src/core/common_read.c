@@ -841,6 +841,7 @@ void common_read_get_attrs_for_variable (const ADIOS_FILE *fp, ADIOS_VARINFO *vi
     assert (fp != NULL);
     vi->nattrs = 0;
     vi->attr_ids = (int *) malloc (fp->nattrs * sizeof(int));
+    assert (vi->attr_ids != NULL);
     varpath = fp->var_namelist [vi->varid];
     log_debug ("Look for attributes of variable %s...\n", varpath);
     int varlen = strlen (varpath);
@@ -862,7 +863,12 @@ void common_read_get_attrs_for_variable (const ADIOS_FILE *fp, ADIOS_VARINFO *vi
                 }
             }
         }
+    }
+    if (vi->nattrs) {
         vi->attr_ids = (int *) realloc (vi->attr_ids, vi->nattrs * sizeof(int));
+    } else {
+        free(vi->attr_ids);
+        vi->attr_ids = NULL;
     }
 }
 
