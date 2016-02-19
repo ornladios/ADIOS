@@ -1596,8 +1596,7 @@ def readvar(fname, varname):
     """
     f = file(fname, comm=MPI.COMM_SELF)
     if not f.var.has_key(varname):
-        print "No valid variable"
-        return
+        raise KeyError(varname)
 
     v = f.var[varname]
     return v.read(from_steps=0, nsteps=v.nsteps)
