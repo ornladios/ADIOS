@@ -803,6 +803,7 @@ AC_SUBST(VERSION_MICRO)
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  tests/Makefile
+                 tests/test_src/Makefile
                  tests/C/Makefile
                  tests/C/flexpath_tests/Makefile
                  tests/C/flexpath_tests/1D_arr_global/Makefile

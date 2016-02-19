@@ -1,6 +1,7 @@
-# Add your codes that you want to build at 'make check'
+# Add your parallel codes that you want to build at 'make check'
 # Do not build Fortran codes if Fortran is not supported.
 # Do not build a code using the write API if only the read API is available
+# Sequential tests of src/ should go into tests/test_src
 # Steps:
 # 1. add code name below to check_readonly_C/check_C/check_readonly_Fortran/check_Fortran targets
 # 2. add code name to TESTS if it is a sequential test 
@@ -34,7 +35,7 @@ check_C=local_array_time \
 	build_standard_dataset \
 	transforms_writeblock_read
 
-test_C=hashtest copy_subvolume transforms_specparse group_free_test
+test_C=
 
 SUBDIRS=examples
 
@@ -42,7 +43,7 @@ endif
 
 if BUILD_FORTRAN
 check_readonly_Fortran=
-test_F=selection_api
+test_F=
 if BUILD_WRITE
 check_Fortran=posix_method
 endif
@@ -71,10 +72,6 @@ posix_method_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 posix_method.o: gwrite_posix_method.fh 
 gwrite_posix_method.fh: posix_method.xml
 	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/posix_method.xml
-
-selection_api_SOURCES=selection_api.F90
-selection_api_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
-selection_api_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 
 local_array_time_SOURCES=local_array_time.c
 local_array_time_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
@@ -198,30 +195,6 @@ transforms_writeblock_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 #transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 #transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 #transforms.o: transforms.c
-
-copy_subvolume_SOURCES=copy_subvolume.c
-copy_subvolume_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_SEQ_LDADD)
-copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_SEQ_LDFLAGS)
-copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSREADLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
-#copy_subvolume.o: copy_subvolume.c
-
-transforms_specparse_SOURCES=transforms_specparse.c
-transforms_specparse_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
-transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS)
-transforms_specparse_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS)
-#transforms_specparse.o: transforms_specparse.c
-
-hashtest_SOURCES=hashtest.c
-hashtest_LDADD = $(top_builddir)/src/libadios_a-qhashtbl.o
-hashtest_LDFLAGS = $(AM_LDFLAGS) 
-hashtest_CPPFLAGS = -I$(top_srcdir)/src
-hashtest.o: hashtest.c
-
-group_free_test_SOURCES=group_free_test.c
-group_free_test_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
-group_free_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS)
-group_free_test_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
-group_free_test.o: group_free_test.c
 
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \

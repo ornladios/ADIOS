@@ -34,6 +34,7 @@
 #include "core/transforms/adios_transforms_reqgroup.h"
 #include "core/common_read.h"
 #include "core/adios_subvolume.h"
+#include "core/util.h"
 #include "public/adios_selection.h"
 
 // An adios_transform_read_request corresponds to a variable read request
