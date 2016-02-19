@@ -563,7 +563,7 @@ cpdef np2adiostype(np.dtype nptype):
     cdef atype = DATATYPE.unknown
 
     if (nptype == np.bool_):
-        atype = DATATYPE.integer
+        atype = DATATYPE.byte
     elif (nptype == np.int8):
         atype = DATATYPE.byte
     elif (nptype == np.int16):
@@ -906,6 +906,8 @@ cdef class var(object):
         for name in self.file.attr.keys():
             if name.startswith(self.name + '/'):
                 self.attrs[name.replace(self.name + '/', '')] = self.file.attr[name]
+            if name.startswith('/' + self.name + '/'):
+                self.attrs[name.replace('/' + self.name + '/', '')] = self.file.attr[name]
 
     def __del__(self):
         self.close()
@@ -1191,7 +1193,10 @@ cdef class attr(object):
     property value:
         """ The attribute's value """
         def __get__(self):
-            return self.value
+            if (self.value.ndim == 0):
+                return np.asscalar(self.value)
+            else:
+                return self.value
 
     def __init__(self, file file, char * name):
         self.file = file
