@@ -26,9 +26,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
-#include "adios.h"
-#include "adios_read.h"
-#include "adios_query.h"
+#include "public/adios.h"
+#include "public/adios_read.h"
+#include "public/adios_query.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -115,18 +115,27 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    if (argc < 3) { Usage(); return 1; }
+    if (argc == 1)
+    {
+        // this case is for the test harness. otherwise this should be calling for Usage();
+        N = 2;
+        NSTEPS = 2;
+        printf("Running query_minmax <N=%d> <nsteps=%d>\n", N, NSTEPS);
+    }
+    else
+    {
+        if (argc < 3) { Usage(); return 1; }
 
-    errno = 0;
-    i = strtol (argv[1], NULL, 10);
-    if (errno || i < 1) { printf("Invalid 1st argument %s\n", argv[1]); Usage(); return 1;}
-    N = i;
+        errno = 0;
+        i = strtol (argv[1], NULL, 10);
+        if (errno || i < 1) { printf("Invalid 1st argument %s\n", argv[1]); Usage(); return 1;}
+        N = i;
 
-    errno = 0;
-    i = strtol (argv[2], NULL, 10);
-    if (errno || i < 1) { printf("Invalid 2nd argument %s\n", argv[2]); Usage(); return 1;}
-    NSTEPS = i;
-
+        errno = 0;
+        i = strtol (argv[2], NULL, 10);
+        if (errno || i < 1) { printf("Invalid 2nd argument %s\n", argv[2]); Usage(); return 1;}
+        NSTEPS = i;
+    }
     adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 4400);
     err = adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=2");

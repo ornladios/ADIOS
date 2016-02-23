@@ -9,6 +9,7 @@
 #include "public/adios_error.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"
+#include "core/util.h"
 #include "query_utils.h"
 
 // get the number of elements in a block (not size in bytes)

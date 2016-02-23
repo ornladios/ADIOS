@@ -86,12 +86,12 @@ int main (int argc, char ** argv)
         printf("byte        v1  = %d\n", v1);
         printf("short       v2  = %d\n", v2);
         printf("integer     v3  = %d\n", v3);
-        printf("long        v4  = %lld\n", v4);
+        printf("long        v4  = %" PRId64 "\n", v4);
 
         printf("uns.byte    v5  = %u\n", v5);
         printf("uns.short   v6  = %u\n", v6);
         printf("uns.int     v7  = %u\n", v7);
-        printf("uns.long    v8  = %llu\n", v8);
+        printf("uns.long    v8  = %" PRIu64 "\n", v8);
 
         printf("float       v9  = %g\n", v9);
         printf("double      v10 = %g\n", v10);

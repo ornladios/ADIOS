@@ -828,7 +828,10 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     export MPIFC=/usr/local/bin/mpif90
     export MPICXX=/usr/local/bin/mpicxx
 
-    CFLAGS="-g -DO_LARGEFILE=0 -fno-common -Wall" ${SRCDIR}/configure --prefix=/opt/adios \
+    export CFLAGS="-g -O0 -DO_LARGEFILE=0 -fno-common -Wall" 
+    export CXXFLAGS="-g -O0"
+    export FCFLAGS="-g -O0"
+    ${SRCDIR}/configure --prefix=/opt/adios \
         --with-mxml=/opt/mxml \
     #    --disable-fortran \
     #        --with-netcdf=/opt/netcdf \

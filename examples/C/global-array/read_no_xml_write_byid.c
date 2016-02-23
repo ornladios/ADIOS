@@ -76,7 +76,7 @@ int main (int argc, char ** argv)
     printf (" ======== Rank %d ========== \n", rank);
     npl = 10;
     for (i = 0; i < slice_size; i+=npl) {
-        printf ("[%4.4lld]  ", rank*slice_size+i);
+        printf ("[%4.4" PRIu64 "]  ", rank*slice_size+i);
         for (j= 0; j < npl; j++) {
             printf (" %6.6g", * ((double *)data + i + j));
         }

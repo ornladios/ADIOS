@@ -50,16 +50,16 @@ void printPoints(const ADIOS_SELECTION_POINTS_STRUCT * pts, const int timestep) 
     }
 }
 
-int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_streaming, int print_points, int read_results)
+void performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_streaming, int print_points, int read_results)
 {
-    int i = 0, timestep = 0 ;
+    int timestep = 0 ;
     ADIOS_VARINFO * tempVar = adios_inq_var(f, queryInfo->varName);
 
     if (use_streaming)
     	for (timestep = 0; timestep < queryInfo->fromStep; ++timestep)
     		assert(adios_advance_step(f, 0, 0) == 0);
 
-    fprintf(stderr,"times steps for variable is: [%d, %d], batch size is %llu\n", queryInfo->fromStep, queryInfo->fromStep + queryInfo->numSteps, queryInfo->batchSize);
+    fprintf(stderr,"times steps for variable is: [%d, %d], batch size is %" PRIu64 "\n", queryInfo->fromStep, queryInfo->fromStep + queryInfo->numSteps, queryInfo->batchSize);
     for (timestep = queryInfo->fromStep; timestep < queryInfo->fromStep + queryInfo->numSteps; timestep ++) {
         fprintf(stderr, "querying on timestep %d \n", timestep);
 
@@ -132,7 +132,6 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
 
 int main(int argc, char ** argv) {
 
-    int i, j, datasize, if_any;
     char xmlFileName[256];
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
 

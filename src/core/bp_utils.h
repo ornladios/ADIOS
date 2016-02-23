@@ -59,7 +59,7 @@ int bp_get_dimension_characteristics(struct adios_index_characteristic_struct_v1
                                     uint64_t *ldims, uint64_t *gdims, uint64_t *offsets);
 int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dims_struct_v1 *dims,
                                      uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
-                                     int file_is_fortran);
+                                     int file_is_fortran, int *has_oldschool_time_index);
 int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_struct_v1 *ch,
                                             uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
                                             int file_is_fortran);

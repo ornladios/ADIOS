@@ -358,14 +358,14 @@ int ncd_dataset (int ncid
                 if ( dims->dimension.var_id!=0
                         ||time_flag == adios_flag_yes) {
                     if (dims->dimension.rank!=0) {
-                        sprintf(dimname,"%s_%d",fullname,rank);
+                        sprintf(dimname,"%s_%zu",fullname,rank);
                         dimids[rank]=-1;
                         nc_inq_dimid(ncid, dimname, &dimids[rank]); 
                         if (dimids [rank] <= 0) 
                             retval=nc_def_dim (ncid, dimname,dims->dimension.rank,&dimids[rank]);
                         start_dims[rank] = 0;
                         count_dims[rank] = dims->dimension.rank;
-                        fprintf(stderr,"\tdim[%d]: c(%d):s(%d): dimid=%d\n"
+                        fprintf(stderr,"\tdim[%zu]: c(%zu):s(%zu): dimid=%d\n"
                                 ,rank 
                                 ,count_dims[rank] 
                                 ,start_dims[rank]
@@ -393,7 +393,7 @@ int ncd_dataset (int ncid
                                     start_dims[rank] = 0;
                                     count_dims[rank] = var_dims[i].rank;
                                     dimids[rank]=var_dims[i].nc_dimid;
-                                    fprintf(stderr,"\tdim[%d]: c(%d):s(%d): dimid=%d\n"
+                                    fprintf(stderr,"\tdim[%zu]: c(%zu):s(%zu): dimid=%d\n"
                                             ,rank
                                             ,count_dims[rank]
                                             ,start_dims[rank]
@@ -446,7 +446,7 @@ int ncd_dataset (int ncid
                 }
                 else {
                     //printf ("Error, every dimension in netcdf need to have name!\n");
-                    sprintf(dimname,"%s_%d", fullname,rank);
+                    sprintf(dimname,"%s_%zu", fullname,rank);
                     nc_inq_dimid(ncid,dimname,&nc_dimid);
                     if (nc_dimid<0)
                         retval = nc_def_dim ( ncid, dimname, dims->dimension.rank, &nc_dimid);
@@ -454,7 +454,7 @@ int ncd_dataset (int ncid
                     count_dims[rank] = dims->dimension.rank;
                     start_dims[rank] =0; 
                     ERR(retval);
-                    fprintf(stderr, "\t local[%d]: %" PRIu64 "\n",rank,dims->dimension.rank);
+                    fprintf(stderr, "\t local[%zu]: %" PRIu64 "\n",rank,dims->dimension.rank);
                 } 
             }
             if (dims)
@@ -473,7 +473,7 @@ int ncd_dataset (int ncid
         } 
         for (rank = 0; rank < maxrank; rank++) {
             if (verbose>0)
-                fprintf(stderr, "\tdimension info[%d]: c(%d) s(%d)\n"
+                fprintf(stderr, "\tdimension info[%zu]: c(%zu) s(%zu)\n"
                         ,rank,count_dims[rank], start_dims[rank]);
         }
         if (time_idx == 0 && dimids[time_idx]!=0) {

@@ -66,7 +66,7 @@ int main (int argc, char ** argv)
 
         printf("Points read (columns 2 and 6 in all rows):\n");
         for (i = 0; i < npoints; i++) {
-            printf("(%llu,%llu) = %.0lf\n", points[i*ndim+0], points[i*ndim+1], data[i]);
+            printf("(%" PRIu64 ",%" PRIu64 ") = %.0lf\n", points[i*ndim+0], points[i*ndim+1], data[i]);
         }
 
         adios_selection_delete (sel1);
