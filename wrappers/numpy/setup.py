@@ -66,12 +66,23 @@ class adios_test(Command):
         test_suite = test_loader.discover(os.path.join(setup_dir, 'test'))
         test_runner.run(test_suite)
 
-setup(name = 'adios',
-      version = '1.9.1b6',
-      description = 'Python Module for Adios',
-      author = 'Jong Choi',
-      author_email = 'yyalli@gmail.com',
-      url = 'http://www.olcf.ornl.gov/center-projects/adios/',
+NAME = 'adios'
+DESCRIPTION = 'Python Module for Adios'
+AUTHOR = 'Jong Choi'
+AUTHOR_EMAIL = 'choij@ornl.gov'
+URL = 'http://www.olcf.ornl.gov/center-projects/adios/'
+
+import re
+module_file = open("src/__init__.py").read()
+metadata = dict(re.findall("__([a-z]+)__\s*=\s*'([^']+)'", module_file))
+VERSION = metadata['version']
+
+setup(name = NAME,
+      version = VERSION,
+      description = DESCRIPTION,
+      author = AUTHOR,
+      author_email = AUTHOR_EMAIL,
+      url = URL,
       cmdclass={'test': adios_test},
       ext_modules = [m1],
       packages=['adios', 'adios._hl'],
