@@ -133,7 +133,7 @@ void query_columns(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method, int nrows, int
                 break;
             }
 
-            ADIOS_SELECTION* hits = result->selections;;
+            ADIOS_SELECTION* hits = result->selections;
             printf("Number of hits returned in batch %d = %lld \n",nBatches, hits->u.points.npoints);
 
             if (hits->u.points.npoints > 0) {

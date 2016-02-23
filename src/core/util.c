@@ -111,8 +111,6 @@ void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES ty
     }
 }
 
-
-
 void adios_util_copy_data (void *dst, void *src,
         int idim,
         int ndim,
