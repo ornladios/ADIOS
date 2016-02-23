@@ -2500,7 +2500,10 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
            incrementally in subfiles according to process_ids.
            This is true so far by all writing methods.
         */
-        current_process_id = pgs->process_id;
+        if (pgs)
+            current_process_id = pgs->process_id;
+            // if pgs==NULL, keep the current process id from the last PG
+
         while (pgs != NULL) {
             if ((int64_t)pgs->offset_in_file <= current_offset) {
                 deduced_file_index++;
