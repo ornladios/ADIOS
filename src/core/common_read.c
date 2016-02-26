@@ -3973,6 +3973,7 @@ ADIOS_SELECTION * common_read_selection_points (int ndim, uint64_t npoints, cons
         sel->u.points.ndim = ndim;
         sel->u.points.npoints = npoints;
         sel->u.points.points = (uint64_t *) points;
+        sel->u.points.container_selection = NULL;
     } else {
         adios_error(err_no_memory, "Cannot allocate memory for points selection\n");
     }
@@ -4012,5 +4013,9 @@ ADIOS_SELECTION * common_read_selection_auto (char *hints)
 
 void common_read_selection_delete (ADIOS_SELECTION *sel)
 {
+    if (sel->type == ADIOS_SELECTION_POINTS && sel->u.points.container_selection != NULL)
+    {
+       common_read_selection_delete (sel->u.points.container_selection);
+    }
     free(sel);
 }

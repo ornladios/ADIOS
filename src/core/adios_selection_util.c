@@ -90,7 +90,10 @@ ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDIN
         return NULL;
     } else {
         new_pts = (uint64_t*)realloc(new_pts, new_npts * ndim * sizeof(uint64_t));
-        return common_read_selection_points(ndim, new_npts, new_pts);
+        ADIOS_SELECTION *bb = common_read_selection_boundingbox(ndim, bb1->start, bb1->count);
+        ADIOS_SELECTION *pts = common_read_selection_points(ndim, new_npts, new_pts);
+        pts->u.points.container_selection = bb;
+        return pts;
     }
 }
 

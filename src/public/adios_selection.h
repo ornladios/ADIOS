@@ -38,6 +38,8 @@ extern "C" {
 /* Types used in the API */
 /*************************/
 
+typedef struct ADIOS_SELECTION_STRUCT  ADIOS_SELECTION;
+
 /* Type of selection */
 enum ADIOS_SELECTION_TYPE {
     ADIOS_SELECTION_BOUNDINGBOX  = 0,   /* Contiguous block of data defined by offsets and counts in each dimension */
@@ -62,6 +64,7 @@ typedef struct {
     int       ndim;
     uint64_t  npoints;
     uint64_t *points;
+    ADIOS_SELECTION *container_selection; // a writeblock, a bounding box, or NULL
 } ADIOS_SELECTION_POINTS_STRUCT;
 
 /* A selected block produced by a writer
