@@ -133,8 +133,9 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount
 		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ , int Corder);
 
+void setBitsinBitMap(rid_t rid, ADIOS_ALAC_BITMAP * alacResultBitmap);
 
-inline void setBitsinBitMap(rid_t rid, ADIOS_ALAC_BITMAP * alacResultBitmap){
+void setBitsinBitMap(rid_t rid, ADIOS_ALAC_BITMAP * alacResultBitmap){
 	uint32_t word = (uint32_t) (rid >> 6);
 	if (word > alacResultBitmap->length){
 		printf("what a hell\n");
