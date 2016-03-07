@@ -1605,6 +1605,9 @@ int mEvaluateTestFullRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 	
 	// has to call evaluate before calling either register_selection_as_bit_array() or extend_bit_array()
 	uint64_t countMe = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
+	
+
+
 	//printf("  boxCounter=%d, countme=%ld \n", boxCounter, countMe);
 	if (boxCounter == 0) {
 	  fastbit_iapi_register_selection_as_bit_array(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
@@ -1626,6 +1629,8 @@ int mEvaluateTestFullRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 }
 
 
+
+/*
  // with fancy query, on leaf node
 int mEvaluateTestFullRange(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
 {
@@ -1700,24 +1705,6 @@ int mEvaluateTestFullRange(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
 	}
 	
 	getHandleFromBlockAtLeafQuery(timeStep, start[0], idxFile,  q,  boxSize);
-	/*
-	// index is on box identified by start/count
-	uint64_t resultCount = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
-	int64_t  coordinateArray[resultCount];
-	fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, resultCount, 0);      
-	
-	int64_t startPosInVar = getPosInVariable(q->varinfo, q->varinfo->ndim, start, 0);
-	printf("result count=%lu, startPos=%lld, (%llu, %llu, %llu) \n", resultCount, startPosInVar, start[0], start[1], start[2]);
-	
-	int k=0;
-	// set bits
-	for (k=0; k<resultCount; k++) {
-	  int64_t currPosInBlock = coordinateArray[k]+startPosInVar;
-	  if (currPosInBlock >= 0) {
-	    bitarray_setbit(bitSlice, currPosInBlock);
-	  }
-	} 
-	*/
 	
 	// has to call evaluate before calling either register_selection_as_bit_array() or extend_bit_array()
 	uint64_t countMe = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
@@ -1779,7 +1766,7 @@ int mEvaluateTestFullRange(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
   casestudyLogger_setPrefix(" summarized evaluation for bb");
   
 }
-
+*/
 
 //
 // idx can be based on (m)ultiple blocks
@@ -3053,6 +3040,98 @@ void printOneSpatialCoordinate(int dim, uint64_t* spatialCoordinates)
   log_debug("\n");
 }
 
+uint64_t* minmaxtest(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coordinates, uint64_t retrivalSize, int timeStep, uint64_t* ptsSize)
+{
+  int i; 
+  int sheet = 1;
+ 
+  if (bbox != NULL) {
+    if (bbox->type != ADIOS_SELECTION_BOUNDINGBOX) {      
+      return NULL;
+    }
+    const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(bbox->u.bb);
+    if (bb->ndim <= 1) {
+      return NULL;
+    }
+    for (i=1; i<bb->ndim; i++) {
+      sheet *= bb->count[i];
+    }
+  } else {
+    ADIOS_QUERY* firstLeaf = getFirstLeaf(q);
+    if (firstLeaf->varinfo->ndim <= 1) {
+      return NULL;
+    }
+    for (i=1; i<firstLeaf->varinfo->ndim; i++) {
+      sheet *= firstLeaf->varinfo->dims[i];
+    }
+  }
+
+  printf("sheet = %ld \n", sheet);
+
+  uint64_t range = coordinates[retrivalSize-1] - coordinates[0];
+  uint64_t gap = sheet*5;  
+  if (range < gap*4) {
+    printf("As is.\n");
+    return NULL;
+  }
+
+  /*  float ratio = (float)retrivalSize/(float)range;
+  printf("retrival vs range. %ld, %ld %.3f\n",retrivalSize, range, ratio);
+  if (ratio > 0.75) {
+    printf("As is!\n");
+    return NULL;
+  }
+  */
+
+  // bbox is of size gap*4
+  uint64_t bbid=coordinates[0]/(gap*4);
+  uint64_t sid;
+
+  uint64_t diff=0;
+  //printf("check point. i=0, value=%ld, sid=%ld\n",  coordinates[0], bbid);
+
+  uint64_t checkpoints[range/gap+2];
+  uint64_t checkpointCounter = 0;
+  checkpoints[0] = 0;
+  
+  for (i=1; i<retrivalSize-1; i++) {
+    diff = coordinates[i] - coordinates[i-1];
+
+    if (diff > gap) {
+      //printf("check point. i=%ld, value=%ld, diff=%ld\n", i, coordinates[i], diff);
+      checkpoints[++checkpointCounter] = i-1;
+      checkpoints[++checkpointCounter] = i;
+    }
+    sid=coordinates[i]/(gap*4);
+    if (sid > bbid) {
+      checkpoints[++checkpointCounter] = i-1;
+      checkpoints[++checkpointCounter] = i;
+      //printf("check point. i=%ld, value=%ld, sheet=%ld checkpointCounter=%ld\n", i, coordinates[i], sid, checkpointCounter);
+      bbid = sid;
+    }    
+  }  
+  checkpoints[++checkpointCounter] = i;
+
+  //printf("check point. i=%ld, value=%ld, checkpointCounter=%ld\n", i, coordinates[i],  checkpointCounter);
+  if (checkpointCounter == 1) {
+    // should return by max ele
+    return NULL;
+  } else {
+    uint64_t total = 0;
+    uint64_t* result = malloc((checkpointCounter+1) * sizeof(uint64_t));
+    for (i=0; i<checkpointCounter+1; i++) {
+      result[i] = checkpoints[i];
+      if (i % 2 == 1) {
+	total += checkpoints[i] - checkpoints[i-1]+1;
+	//printf("i=%ld, %ld to %ld, uptodate: %ld \n", i, checkpoints[i-1], checkpoints[i], total);
+      }
+    }
+
+    *ptsSize = checkpointCounter+1;
+    return result;
+  } 
+}
+
 ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coordinates, uint64_t retrivalSize, int timeStep)
 {
   uint64_t arraySize = retrivalSize * (var->ndim);
@@ -3163,7 +3242,8 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
 				  int incomingTimestep,
 				  uint64_t batchSize, 
 				  ADIOS_SELECTION* outputBoundary, 
-				  ADIOS_SELECTION** result)
+				  //ADIOS_SELECTION** result)
+				  ADIOS_QUERY_RESULT* queryResult)
 {
   casestudyLogger_init();
   casestudyLogger_starts("queryArrived. initfastbit");
@@ -3201,6 +3281,12 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
       retrivalSize = batchSize;
   }
 
+  ADIOS_QUERY* firstLeaf = getFirstLeaf(q);
+  if ((firstLeaf == NULL) || (firstLeaf->varinfo == NULL)) {
+    log_error(":: Error: unable to get a valid first leaf! Exit. \n");
+    return -1;
+  }
+
   //uint64_t coordinates[retrivalSize];
   uint64_t* coordinates = (uint64_t*) calloc(retrivalSize, sizeof(uint64_t));
   if (coordinates == 0) {
@@ -3221,29 +3307,45 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   q->resultsReadSoFar += retrivalSize;
   
   if (outputBoundary == 0) {
-    ADIOS_QUERY* firstLeaf = getFirstLeaf(q);
-    if ((firstLeaf == NULL) || (firstLeaf->varinfo == NULL)) {
-	log_error(":: Error: unable to get a valid first leaf! Exit. \n");
-	free(coordinates);
-	return -1;
-      }
     if (firstLeaf->sel == NULL) {
-      *result = getSpatialCoordinatesDefault(firstLeaf->varinfo, coordinates, retrivalSize, timeStep);
+      queryResult->selections = getSpatialCoordinatesDefault(firstLeaf->varinfo, coordinates, retrivalSize, timeStep);
     } else {
-      *result = getSpatialCoordinates(firstLeaf->sel, coordinates, retrivalSize, firstLeaf->varinfo, timeStep);
+	queryResult->selections = getSpatialCoordinates(firstLeaf->sel, coordinates, retrivalSize, firstLeaf->varinfo, timeStep);
     }
-    free(coordinates);
   } else {
     //*result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize);
     // variable needs to be in place to handle the block information
     // not sure wheather this is well defined case of combined query?! but the first varibale will be used for block information calculation
-    *result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize, getFirstLeaf(q)->varinfo, timeStep);
-
-    free(coordinates);
-    if (*result == 0) {
-      return -1;
-    }
+    queryResult->selections = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize, getFirstLeaf(q)->varinfo, timeStep);     
   }
+
+  if (queryResult->selections != NULL) {
+    queryResult->npoints = queryResult->selections[0].u.points.npoints;
+  } else {
+    queryResult->npoints = 0;
+  }
+
+  printf(" --> \n");
+  uint64_t ptsSize = 0;
+  uint64_t* parts = minmaxtest(outputBoundary, q,  coordinates, retrivalSize, timeStep, &ptsSize);
+  if ((parts != NULL) && (ptsSize > 1)) {
+    ADIOS_SELECTION* multiSets = (ADIOS_SELECTION*)(malloc(ptsSize * sizeof(ADIOS_SELECTION)));
+    int i, counter=0;
+    uint64_t* pts = queryResult->selections->u.points.points;    
+    for (i=1; i<ptsSize; i=i+2) {      
+      uint64_t bundleSize = parts[i]-parts[i-1] + 1;
+      multiSets[(i-1)/2] = *(common_read_selection_points(firstLeaf->varinfo->ndim, bundleSize, pts+counter));
+      counter += bundleSize * firstLeaf->varinfo->ndim;
+    }
+    free(queryResult->selections);
+    queryResult->selections = multiSets;
+    queryResult->nselections = (ptsSize-1)/2;
+    free(parts);
+  }
+  
+  printf(" <-- \n");
+  free(coordinates);
+
   casestudyLogger_frame_writeout(&startT, "bitarrayGetHits");
 
   // print results
