@@ -92,7 +92,7 @@ int main (int argc, char ** argv)
 	char dimstr[32];
 
 	adios_init_noxml (comm);
-	adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1);
+	adios_set_max_buffer_size (1);
 
 	adios_declare_group (&g, "table", "", adios_flag_yes);
 	adios_select_method (g, "POSIX", "", "");

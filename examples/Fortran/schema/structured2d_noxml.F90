@@ -127,7 +127,7 @@ program structured2d_f_noxml
     enddo
 
     call adios_init_noxml (comm, adios_err)
-    call adios_allocate_buffer (50, adios_err)
+    call adios_set_max_buffer_size (50) 
     call adios_declare_group (m_adios_group, "structured2d", "", 1, adios_err)
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
 

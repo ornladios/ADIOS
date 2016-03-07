@@ -61,7 +61,7 @@ int main(int argc, char ** argv){
 
 	// returns 0 (buffer allocated) or 1 (seems everything fine)
 	// I guess size of the buffer in MB
-	adios_allocate_buffer(ADIOS_BUFFER_ALLOC_NOW, ADS_BUFFER_SIZE);
+	adios_set_max_buffer_size (ADS_BUFFER_SIZE);
 
 	// this will hold the group id for all variables defined within this group
 	int64_t	adios_grp = 0;
