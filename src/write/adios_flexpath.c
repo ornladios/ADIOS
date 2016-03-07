@@ -1685,7 +1685,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     
     // now gather offsets and send them via MPI to root
     struct adios_group_struct * g = fd->group;
-    struct adios_var_struct * list = g->vars;
+    struct adios_pg_struct * pg = fd->pgs_written;
     evgroup *gp = malloc(sizeof(evgroup));    
     gp->group_name = strdup(method->group->name);
     gp->process_id = fileData->rank;
@@ -1705,56 +1705,61 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	int myrank = fileData->rank;
 	int commsize = fileData->size;
 
-	while (list) {
-	    char *fullname = resolve_path_name(list->path, list->name);
-	    //int num_local_offsets = 0;
-	    uint64_t *local_offsets = NULL;
-	    uint64_t *local_dimensions = NULL;
-	    uint64_t *global_dimensions = NULL; // same at each rank.
-	    int num_local_offsets = get_var_offsets(list, g, 
-						    &local_offsets, 
-						    &local_dimensions, 
-						    &global_dimensions);
-	    // flip for fortran here.
-            if (fileData->host_language == FP_FORTRAN_MODE) {
-                reverse_dims(local_offsets, num_local_offsets);
-                reverse_dims(local_dimensions, num_local_offsets);
-                reverse_dims(global_dimensions, num_local_offsets);
+        while (pg) {
+            struct adios_var_struct * list = pg->vars_written;
+            while (list) {
+                char *fullname = resolve_path_name(list->path, list->name);
+                //int num_local_offsets = 0;
+                uint64_t *local_offsets = NULL;
+                uint64_t *local_dimensions = NULL;
+                uint64_t *global_dimensions = NULL; // same at each rank.
+                int num_local_offsets = get_var_offsets(list, g, 
+                        &local_offsets, 
+                        &local_dimensions, 
+                        &global_dimensions);
+                // flip for fortran here.
+                if (fileData->host_language == FP_FORTRAN_MODE) {
+                    reverse_dims(local_offsets, num_local_offsets);
+                    reverse_dims(local_dimensions, num_local_offsets);
+                    reverse_dims(global_dimensions, num_local_offsets);
+                }
+
+                if (num_local_offsets > 0) {
+                    uint64_t *all_offsets = NULL;
+                    uint64_t *all_local_dims = NULL;
+
+                    int buf_size = num_local_offsets * commsize * sizeof(uint64_t);		    
+                    all_offsets = malloc(buf_size);		
+                    all_local_dims = malloc(buf_size);
+
+                    int arr_size = num_local_offsets * sizeof(uint64_t);
+                    MPI_Allgather(local_offsets, arr_size, MPI_BYTE, 
+                            all_offsets, arr_size, MPI_BYTE,
+                            fileData->mpiComm);
+
+                    MPI_Allgather(local_dimensions, arr_size, MPI_BYTE, 
+                            all_local_dims, arr_size, MPI_BYTE,
+                            fileData->mpiComm);
+
+                    num_gbl_vars++;
+                    offset_struct *ostruct = malloc(sizeof(offset_struct));
+                    ostruct->offsets_per_rank = num_local_offsets;
+                    ostruct->total_offsets = num_local_offsets * commsize;
+                    ostruct->local_offsets = all_offsets;
+                    ostruct->local_dimensions = all_local_dims;
+                    ostruct->global_dimensions = global_dimensions;
+
+                    gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
+                    gbl_vars[num_gbl_vars - 1].name = fullname;
+                    gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
+                    gbl_vars[num_gbl_vars - 1].offsets = ostruct;
+
+                }
+                list=list->next;
             }
 
-	    if (num_local_offsets > 0) {
-		uint64_t *all_offsets = NULL;
-		uint64_t *all_local_dims = NULL;
-		
-		int buf_size = num_local_offsets * commsize * sizeof(uint64_t);		    
-		all_offsets = malloc(buf_size);		
-		all_local_dims = malloc(buf_size);
-
-		int arr_size = num_local_offsets * sizeof(uint64_t);
-		MPI_Allgather(local_offsets, arr_size, MPI_BYTE, 
-			      all_offsets, arr_size, MPI_BYTE,
-			      fileData->mpiComm);
-
-		MPI_Allgather(local_dimensions, arr_size, MPI_BYTE, 
-			      all_local_dims, arr_size, MPI_BYTE,
-			      fileData->mpiComm);
-		
-		num_gbl_vars++;
-		offset_struct *ostruct = malloc(sizeof(offset_struct));
-		ostruct->offsets_per_rank = num_local_offsets;
-		ostruct->total_offsets = num_local_offsets * commsize;
-		ostruct->local_offsets = all_offsets;
-		ostruct->local_dimensions = all_local_dims;
-		ostruct->global_dimensions = global_dimensions;
-
-		gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
-		gbl_vars[num_gbl_vars - 1].name = fullname;
-		gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
-		gbl_vars[num_gbl_vars - 1].offsets = ostruct;
-
-	    }
-	    list=list->next;
-	}
+            pg = pg->next;
+        }
 
 	gp->num_vars = num_gbl_vars;
 	gp->step = fileData->writerStep;
