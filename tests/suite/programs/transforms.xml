@@ -7,6 +7,6 @@
         </global-bounds>
     </adios-group>
     <method group="transforms" method="MPI"></method>
-    <buffer size-MB="100" allocate-time="now"/>
+    <buffer max-size-MB="100"/>
 </adios-config>
 

@@ -29,6 +29,6 @@
 
     <method group="fields" method="MPI">***skel-parameters***</method>
 
-    <buffer allocate-time="now" size-MB="32"/>
+    <buffer max-size-MB="32"/>
 
 </adios-config>

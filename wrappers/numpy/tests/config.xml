@@ -11,6 +11,6 @@
 
 <method group="temperature" method="POSIX1"/>
 
-<buffer size-MB="2" allocate-time="now"/>
+<buffer max-size-MB="2"/>
 
 </adios-config>

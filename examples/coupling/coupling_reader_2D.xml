@@ -22,6 +22,6 @@
 
   <transport group="reader2D" method="MPI"/>
 
-  <buffer size-MB="400" allocate-time="now"/>
+  <buffer max-size-MB="400"/>
 
 </adios-config>

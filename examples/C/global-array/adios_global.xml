@@ -17,7 +17,7 @@
   <!--method group="temperature" method="MPI_AGGREGATE">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0;num_ost=2</method-->
   <!--method group="temperature" method="PHDF5"/-->
  
-  <buffer size-MB="2" allocate-time="now"/>
+  <buffer max-size-MB="2"/>
 
 </adios-config>
 

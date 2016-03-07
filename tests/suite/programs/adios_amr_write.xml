@@ -15,7 +15,7 @@
 
 <method group="temperature" method="MPI_AMR">stripe_count=1;stripe_size=10485760;num_aggregators=8;merging_pgs=0;num_ost=2</method>
 
-<buffer size-MB="100" allocate-time="now"/>
+<buffer max-size-MB="100"/>
 
 </adios-config>
 

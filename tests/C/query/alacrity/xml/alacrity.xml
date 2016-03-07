@@ -22,7 +22,7 @@
 
 <method group="S3D" method="MPI"/>
 
-<buffer size-MB="128" allocate-time="now"/>
+<buffer max-size-MB="128"/>
 
 </adios-config>
 

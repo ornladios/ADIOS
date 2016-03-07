@@ -99,7 +99,7 @@ static void produce_xml(
 	static const char *FOOTER_XML =
 	"	</adios-group>\n"
 	"	<method group=\"%s\" method=\"%s\"/>\n"
-	"	<buffer size-MB=\"%u\" allocate-time=\"now\"/>\n"
+	"	<buffer max-size-MB=\"%u\"/>\n"
 	"</adios-config>\n";
 
 	// Actual function begins

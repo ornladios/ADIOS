@@ -34,7 +34,7 @@
  </adios-group>
  <method group="post_process" method="MPI_LUSTRE">
 stripe_count=32;stripe_size=1048576;block_size=1048576</method>
- <buffer size-MB="500" allocate-time="now" />
+ <buffer max-size-MB="500" />
 <!--
 Estimation about the size of output data by a process at a time
 The adios_group for every process has such descriptive variables like gndx, gndy, gndz, nproc, ndx, ndy, ndz,offx, offy and offz.

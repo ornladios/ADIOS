@@ -296,6 +296,6 @@
     <method group="geosgcm" method="MPI"/>
     <!--method group="geosgcm" method="TIME_AGG">time_steps=10,step_break=10,io_method=MPI</method-->
 
- <buffer size-MB="512" allocate-time="now"/>
+ <buffer max-size-MB="512"/>
 </adios-config>
 

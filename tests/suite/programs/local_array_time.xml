@@ -14,5 +14,5 @@
         type="string"/>
 </adios-group>
 <method group="schema" method="MPI"/>
-<buffer size-MB="1" allocate-time="now"/>
+<buffer max-size-MB="1"/>
 </adios-config>
