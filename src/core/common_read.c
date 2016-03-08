@@ -626,35 +626,42 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
     
     adios_errno = err_no_error;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_advance_step_fn (fp, last, timeout_sec);
-        if (!retval) {
-            // Re-create hashtable from the variable names as key and their index as value
-            if (internals->hashtbl_vars)
-                internals->hashtbl_vars->free (internals->hashtbl_vars);
-            hashsize = calc_hash_size(fp->nvars);
-            internals->hashtbl_vars = qhashtbl(hashsize);
-            for (i=0; i<fp->nvars; i++) {
-                internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
-                        (void *)(i+1)); // avoid 0 for error checking later
-            }
+        if (fp->is_streaming)
+        {
+            internals = (struct common_read_internals_struct *) fp->internal_data;
+            retval = internals->read_hooks[internals->method].adios_advance_step_fn (fp, last, timeout_sec);
+            if (!retval) {
+                // Re-create hashtable from the variable names as key and their index as value
+                if (internals->hashtbl_vars)
+                    internals->hashtbl_vars->free (internals->hashtbl_vars);
+                hashsize = calc_hash_size(fp->nvars);
+                internals->hashtbl_vars = qhashtbl(hashsize);
+                for (i=0; i<fp->nvars; i++) {
+                    internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i],
+                            (void *)(i+1)); // avoid 0 for error checking later
+                }
 
-            // Invalidate infocache, since all varinfos may have changed now
-            adios_infocache_invalidate(internals->infocache);
+                // Invalidate infocache, since all varinfos may have changed now
+                adios_infocache_invalidate(internals->infocache);
 
-            /* Update group information too */
-            free_namelist (internals->group_namelist, internals->ngroups);
-            free (internals->nvars_per_group);
-            free (internals->nattrs_per_group);
-            adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
-                    &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);
-            if (internals->group_in_view > -1) {
-                /* if we have a group view, we need to update the presented list again */
-                /* advance_step updated fp->nvars, nattrs, var_namelist, attr_namelist */
-                int groupid = internals->group_in_view;
-                internals->group_in_view = -1; // we have the full view at this moment
-                common_read_group_view (fp, groupid);
+                /* Update group information too */
+                free_namelist (internals->group_namelist, internals->ngroups);
+                free (internals->nvars_per_group);
+                free (internals->nattrs_per_group);
+                adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups,
+                        &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);
+                if (internals->group_in_view > -1) {
+                    /* if we have a group view, we need to update the presented list again */
+                    /* advance_step updated fp->nvars, nattrs, var_namelist, attr_namelist */
+                    int groupid = internals->group_in_view;
+                    internals->group_in_view = -1; // we have the full view at this moment
+                    common_read_group_view (fp, groupid);
+                }
             }
+        } else {
+            adios_error (err_end_of_stream, "Cannot advance %s opened as file for read since all timesteps are available at once.\n",
+                    fp->path);
+            retval = err_end_of_stream;
         }
     } else {
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_advance_step()\n");
