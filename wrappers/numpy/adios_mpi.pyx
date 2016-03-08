@@ -347,7 +347,13 @@ cpdef int write (int64_t fd_p, char * name, val, dtype=None):
     else:
         val_ = np.array(val, dtype=dtype)
 
-    return adios_write (fd_p, name, <void *> val_.data)
+    cdef void * ptr
+    if (val_.dtype.char == 'S'):
+        ptr = <void *> PyString_AsString(val_.data)
+    else:
+        ptr = <void *> val_.data
+
+    return adios_write (fd_p, name, ptr)
 
 cpdef int write_int (int64_t fd_p, char * name, int val):
     return adios_write (fd_p, name, &val)
