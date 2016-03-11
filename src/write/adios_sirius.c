@@ -26,6 +26,8 @@
 
 #include "mpi.h"
 #include "split-interface.h"
+//threaded support
+#include <pthread.h>
 
 #define MAXLEVEL 10
 
@@ -33,7 +35,7 @@ static char *io_method[MAXLEVEL]; //the IO methods for data output for each leve
 static char *io_parameters[MAXLEVEL]; //the IO method parameters
 static char *io_paths[MAXLEVEL]; //the IO method output paths (prefix to filename)
 static int nlevels=1; // Number of storage levels
-
+static int no_thread = 0;
 
 
 struct var_struct
@@ -62,6 +64,7 @@ struct level_struct
     struct var_struct *vars;      // last inserted variable into this level
     struct var_struct *vars_head; // starting of variables in this level
     uint64_t totalsize;  // size of variables in this level
+    pthread_t thread;
 };
 
 struct adios_sirius_data_struct
@@ -91,7 +94,7 @@ static int declare_group (int64_t * id, const char * name
                                       ,""
                                       ,""
                                       ,time_index
-                                      ,stats
+                                      ,adios_flag_no
         );
     if (ret == 1) {
         struct adios_group_struct * g = (struct adios_group_struct *) *id;
@@ -131,25 +134,25 @@ static int convert_file_mode(enum ADIOS_METHOD_MODE mode, char * file_mode)
 {
     switch (mode)
     {
-    case adios_mode_read:
-        strcpy(file_mode,"r");
-        break;
+        case adios_mode_read:
+            strcpy(file_mode,"r");
+            break;
 
-    case adios_mode_write:
-        strcpy(file_mode,"w");
-        break;
+        case adios_mode_write:
+            strcpy(file_mode,"w");
+            break;
 
-    case adios_mode_append:
-        strcpy(file_mode,"a");
-        break;
+        case adios_mode_append:
+            strcpy(file_mode,"a");
+            break;
 
-    case adios_mode_update:
-        strcpy(file_mode,"u");
-        break;
-    default:
-        fprintf (stderr, "adios_open: unknown file mode: %s\n", file_mode);
-        return -1;
-        break;
+        case adios_mode_update:
+            strcpy(file_mode,"u");
+            break;
+        default:
+            fprintf (stderr, "adios_open: unknown file mode: %s\n", file_mode);
+            return -1;
+            break;
     }
     return 0;
 }
@@ -215,6 +218,12 @@ void adios_sirius_init(const PairStruct * parameters,
     method->method_data = malloc (sizeof (struct adios_sirius_data_struct));
     md = (struct adios_sirius_data_struct *) method->method_data;
 
+    char *threaded_writes = getenv("DOTHREAD");
+    if(threaded_writes == NULL)
+        no_thread = 1;
+    else
+        no_thread = 0;
+
     init_output_parameters(parameters);
 }
 
@@ -245,42 +254,42 @@ int adios_sirius_open (struct adios_file_struct * fd
 
     switch (fd->mode)
     {
-    case adios_mode_read:
-    {
-        adios_error (err_invalid_file_mode, "SIRIUS method: Read mode is not supported.\n");
-        return -1;
-    }
-    case adios_mode_append:
-    case adios_mode_update:
-    case adios_mode_write:
-    {
-        md->group_comm = comm;
-        if (md->group_comm != MPI_COMM_NULL)
+        case adios_mode_read:
         {
-            MPI_Comm_rank (md->group_comm, &md->rank);
-            MPI_Comm_size (md->group_comm, &md->size);
+            adios_error (err_invalid_file_mode, "SIRIUS method: Read mode is not supported.\n");
+            return -1;
         }
-        fd->group->process_id = md->rank;
-
-        //need to get the parameters form XML
-        //init_output_parameters(method->parameters);
-        init_method_parameters(md);
-        define_iogroups(method);
-
-        for (l=0; l < nlevels; l++)
+        case adios_mode_append:
+        case adios_mode_update:
+        case adios_mode_write:
         {
-            md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 1);
-            sprintf (md->level[l].filename, "%s/%s", io_paths[l], fd->name);
-            convert_file_mode(fd->mode, mode);
-            common_adios_open( &(md->level[l].fd), md->level[l].grp_name, md->level[l].filename, mode, comm);
+            md->group_comm = comm;
+            if (md->group_comm != MPI_COMM_NULL)
+            {
+                MPI_Comm_rank (md->group_comm, &md->rank);
+                MPI_Comm_size (md->group_comm, &md->size);
+            }
+            fd->group->process_id = md->rank;
+
+            //need to get the parameters form XML
+            //init_output_parameters(method->parameters);
+            init_method_parameters(md);
+            define_iogroups(method);
+
+            for (l=0; l < nlevels; l++)
+            {
+                md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 1);
+                sprintf (md->level[l].filename, "%s/%s", io_paths[l], fd->name);
+                convert_file_mode(fd->mode, mode);
+                common_adios_open( &(md->level[l].fd), md->level[l].grp_name, md->level[l].filename, mode, comm);
+            }
+            break;
         }
-        break;
-    }
-    default:
-    {
-        adios_error (err_invalid_file_mode, "SIRIUS method: Unknown file mode requested: %d\n", fd->mode);
-        return adios_flag_no;
-    }
+        default:
+        {
+            adios_error (err_invalid_file_mode, "SIRIUS method: Unknown file mode requested: %d\n", fd->mode);
+            return adios_flag_no;
+        }
     }
 
     return 1;
@@ -612,7 +621,7 @@ void adios_sirius_write (struct adios_file_struct * fd
 
     
     if(splithandle == NULL)
-        free_splitter(splithandle);
+         free_splitter(splithandle);
         
 }
 
@@ -661,6 +670,15 @@ void release_resource_at_close (struct adios_sirius_data_struct * md)
     }
 }
 
+void * threaded_call_common_close(void *lp)
+{
+    struct level_struct *level = (struct level_struct *)lp;
+    if(level == NULL)
+        return NULL;
+    common_adios_close (level->fd);
+    return NULL;
+}
+
 void adios_sirius_close (struct adios_file_struct * fd
                          ,struct adios_method_struct * method
     )
@@ -670,28 +688,40 @@ void adios_sirius_close (struct adios_file_struct * fd
 
     switch (fd->mode)
     {
-    case adios_mode_read:
-    {
-        adios_error (err_invalid_file_mode, "SIRIUS method: Read mode is not supported.\n");
-        break;
-    }
-    case adios_mode_append:
-    case adios_mode_update:
-    case adios_mode_write:
-    {
-        int l;
-        for (l=0; l < nlevels; l++)
+        case adios_mode_read:
         {
-            common_adios_close (md->level[l].fd);
+            adios_error (err_invalid_file_mode, "SIRIUS method: Read mode is not supported.\n");
+            break;
         }
-        release_resource_at_close (md);
-        break;
-    }
-    default:
-    {
-        adios_error (err_invalid_file_mode, "SIRIUS method: Unknown file mode requested: %d\n", fd->mode);
-        break;
-    }
+        case adios_mode_append:
+        case adios_mode_update:
+        case adios_mode_write:
+        {
+            int l;
+            for (l=0; l < nlevels; l++)
+            {
+                if(no_thread == 1)
+                    common_adios_close (md->level[l].fd);
+                else
+                    pthread_create(&md->level[l].thread,
+                                   NULL, threaded_call_common_close, (void*)&md->level[l]);
+            }
+            if(no_thread == 0)
+                for (l=0; l < nlevels; l++)
+                {
+                
+                    pthread_join(md->level[l].thread, NULL);
+                    fprintf(stderr, "joined with thread for level %d\n", l);
+                }
+        
+            release_resource_at_close (md);
+            break;
+        }
+        default:
+        {
+            adios_error (err_invalid_file_mode, "SIRIUS method: Unknown file mode requested: %d\n", fd->mode);
+            break;
+        }
     }
 
     return;
