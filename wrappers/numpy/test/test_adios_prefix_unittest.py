@@ -22,7 +22,7 @@ class AdiosTestCase(ut.TestCase):
         self.msg = "this is a test"
         ad.define_attribute(g, "desc", "", ad.DATATYPE.string, self.msg, "")
         ad.define_attribute(g, "temperature/unit", "", ad.DATATYPE.string, "C", "")
-        ad.define_attribute(g, "/temperature/desc", "", ad.DATATYPE.string, "description", "")
+        ad.define_attribute(g, "temperature/desc", "", ad.DATATYPE.string, "description", "")
         ad.define_attribute(g, "/subgroup/subsubgroup/otherattr", "", ad.DATATYPE.string, "another", "")
         ad.define_var(g, "/subgroup/subsubgroup/othervar", "", ad.DATATYPE.integer, "", "", "")
         ad.select_method(g, "POSIX1", "verbose=3", "")
@@ -59,7 +59,7 @@ class AdiosTestCase(ut.TestCase):
         self.assertEqual(sorted(self.f.vars.keys()), \
                          sorted(['NX', 'size', 'temperature', '/subgroup/subsubgroup/othervar']))
         self.assertEqual(sorted(self.f.attrs.keys()), \
-                        sorted(['temperature/unit', '/temperature/desc', 'desc', '/subgroup/subsubgroup/otherattr']))
+                        sorted(['temperature/unit', 'temperature/desc', 'desc', '/subgroup/subsubgroup/otherattr']))
 
     def test_adios_attr(self):
         self.assertEqual(self.f.attrs['desc'].value, self.msg)
