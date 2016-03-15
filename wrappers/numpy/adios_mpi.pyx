@@ -766,6 +766,10 @@ cdef class file(object):
         print '%15s : %lu' % ('fp', <unsigned long> self.fp)
         printfile(self.fp)
 
+    cpdef release_step(self):
+        """ Release the current step lock and let the writer code to progress """
+        adios_release_step(self.fp)
+
     cpdef advance(self, int last = 0, float timeout_sec = 0.0):
         """
         Advance a timestep for stream reader.
@@ -812,8 +816,18 @@ cdef class file(object):
                 return self.var.get(key_)
             elif key_ in self.attr.keys():
                 return self.attr.get(key_)
-            else:
-                raise KeyError(key_)
+
+            #TODO: return group (self, groupname)
+            for name in self.var.keys():
+                if key_ == os.path.dirname(name):
+                    return group(self, key_)
+
+            for name in self.attr.keys():
+                if key_ == os.path.dirname(name):
+                    return group(self, key_)
+
+        raise KeyError(key_)
+
 
     def __repr__(self):
         """ Return string representation. """
@@ -1110,8 +1124,9 @@ cdef class var(object):
         printvar(self.vp)
 
     def __repr__(self):
-        return "AdiosVar (varid=%r, dtype=%r, ndim=%r, dims=%r, nsteps=%r)" % \
+        return "AdiosVar (varid=%r, name=%r, dtype=%r, ndim=%r, dims=%r, nsteps=%r)" % \
                (self.varid,
+                self.name,
                 self.dtype,
                 self.ndim,
                 self.dims,
@@ -1241,10 +1256,82 @@ cdef class attr(object):
         else:
             raise KeyError(name)
 
+    def __getitem__(self, args):
+        val = self.value[args]
+        if (val.ndim == 0):
+            return np.asscalar(val)
+        else:
+            return val
+
     def __repr__(self):
         return "AdiosAttr (name=%r, dtype=%r, value=%r)" % \
                (self.name, self.dtype, self.value)
 
+cdef class group(object):
+    """
+    Adios group class.
+
+    Note:
+        Users do not need to create this class manually.
+    """
+    cdef file file
+    cpdef bytes name
+
+    ## Public Memeber
+    cpdef public dict vars
+    cpdef public dict attrs
+
+    def __init__(self, file file, char * name):
+        self.file = file
+        self.name = name.rstrip('/')
+
+        self.vars = {}
+        for name in self.file.var.keys():
+            if name.startswith(self.name + '/'):
+                self.vars[name.replace(self.name + '/', '', 1)] = self.file.var[name]
+            if name.startswith('/' + self.name + '/'):
+                self.vars[name.replace('/' + self.name + '/', '', 1)] = self.file.var[name]
+
+        self.attrs = {}
+        for name in self.file.attr.keys():
+            if name.startswith(self.name + '/'):
+                self.attrs[name.replace(self.name + '/', '', 1)] = self.file.attr[name]
+            if name.startswith('/' + self.name + '/'):
+                self.attrs[name.replace('/' + self.name + '/', '', 1)] = self.file.attr[name]
+
+    def __getitem__(self, varname):
+        """
+        Return Adios variable or attribute.
+
+        Args:
+            varname (str): variable or attribute name.
+
+        Raises:
+            KeyError: If no name exists.
+
+        """
+        if not isinstance(varname, tuple):
+            varname = (varname,)
+
+        if len(varname) > 1:
+            raise KeyError(varname)
+
+        for key_ in varname:
+            if not isinstance(key_, str):
+                raise TypeError("Unhashable type")
+
+            if key_ in self.vars.keys():
+                return self.vars.get(key_)
+            elif key_ in self.attrs.keys():
+                return self.attrs.get(key_)
+
+        raise KeyError(key_)
+
+    def __repr__(self):
+        """ Return string representation. """
+        return ("AdiosGroup (var=%r, attr=%r)") % \
+                (self.vars.keys(),
+                 self.attrs.keys())
 
 ## Helper dict
 cdef class smartdict(dict):
