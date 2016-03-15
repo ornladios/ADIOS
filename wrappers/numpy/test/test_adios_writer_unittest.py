@@ -109,9 +109,9 @@ class AdiosTestCase(ut.TestCase):
         fw = ad.writer(self.temp.path)
         fw.declare_group("group", method="POSIX1")
 
-        fw.var['NX'] = NX
-        fw.var['val1'] = val1
-        fw.var['val2'] = val2
+        fw.vars['NX'] = NX
+        fw.vars['val1'] = val1
+        fw.vars['val2'] = val2
         fw.close()
 
         f = ad.file(self.temp.path)

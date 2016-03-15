@@ -38,7 +38,7 @@ print "\n>>> Reading ...\n"
 f = ad.file("adios_test.bp")
 f.printself()
 
-v = f.var['temperature']
+v = f.vars['temperature']
 v.printself()
 
 val = v.read()
@@ -53,4 +53,3 @@ print "bpls:\n", ad.bpls('adios_test.bp')
 print "readvar:\n", ad.readvar("adios_test.bp", "temperature")
 
 print "\n>>> Done.\n"
-

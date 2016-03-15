@@ -56,14 +56,14 @@ class AdiosTestCase(ut.TestCase):
         self.assertEqual(self.f.nvars, 4)
         self.assertEqual(self.f.current_step, 0)
         self.assertEqual(self.f.last_step, 0)
-        self.assertEqual(sorted(self.f.var.keys()), \
+        self.assertEqual(sorted(self.f.vars.keys()), \
                          sorted(['NX', 'size', 'temperature', '/subgroup/subsubgroup/othervar']))
-        self.assertEqual(sorted(self.f.attr.keys()), \
+        self.assertEqual(sorted(self.f.attrs.keys()), \
                         sorted(['temperature/unit', '/temperature/desc', 'desc', '/subgroup/subsubgroup/otherattr']))
 
     def test_adios_attr(self):
-        self.assertEqual(self.f.attr['desc'].value, self.msg)
-        self.assertEqual(self.f.attr['desc'].dtype, np.dtype('S14'))
+        self.assertEqual(self.f.attrs['desc'].value, self.msg)
+        self.assertEqual(self.f.attrs['desc'].dtype, np.dtype('S14'))
 
     def test_adios_file_getitem(self):
         self.assertRaises(TypeError, self.f.__getitem__, Slicee()[1])
