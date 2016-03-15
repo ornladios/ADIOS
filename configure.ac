@@ -844,7 +844,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bpls/Makefile
                  utils/bpdiff/Makefile
                  utils/bp2bp/Makefile
-                 utils/list_methods/Makefile
+                 utils/adios_list_methods/Makefile
                  utils/bpmeta/Makefile
                  utils/bprecover/Makefile
 		 utils/fastbit/Makefile
