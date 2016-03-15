@@ -5095,7 +5095,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
     int32_t map[32];
     memset (map, -1, sizeof(map));
 
-#if 1
+
 #define HIST(a) \
     { \
         int low, high, mid; \
@@ -5122,10 +5122,13 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             hist->frequencies[low + 1] += 1; \
         } \
     }
-#endif
 
-#if 1
-#define ADIOS_STATISTICS(a,b) \
+
+
+# define CHECK_FLOAT() (isnan (data [size]) || !isfinite (data [size]))
+# define CHECK_INT() (0)
+
+#define ADIOS_STATISTICS(a,b,NON_FINITE_CHECK) \
 {\
     a * data = (a *) var->data; \
     int i, j; \
@@ -5156,15 +5159,15 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             hist = (struct adios_hist_struct *) stats[map[adios_statistic_hist]].data; \
             hist->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, "")); \
         } \
-        int finite = 0; \
+        int have_finite_value = 0; \
         size = 0; \
         while ((size * b) < total_size) \
         { \
-            if (isnan (data [size]) || !isfinite (data [size])) {\
+            if (NON_FINITE_CHECK()) {\
                 size ++; \
                 continue; \
             }\
-            if (!finite) { \
+            if (!have_finite_value) { \
                 *min = data [size]; \
                 *max = data [size]; \
                 *sum = data [size]; \
@@ -5172,7 +5175,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
                 *cnt = *cnt + 1; \
                 if (map[adios_statistic_hist] != -1) \
                 HIST(data [size]); \
-                finite = 1; \
+                have_finite_value = 1; \
                 size ++; \
                 continue; \
             } \
@@ -5188,10 +5191,10 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             size++; \
         } \
         if (map[adios_statistic_finite] != -1) \
-        * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = finite; \
+        * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = have_finite_value; \
         return 0; \
     }
-#else
+
 #define MIN_MAX(a,b)\
     {\
         a * data = (a *) var->data; \
@@ -5203,42 +5206,42 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
         *max = data [0]; \
         return 0; \
     }
-#endif
+
 
     switch (original_var_type)
     {
         case adios_byte:
-            ADIOS_STATISTICS(int8_t,1)
+            ADIOS_STATISTICS(int8_t,1,CHECK_INT)
 
         case adios_unsigned_byte:
-                ADIOS_STATISTICS(uint8_t,1)
+            ADIOS_STATISTICS(uint8_t,1,CHECK_INT)
 
         case adios_short:
-                    ADIOS_STATISTICS(int16_t,2)
+            ADIOS_STATISTICS(int16_t,2,CHECK_INT)
 
         case adios_unsigned_short:
-                        ADIOS_STATISTICS(uint16_t,2)
+            ADIOS_STATISTICS(uint16_t,2,CHECK_INT)
 
         case adios_integer:
-                            ADIOS_STATISTICS(int32_t,4)
+            ADIOS_STATISTICS(int32_t,4,CHECK_INT)
 
         case adios_unsigned_integer:
-                                ADIOS_STATISTICS(uint32_t,4)
+            ADIOS_STATISTICS(uint32_t,4,CHECK_INT)
 
         case adios_long:
-                                    ADIOS_STATISTICS(int64_t,8)
+            ADIOS_STATISTICS(int64_t,8,CHECK_INT)
 
         case adios_unsigned_long:
-                                        ADIOS_STATISTICS(uint64_t,8)
+            ADIOS_STATISTICS(uint64_t,8,CHECK_INT)
 
         case adios_real:
-                                            ADIOS_STATISTICS(float,4)
+            ADIOS_STATISTICS(float,4,CHECK_FLOAT)
 
         case adios_double:
-                                                ADIOS_STATISTICS(double,8)
+            ADIOS_STATISTICS(double,8,CHECK_FLOAT)
 
         case adios_long_double:
-                                                    ADIOS_STATISTICS(long double,16)
+            ADIOS_STATISTICS(long double,16,CHECK_FLOAT)
 
         case adios_complex:
         {
