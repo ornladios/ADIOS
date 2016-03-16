@@ -5,6 +5,8 @@
 """
 
 #cdef extern from "mpi-compat.h": pass
+cdef extern from "string.h" nogil:
+    char   *strdup  (const char *s)
 
 import numpy as np
 cimport numpy as np
@@ -354,7 +356,7 @@ cpdef int write (int64_t fd_p, char * name, val, dtype=None):
 
     cdef void * ptr
     if (val_.dtype.char == 'S'):
-        ptr = <void *> PyString_AsString(val_.data)
+        ptr = <void *> PyString_AsString(str(val_))
     else:
         ptr = <void *> val_.data
 
@@ -454,7 +456,7 @@ cpdef int define_attribute_byvalue (int64_t group,
     cdef char ** pt2
     if (val_.dtype.char == 'S'):
         if (val_.size == 1):
-            pt1 = PyString_AsString(val)
+            pt1 = PyString_AsString(str(val))
             adios_define_attribute_byvalue (group,
                                             name,
                                             path,
