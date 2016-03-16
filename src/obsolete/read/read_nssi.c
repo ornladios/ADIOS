@@ -333,7 +333,7 @@ ADIOS_FILE * adios_read_nssi_fopen (const char * fname, MPI_Comm comm)
     fp->file_size = 0;
     fp->version = 1;
     fp->endianness = 0; /* FIXME: not always Little Endian. Does it matter? */
-    alloc_namelist (&fp->group_namelist,fp->groups_count);
+    a2s_alloc_namelist (&fp->group_namelist,fp->groups_count);
     for (i=0;i<fp->groups_count;i++) {
         if (!fp->group_namelist[i]) {
             adios_error (err_no_memory, "Could not allocate buffer for %d strings in adios_fopen()", fp->groups_count);
@@ -389,7 +389,7 @@ int adios_read_nssi_fclose (ADIOS_FILE *fp)
         }
     }
 
-    free_namelist ((fp->group_namelist),fp->groups_count);
+    a2s_free_namelist ((fp->group_namelist),fp->groups_count);
     if (ds->fname) { free(ds->fname); ds->fname = 0; }
     free(ds);
     free(fp);
@@ -452,8 +452,8 @@ int adios_read_nssi_gclose (ADIOS_GROUP *gp)
 
     adios_errno = 0;
 
-    free_namelist ((gp->var_namelist),gp->vars_count);
-    free_namelist ((gp->attr_namelist),gp->attrs_count);
+    a2s_free_namelist ((gp->var_namelist),gp->vars_count);
+    a2s_free_namelist ((gp->attr_namelist),gp->attrs_count);
     free(gp);
     return 0;
 }
