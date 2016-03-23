@@ -1,8 +1,6 @@
 #include <string.h>
 #include <inttypes.h>
 
-#include "adios.h"
-
 #include <mxml.h>
 #include <adios_read.h>
 #include <adios_query.h>
@@ -44,9 +42,6 @@ long _stageRefreshMillis = 0;
 long _lastMeasuredMillis = 0;
 long _queryStartMillis = 0;
 
-
-void doubleCheckWithIdx(ADIOS_FILE* dataFile, const char* basefileName);
-
 #define  logTimeMillis(...) {	    \
     long ms = fastbit_adios_getCurrentTimeMillis(); \
     long d = ms - _lastMeasuredMillis; \
@@ -64,128 +59,6 @@ void doubleCheckWithIdx(ADIOS_FILE* dataFile, const char* basefileName);
     _lastMeasuredMillis = ms; \
   }
 
-int findBlockId_1(ADIOS_QUERY* q, int* c)
-{
-  
-}
-
-int  findBlockId_0(ADIOS_QUERY* q, int* c, int startBlock)
-{
-  int nblocks = q->varinfo->sum_nblocks;
-	     
-  int n,k;
-  int inBlock;
-
-  long order=0;
-  for (n=startBlock; n<nblocks; n ++) {        
-    inBlock=n;
-    order=0;
-    long orderCounter[q->varinfo->ndim];
-
-    for (k=0; k<q->varinfo->ndim; k++) {
-      int start = q->varinfo->blockinfo[n].start[k];
-      int count = q->varinfo->blockinfo[n].count[k];
-
-      orderCounter[k] = count;
-
-      if ((c[k] < start) || (c[k] >= start+count)) {
-	inBlock=-1;
-	break;
-      }
-    }
-    if (inBlock >= 0) {
-
-       int j=0;
-      for (k=0; k<q->varinfo->ndim; k++) {
-	orderCounter[k]=1;
-	for (j=k+1; j<q->varinfo->ndim; j++) {
-	  orderCounter[k] *= orderCounter[j];
-	}
-	order += orderCounter[k]*(c[k] - q->varinfo->blockinfo[n].start[k]);
-      }
-
-      return inBlock;
-    }
-  }
-  return inBlock;
-}
-
-int findBlockId(ADIOS_QUERY* q, int* c, int* order)
-{
-  int nblocks = q->varinfo->sum_nblocks;
-	     
-  int n,k;
-  int inBlock;
-  //long order=0;
-  for (n=0; n<nblocks; n ++) {        
-    inBlock=n;
-    *order=0;
-    long orderCounter[q->varinfo->ndim];
-
-    for (k=0; k<q->varinfo->ndim; k++) {
-      int start = q->varinfo->blockinfo[n].start[k];
-      int count = q->varinfo->blockinfo[n].count[k];
-
-      orderCounter[k] = count;
-
-      if ((c[k] < start) || (c[k] >= start+count)) {
-	inBlock=-1;
-	break;
-      }
-    }
-    if (inBlock >= 0) {
-
-       int j=0;
-      for (k=0; k<q->varinfo->ndim; k++) {
-	orderCounter[k]=1;
-	for (j=k+1; j<q->varinfo->ndim; j++) {
-	  orderCounter[k] *= orderCounter[j];
-	}
-	*order += orderCounter[k]*(c[k] - q->varinfo->blockinfo[n].start[k]);
-      }
-
-      return inBlock;
-    }
-  }
-
-
-  //printf("block at: %d, %dth\n", inBlock, order);
-}
-
-void blockIDtest(ADIOS_QUERY* q)
-{
-  adios_inq_var_blockinfo (q->file, q->varinfo);
-	  
-  int x=0,y=0,z=0;
-  int prev=0;
-  //for (x=0;x<1100;x++) {
-  for (x=0;x<11;x++) {
-    for (y=0;y<1080;y++) {
-      for (z=0; z<1408;z++) {
-	int c[3] = {x,y,z};
-	int inBlock=0, order=0;
-#ifdef EVEN // takes 1 sec
-	int bx = x/44;
-	int by = y/36;
-	int bz = z/64;
-	inBlock = bx*(30*64)+by*64+bz;
-	order = (x-bx*44)*36*22 + (y-by*36)*22 + (z -bz*64);
-#else 
-	inBlock = findBlockId(q,c, &order);
-	
-	/* does not work since (0,1,0) has block 0, but  (0,0,1407) has block 63
-	  inBlock=findBlockId_0(q,c, prev);
-	  prev = inBlock;
-	*/
-	//inBlock=findBlockId(q,c);
-#endif
-	if ((y+z) == 0) {
-	  printf("%d, %d, %d => block %d, %d th\n", x,y,z, inBlock, order);
-	}
-      }
-    }
-  }
-}
 
 void logReport(int stage, ADIOS_QUERY* q) {
   long ms = fastbit_adios_getCurrentTimeMillis();
@@ -547,37 +420,7 @@ double getCurrentValue(void* data, uint64_t idx, enum ADIOS_DATATYPES type)
   return 0;
 }
 
-//block
 void manualCheck(ADIOS_QUERY* q, int timestep, int64_t compareHits) {
-  if ((q->left != NULL) || (q->right != NULL)) {    
-    printf(" Not checking composite queries. \n");
-    return;
-  }
-  adios_inq_var_blockinfo (q->file, q->varinfo);
-    
-  int nblocks = q->varinfo->sum_nblocks;
-
-  int n;
-  for (n=0; n<nblocks; n ++) {        
-      int k=0;
-      uint64_t blocksize = 1;
-      for (k=0; k<q->varinfo->ndim; k++) {
-	blocksize *= q->varinfo->blockinfo[n].count[k];
-      }
-      //printf(" block %d has size: %lld \n", n, blocksize);
-      void* out = malloc (8* blocksize);
-        
-      ADIOS_SELECTION *sel = adios_selection_writeblock (n);      
-        
-      adios_schedule_read(q->file, sel, q->varName, 0, 1, out);
-      adios_perform_reads(q->file, 1);
-
-      adios_selection_delete(sel);
-  }
-  logTimeMillis("    adios reading data out from query: %s.\n", q->condition);
-}
-
-void manualCheckReadOutwhole(ADIOS_QUERY* q, int timestep, int64_t compareHits) {
   if ((q->left == NULL) && (q->right == NULL)) {    
       printf ("... manual check: \n");
 
@@ -607,22 +450,29 @@ void manualCheckReadOutwhole(ADIOS_QUERY* q, int timestep, int64_t compareHits) 
 
       for (k=0; k<totalSize; k++) {
 	double curr = getCurrentValue(output, k, q->varinfo->type);
-
+	/*
+	if (k==0) {
+	  min=curr; max=curr;
+	} else {
+	  if (curr < min) {
+	    min = curr;
+	  } else if (curr > max) {
+	    max = curr;
+	  }
+	}
+	*/
+	
 	//printf ("curr=%lg, vv=%lg\n", curr, vv);
 	if (curr == vv) {
 	  if ((q->predicateOp == ADIOS_EQ) || (q->predicateOp == ADIOS_LTEQ) || (q->predicateOp == ADIOS_GTEQ)) {
-	    //printf ("[%ld]th: curr=%lg = vv=%lg, hits:%llu\n", k, curr, vv, hits);
 	      hits ++;
 	  }
 	} else if (curr < vv) {
 	  if ((q->predicateOp == ADIOS_LT) || (q->predicateOp == ADIOS_LTEQ)) {
-	    //printf ("[%ld]th: curr=%lg < vv=%lg, hits:%llu\n", k, curr, vv, hits);	    
-	      hits ++;
+	    hits ++;
 	  }
 	} else { // >
-	  //printf ("                 not [%ld]th: curr=%lg > vv=%lg\n", k, curr, vv);
 	  if ((q->predicateOp == ADIOS_GT) || (q->predicateOp == ADIOS_GTEQ)) {
-	    //printf ("[%ld]th: curr=%lg > vv=%lg\n", k, curr, vv);
 	    hits ++;
 	  }
 	}	  
@@ -695,7 +545,6 @@ int parseQueryXml(const char* xmlQueryFileName)
 
   mxml_node_t* queryNode; // mxmlFindElement(testsNode, testsNode, _gTagQuery, NULL, NULL, MXML_DESCEND);
   
-  fastbit_set_verbose_level(8);
 
   for (queryNode = mxmlFindElement(tree, tree, _gTagQuery, NULL, NULL, MXML_DESCEND);
        queryNode != NULL;
@@ -743,27 +592,7 @@ int parseQueryXml(const char* xmlQueryFileName)
 
       //adios_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
       int timestep = 0;
-
-      //doubleCheckWithIdx(f, bpFileName);
-
-      logTimeMillis("loading idx file for bms took: \n");
-
-      /*      
-      void * testdata = malloc (8192000000);
-      ADIOS_SELECTION *sel =  adios_selection_writeblock (0);      
-      //adios_schedule_read(f, sel, "iphase_0", 0, 1, testdata); // xgc
-      adios_schedule_read(f, sel, "/temp", 0, 1, testdata);
-      adios_perform_reads(f, 1);
-
-      adios_selection_delete(sel);
-      free(testdata);
-      */
-      if (q->varinfo != NULL) {
-	manualCheck(q, 0, 0);
-      } else {
-	printf(" No manual check.\n");
-      }
-      logTimeMillis("loading data file for iphase_0 took: \n");
+      fastbit_set_verbose_level(0);
       //ADIOS_SELECTION* noBox = 0;
       while (timestep <= f->last_step) {
 	printf("\n==> query=%s, %s, [TimeStep=%d of %d]\n",queryName, q->condition, timestep, f->last_step);
@@ -772,22 +601,11 @@ int parseQueryXml(const char* xmlQueryFileName)
 	logTimeMillis(" estimated. %s", q->condition);
 	printf("\n .. query %s: %s, \t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
 #endif
-	int readBatchCounter = 0;
 	ADIOS_SELECTION* currBatch = NULL;
 	int hasMore = 1; 
 
+	int readBatchCounter = 1; // 1 = no read back
 	int64_t numHits = 0;
-
-#ifdef NO_EVALUATION
-	     hasMore = 0;
-	     printf("========== No evaluation =======\n");
-	     numHits = adios_query_estimate(q,timestep);
-	     logTimeMillis("    block id test starts", "starts");
-	     blockIDtest(q);
-	     logTimeMillis("    block id test ends", "ends");
-	     return;
-#endif	     
-
 	while (hasMore > 0) {
 	  hasMore = adios_query_evaluate(q, outputBox, timestep, batchSize, &currBatch);
 	  logTimeMillis(" evaluated one batch: %s \n", q->condition);
@@ -796,25 +614,16 @@ int parseQueryXml(const char* xmlQueryFileName)
 	  }
 	  if (currBatch != NULL) {
 	    int currBatchSize = currBatch->u.points.npoints;
-	    numHits += currBatchSize;	   
+	    numHits += currBatchSize;
 	    printf("\n   evaluated: %ld hits for %s\n", currBatchSize, q->condition);
-	    /*
-	    int s = 0;
-	    for (s=0; s<10; s++) {
-	      if (s<currBatchSize) {
-		uint64_t* pts=currBatch->u.points.points;
-		//printf("result sample (%llu, %llu, %llu)\n", pts[3*s], pts[3*s+1], pts[3*s+2]);	      
-	      }
-	    }
 	    
 	    if (readBatchCounter < 1) {
-	        if (currBatchSize <= 10485760000) { // takes too long otherwise
-		    printf("\n   curr batch: reading data out from ADIOS\n");
-		    //readBatchCounter ++;
-		    //  printf("\n   sample once on reading data out from ADIOS\n");
+	        if (currBatchSize <= 1048576) { // takes too long otherwise
+	            readBatchCounter ++;
+		    printf("\n   sample once on reading data out from ADIOS\n");
 		    ADIOS_QUERY* leaf = q;
 		    while (leaf->varinfo == NULL) {
-		      leaf = leaf->left;
+		        leaf = leaf->left;
 		    }
 		    uint64_t output_byte_size = common_read_type_size (leaf->varinfo->type, leaf->varinfo->value);
 		    output_byte_size *= currBatchSize;
@@ -823,17 +632,13 @@ int parseQueryXml(const char* xmlQueryFileName)
 		    if (output == NULL) {
 		      logTimeMillis(".. unable to allocate enough memory for %ld bytes. Skip.\n", output_byte_size+1000);
 		    } else {
-		      
 		      adios_schedule_read (leaf->file, currBatch, leaf->varName, timestep, 1, output);
 		      adios_perform_reads (leaf->file, 1);
 		      logTimeMillis(" .. read batch data out from ADIOS, batchsize=%ld,  for: %s out of %ld\n", currBatchSize, leaf->condition, leaf->rawDataSize);
-		      
-		      printf("just checking: %.3f %.3f %.3f \n", ((double*)output)[0], ((double*)output)[1], ((double*)output)[currBatchSize-1]);
 		      free(output);
 		    }
 		}
 	    }
-	    */
 	  } else {
 	    printf("\n   evaluated 0 hits for %s\n", q->condition);
 	  }
@@ -849,10 +654,7 @@ int parseQueryXml(const char* xmlQueryFileName)
 
 	//printf("\n skipping manual check. not enough memory\n");
 	printf("\n numHits = %ld, %s\n", numHits, q->condition);
-	printf("got =  %ld hits  for %s \n", numHits,  q->condition);
-	//float percentage= numHits/11*1408*1080;	
-	//printf("got =  %ld hits (%.3f)\% for %s \n", numHits, percentage, q->condition);
-	if (numHits >= 0) {
+	if (numHits > 5000000) {
 	  //manualCheck(q, timestep, numHits);
 	} else {
 	  //printf("\n numHits = %ld\n", numHits);
@@ -860,13 +662,6 @@ int parseQueryXml(const char* xmlQueryFileName)
 
 	logTimeMillis(" sequential scan done! %s\n", q->condition);
 	timestep ++;      
-
-	if (outputBox && outputBox->type == ADIOS_SELECTION_BOUNDINGBOX) {    
-	  const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBox->u.bb);
-	  free(bb->start);
-	  free(bb->count);
-	}      
-
       }
       recursive_free(q);
       adios_read_close(f);
@@ -878,7 +673,6 @@ int parseQueryXml(const char* xmlQueryFileName)
   mxmlDelete(tree);    
 
   adios_read_finalize_method(ADIOS_READ_METHOD_BP);
-  /* adios_finalize(rank); */
 }
 
 /*
@@ -1172,8 +966,8 @@ void testUseOneWriteBlock(ADIOS_FILE* f, int blockNum, const char* varName1, con
   adios_selection_delete(box);
 }
 */
-
-void doubleCheckWithIdx(ADIOS_FILE* dataFile, const char* basefileName) 
+/*
+void doubleCheckWithIdxOnBlock(ADIOS_FILE* dataFile, const char* basefileName, int blockNum, ADIOS_VARINFO* v, int timestep, double lessThanVal) 
 {
   ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName,  0);
 
@@ -1182,43 +976,76 @@ void doubleCheckWithIdx(ADIOS_FILE* dataFile, const char* basefileName)
     return;
   }
 
-  char bmsVarName[100]="bms-0-0-box-0"; // xgc
-  //char bmsVarName[100]="bms-13-0-box-0"; // s3d
+  char bmsVarName[100];
+  char keyVarName[100];
+  char offsetName[100];
 
+  sprintf(bmsVarName, "bms-%d-%d-%d", v->varid, timestep, blockNum);
+  sprintf(keyVarName, "key-%d-%d-%d", v->varid, timestep, blockNum);
+  sprintf(offsetName, "offset-%d-%d-%d", v->varid, timestep, blockNum);
 
   ADIOS_VARINFO * bmsV = adios_inq_var (idxFile, bmsVarName); 
-  //ADIOS_VARINFO * keyV = adios_inq_var (idxFile, keyVarName); 
-  //ADIOS_VARINFO * offsetV = adios_inq_var (idxFile, offsetName); 
+  ADIOS_VARINFO * keyV = adios_inq_var (idxFile, keyVarName); 
+  ADIOS_VARINFO * offsetV = adios_inq_var (idxFile, offsetName); 
 
   int64_t bms_byte_size = adios_type_size (bmsV->type, bmsV->value);
-  //int64_t key_byte_size = adios_type_size (keyV->type, keyV->value);
-  //int64_t offset_byte_size = adios_type_size (offsetV->type, offsetV->value);
+  int64_t key_byte_size = adios_type_size (keyV->type, keyV->value);
+  int64_t offset_byte_size = adios_type_size (offsetV->type, offsetV->value);
 
   void *bms = malloc((bmsV->dims[0])*bms_byte_size);
-  //void *key = malloc((keyV->dims[0])*key_byte_size);
-  //void *offset = malloc(offsetV->dims[0]*offset_byte_size);
+  void *key = malloc((keyV->dims[0])*key_byte_size);
+  void *offset = malloc(offsetV->dims[0]*offset_byte_size);
 
-  ADIOS_SELECTION* bmsSel = adios_selection_writeblock (0);      
-  //ADIOS_SELECTION* keySel = NULL;
-  //ADIOS_SELECTION* offsetSel = NULL;
+  uint64_t start[] = {0};
+  uint64_t count_bms[] = {bmsV->dims[0]};
+  uint64_t count_key[] = {keyV->dims[0]};
+  uint64_t count_offset[] = {offsetV->dims[0]};
+
+  ADIOS_SELECTION* bmsSel = adios_selection_boundingbox(bmsV->ndim, start, count_bms);
+  ADIOS_SELECTION* keySel = adios_selection_boundingbox(keyV->ndim, start, count_key);
+  ADIOS_SELECTION* offsetSel = adios_selection_boundingbox(offsetV->ndim, start, count_offset);
 
   // has one timestep in idx file
   adios_schedule_read(idxFile, bmsSel, bmsVarName, 0, 1, bms);
-  //adios_schedule_read(idxFile, keySel, keyVarName, 0, 1, key);
-  //adios_schedule_read(idxFile, offsetSel, offsetName, 0, 1, offset);
+  adios_schedule_read(idxFile, keySel, keyVarName, 0, 1, key);
+  adios_schedule_read(idxFile, offsetSel, offsetName, 0, 1, offset);
 
   adios_perform_reads(idxFile,1);
 
-  adios_free_varinfo(bmsV);
+  uint64_t nk = keyV->dims[0];
+  uint64_t no = offsetV->dims[0];
+  printf(" bms/key/offset data: length=%lld/%lld/%lld\n", bmsV->dims[0], keyV->dims[0], offsetV->dims[0]);
 
+  printData(bms, bmsV->type, bmsV->dims[0]);
+
+  adios_selection_delete(bmsSel);
+  adios_free_varinfo(bmsV);
   adios_read_close(idxFile);
 
+  ADIOS_SELECTION* box = adios_selection_writeblock(blockNum);
+
+  adios_inq_var_blockinfo(dataFile, v);
+  uint64_t blockSize = getBlockSize(v, blockNum);
+  void* data = malloc(adios_type_size(v->type, v->value)*blockSize);
+  adios_schedule_read_byid(dataFile, box, v->varid, timestep, 1, data);
+  adios_perform_reads(dataFile,1);
+
+  fastbit_iapi_register_array("testme", getFastbitDataType(v->type), data, blockSize);
+  
+  int ierr = fastbit_iapi_attach_index ("testme", key, nk, offset, no, bms, mybmreader);
+  if (ierr < 0) {
+    printf(" reattaching index failed ierr = %ld\n", ierr);
+  } else {
+    FastBitSelectionHandle  h = fastbit_selection_osr("testme", FastBitCompareLess, lessThanVal);
+    int64_t hits =  fastbit_selection_evaluate(h);
+    printf(" double check, hits = %ld\n", hits);
+  }
   free(bms);
-  //free(key);
-  //free(offset);
+  free(key);
+  free(offset);
 
 }
-
+*/
 
 
 int main (int argc, char ** argv) 

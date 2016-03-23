@@ -206,8 +206,8 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 				outputStart[j] = atoi(outputStartTokens[j]);
 				outputCount[j] = atoi(outputCountTokens[j]);
 			}
-			/* a2s_cleanup_dimensions(outputStartTokens, outputDim); */
-            /* a2s_cleanup_dimensions(outputCountTokens, outputDim); */
+			a2s_cleanup_dimensions(outputStartTokens, outputDim);
+            a2s_cleanup_dimensions(outputCountTokens, outputDim);
 
 			outputBox = adios_selection_boundingbox(outputDim, outputStart, outputCount);
 
@@ -267,7 +267,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 		else {
 			// this is the only way I found for getting the next <entry> or <combine> node
 			entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND);
-			/* entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND); */
+			entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND);
 		}
 
 		// check if current node is <combine>
@@ -368,8 +368,8 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
         					queryStart[j] = atoi(queryStartTokens[j]);
         					queryCount[j] = atoi(queryCountTokens[j]);
         				}
-        	            /* a2s_cleanup_dimensions(outputStartTokens, outputDim); */
-        	            /* a2s_cleanup_dimensions(outputCountTokens, outputDim); */
+        	            a2s_cleanup_dimensions(outputStartTokens, outputDim);
+        	            a2s_cleanup_dimensions(outputCountTokens, outputDim);
         
         				inputSelection = adios_selection_boundingbox(queryDim, queryStart, queryCount);
                                 }
