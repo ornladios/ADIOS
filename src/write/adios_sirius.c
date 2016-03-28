@@ -178,7 +178,10 @@ static void init_output_parameters(const PairStruct *params)
             nlevels++;
         } else if (!strcasecmp (p->name, "parameters")) {
             errno = 0;
-            io_parameters[level_params] = strdup (p->value);
+            if(p->value)
+                io_parameters[level_params] = strdup (p->value);
+            else
+                io_parameters[level_params] = strdup (" ");
             if (!errno) {
                 log_debug ("parameters %d set to %s for SIRIUS method\n", level_params, io_parameters[level_params]);
             } else {
@@ -188,7 +191,7 @@ static void init_output_parameters(const PairStruct *params)
             }
             level_params++;
         } else if (!strcasecmp (p->name, "path")) {
-            errno = 0;
+            errno = 0;            
             io_paths[level_paths] = strdup (p->value);
             if (!errno) {
                 log_debug ("path %d set to %s for SIRIUS method\n", level_paths, io_parameters[level_paths]);
