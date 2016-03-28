@@ -11,6 +11,15 @@
 
 #include "mpi.h"
 #include "adios.h"
+
+// t1 is split time, t2 is write time, t3 is close time
+double t1=0, t2=0, t3=0;
+#define START(t) t -= MPI_Wtime()
+#define STOP(t) t += MPI_Wtime()
+
+#define print(...) fprintf (stderr, __VA_ARGS__); 
+#define print0(...) if (!rank) fprintf (stderr, __VA_ARGS__); 
+
 int main (int argc, char ** argv) 
 {
 	char        filename [256];
@@ -57,17 +66,23 @@ int main (int argc, char ** argv)
             p[i] = it*1000.0 + rank*NY + i;
 		
         if (it==1)
-		    adios_open (&adios_handle, "restart", filename, "w", comm);
+		    adios_open (&adios_handle, "restart", filename, "w", MPI_COMM_SELF);
         else
-		    adios_open (&adios_handle, "restart", filename, "a", comm);
+		    adios_open (&adios_handle, "restart", filename, "a", MPI_COMM_SELF);
 
+        START(t1);
 #include "gwrite_restart.ch"
+        STOP(t1);
+        START(t2);
         adios_close (adios_handle);
+        STOP(t2);
 		MPI_Barrier (comm);
         //if (rank==0) printf("Timestep %d written\n", it+1);
  	}
 	MPI_Barrier (comm);
     //if (rank==0) printf("Finalize adios\n");
+    print ("RESULTS: %i: split time: %f close time: %f\n", rank, t1, t2);
+
     adios_finalize (rank);
 
     //if (rank==0) printf("Finalize MPI\n");
