@@ -587,57 +587,57 @@ void adios_posix_get_write_buffer (struct adios_file_struct * fd
                                   ,struct adios_method_struct * method
                                   )
 {
-    uint64_t mem_allowed;
+    // uint64_t mem_allowed;
 
-    if (*size == 0)
-    {
-        *buffer = 0;
+    // if (*size == 0)
+    // {
+    //     *buffer = 0;
 
-        return;
-    }
+    //     return;
+    // }
 
-    if (v->adata && v->free_data)
-    {
-        adios_method_buffer_free (v->data_size);
-        free (v->adata);
-    }
+    // if (v->adata && v->free_data)
+    // {
+    //     adios_method_buffer_free (v->data_size);
+    //     free (v->adata);
+    // }
 
-    mem_allowed = adios_method_buffer_alloc (*size);
-    if (mem_allowed == *size)
-    {
-        *buffer = malloc (*size);
-        if (!*buffer)
-        {
-            adios_method_buffer_free (mem_allowed);
-            fprintf (stderr, "Out of memory allocating %" PRIu64 " bytes for %s\n"
-                    ,*size, v->name
-                    );
-            v->got_buffer = adios_flag_no;
-            v->free_data = adios_flag_no;
-            v->data_size = 0;
-            v->data = 0;
-            *size = 0;
-            *buffer = 0;
-        }
-        else
-        {
-            v->got_buffer = adios_flag_yes;
-            v->free_data = adios_flag_yes;
-            v->data_size = mem_allowed;
-            v->data = *buffer;
-        }
-    }
-    else
-    {
-        adios_method_buffer_free (mem_allowed);
-        fprintf (stderr, "OVERFLOW: Cannot allocate requested buffer of %" PRIu64 " "
-                         "bytes for %s\n"
-                ,*size
-                ,v->name
-                );
-        *size = 0;
-        *buffer = 0;
-    }
+    // mem_allowed = adios_method_buffer_alloc (*size);
+    // if (mem_allowed == *size)
+    // {
+    //     *buffer = malloc (*size);
+    //     if (!*buffer)
+    //     {
+    //         adios_method_buffer_free (mem_allowed);
+    //         fprintf (stderr, "Out of memory allocating %llu bytes for %s\n"
+    //                 ,*size, v->name
+    //                 );
+    //         v->got_buffer = adios_flag_no;
+    //         v->free_data = adios_flag_no;
+    //         v->data_size = 0;
+    //         v->data = 0;
+    //         *size = 0;
+    //         *buffer = 0;
+    //     }
+    //     else
+    //     {
+    //         v->got_buffer = adios_flag_yes;
+    //         v->free_data = adios_flag_yes;
+    //         v->data_size = mem_allowed;
+    //         v->data = *buffer;
+    //     }
+    // }
+    // else
+    // {
+    //     adios_method_buffer_free (mem_allowed);
+    //     fprintf (stderr, "OVERFLOW: Cannot allocate requested buffer of %llu "
+    //                      "bytes for %s\n"
+    //             ,*size
+    //             ,v->name
+    //             );
+    //     *size = 0;
+    //     *buffer = 0;
+    // }
 }
 
 void adios_posix_read (struct adios_file_struct * fd

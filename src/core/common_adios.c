@@ -804,55 +804,160 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_get_write_buffer (int64_t fd_p, const char * name
-                           ,uint64_t * size
-                           ,void ** buffer
-                           )
+                                   ,uint64_t * size
+                                   ,void ** buffer
+    )
 {
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_start ("adios_write");
+#endif
     adios_errno = err_no_error;
-    if (!fd)
-    {
-        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
-        return adios_errno;
-    }
-    struct adios_var_struct * v = fd->group->vars;
+    
+    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_method_list_struct * m = fd->group->methods;
+    (void)size;
 
-    v = adios_find_var_by_name (fd->group, name);
+    struct adios_var_struct *v = adios_find_var_by_name (fd->group, name);
 
-    if (!v)
+    //can't generate var characteristics
+    //don't have the data
+
+    uint64_t vsize = 0;
+    if (fd->bufstate == buffering_ongoing)
     {
-        adios_error (err_invalid_varname, "Bad var name (ignored): '%s' (%c%c%c)\n",
-                     name, name[0], name[1], name[2]);
-        return adios_errno;
-    }
+        // Second, estimate the size needed for buffering and extend buffer when needed
+        // and handle the error if buffer cannot be extended
+        vsize = adios_transform_worst_case_transformed_var_size(v);
 
-    if (fd->mode == adios_mode_read)
-    {
-        adios_error (err_invalid_file_mode,
-                     "write attempted on %s in %s. This was opened for read\n",
-                     name , fd->name);
-        return adios_errno;
-    }
-
-    // since we are only getting one buffer, get it from the first
-    // transport method that can provide it.
-    while (m)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_get_write_buffer_fn
-           )
+        if (fd->buffer_size < fd->offset + vsize)
         {
-            adios_transports [m->method->m].adios_get_write_buffer_fn
-                                (fd, v, size, buffer, m->method);
-            m = 0;
+            /* Trouble: this variable does not fit into the current buffer */
+            // First, try to realloc the buffer 
+            uint64_t extrasize = adios_databuffer_get_extension_size (fd);
+            if (extrasize < vsize)
+                extrasize = vsize;
+            if (adios_databuffer_resize (fd, fd->buffer_size + extrasize))
+            {
+                //can't do anything about overflow since we aren't writing just getting memory.
+                //at this point all we can do is to return a null buffer
+                *buffer = NULL;
+
+                //this might be handled similarly
+                
+                // if (fd->bufstrat == continue_with_new_pg) 
+                // {
+                //     // special case: fd->buffer_size is smaller than this single variable, and the extension failed:
+                //     // try to extend it to contain this single variable (plus headers) in the next PG
+                //     if (fd->buffer_size < vsize + 1024)
+                //     {
+                //         if (adios_databuffer_resize (fd, vsize+1024))
+                //         {
+                //             adios_error (err_no_memory, "adios_write(): buffer cannot accommodate variable %s/%s "
+                //                          "with its storage size of %llu bytes at all. "
+                //                          "No more variables will be written.\n", v->path, v->name, vsize);
+                //             //"This variable won't be written.\n", v->path, v->name, vsize);
+                //             fd->bufstate = buffering_stopped;
+                //             /* FIXME: This stops all writing, not just this variable! */
+                //             /* FIXME: so maybe we should give the method a chance to write this variable directly? */
+                //         }
+                //     }
+                //     /* Start buffering from scratch (a new PG) */
+                //     fd->offset = 0;
+                //     adios_write_open_process_group_header_v1 (fd);
+                //     adios_write_open_vars_v1 (fd);
+                //     add_new_pg_written (fd);
+                // } 
+            }
         }
-        else
-            m = m->next;
     }
 
-    return adios_errno;
+    // If no transform is specified, do the normal thing (write to shared
+    // buffer immediately, if one exists)
+    if (v->transform_type == adios_transform_none)
+    {
+        if (fd->bufstate == buffering_ongoing)
+        {
+            /* Now buffer only if we have the buffer for it */
+            if (fd->buffer_size > fd->offset + vsize)
+            {
+                // var payload sent for sizing information
+                adios_write_var_header_v1 (fd, v);
+
+                // write payload
+                adios_write_var_payload_v1 (fd, v);
+            }
+        }
+    }
+
+#if 0
+    else // Else, do a transform
+    {
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+        timer_start ("adios_transform");
+#endif
+        int success = common_adios_write_transform_helper(fd, v);
+        if (success) {
+            // Make it appear as if the user had supplied the transformed data
+            var = v->data;
+        } else {
+            log_error("Error: unable to apply transform %s to variable %s; likely ran out of memory, check previous error messages\n", adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
+            // FIXME: Reverse the transform metadata and write raw data as usual
+        }
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+        timer_stop ("adios_transform");
+#endif
+    }
+#endif
+
+    // now tell each transport attached that it is being written unless buffering is stopped
+    if (fd->bufstate == buffering_ongoing || fd->bufstrat == no_buffering)
+    {
+        m = fd->group->methods;
+        while (m)
+        {
+            if (   m->method->m != ADIOS_METHOD_UNKNOWN
+                   && m->method->m != ADIOS_METHOD_NULL
+                   && adios_transports [m->method->m].adios_write_fn
+                )
+            {
+                adios_transports [m->method->m].adios_get_write_buffer_fn (fd, v, size, buffer, m);
+            }
+
+            m = m->next;
+        }
+    }
+    else
+    {
+        adios_errno = err_buffer_overflow; // signal error but don't print anything anymore
+    }
+
+#if 0
+    if (v->dimensions)
+    {
+        // NCSU ALACRITY-ADIOS - Free transform-method-allocated data buffers
+        // TODO: Is this correct? Normally v->data is a user buffer, so we
+        //   can't free it. However, after a transform, we probably do need
+        //   to free it. We mark this by setting the free_data flag. However,
+        //   as this flag is hardly ever used, I don't know whether this is
+        //   using the flag correctly or not. Need verification with
+        //   Gary/Norbert/someone knowledgable about ADIOS internals.
+        if (v->transform_type != adios_transform_none && v->free_data == adios_flag_yes && v->adata)
+        {
+            free(v->adata);
+        }
+        v->data = v->adata = 0; // throw away pointers to user data in case of arrays to avoid trying
+                                // to free them in possible forthcoming adios_write() of the same variable
+    }
+#endif
+
+    if (!adios_errno) {
+        v->write_count++;
+    }
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_stop ("adios_write");
+#endif
+    // printf ("var: %s written %d\n", v->name, v->write_count);
+    return adios_errno;    
 }
 
 ///////////////////////////////////////////////////////////////////////////////
