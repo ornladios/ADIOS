@@ -7,7 +7,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-
+#include <sys/stat.h>
 // xml parser
 #include <mxml.h>
 
@@ -281,6 +281,16 @@ int adios_sirius_open (struct adios_file_struct * fd
 
             for (l=0; l < nlevels; l++)
             {
+                //check if the directory exists and create it if it doesn't
+                struct stat sb;
+                if((stat(io_paths[l], &sb) != 0) || !S_ISDIR(sb.st_mode))
+                {
+                    //directory doesn't exist
+                    //FIXME: there is a case where something already exists but
+                    //isn't a directory. Hard to imagine though so I am ignoring
+                    //it for the time beingmdki
+                    mkdir(io_paths[l], 0700);
+                }
                 md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 1);
                 sprintf (md->level[l].filename, "%s/%s", io_paths[l], fd->name);
                 convert_file_mode(fd->mode, mode);
@@ -624,7 +634,7 @@ void adios_sirius_write (struct adios_file_struct * fd
 
     
     if(splithandle == NULL)
-         free_splitter(splithandle);
+        free_splitter(splithandle);
         
 }
 
@@ -714,9 +724,8 @@ void adios_sirius_close (struct adios_file_struct * fd
                 {
                 
                     pthread_join(md->level[l].thread, NULL);
-                    fprintf(stderr, "joined with thread for level %d\n", l);
                 }
-        
+            
             release_resource_at_close (md);
             break;
         }
