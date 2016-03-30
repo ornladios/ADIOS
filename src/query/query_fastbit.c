@@ -13,6 +13,7 @@
 
 #define BITARRAY
 #define INT_BIT 32
+#define RETURN_ONE_DIM
 
 #define BITMASK(b) (1 << ((b) % INT_BIT))
 #define BITSLOT(b) ((b) / INT_BIT)
@@ -3053,6 +3054,7 @@ uint64_t* minmaxtest(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coordinate
     if (bb->ndim <= 1) {
       return NULL;
     }
+
     for (i=1; i<bb->ndim; i++) {
       sheet *= bb->count[i];
     }
@@ -3061,17 +3063,18 @@ uint64_t* minmaxtest(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coordinate
     if (firstLeaf->varinfo->ndim <= 1) {
       return NULL;
     }
+
     for (i=1; i<firstLeaf->varinfo->ndim; i++) {
       sheet *= firstLeaf->varinfo->dims[i];
     }
   }
 
-  printf("sheet = %ld \n", sheet);
+  //printf("sheet = %ld \n", sheet);
 
   uint64_t range = coordinates[retrivalSize-1] - coordinates[0];
   uint64_t gap = sheet*5;  
   if (range < gap*4) {
-    printf("As is.\n");
+    //printf("As is.\n");
     return NULL;
   }
 
@@ -3094,6 +3097,7 @@ uint64_t* minmaxtest(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coordinate
   uint64_t checkpointCounter = 0;
   checkpoints[0] = 0;
   
+#ifdef NEVER
   for (i=1; i<retrivalSize-1; i++) {
     diff = coordinates[i] - coordinates[i-1];
 
@@ -3110,26 +3114,41 @@ uint64_t* minmaxtest(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coordinate
       bbid = sid;
     }    
   }  
-  checkpoints[++checkpointCounter] = i;
+#else
+  for (i=1; i<=retrivalSize-1; i++) {
+    sid=coordinates[i]/(gap*4);
+    if (sid > bbid) {
+      checkpoints[++checkpointCounter] = i-1;
+      checkpoints[++checkpointCounter] = i;
+      //printf("check point. i=%ld, value=%ld, sid=%ld bbid=%ld checkpointCounter=%ld\n", i, coordinates[i], sid, bbid, checkpointCounter);
+      bbid = sid;
+    } else {
+      //checkpoints[checkpointCounter+1] = i;
+    }
+  }  
+#endif
+
+  checkpoints[++checkpointCounter] = i-1;
 
   //printf("check point. i=%ld, value=%ld, checkpointCounter=%ld\n", i, coordinates[i],  checkpointCounter);
   if (checkpointCounter == 1) {
     // should return by max ele
     return NULL;
-  } else {
-    uint64_t total = 0;
-    uint64_t* result = malloc((checkpointCounter+1) * sizeof(uint64_t));
-    for (i=0; i<checkpointCounter+1; i++) {
-      result[i] = checkpoints[i];
-      if (i % 2 == 1) {
-	total += checkpoints[i] - checkpoints[i-1]+1;
-	//printf("i=%ld, %ld to %ld, uptodate: %ld \n", i, checkpoints[i-1], checkpoints[i], total);
-      }
-    }
-
-    *ptsSize = checkpointCounter+1;
-    return result;
   } 
+
+
+  uint64_t total = 0;
+  uint64_t* result = malloc((checkpointCounter+1) * sizeof(uint64_t));
+  for (i=0; i<checkpointCounter+1; i++) {
+    result[i] = checkpoints[i];
+    if (i % 2 == 1) {
+      total += checkpoints[i] - checkpoints[i-1]+1;
+      //printf("i=%ld, %ld to %ld, uptodate: %ld, sid: %ld, %ld \n", i, checkpoints[i-1], checkpoints[i], total, coordinates[checkpoints[i]]/(gap*4), coordinates[checkpoints[i-1]]/(gap*4));
+    }
+  }
+  
+  *ptsSize = checkpointCounter+1;
+  return result;   
 }
 
 ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coordinates, uint64_t retrivalSize, int timeStep)
@@ -3306,6 +3325,9 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
 
   q->resultsReadSoFar += retrivalSize;
   
+#ifdef RETURN_ONE_DIM
+  queryResult->selections = common_read_selection_points(1, retrivalSize, coordinates);
+#else // return N-Dim
   if (outputBoundary == 0) {
     if (firstLeaf->sel == NULL) {
       queryResult->selections = getSpatialCoordinatesDefault(firstLeaf->varinfo, coordinates, retrivalSize, timeStep);
@@ -3318,34 +3340,45 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
     // not sure wheather this is well defined case of combined query?! but the first varibale will be used for block information calculation
     queryResult->selections = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize, getFirstLeaf(q)->varinfo, timeStep);     
   }
+#endif
 
   if (queryResult->selections != NULL) {
     queryResult->npoints = queryResult->selections[0].u.points.npoints;
+    queryResult->nselections = 1; // default
   } else {
     queryResult->npoints = 0;
   }
 
+ 
   printf(" --> \n");
-  uint64_t ptsSize = 0;
-  uint64_t* parts = minmaxtest(outputBoundary, q,  coordinates, retrivalSize, timeStep, &ptsSize);
-  if ((parts != NULL) && (ptsSize > 1)) {
-    ADIOS_SELECTION* multiSets = (ADIOS_SELECTION*)(malloc(ptsSize * sizeof(ADIOS_SELECTION)));
+  uint64_t partsSize = 0;
+  uint64_t* parts = minmaxtest(outputBoundary, q,  coordinates, retrivalSize, timeStep, &partsSize);
+  if ((parts != NULL) && (partsSize > 1)) {
+    ADIOS_SELECTION* multiSets = (ADIOS_SELECTION*)(malloc(partsSize * sizeof(ADIOS_SELECTION)));
     int i, counter=0;
     uint64_t* pts = queryResult->selections->u.points.points;    
-    for (i=1; i<ptsSize; i=i+2) {      
+    for (i=1; i<partsSize; i=i+2) {      
       uint64_t bundleSize = parts[i]-parts[i-1] + 1;
+#ifdef RETURN_ONE_DIM
+      multiSets[(i-1)/2] = *(common_read_selection_points(1, bundleSize, pts+counter));
+      counter += bundleSize;
+#else
       multiSets[(i-1)/2] = *(common_read_selection_points(firstLeaf->varinfo->ndim, bundleSize, pts+counter));
       counter += bundleSize * firstLeaf->varinfo->ndim;
+#endif
     }
     free(queryResult->selections);
     queryResult->selections = multiSets;
-    queryResult->nselections = (ptsSize-1)/2;
+    queryResult->nselections = (partsSize-1)/2;
     free(parts);
   }
   
   printf(" <-- \n");
-  free(coordinates);
-
+#ifdef RETURN_ONE_DIM
+  // used directly in return 1-D pts, client should free
+#else
+  free(coordinates); 
+#endif
   casestudyLogger_frame_writeout(&startT, "bitarrayGetHits");
 
   // print results
