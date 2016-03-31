@@ -42,16 +42,17 @@ sysconf_DATA = scripts/FindADIOS.cmake
 
         
 install-data-hook:
-	if git -C $(srcdir) rev-parse --git-dir &>/dev/null; then \
-	    echo "GITLOG=\"`git -C $(srcdir) log -n 1 --format=\"Last commit on %ad hash %h\"`\"" > adios_git_status; \
-	    echo "read -d '' GITSTAT <<'_EOF_'" >> adios_git_status; \
-	    git -C $(srcdir) status -uno >> adios_git_status; \
-	    echo "_EOF_" >> adios_git_status; \
+	(cd $(top_srcdir); \
+	if git rev-parse &>/dev/null; then \
+	    echo "GITLOG=\"`git log -n 1 --format=\"Last commit on %ad hash %h\"`\"" > $(abs_top_builddir)/adios_git_status; \
+	    echo "read -d '' GITSTAT <<'_EOF_'" >> $(abs_top_builddir)/adios_git_status; \
+	    git status -uno >> $(abs_top_builddir)/adios_git_status; \
+	    echo "_EOF_" >> $(abs_top_builddir)/adios_git_status; \
 	else \
-	    echo "GITLOG=\"git log not available\"" >> adios_git_status; \
-	    echo "GITSTAT=\"git status not available\"" >> adios_git_status; \
+	    echo "GITLOG=\"git log not available\"" >> $(builddir)/adios_git_status; \
+	    echo "GITSTAT=\"git status not available\"" >> $(builddir)/adios_git_status; \
 	    echo "Note: git command not found or $(PWD) is not a git repository."; \
-	fi 
+	fi) 
 	$(INSTALL_DATA) adios_config.flags $(DESTDIR)$(sysconfdir)
 	$(INSTALL_DATA) adios_git_status $(DESTDIR)$(sysconfdir)
  
