@@ -82,7 +82,9 @@ do
         v) echo "$VERSIONSTRING"; 
            exit 0;;
         i) echo "ADIOS $VERSIONSTRING"; 
-           echo "Installed from source directory: $SRCDIR"; 
+           echo "Installed from "
+           echo "  source directory: $SRCDIR"; 
+           echo "  build directory:  $BUILDDIR"; 
            if [ ! -z "$GITLOG" ]; then echo "$GITLOG"; fi 
            if [ ! -z "$GITSTAT" ]; then echo "Git status of source directory:"; echo "$GITSTAT"; fi 
            exit 0;;

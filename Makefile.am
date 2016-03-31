@@ -39,13 +39,13 @@ sysconf_DATA = scripts/FindADIOS.cmake
 #	    echo "Error: svnversion command not found"; \
 #	fi 
 #	cp adios_config.flags $(DESTDIR)$(bindir)
+
         
 install-data-hook:
-	echo "SRCDIR=\"$(PWD)\"" >> adios_config.flags; \
-	if git rev-parse --git-dir &>/dev/null; then \
-	    echo "GITLOG=\"`git log -n 1 --format=\"Last commit on %ad hash %h\"`\"" > adios_git_status; \
+	if git -C $(srcdir) rev-parse --git-dir &>/dev/null; then \
+	    echo "GITLOG=\"`git -C $(srcdir) log -n 1 --format=\"Last commit on %ad hash %h\"`\"" > adios_git_status; \
 	    echo "read -d '' GITSTAT <<'_EOF_'" >> adios_git_status; \
-	    git status -uno >> adios_git_status; \
+	    git -C $(srcdir) status -uno >> adios_git_status; \
 	    echo "_EOF_" >> adios_git_status; \
 	else \
 	    echo "GITLOG=\"git log not available\"" >> adios_git_status; \
@@ -54,5 +54,30 @@ install-data-hook:
 	fi 
 	$(INSTALL_DATA) adios_config.flags $(DESTDIR)$(sysconfdir)
 	$(INSTALL_DATA) adios_git_status $(DESTDIR)$(sysconfdir)
-        
-CLEANFILES = 
+ 
+CLEANFILES = adios_config adios_config.flags adios_config.makesrc adios_config.flags.makesrc
+
+#
+# Extra targets to generate adios_config and adios_config.flags
+#
+edit = sed \
+	-e 's|%libdir[%]|$(libdir)|g' \
+	-e 's|%includedir[%]|$(includedir)|g' \
+	-e 's|%sysconfdir[%]|$(sysconfdir)|g' \
+	-e 's|%prefix[%]|$(prefix)|g' \
+	-e 's|%VERSION[%]|$(VERSION)|g' \
+	-e 's|%srcdir[%]|$(abs_top_srcdir)|g' \
+	-e 's|%builddir[%]|$(abs_top_builddir)|g'
+     
+adios_config adios_config.flags: Makefile
+	rm -f $@ $@.tmp
+	test -f ./$@.makesrc; \
+	$(edit) $@.makesrc >$@.tmp
+	
+	chmod +x $@.tmp
+	chmod a-w $@.tmp
+	mv $@.tmp $@
+
+adios_config: adios_config.makesrc adios_config.flags
+adios_config.flags: adios_config.flags.makesrc
+
