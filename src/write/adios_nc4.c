@@ -1563,6 +1563,12 @@ void adios_nc4_read(
     }
 }
 
+void adios_nc4_buffer_overflow (struct adios_file_struct * fd, 
+                                struct adios_method_struct * method)
+{
+    // this never happens without shared buffering
+}
+
 void adios_nc4_close(
         struct adios_file_struct *fd,
         struct adios_method_struct *method)
