@@ -100,11 +100,12 @@ static void internal_alloc_blocks (ADIOS_QUERY*q, int nblocks)
    hidden behind a void* pointer and its type depends on the adios 'type'
    returns 1 if the comparison is true, 0 otherwise
  */
-static int compare_values (char *v_str, enum ADIOS_PREDICATE_MODE op, void *v_void, enum ADIOS_DATATYPES vartype)
+static int compare_values (void *v_pred, enum ADIOS_PREDICATE_MODE op, void *v_void, enum ADIOS_DATATYPES vartype)
 {
     signed long long v1_int, v2_int;
     unsigned long long v1_uint, v2_uint;
-    LONGDOUBLE v1_real, v2_real;
+    double v1_real, v2_real;
+    LONGDOUBLE v1_ld, v2_ld;
 
     switch (vartype) 
     {
@@ -133,13 +134,13 @@ static int compare_values (char *v_str, enum ADIOS_PREDICATE_MODE op, void *v_vo
             v2_int =  *((signed long long *) v_void);
             break;
         case adios_real:
-            v2_real = (LONGDOUBLE) *((float *) v_void);
+            v2_real = (double) *((float *) v_void);
             break;
         case adios_double:
-            v2_real = (LONGDOUBLE) *((double *) v_void);
+            v2_real = (double) *((double *) v_void);
             break;
         case adios_long_double:
-            v2_real = *((LONGDOUBLE *) v_void);
+            v2_ld = *((LONGDOUBLE *) v_void);
             break;
 
         case adios_complex:
@@ -157,7 +158,7 @@ static int compare_values (char *v_str, enum ADIOS_PREDICATE_MODE op, void *v_vo
         case adios_unsigned_short:
         case adios_unsigned_integer:
         case adios_unsigned_long:
-            v1_uint = strtoll (v_str, NULL, 10);
+            v1_uint = *(unsigned long long *) v_pred;
             COMPARE_VALUES (v1_uint, op, v2_uint)
             break;
 
@@ -165,15 +166,19 @@ static int compare_values (char *v_str, enum ADIOS_PREDICATE_MODE op, void *v_vo
         case adios_short:
         case adios_integer:
         case adios_long:
-            v1_int = strtoll (v_str, NULL, 10);
+            v1_int = *(signed long long *) v_pred;
             COMPARE_VALUES (v1_int, op, v2_int)
             break;
 
         case adios_real:
         case adios_double:
-        case adios_long_double:
-            v1_real = STRTOLONGDOUBLE(v_str,NULL);
+            v1_real = *(double *) v_pred;
             COMPARE_VALUES (v1_real, op, v2_real)
+            break;
+
+        case adios_long_double:
+            v1_ld = *(LONGDOUBLE *) v_pred;
+            COMPARE_VALUES (v1_ld, op, v2_ld)
             break;
 
         case adios_complex:
@@ -183,6 +188,51 @@ static int compare_values (char *v_str, enum ADIOS_PREDICATE_MODE op, void *v_vo
             break;
     } // end switch
     return 0;
+}
+
+static void * string_to_value (char *v_str, enum ADIOS_DATATYPES vartype)
+{
+    void * retval;
+    static signed long long v_int;
+    static unsigned long long v_uint;
+    static double v_real;
+    LONGDOUBLE v_ld;
+    switch (vartype) 
+    {
+        case adios_unsigned_byte:
+        case adios_unsigned_short:
+        case adios_unsigned_integer:
+        case adios_unsigned_long:
+            v_uint = strtoll (v_str, NULL, 10);
+            retval = &v_uint;
+            break;
+
+        case adios_byte:
+        case adios_short:
+        case adios_integer:
+        case adios_long:
+            v_int = strtoll (v_str, NULL, 10);
+            retval = &v_int;
+            break;
+
+        case adios_real:
+        case adios_double:
+            v_real = strtod (v_str,NULL);
+            retval = &v_real;
+            break;
+
+        case adios_long_double:
+            v_ld = STRTOLONGDOUBLE(v_str,NULL);
+            retval = &v_ld;
+            break;
+
+        case adios_complex:
+        case adios_double_complex:
+        default:
+            return 0;
+            break;
+    } // end switch
+    return retval;
 }
 
 /*
@@ -228,6 +278,8 @@ static int minmax_evaluate_node (ADIOS_QUERY* q, int timestep, int nblocks, char
         loop_end = index+1;
     }
 
+    void * pred_val = string_to_value (q->predicateValue, q->varinfo->type);
+
     for (i=loop_start; i < loop_end; i++) 
     {    
         if (blocks[i] && q->sel && *sel != q->sel)
@@ -270,34 +322,34 @@ static int minmax_evaluate_node (ADIOS_QUERY* q, int timestep, int nblocks, char
             {
                 case ADIOS_LT: 
                     //blocks[i] = (v > q->varinfo->statistics->blocks->mins[i+block_start_idx]);
-                    blocks[i] = compare_values (q->predicateValue, ADIOS_GT, q->varinfo->statistics->blocks->mins[i+block_start_idx], q->varinfo->type);
+                    blocks[i] = compare_values (pred_val, ADIOS_GT, q->varinfo->statistics->blocks->mins[i+block_start_idx], q->varinfo->type);
                     break;
                 case ADIOS_LTEQ:
                     //blocks[i] = (v >= q->varinfo->statistics->blocks->mins[i+block_start_idx]);
-                    blocks[i] = compare_values (q->predicateValue, ADIOS_GTEQ, q->varinfo->statistics->blocks->mins[i+block_start_idx], q->varinfo->type);
+                    blocks[i] = compare_values (pred_val, ADIOS_GTEQ, q->varinfo->statistics->blocks->mins[i+block_start_idx], q->varinfo->type);
                     break;
                 case ADIOS_GT:
                     //blocks[i] = (v < q->varinfo->statistics->blocks->maxs[i+block_start_idx]);
-                    blocks[i] = compare_values (q->predicateValue, ADIOS_LT, q->varinfo->statistics->blocks->maxs[i+block_start_idx], q->varinfo->type);
+                    blocks[i] = compare_values (pred_val, ADIOS_LT, q->varinfo->statistics->blocks->maxs[i+block_start_idx], q->varinfo->type);
                     break;
                 case ADIOS_GTEQ:
                     //blocks[i] = (v <= q->varinfo->statistics->blocks->maxs[i+block_start_idx]);
-                    blocks[i] = compare_values (q->predicateValue, ADIOS_LTEQ, q->varinfo->statistics->blocks->maxs[i+block_start_idx], q->varinfo->type);
+                    blocks[i] = compare_values (pred_val, ADIOS_LTEQ, q->varinfo->statistics->blocks->maxs[i+block_start_idx], q->varinfo->type);
                     break;
                 case ADIOS_EQ:
                     // we MAY have a match in block if the predicate value falls inside of the min..max range
                     //blocks[i] = (v >= q->varinfo->statistics->blocks->mins[i+block_start_idx] &&
                     //             v <= q->varinfo->statistics->blocks->maxs[i+block_start_idx]); 
-                    blocks[i] = compare_values (q->predicateValue, ADIOS_GTEQ, q->varinfo->statistics->blocks->mins[i+block_start_idx], q->varinfo->type);
-                    blocks[i] = compare_values (q->predicateValue, ADIOS_LTEQ, q->varinfo->statistics->blocks->maxs[i+block_start_idx], q->varinfo->type);
+                    blocks[i] = compare_values (pred_val, ADIOS_GTEQ, q->varinfo->statistics->blocks->mins[i+block_start_idx], q->varinfo->type);
+                    blocks[i] = compare_values (pred_val, ADIOS_LTEQ, q->varinfo->statistics->blocks->maxs[i+block_start_idx], q->varinfo->type);
                     break;
                 case ADIOS_NE:
                     // we only know for sure that the block is not a match if all elements
                     // are the same (min=max) and the predicate value is that same value
                     //blocks[i] = !(v == q->varinfo->statistics->blocks->mins[i+block_start_idx] &&
                     //              v == q->varinfo->statistics->blocks->maxs[i+block_start_idx]); 
-                    blocks[i] = !(compare_values (q->predicateValue, ADIOS_EQ, q->varinfo->statistics->blocks->mins[i+block_start_idx], q->varinfo->type) &&
-                                  compare_values (q->predicateValue, ADIOS_EQ, q->varinfo->statistics->blocks->maxs[i+block_start_idx], q->varinfo->type));
+                    blocks[i] = !(compare_values (pred_val, ADIOS_EQ, q->varinfo->statistics->blocks->mins[i+block_start_idx], q->varinfo->type) &&
+                                  compare_values (pred_val, ADIOS_EQ, q->varinfo->statistics->blocks->maxs[i+block_start_idx], q->varinfo->type));
                     break;
             }
         }
