@@ -36,7 +36,7 @@ static char *io_parameters[MAXLEVEL]; //the IO method parameters
 static char *io_paths[MAXLEVEL]; //the IO method output paths (prefix to filename)
 static int nlevels=1; // Number of storage levels
 static int no_thread = 0;
-
+static char *splitter_type;
 
 struct var_struct
 {
@@ -165,6 +165,7 @@ static void init_output_parameters(const PairStruct *params)
     int level_params = 0;
     int level_paths = 0;
 
+    splitter_type = strdup("float");
     while (p) {
         if (!strcasecmp (p->name, "method")) {
             errno = 0;
@@ -201,6 +202,13 @@ static void init_output_parameters(const PairStruct *params)
                 io_paths[level_paths] = NULL;
             }
             level_paths++;
+        }
+        else if (!strcasecmp(p->name, "type"))
+        {
+            errno = 0;
+            free(splitter_type);
+            splitter_type = strdup(p->value);            
+            fprintf(stderr, "set param type = %s\n", splitter_type);
         } else {
             log_error ("Parameter name %s is not recognized by the SIRIUS "
                        "method\n", p->name);
@@ -505,7 +513,7 @@ void adios_sirius_write (struct adios_file_struct * fd
                 {
                     //we can split this
                     //initialize the splitter
-                    splithandle = initialize_splitter(nelems);
+                    splithandle = initialize_splitter(v->name, splitter_type, nelems);
                     //now feed the data into the splitter
                     split_doubles(data, splithandle);
                     //now data has been split
