@@ -15,8 +15,6 @@ AM_INIT_AUTOMAKE([1.11.1])
 AM_MAINTAINER_MODE([enable])
 
 AC_LANG(C)
-AC_C_STRINGIZE
-dnl generates HAVE_STRINGIZE
 
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -66,6 +64,11 @@ dnl g/^hardcode_libdir_flag_spec_ld=".*"/s//hardcode_libdir_flag_spec_ld=""/
 
 AC_SEARCH_LIBS([nanosleep], [rt])
 AC_CHECK_FUNCS([nanosleep strncpy strerror gettimeofday])
+
+AC_C_STRINGIZE
+dnl generates HAVE_STRINGIZE
+AC_FUNC_STRTOLD
+dnl generates HAVE_STRTOLD
 
 AC_ARG_ENABLE(write,
     [AS_HELP_STRING([--disable-write],[disable building the write methods in ADIOS.])])

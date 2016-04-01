@@ -18,6 +18,7 @@
 #include "core/adios_logger.h"
 #include "common_query.h"
 #include "query_utils.h"
+#include "config.h"  // HAVE_STRTOLD
 
 
 typedef struct {
@@ -87,6 +88,14 @@ static void internal_alloc_blocks (ADIOS_QUERY*q, int nblocks)
     }                               \
 }
 
+#if HAVE_STRTOLD
+#  define  LONGDOUBLE long double
+#  define  STRTOLONGDOUBLE(x,y) strtold(x,y)
+#else
+#  define  LONGDOUBLE double
+#  define  STRTOLONGDOUBLE(x,y) strtod(x,y)
+#endif
+
 /* Compare two values with 'op', where one value comes in as string, the other is
    hidden behind a void* pointer and its type depends on the adios 'type'
    returns 1 if the comparison is true, 0 otherwise
@@ -95,7 +104,7 @@ static int compare_values (char *v_str, enum ADIOS_PREDICATE_MODE op, void *v_vo
 {
     signed long long v1_int, v2_int;
     unsigned long long v1_uint, v2_uint;
-    long double v1_real, v2_real;
+    LONGDOUBLE v1_real, v2_real;
 
     switch (vartype) 
     {
@@ -124,13 +133,13 @@ static int compare_values (char *v_str, enum ADIOS_PREDICATE_MODE op, void *v_vo
             v2_int =  *((signed long long *) v_void);
             break;
         case adios_real:
-            v2_real = (long double) *((float *) v_void);
+            v2_real = (LONGDOUBLE) *((float *) v_void);
             break;
         case adios_double:
-            v2_real = (long double) *((double *) v_void);
+            v2_real = (LONGDOUBLE) *((double *) v_void);
             break;
         case adios_long_double:
-            v2_real = *((long double *) v_void);
+            v2_real = *((LONGDOUBLE *) v_void);
             break;
 
         case adios_complex:
@@ -163,7 +172,7 @@ static int compare_values (char *v_str, enum ADIOS_PREDICATE_MODE op, void *v_vo
         case adios_real:
         case adios_double:
         case adios_long_double:
-            v1_real = strtold (v_str, NULL);
+            v1_real = STRTOLONGDOUBLE(v_str,NULL);
             COMPARE_VALUES (v1_real, op, v2_real)
             break;
 
