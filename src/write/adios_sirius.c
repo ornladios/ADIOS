@@ -521,6 +521,7 @@ void adios_sirius_write (struct adios_file_struct * fd
 
                 // name the variable
                 int len = 5 + strlen (v->name);
+                int splitter_type_int = get_splitter_type_from_name(splitter_type);
                 var->name = (char *) malloc (len);
                 sprintf(var->name, "%s/L%d",v->name, l);
                 var->path = strdup (v->path);
@@ -539,8 +540,17 @@ void adios_sirius_write (struct adios_file_struct * fd
                     alldims[i+ndims*2] = offsets[i];                                        
                 }
                 
-                adios_common_define_attribute_byvalue (md->level[l].grp, "dimensions", v->name, adios_integer, 1, &ndims);
-                adios_common_define_attribute_byvalue (md->level[l].grp, "dims", v->name, adios_integer, (ndims*3), alldims);
+                fprintf(stderr, "splitter type = %d\n", splitter_type_int);
+                adios_common_define_attribute_byvalue (md->level[l].grp, "dimensions", var->name,
+                                                       adios_integer, 1, &ndims);
+                adios_common_define_attribute_byvalue (md->level[l].grp, "splittype", var->name,
+                                                       adios_integer, 1,
+                                                       &splitter_type_int);
+                adios_common_define_attribute_byvalue (md->level[l].grp, "dims", var->name, adios_integer, (ndims*3),
+                                                       alldims);
+                                                       
+                                                       
+                                                       
 
                 if(l == 0)
                 {
@@ -617,7 +627,7 @@ void adios_sirius_write (struct adios_file_struct * fd
                 // define the variable for this level
                 adios_common_define_var (md->level[l].grp, var->name, var->path, var->type,
                                          var->local_dimensions, var->global_dimensions, var->local_offsets);
-                signed char t = (char) var->type;
+                signed char t = (char) v->type;
                 adios_common_define_attribute_byvalue (md->level[l].grp, "type", var->name, adios_byte, 1, &t);
                 adios_common_define_attribute_byvalue (md->level[l].grp, "level", var->name, adios_integer, 1, &l);
             }

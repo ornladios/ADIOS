@@ -11,7 +11,7 @@
 
 // copy an array of strings with allocation, return pointer
 // also return the sum of string lengths in 'total_length'
-char ** dup_string_array (char ** v, int nelems, int * total_length) 
+char ** a2s_dup_string_array (char ** v, int nelems, int * total_length) 
 {
     *total_length = 0;
 
@@ -36,7 +36,7 @@ char ** dup_string_array (char ** v, int nelems, int * total_length)
     return p;
 }
 
-void free_string_array (char ** v, int nelems) 
+void a2s_free_string_array (char ** v, int nelems) 
 {
     int i;
     for (i=0; i<nelems; i++) {
@@ -46,7 +46,7 @@ void free_string_array (char ** v, int nelems)
     free (v);
 }
 
-void alloc_namelist (char ***namelist, int length)
+void a2s_alloc_namelist (char ***namelist, int length)
 {
     int j;
 
@@ -57,7 +57,7 @@ void alloc_namelist (char ***namelist, int length)
     return;
 }
 
-void free_namelist (char **namelist, int length)
+void a2s_free_namelist (char **namelist, int length)
 {
     int i;
     if (namelist) {
@@ -69,6 +69,108 @@ void free_namelist (char **namelist, int length)
         free(namelist);
     }
     return;
+}
+
+// remove leading white spaces
+// it returns a pointer inside str, it does not allocate new memory
+char * a2s_trimL (char * str)
+{
+    if (!str)
+        return str;
+    char * b = str;
+    while (isspace(*b))
+    {
+        b++;
+    }
+    return b;
+}
+
+// remove trailing white spaces
+// it returns str, it does not allocate new memory, just shortens the strings
+char * a2s_trimR (char * str)
+{
+    if (!str)
+        return str;
+    int len = strlen(str);
+    if (!len)
+        return str;
+    char * t = str+len-1;
+    while (isspace(*t))
+    {
+        *t = '\0';
+        t--;
+    }
+    return str;
+}
+
+
+char * a2s_trimLR (char * str)
+{
+    if (!str)
+        return str;
+    int len = strlen(str);
+    if (!len)
+        return str;
+
+    // trim front
+    char * b = str;
+    while (isspace(*b))
+    {
+        b++;
+    }
+
+    // trim trailing whitespaces
+    char * t = str+len-1;
+    while (isspace(*t))
+    {
+        *t = '\0';
+        t--;
+    }
+    return b;
+}
+
+void a2s_tokenize_dimensions (const char * str, char *** tokens, int * count)
+{
+    *count = 0;
+    *tokens = 0;
+    if (!str)
+        return;
+
+    char * dims[32];
+    char * save_str = strdup (str);
+    char * t = save_str;
+    int i;
+
+    for (t = strtok(save_str, ",");
+         t;
+         t = strtok(NULL, ","))
+    {
+        t = a2s_trimLR(t);
+        dims[*count] = strdup (t);
+        (*count)++;
+    }
+
+    if (*count)
+    {
+        *tokens = (char **) malloc (sizeof (char **) * *count);
+        for (i = 0; i < *count; i++)
+        {
+            (*tokens) [i] = strdup (dims[i]);
+        }
+    }
+
+    free (save_str);
+}
+
+void a2s_cleanup_dimensions (char ** tokens, int count)
+{
+    int i;
+    for (i = 0; i < count; i++)
+    {
+        free (tokens[i]);
+    }
+    if (tokens)
+        free (tokens);
 }
 
 void trim_spaces (char * str)
@@ -157,7 +259,7 @@ static void splitnamevalue (const char * line, int linelen,  char **name, char *
     }
 }
 
-PairStruct * text_to_name_value_pairs (const char * text)
+PairStruct * a2s_text_to_name_value_pairs (const char * text)
 {
     /* Process a multi-line and/or ;-separated text and create a list
        of name=value pairs from each line which has a 
@@ -184,7 +286,6 @@ PairStruct * text_to_name_value_pairs (const char * text)
          * A value might be a long string containing ;
          * e.g.  methodparams = "aggr=5;ost=3;verbose=1"; method = MPI_AGGREGATE;
          */
-        char * startsearch = item;
         quote1 = strchr (item, '"');
         delim  = strchr (item, ';');
         if (quote1 && delim && delim > quote1) // ; is after opening "
@@ -195,7 +296,6 @@ PairStruct * text_to_name_value_pairs (const char * text)
 
                 if (quote2)
                 {
-                    startsearch = quote2;
                     delim = strchr (quote2, ';');
                 }
                 else
@@ -237,7 +337,7 @@ PairStruct * text_to_name_value_pairs (const char * text)
     return res;
 }
 
-void free_name_value_pairs (PairStruct * pairs)
+void a2s_free_name_value_pairs (PairStruct * pairs)
 {
     PairStruct *p;
     while (pairs) {

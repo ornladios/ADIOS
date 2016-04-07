@@ -27,6 +27,9 @@
 #include "adios.h"
 #include "adios_read.h"
 #include "adios_error.h"
+#include <libgen.h>
+
+#define print 
 
 // Input arguments
 char   infilename[256];    // File/stream to read 
@@ -58,6 +61,22 @@ int         decomp_values[10];
 
 int process_metadata(int step);
 int read_write(int step);
+
+
+static char * print_dimensions (int ndims, uint64_t *values)
+{
+    char * s = calloc (ndims*16, sizeof(char));
+    int i = 0;
+    for (i=0; i < ndims; i++)
+    {
+        if (i==0)
+            sprintf(s, "%" PRIu64, values[i]);
+        else
+            sprintf(s, "%s,%" PRIu64, s, values[i]);
+    }
+    return s;
+}
+
 
 void printUsage(char *prgname)
 {
@@ -183,7 +202,29 @@ int main (int argc, char ** argv)
     print0("Read method parameters  = \"%s\"\n", rmethodparams);
     print0("Write method            = %s\n", wmethodname);
     print0("Write method parameters = \"%s\"\n", wmethodparams);
-    
+
+
+    //we are going to be reading the data from two files level0/infilename and level1/infilename
+    //lets create the two names
+
+    //we need the last component of the path to infilename
+    //and we need the rest of the string
+
+    char *dname, *bname;
+
+    char l0filename[255];
+    char l1filename[255];
+
+    dname = dirname(infilename);
+    bname = basename(infilename);
+
+    //now we snprintf the names
+
+    snprintf(l0filename, 255, "%s/level0/%s", dname, bname);
+    snprintf(l1filename, 255, "%s/level1/%s", dname, bname);
+
+    // free(dname);
+    // free(bname);
 
     err = adios_read_init_method(read_method, comm, rmethodparams);
 
@@ -193,9 +234,12 @@ int main (int argc, char ** argv)
 
     adios_init_noxml(comm);
 
-    print0 ("Waiting to open stream %s...\n", infilename);
-    f = adios_read_open_stream (infilename, read_method, comm, 
+    print0 ("Waiting to open stream %s...\n", l0filename);
+    //we initially only need to open the level 0 file
+    
+    f = adios_read_open_stream (l0filename, read_method, comm, 
                                              ADIOS_LOCKMODE_ALL, timeout_sec);
+
     if (adios_errno == err_file_not_found) 
     {
         print ("rank %d: Stream not found after waiting %d seconds: %s\n", 
@@ -270,11 +314,51 @@ int main (int argc, char ** argv)
 }
 
 
+void print_attr (int rank, ADIOS_FILE *f, int attrid, enum ADIOS_DATATYPES attr_type, int attr_size, void * data)
+{
+    printf ("rank %d: attr: %s %s = ", rank, adios_type_to_string(attr_type), f->attr_namelist [attrid]);
+    int type_size = adios_type_size (attr_type, data);
+    int nelems = attr_size / type_size;
+    int k;
+    char *p = (char*)data;
+    for (k=0; k<nelems; k++) 
+    {
+        if (k>0) printf(", ");
+        switch (attr_type)  
+        {
+            case adios_integer:
+                printf ("%d", *(int *)p);
+                break;
+            case adios_double:
+                printf ("%e", *(double *)p);
+                break;
+            case adios_string:
+                printf ("\"%s\"", (char *)p);
+                break;
+            case adios_string_array:
+                printf ("\"%s\"", *(char **)p);
+                break;
+            default:
+                printf ("??????\n");
+        }
+        p=p+type_size;
+    }
+    printf("\n");
+}
+
 typedef struct {
     ADIOS_VARINFO * v;
     uint64_t        start[10];
     uint64_t        count[10];
     uint64_t        writesize; // size of subset this process writes, 0: do not write
+    uint8_t         split;
+    uint64_t        *gdims;
+    char *s_g;
+    char *s_l;
+    char *s_o;
+    uint64_t        *ldims;
+    uint64_t        *offsets;
+    uint32_t ndim;
 } VarInfo;
 
 VarInfo * varinfo;
@@ -287,6 +371,7 @@ int process_metadata(int step)
     uint64_t sum_count;
     ADIOS_VARINFO *v; // shortcut pointer
     char     ** group_namelist; // name(s) of ADIOS group(s)
+    char *varbasename, *varactualname;
 
 
     if (step > 1)
@@ -308,7 +393,7 @@ int process_metadata(int step)
     varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);
     if (!varinfo) {
         print("ERROR: rank %d cannot allocate %llu bytes\n", 
-                rank, (uint64_t)(sizeof(VarInfo)*f->nvars));
+              rank, (uint64_t)(sizeof(VarInfo)*f->nvars));
         return 1;
     }
 
@@ -327,6 +412,68 @@ int process_metadata(int step)
             return 1;
         }
 
+        //check if this variable has L0 in the name
+        varbasename = basename(f->var_namelist[i]);
+        if(!strcmp(varbasename, "L0"))
+        {
+            varactualname = dirname(f->var_namelist[i]);
+            varinfo[i].split = 1;
+
+            //since variable is split we can get the following attributes
+            int no_of_dims = 0;
+            enum ADIOS_DATATYPES attr_type;
+            void * attr_value;
+            char * attr_value_str;
+            int  attr_size;
+            
+            for(int nattr = 0; nattr < v->nattrs; nattr++)
+            {
+                int aid = v->attr_ids[nattr];
+                //name is now f->attr_namelist[aid]
+                char *attrname =strdup(f->attr_namelist[aid]);
+                char *attrbase = basename(attrname);
+                if(!strcmp(attrbase, "dimensions"))
+                {
+                    //number of dimensions
+                    adios_get_attr_byid(f, aid, &attr_type, &attr_size,
+                                        &attr_value);
+                    // print_attr(0, f, aid, attr_type, attr_size, attr_value);
+                    no_of_dims = *(int*)attr_value;
+                    free(attr_value);                                        
+                }
+                else if(!strcmp(attrbase, "dims"))
+                {
+                    //dimensional string
+                    int nelems;
+                    adios_get_attr_byid(f, aid, &attr_type, &attr_size,
+                                        &attr_value);
+                    nelems = attr_size/adios_type_size(adios_integer, &attr_value);
+                    no_of_dims = nelems/3;
+                    varinfo[i].gdims = (uint32_t*)malloc(sizeof(uint32_t*) * no_of_dims);
+                    varinfo[i].ldims = (uint32_t*)malloc(sizeof(uint32_t*) * no_of_dims);
+                    varinfo[i].offsets = (uint32_t*)malloc(sizeof(uint32_t*) * no_of_dims);
+                    uint32_t *dims = (uint32_t*)attr_value;
+
+                    for(int nx = 0; nx < no_of_dims; nx++)
+                    {
+                        varinfo[i].gdims[nx] = dims[nx];
+                        varinfo[i].ldims[nx] = dims[no_of_dims + nx];
+                        varinfo[i].offsets[nx] = dims[2*no_of_dims + nx];
+                               
+                    }
+
+                    varinfo[i].s_g = print_dimensions(no_of_dims, varinfo[i].gdims);
+                    varinfo[i].s_l = print_dimensions(no_of_dims, varinfo[i].ldims);
+                    varinfo[i].s_o = print_dimensions(no_of_dims, varinfo[i].offsets);
+                    varinfo[i].ndim = no_of_dims;                    
+                    
+                }
+            }
+            
+        }
+        else
+            varinfo[i].split = 0;
+        
         // print variable type and dimensions
         print0("    %-9s  %s", adios_type_to_string(v->type), f->var_namelist[i]);
         if (v->ndim > 0) {
@@ -339,9 +486,22 @@ int process_metadata(int step)
         }
 
         // determine subset we will write
-        decompose (numproc, rank, v->ndim, v->dims, decomp_values,
-                   varinfo[i].count, varinfo[i].start, &sum_count);
-        varinfo[i].writesize = sum_count * adios_type_size(v->type, v->value);
+        // if(varinfo[i].split)
+        // {
+        //     decompose (numproc, rank, varinfo[i].ndim, varinfo[i].ldims,
+        //                decomp_values, varinfo[i].count, varinfo[i].start, &sum_count);
+        //     print0 ("sum count = %d\n", sum_count);
+        //     varinfo[i].writesize = sum_count * adios_type_size(adios_double, v->value);
+        // }
+        // else
+        {
+            decompose (numproc, rank, v->ndim, v->dims, decomp_values,
+                       varinfo[i].count, varinfo[i].start, &sum_count);
+            if(varinfo[i].split)
+                varinfo[i].writesize = sum_count * adios_type_size(adios_double, v->value);
+            else
+                varinfo[i].writesize = sum_count * adios_type_size(v->type, v->value);
+        }
 
         if (varinfo[i].writesize != 0) {
             write_total += varinfo[i].writesize;
@@ -355,7 +515,7 @@ int process_metadata(int step)
     uint64_t bufsize = write_total + f->nvars*128 + f->nattrs*32 + 1024; 
     if (bufsize > max_write_buffer_size) {
         print ("ERROR: rank %d: write buffer size needs to hold about %llu bytes, "
-                "but max is set to %d\n", rank, bufsize, max_write_buffer_size);
+               "but max is set to %d\n", rank, bufsize, max_write_buffer_size);
         return 1;
     }
     print0 ("Rank %d: allocate %llu MB for output buffer\n", rank, bufsize/1048576+1);
@@ -365,7 +525,7 @@ int process_metadata(int step)
     bufsize = largest_block + 128;
     if (bufsize > max_read_buffer_size) {
         print ("ERROR: rank %d: read buffer size needs to hold at least %llu bytes, "
-                "but max is set to %d\n", rank, bufsize, max_read_buffer_size);
+               "but max is set to %d\n", rank, bufsize, max_read_buffer_size);
         return 1;
     }
     print0 ("Rank %d: allocate %g MB for input buffer\n", rank, (double)bufsize/1048576.0);
@@ -384,26 +544,35 @@ int process_metadata(int step)
     for (i=0; i<f->nvars; i++) 
     {
         v = varinfo[i].v;
+        print0 ("write size for i=%d = %d\n", i, varinfo[i].writesize);
         if (varinfo[i].writesize != 0) {
             // define variable for ADIOS writes
             getbasename (f->var_namelist[i], &vpath, &vname);
 
             if (v->ndim > 0) 
             {
-                int64s_to_str (v->ndim, v->dims, gdims);
-                int64s_to_str (v->ndim, varinfo[i].count, ldims);
-                int64s_to_str (v->ndim, varinfo[i].start, offs);
-
-                print ("rank %d: Define variable path=\"%s\" name=\"%s\"  "
-                       "gdims=%s  ldims=%s  offs=%s\n", 
-                       rank, vpath, vname, gdims, ldims, offs);
+                if(varinfo[i].split)
+                {
+                    int64s_to_str (varinfo[i].ndim, varinfo[i].ldims, gdims);
+                    int64s_to_str (varinfo[i].ndim, varinfo[i].count, ldims);
+                    int64s_to_str (varinfo[i].ndim, varinfo[i].start, offs);
+                }
+                else
+                {
+                    int64s_to_str (v->ndim, v->dims, gdims);
+                    int64s_to_str (v->ndim, varinfo[i].count, ldims);
+                    int64s_to_str (v->ndim, varinfo[i].start, offs);
+                }
+                print0 ("rank %d: Define variable path=\"%s\" name=\"%s\"  "
+                        "gdims=%s  ldims=%s  offs=%s\n", 
+                        rank, vpath, vname, gdims, ldims, offs);
 
                 adios_define_var (gh, vname, vpath, v->type, ldims, gdims, offs);
             }
             else 
             {
-                print ("rank %d: Define scalar path=\"%s\" name=\"%s\"\n",
-                       rank, vpath, vname);
+                print0 ("rank %d: Define scalar path=\"%s\" name=\"%s\"\n",
+                        rank, vpath, vname);
 
                 adios_define_var (gh, vname, vpath, v->type, "", "", "");
             }
@@ -427,12 +596,12 @@ int process_metadata(int step)
             if (vpath && !strcmp(vpath,"/__adios__")) { 
                 // skip on /__adios/... attributes 
                 print ("rank %d: Ignore this attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
-                        rank, vpath, vname, attr_value_str);
+                       rank, vpath, vname, attr_value_str);
             } else {
                 adios_define_attribute (gh, vname, vpath,
-                        attr_type, attr_value_str, "");
+                                        attr_type, attr_value_str, "");
                 print ("rank %d: Define attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
-                        rank, vpath, vname, attr_value_str);
+                       rank, vpath, vname, attr_value_str);
                 free (attr_value);
             }
         }
@@ -440,6 +609,8 @@ int process_metadata(int step)
 
     return retval;
 }
+
+
 
 int read_write(int step)
 {
@@ -473,6 +644,5 @@ int read_write(int step)
     adios_close (fh); // write out output buffer to file
     return retval;
 }
-
 
 

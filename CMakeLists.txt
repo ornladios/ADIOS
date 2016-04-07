@@ -1837,9 +1837,18 @@ install(PROGRAMS ${CMAKE_BINARY_DIR}/adios_config DESTINATION ${bindir})
 install(FILES ${PROJECT_SOURCE_DIR}/scripts/FindADIOS.cmake DESTINATION ${sysconfdir}) 
 #install(FILES ${PROJECT_SOURCE_DIR}/adios_git_status DESTINATION ${sysconfdir})
 
-add_subdirectory(utils)
-add_subdirectory(tests)
-add_subdirectory(examples)
+if(NOT DEFINED ENV{ADIOS_SKIP_UTILS})
+  add_subdirectory(utils)
+endif()
+
+if(NOT DEFINED ENV{ADIOS_SKIP_TESTS})
+  add_subdirectory(tests)
+endif()
+
+if(NOT DEFINED ENV{ADIOS_SKIP_EXAMPLES})
+  add_subdirectory(examples)
+endif()
+
 ############################### end of top CMakeLists.txt ###############################
 
 message("*********************************")
