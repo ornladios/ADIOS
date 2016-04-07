@@ -44,7 +44,7 @@ if rank == 0:
     f = ad.file("adios_test_mpi.bp", comm=MPI.COMM_SELF)
     f.printself()
 
-    v = f.var['temperature']
+    v = f.vars['temperature']
     v.printself()
 
     val = v.read()

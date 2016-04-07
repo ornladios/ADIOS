@@ -53,6 +53,6 @@
   <!--transport group="writer2D" method="DIMES">verbose=3</transport-->
   <!--transport group="writer2D" method="FLEXPATH">QUEUE_SIZE=10;verbose=3</transport-->
 
-  <buffer size-MB="40" allocate-time="now"/>
+  <buffer max-size-MB="40"/>
 
 </adios-config>

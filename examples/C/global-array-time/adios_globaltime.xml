@@ -24,7 +24,7 @@
       method=POSIX;         parameters="";                            path=level1;
   </method>
 
-  <buffer max-size-MB="0"/>
+  <buffer max-size-MB="1"/>
 
 </adios-config>
 

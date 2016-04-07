@@ -1060,7 +1060,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
             if (type == adios_string_array) {
                 // need to copy strings from a char** array
                 int total_length;
-                attr->value = dup_string_array ((char**)values, nelems, &total_length);
+                attr->value = a2s_dup_string_array ((char**)values, nelems, &total_length);
                 if (!attr->value) {
                     adios_error (err_no_memory, 
                             "Not enough memory to copy string array attribute %s/%s\n", 
@@ -1494,7 +1494,7 @@ int adios_common_delete_attrdefs (struct adios_group_struct * g)
         struct adios_attribute_struct * attr = g->attributes;
         g->attributes = g->attributes->next;
         if (attr->type == adios_string_array)
-            free_string_array (attr->value, attr->nelems);
+            a2s_free_string_array (attr->value, attr->nelems);
         else
             free (attr->value);
         free (attr->name);
@@ -1622,61 +1622,7 @@ int adios_common_free_group (int64_t id)
     return 0;
 }
 
-static void tokenize_dimensions (const char * str, char *** tokens, int * count)
-{
-    if (!str)
-    {
-        *tokens = 0;
-        *count = 0;
 
-        return;
-    }
-
-    char * save_str = strdup (str);
-    char * t = save_str;
-    int i;
-
-    trim_spaces (save_str);
-
-    if (strlen (save_str) > 0)
-        *count = 1;
-    else
-    {
-        *tokens = 0;
-        *count = 0;
-        free (save_str);
-
-        return;
-    }
-
-    while (*t)
-    {
-        if (*t == ',')
-            (*count)++;
-        t++;
-    }
-
-    *tokens = (char **) malloc (sizeof (char **) * *count);
-    (*tokens) [0] = strdup (strtok (save_str, ","));
-    for (i = 1; i < *count; i++)
-    {
-        (*tokens) [i] = strdup (strtok (NULL, ","));
-    }
-
-    free (save_str);
-}
-
-static void cleanup_dimensions (char *** tokens, int * count)
-{
-    int i;
-    for (i = 0; i < *count; i++)
-    {
-        free ((*tokens) [i]);
-    }
-    free (*tokens);
-    *tokens = 0;
-    *count = 0;
-}
 
 int adios_common_define_var_characteristics (struct adios_group_struct * g
         , const char * var_name
@@ -1720,7 +1666,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
             int count;
             char ** bin_tokens = 0;
 
-            tokenize_dimensions (bin_intervals, &bin_tokens, &count);
+            a2s_tokenize_dimensions (bin_intervals, &bin_tokens, &count);
 
             if (!count)
             {
@@ -1760,6 +1706,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
                 hist->max = hist->min;
 
             var->bitmap = var->bitmap | (1 << adios_statistic_hist);
+            a2s_cleanup_dimensions (bin_tokens, count);
         }
         else
         {
@@ -1927,9 +1874,9 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
 
         int i = 0;
 
-        tokenize_dimensions (dim_temp, &dim_tokens, &dim_count);
-        tokenize_dimensions (g_dim_temp, &g_dim_tokens, &g_dim_count);
-        tokenize_dimensions (lo_dim_temp, &lo_dim_tokens, &lo_dim_count);
+        a2s_tokenize_dimensions (dim_temp, &dim_tokens, &dim_count);
+        a2s_tokenize_dimensions (g_dim_temp, &g_dim_tokens, &g_dim_count);
+        a2s_tokenize_dimensions (lo_dim_temp, &lo_dim_tokens, &lo_dim_count);
 
         while (i < dim_count)
         {
@@ -1964,9 +1911,9 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
                 free (v->name);
                 free (v->path);
                 free (v);
-                cleanup_dimensions (&dim_tokens, &dim_count);
-                cleanup_dimensions (&g_dim_tokens, &g_dim_count);
-                cleanup_dimensions (&lo_dim_tokens, &lo_dim_count);
+                a2s_cleanup_dimensions (dim_tokens, dim_count);
+                a2s_cleanup_dimensions (g_dim_tokens, g_dim_count);
+                a2s_cleanup_dimensions (lo_dim_tokens, lo_dim_count);
 
                 return 0;
             }
@@ -1975,9 +1922,9 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
 
             i++;
         }
-        cleanup_dimensions (&dim_tokens, &dim_count);
-        cleanup_dimensions (&g_dim_tokens, &g_dim_count);
-        cleanup_dimensions (&lo_dim_tokens, &lo_dim_count);
+        a2s_cleanup_dimensions (dim_tokens, dim_count);
+        a2s_cleanup_dimensions (g_dim_tokens, g_dim_count);
+        a2s_cleanup_dimensions (lo_dim_tokens, lo_dim_count);
     }
 
     if (dim_temp)
@@ -5095,7 +5042,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
     int32_t map[32];
     memset (map, -1, sizeof(map));
 
-#if 1
+
 #define HIST(a) \
     { \
         int low, high, mid; \
@@ -5122,10 +5069,13 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             hist->frequencies[low + 1] += 1; \
         } \
     }
-#endif
 
-#if 1
-#define ADIOS_STATISTICS(a,b) \
+
+
+# define CHECK_FLOAT() (isnan (data [size]) || !isfinite (data [size]))
+# define CHECK_INT() (0)
+
+#define ADIOS_STATISTICS(a,b,NON_FINITE_CHECK) \
 {\
     a * data = (a *) var->data; \
     int i, j; \
@@ -5156,15 +5106,15 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             hist = (struct adios_hist_struct *) stats[map[adios_statistic_hist]].data; \
             hist->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, "")); \
         } \
-        int finite = 0; \
+        int have_finite_value = 0; \
         size = 0; \
         while ((size * b) < total_size) \
         { \
-            if (isnan (data [size]) || !isfinite (data [size])) {\
+            if (NON_FINITE_CHECK()) {\
                 size ++; \
                 continue; \
             }\
-            if (!finite) { \
+            if (!have_finite_value) { \
                 *min = data [size]; \
                 *max = data [size]; \
                 *sum = data [size]; \
@@ -5172,7 +5122,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
                 *cnt = *cnt + 1; \
                 if (map[adios_statistic_hist] != -1) \
                 HIST(data [size]); \
-                finite = 1; \
+                have_finite_value = 1; \
                 size ++; \
                 continue; \
             } \
@@ -5188,10 +5138,10 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             size++; \
         } \
         if (map[adios_statistic_finite] != -1) \
-        * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = finite; \
+        * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = have_finite_value; \
         return 0; \
     }
-#else
+
 #define MIN_MAX(a,b)\
     {\
         a * data = (a *) var->data; \
@@ -5203,42 +5153,42 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
         *max = data [0]; \
         return 0; \
     }
-#endif
+
 
     switch (original_var_type)
     {
         case adios_byte:
-            ADIOS_STATISTICS(int8_t,1)
+            ADIOS_STATISTICS(int8_t,1,CHECK_INT)
 
         case adios_unsigned_byte:
-                ADIOS_STATISTICS(uint8_t,1)
+            ADIOS_STATISTICS(uint8_t,1,CHECK_INT)
 
         case adios_short:
-                    ADIOS_STATISTICS(int16_t,2)
+            ADIOS_STATISTICS(int16_t,2,CHECK_INT)
 
         case adios_unsigned_short:
-                        ADIOS_STATISTICS(uint16_t,2)
+            ADIOS_STATISTICS(uint16_t,2,CHECK_INT)
 
         case adios_integer:
-                            ADIOS_STATISTICS(int32_t,4)
+            ADIOS_STATISTICS(int32_t,4,CHECK_INT)
 
         case adios_unsigned_integer:
-                                ADIOS_STATISTICS(uint32_t,4)
+            ADIOS_STATISTICS(uint32_t,4,CHECK_INT)
 
         case adios_long:
-                                    ADIOS_STATISTICS(int64_t,8)
+            ADIOS_STATISTICS(int64_t,8,CHECK_INT)
 
         case adios_unsigned_long:
-                                        ADIOS_STATISTICS(uint64_t,8)
+            ADIOS_STATISTICS(uint64_t,8,CHECK_INT)
 
         case adios_real:
-                                            ADIOS_STATISTICS(float,4)
+            ADIOS_STATISTICS(float,4,CHECK_FLOAT)
 
         case adios_double:
-                                                ADIOS_STATISTICS(double,8)
+            ADIOS_STATISTICS(double,8,CHECK_FLOAT)
 
         case adios_long_double:
-                                                    ADIOS_STATISTICS(long double,16)
+            ADIOS_STATISTICS(long double,16,CHECK_FLOAT)
 
         case adios_complex:
         {

@@ -56,7 +56,7 @@ int main (int argc, char ** argv)
 	strcpy (filename, "global_array_byid_noxml_C.bp");
 
 	adios_init_noxml (comm);
-        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
+        adios_set_max_buffer_size (10);
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;

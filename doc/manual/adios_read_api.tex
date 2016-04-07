@@ -260,7 +260,7 @@ application writes different variables at different times.
 \item{\bf comm}    The MPI communicator of all processes that want to read data from the stream.
 If compiled with -D\_NOMPI, pass any integer here.
 \item{\bf lock\_mode} In case of real streams, a step may need to be locked in memory to be able
-to read all data of the step completely.
+to read all data of the step completely. Available options include ADIOS\_LOCKMODE\_NONE, ADIOS\_LOCKMODE\_CURRENT, and ADIOS\_LOCKMODE\_ALL.
 \item{\bf timeout\_sec}  $>=0.0$: block until the stream becomes available but 
 for max 'timeout\_sec' seconds.\\
 $0.0$: return immediately if stream is not available\\

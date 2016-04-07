@@ -29,7 +29,7 @@ cat << EOF > config.xml
 
 <method group="temperature" method="MPI">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0</method>
 
-<buffer size-MB="2" allocate-time="now"/>
+<buffer max-size-MB="2"/>
 
 </adios-config>
 EOF

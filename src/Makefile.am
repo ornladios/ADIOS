@@ -718,7 +718,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_socket.h core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/adios_infocache.h core/futils.h core/globals.h core/ds_metadata.h \
-             core/types.h core/util.h core/strutil.c core/flexpath.h core/qhashtbl.h \
+             core/types.h core/util.h core/strutil.h core/flexpath.h core/qhashtbl.h \
 	     public/adios_version.h.in \
              $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
              $(query_common_HDRS) $(query_method_HDRS) \

@@ -2130,7 +2130,7 @@ int adios_clear_attribute_v1 (struct adios_attribute_struct_v1 * attribute)
     if (attribute->value)
     {
         if (attribute->type == adios_string_array)
-            free_string_array (attribute->value, attribute->nelems);
+            a2s_free_string_array (attribute->value, attribute->nelems);
         else
             free (attribute->value);
         attribute->value = 0;

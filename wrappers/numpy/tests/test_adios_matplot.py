@@ -34,7 +34,7 @@ print "\n>>> Reading ...\n"
 f = ad.file("adios_test.bp")
 f.printself()
 
-v = f.var['temperature']
+v = f.vars['temperature']
 v.printself()
 
 val = v.read()
@@ -53,4 +53,3 @@ plt.colorbar()
 plt.show()
 
 print "\n>>> Done.\n"
-

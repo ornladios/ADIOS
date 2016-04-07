@@ -10,7 +10,7 @@
 
 <method group="arrays"  method="FLEXPATH">QUEUE_SIZE=10;</method>
 
-<buffer size-MB="20" allocate-time="now"/>
+<buffer max-size-MB="20"/>
 
 </adios-config>
 

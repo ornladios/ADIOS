@@ -2158,7 +2158,7 @@ int bp_get_dimension_characteristics(struct adios_index_characteristic_struct_v1
    ldims/gdims/offsets with 'time' extracted. */
 int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dims_struct_v1 *dims,
         uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
-        int file_is_fortran)
+        int file_is_fortran, int * has_oldschool_time_index)
 {
     int is_global = 0, dummy = 0, has_time = 0;
     int k;
@@ -2276,7 +2276,7 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
             }
         }
     }
-
+    *has_oldschool_time_index = has_time;
     return is_global;
 }
 
@@ -2290,8 +2290,8 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
     //int is_transformed = (ch->transform.transform_type != adios_transform_none);
     //const struct adios_index_characteristic_dims_struct_v1 *dims =
     //    is_transformed ? &ch->transform.pre_transform_dimensions : &ch->dims;
-
-    return bp_get_dimension_generic_notime(&ch->dims, ldims, gdims, offsets, file_is_fortran); // dims
+    int has_time;
+    return bp_get_dimension_generic_notime(&ch->dims, ldims, gdims, offsets, file_is_fortran, &has_time); // dims
 }
 
 

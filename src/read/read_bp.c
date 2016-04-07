@@ -242,14 +242,14 @@ static void release_step (ADIOS_FILE *fp)
 
     if (fp->var_namelist)
     {
-        free_namelist (fp->var_namelist, fp->nvars);
+        a2s_free_namelist (fp->var_namelist, fp->nvars);
         fp->var_namelist = 0;
         fp->nvars = 0;
     }
 
     if (fp->attr_namelist)
     {
-        free_namelist (fp->attr_namelist, fp->nattrs);
+        a2s_free_namelist (fp->attr_namelist, fp->nattrs);
         fp->attr_namelist = 0;
         fp->nattrs = 0;
     }
@@ -1390,13 +1390,13 @@ int adios_read_bp_close (ADIOS_FILE * fp)
 
     if (fp->var_namelist)
     {
-        free_namelist (fp->var_namelist, fp->nvars);
+        a2s_free_namelist (fp->var_namelist, fp->nvars);
         fp->var_namelist = 0;
     }
 
     if (fp->attr_namelist)
     {
-        free_namelist (fp->attr_namelist, fp->nattrs);
+        a2s_free_namelist (fp->attr_namelist, fp->nattrs);
         fp->attr_namelist = 0;
     }
 
@@ -2406,6 +2406,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     for (i = 0; i < nblks; i++)
     {
         int k; /* to save i or j for the process_id determination step below */
+        int has_oldschool_time_index = 0; // old BP file with time encoded as dimension
         blockinfo[i].start = (uint64_t *) malloc (dimcount * 8);
         blockinfo[i].count = (uint64_t *) malloc (dimcount * 8);
         assert (blockinfo[i].start && blockinfo[i].count);
@@ -2422,7 +2423,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
             				&blk_characteristic->transform.pre_transform_dimensions :
             				&blk_characteristic->dims;
 
-            bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran);
+            bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran, &has_oldschool_time_index);
             k = i;
         }
         else
@@ -2444,7 +2445,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
                 				&blk_characteristic->transform.pre_transform_dimensions :
                 				&blk_characteristic->dims;
 
-                bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran);
+                bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran, &has_oldschool_time_index);
                 k = j;
                 j++;
             }
@@ -2456,7 +2457,8 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
         // NCSU ALACRITY-ADIOS - If a time dimension was removed above, update
         // dimcount so that dimension copy/swapping works below
-        if (dimcount > 0 && ldims[dimcount-1] == 0 && gdims[dimcount-1] != 0)
+        //if (dimcount > 0 && ldims[dimcount-1] == 0 && gdims[dimcount-1] != 0)
+        if (has_oldschool_time_index && dimcount > 0)
             dimcount--;
 
         /*Fix: the function above swaps the dimensions to C order in any case. 
@@ -2498,7 +2500,10 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
            incrementally in subfiles according to process_ids.
            This is true so far by all writing methods.
         */
-        current_process_id = pgs->process_id;
+        if (pgs)
+            current_process_id = pgs->process_id;
+            // if pgs==NULL, keep the current process id from the last PG
+
         while (pgs != NULL) {
             if ((int64_t)pgs->offset_in_file <= current_offset) {
                 deduced_file_index++;

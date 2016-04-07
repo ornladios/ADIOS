@@ -167,7 +167,7 @@ int main (int argc, char ** argv)
 
     alloc_vars();
     adios_init_noxml (comm);
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 100);
+    adios_set_max_buffer_size (100);
     err = adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=2");
     if (err) {
         printE ("%s\n", adios_errmsg());

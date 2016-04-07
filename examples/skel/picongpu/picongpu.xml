@@ -29,6 +29,6 @@
 
     <method group="fields" method="MPI" />
 
-    <buffer size-MB="32" allocate-time="now"/>
+    <buffer max-size-MB="32"/>
 
 </adios-config>

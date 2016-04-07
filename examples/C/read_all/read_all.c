@@ -136,8 +136,18 @@ int main (int argc, char ** argv)
             int  asize;
             void *adata;
             adios_get_attr_byid (f, i, &atype, &asize, &adata);
-            printf("    %-9s  %s = %s\n", adios_type_to_string(atype), 
-                    f->attr_namelist[i], value_to_string(atype, adata, 0));
+            int type_size = adios_type_size (atype, adata);
+            int nelems = asize / type_size;
+            printf("    %-9s  %s = ", adios_type_to_string(atype), f->attr_namelist[i]);
+            char *p = (char*)adata;
+            if (nelems>1) printf("{");
+            for (j=0; j<nelems; j++) {
+                if (j>0) printf(", ");
+                printf ("%s", value_to_string(atype, p, 0));
+                p += type_size;
+            }
+            if (nelems>1) printf("}");
+            printf("\n");
             free(adata);
         } /* attributes */
 

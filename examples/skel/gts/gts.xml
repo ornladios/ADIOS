@@ -78,5 +78,5 @@
 
 <!-- method priority="3" method="MPI_AMR" iterations="100" group="restart"/ -->
 <method priority="3" method="POSIX" group="restart"/>
-<buffer size-MB="256" allocate-time="now" />
+<buffer max-size-MB="256" />
 </adios-config>

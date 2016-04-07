@@ -9,7 +9,7 @@ include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/tests/test_src)
 
 
-set(C_PROGS_READONLY hashtest copy_subvolume)
+set(C_PROGS_READONLY hashtest copy_subvolume text_to_pairstruct test_strutil)
 
 if(BUILD_WRITE)
     set(C_PROGS_WRITE transforms_specparse group_free_test)

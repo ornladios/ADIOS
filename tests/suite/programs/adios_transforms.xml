@@ -20,7 +20,7 @@
 
 <method group="transform" method="MPI"/>
 
-<buffer size-MB="5" allocate-time="now"/>
+<buffer max-size-MB="5"/>
 
 </adios-config>
 
