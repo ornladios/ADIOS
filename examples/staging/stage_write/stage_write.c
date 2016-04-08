@@ -28,6 +28,7 @@
 #include "adios_read.h"
 #include "adios_error.h"
 #include <libgen.h>
+#include "split-interface.h"
 
 #define print 
 
@@ -43,7 +44,7 @@ enum ADIOS_READ_METHOD read_method;
 static const int max_read_buffer_size  = 1024*1024*1024;
 static const int max_write_buffer_size = 1024*1024*1024;
 
-static int timeout_sec = 300; // will stop if no data found for this time (-1: never stop)
+static int timeout_sec = 1; // will stop if no data found for this time (-1: never stop)
 
 
 // Global variables
@@ -226,18 +227,19 @@ int main (int argc, char ** argv)
     // free(dname);
     // free(bname);
 
-    err = adios_read_init_method(read_method, comm, rmethodparams);
+    err = adios_read_init_method(read_method, MPI_COMM_SELF, rmethodparams);
 
     if (!err) {
         print0 ("%s\n", adios_errmsg());
     }
 
-    adios_init_noxml(comm);
+    adios_init_noxml(MPI_COMM_SELF);
+    initialize_splitter();
 
     print0 ("Waiting to open stream %s...\n", l0filename);
     //we initially only need to open the level 0 file
     
-    f = adios_read_open_stream (l0filename, read_method, comm, 
+    f = adios_read_open_stream (l0filename, read_method, MPI_COMM_SELF, 
                                              ADIOS_LOCKMODE_ALL, timeout_sec);
 
     if (adios_errno == err_file_not_found) 
@@ -353,12 +355,17 @@ typedef struct {
     uint64_t        writesize; // size of subset this process writes, 0: do not write
     uint8_t         split;
     uint64_t        *gdims;
+    int readbytes;
+    char *vname;
+    int splittype;
     char *s_g;
     char *s_l;
     char *s_o;
     uint64_t        *ldims;
     uint64_t        *offsets;
     uint32_t ndim;
+    uint64_t nelems;
+    void *splitter;
 } VarInfo;
 
 VarInfo * varinfo;
@@ -417,6 +424,7 @@ int process_metadata(int step)
         if(!strcmp(varbasename, "L0"))
         {
             varactualname = dirname(f->var_namelist[i]);
+            varinfo[i].vname = varactualname;
             varinfo[i].split = 1;
 
             //since variable is split we can get the following attributes
@@ -425,6 +433,7 @@ int process_metadata(int step)
             void * attr_value;
             char * attr_value_str;
             int  attr_size;
+            int splittype;
             
             for(int nattr = 0; nattr < v->nattrs; nattr++)
             {
@@ -447,12 +456,12 @@ int process_metadata(int step)
                     int nelems;
                     adios_get_attr_byid(f, aid, &attr_type, &attr_size,
                                         &attr_value);
-                    nelems = attr_size/adios_type_size(adios_integer, &attr_value);
+                    nelems = attr_size/adios_type_size(adios_long, &attr_value);
                     no_of_dims = nelems/3;
-                    varinfo[i].gdims = (uint32_t*)malloc(sizeof(uint32_t*) * no_of_dims);
-                    varinfo[i].ldims = (uint32_t*)malloc(sizeof(uint32_t*) * no_of_dims);
-                    varinfo[i].offsets = (uint32_t*)malloc(sizeof(uint32_t*) * no_of_dims);
-                    uint32_t *dims = (uint32_t*)attr_value;
+                    varinfo[i].gdims = (uint64_t*)malloc(sizeof(uint64_t*) * no_of_dims);
+                    varinfo[i].ldims = (uint64_t*)malloc(sizeof(uint64_t*) * no_of_dims);
+                    varinfo[i].offsets = (uint64_t*)malloc(sizeof(uint64_t*) * no_of_dims);
+                    uint64_t *dims = (uint64_t*)attr_value;
 
                     for(int nx = 0; nx < no_of_dims; nx++)
                     {
@@ -465,8 +474,15 @@ int process_metadata(int step)
                     varinfo[i].s_g = print_dimensions(no_of_dims, varinfo[i].gdims);
                     varinfo[i].s_l = print_dimensions(no_of_dims, varinfo[i].ldims);
                     varinfo[i].s_o = print_dimensions(no_of_dims, varinfo[i].offsets);
-                    varinfo[i].ndim = no_of_dims;                    
+                    varinfo[i].ndim = no_of_dims;
+                    varinfo[i].readbytes = (int)varinfo[i].v->dims[0];
                     
+                }
+                else if(!strcmp(attrbase, "splittype"))
+                {
+                    adios_get_attr_byid(f, aid, &attr_type, &attr_size, &attr_value);
+                    varinfo[i].splittype = *(int*)attr_value;
+                    print0 ("splitter type = %d\n", varinfo[i].splittype);
                 }
             }
             
@@ -495,13 +511,24 @@ int process_metadata(int step)
         // }
         // else
         {
-            decompose (numproc, rank, v->ndim, v->dims, decomp_values,
-                       varinfo[i].count, varinfo[i].start, &sum_count);
             if(varinfo[i].split)
+            {
+                decompose (numproc, rank, varinfo[i].ndim, varinfo[i].ldims, decomp_values,
+                           varinfo[i].count, varinfo[i].start, &sum_count);
+
                 varinfo[i].writesize = sum_count * adios_type_size(adios_double, v->value);
+                varinfo[i].nelems = sum_count;
+            }
             else
+            {
+                decompose (numproc, rank, v->ndim, v->dims, decomp_values,
+                           varinfo[i].count, varinfo[i].start, &sum_count);
+
                 varinfo[i].writesize = sum_count * adios_type_size(v->type, v->value);
+            }
         }
+
+        
 
         if (varinfo[i].writesize != 0) {
             write_total += varinfo[i].writesize;
@@ -509,6 +536,7 @@ int process_metadata(int step)
                 largest_block = varinfo[i].writesize; 
         }
 
+        print0 ("writesize for var at %d = %d\n", i, varinfo[i].writesize);
     }
 
     // determine output buffer size and allocate it
@@ -529,7 +557,7 @@ int process_metadata(int step)
         return 1;
     }
     print0 ("Rank %d: allocate %g MB for input buffer\n", rank, (double)bufsize/1048576.0);
-    readbuf = (char *) malloc ((size_t)bufsize);
+    readbuf = (char *) malloc ((size_t)bufsize*10);
     if (!readbuf) {
         print ("ERROR: rank %d: cannot allocate %llu bytes for read buffer\n",
                rank, bufsize);
@@ -553,21 +581,30 @@ int process_metadata(int step)
             {
                 if(varinfo[i].split)
                 {
-                    int64s_to_str (varinfo[i].ndim, varinfo[i].ldims, gdims);
-                    int64s_to_str (varinfo[i].ndim, varinfo[i].count, ldims);
-                    int64s_to_str (varinfo[i].ndim, varinfo[i].start, offs);
+                    // int64s_to_str (varinfo[i].ndim, varinfo[i].ldims, gdims);
+                    // int64s_to_str (varinfo[i].ndim, varinfo[i].count, ldims);
+                    // int64s_to_str (varinfo[i].ndim, varinfo[i].start, offs);
+                    print0 ("rank %d: Define variable path=\"%s\" name=\"%s\"  "
+                            "gdims=%s  ldims=%s  offs=%s\n", 
+                            rank, vpath, varinfo[i].vname,
+                            varinfo[i].s_g,
+                            varinfo[i].s_l,
+                            varinfo[i].s_o);
+                    adios_define_var(gh, varinfo[i].vname, vpath,
+                                     adios_double, varinfo[i].s_l,
+                                     varinfo[i].s_g, varinfo[i].s_o);
                 }
                 else
                 {
                     int64s_to_str (v->ndim, v->dims, gdims);
                     int64s_to_str (v->ndim, varinfo[i].count, ldims);
                     int64s_to_str (v->ndim, varinfo[i].start, offs);
-                }
-                print0 ("rank %d: Define variable path=\"%s\" name=\"%s\"  "
-                        "gdims=%s  ldims=%s  offs=%s\n", 
-                        rank, vpath, vname, gdims, ldims, offs);
+                    print0 ("rank %d: Define variable path=\"%s\" name=\"%s\"  "
+                            "gdims=%s  ldims=%s  offs=%s\n", 
+                            rank, vpath, vname, gdims, ldims, offs);
 
-                adios_define_var (gh, vname, vpath, v->type, ldims, gdims, offs);
+                    adios_define_var (gh, vname, vpath, v->type, ldims, gdims, offs);
+                }
             }
             else 
             {
@@ -619,24 +656,51 @@ int read_write(int step)
     uint64_t total_size;
 
     // open output file
-    adios_open (&fh, group_name, outfilename, (step==1 ? "w" : "a"), comm);
+    adios_open (&fh, group_name, outfilename, (step==1 ? "w" : "a"), MPI_COMM_SELF);
     adios_group_size (fh, write_total, &total_size);
     
     for (i=0; i<f->nvars; i++) 
     {
         if (varinfo[i].writesize != 0) {
             // read variable subset
-            print ("rank %d: Read variable %d: %s\n", rank, i, f->var_namelist[i]); 
-            ADIOS_SELECTION *sel = adios_selection_boundingbox (varinfo[i].v->ndim,
-                    varinfo[i].start, 
-                    varinfo[i].count);
-            adios_schedule_read_byid (f, sel, i, 0, 1, readbuf);
-            adios_perform_reads (f, 1);   
+            print ("rank %d: Read variable %d: %s\n", rank, i, f->var_namelist[i]);
+            if(varinfo[i].split == 1)
+            {
+                uint64_t s[1], c[1];
+                s[0] = 0;
+                c[0] = varinfo[i].readbytes;
+                
+                ADIOS_SELECTION *sel = adios_selection_boundingbox (1,
+                                                                    s, c);
+                adios_schedule_read_byid (f, sel, i, 0, 1, readbuf);
+                adios_perform_reads (f, 1);
 
+                //now we can make create a splitter
+                varinfo[i].splitter = initialize_splitter_from_type(varinfo[i].vname,
+                                                                    varinfo[i].splittype,
+                                                                    varinfo[i].nelems);
+                double *d = unsplit_top(varinfo[i].splitter,
+                                        readbuf,
+                                        varinfo[i].readbytes);
 
-            // write (buffer) variable
-            print ("rank %d: Write variable %d: %s\n", rank, i, f->var_namelist[i]); 
-            adios_write(fh, f->var_namelist[i], readbuf);
+                // write (buffer) variable
+                print ("rank %d: Write variable %d: %s\n", rank, i, f->var_namelist[i]); 
+                adios_write(fh, f->var_namelist[i], (void*)d);
+                
+            }
+            else
+            {
+                
+                ADIOS_SELECTION *sel = adios_selection_boundingbox (varinfo[i].v->ndim,
+                                                                    varinfo[i].start, 
+                                                                    varinfo[i].count);
+                adios_schedule_read_byid (f, sel, i, 0, 1, readbuf);
+                adios_perform_reads (f, 1);   
+                // write (buffer) variable
+                print ("rank %d: Write variable %d: %s\n", rank, i, f->var_namelist[i]); 
+                adios_write(fh, f->var_namelist[i], readbuf);
+
+            }
         }
     }
 

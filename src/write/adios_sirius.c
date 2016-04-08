@@ -90,7 +90,7 @@ static int declare_group (int64_t * id, const char * name
     )
 {
     int ret;
-    ret = adios_common_declare_group (id, name, adios_flag_yes
+    ret = adios_common_declare_group (id, name, adios_flag_no
                                       ,""
                                       ,""
                                       ,time_index
@@ -235,6 +235,7 @@ void adios_sirius_init(const PairStruct * parameters,
     else
         no_thread = 0;
 
+    initialize_splitter();
     init_output_parameters(parameters);
 }
 
@@ -513,7 +514,7 @@ void adios_sirius_write (struct adios_file_struct * fd
                 {
                     //we can split this
                     //initialize the splitter
-                    splithandle = initialize_splitter(v->name, splitter_type, nelems);
+                    splithandle = initialize_splitter_from_name(v->name, splitter_type, nelems);
                     //now feed the data into the splitter
                     split_doubles(data, splithandle);
                     //now data has been split
@@ -546,7 +547,7 @@ void adios_sirius_write (struct adios_file_struct * fd
                 adios_common_define_attribute_byvalue (md->level[l].grp, "splittype", var->name,
                                                        adios_integer, 1,
                                                        &splitter_type_int);
-                adios_common_define_attribute_byvalue (md->level[l].grp, "dims", var->name, adios_integer, (ndims*3),
+                adios_common_define_attribute_byvalue (md->level[l].grp, "dims", var->name, adios_long, (ndims*3),
                                                        alldims);
                                                        
                                                        
@@ -560,7 +561,8 @@ void adios_sirius_write (struct adios_file_struct * fd
             
                     /* FIXME: decompose here the data into multiple levels */
                     // right now just write everything at every level
-                    gdims[0] = ldims[0] = offsets[0] = var->size;
+                    gdims[0] = ldims[0] = var->size;
+                    offsets[0] = 0;
                     var->global_dimensions = print_dimensions (1, gdims);
                     var->local_dimensions  = print_dimensions (1, ldims);
                     var->local_offsets     = print_dimensions (1, offsets);
@@ -579,7 +581,8 @@ void adios_sirius_write (struct adios_file_struct * fd
                     var->data = get_split_bot(splithandle, nelems, &var->size);
 
                     //we write out the bottom
-                    gdims[0] = ldims[0] = offsets[0] = var->size;
+                    gdims[0] = ldims[0] = var->size;
+                    offsets[0] = 0;
                     var->global_dimensions = print_dimensions (1, gdims);
                     var->local_dimensions  = print_dimensions (1, ldims);
                     var->local_offsets     = print_dimensions (1, offsets);
