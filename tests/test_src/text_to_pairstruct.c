@@ -72,7 +72,7 @@ int dotest (const char * text, PairStruct *p)
 {
     int nerrors = 0;
     printf("text=[%s]\n", text);
-    PairStruct *q = text_to_name_value_pairs(text);
+    PairStruct *q = a2s_text_to_name_value_pairs(text);
 
     /* Get each element and check value */
     PairStruct *p1 = p;

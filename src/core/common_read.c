@@ -102,7 +102,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     }
 
     // process common parameters here
-    params = text_to_name_value_pairs (parameters);
+    params = a2s_text_to_name_value_pairs (parameters);
     p = params;
     prev_p = NULL;
     while (p) {
@@ -148,13 +148,13 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
                 // remove head
                 p = p->next;
                 params->next = NULL;
-                free_name_value_pairs (params);
+                a2s_free_name_value_pairs (params);
                 params = p;
             } else {
                 // remove from middle of the list
                 prev_p->next = p->next;
                 p->next = NULL;
-                free_name_value_pairs (p);
+                a2s_free_name_value_pairs (p);
                 p = prev_p->next;
             }
         } else {
@@ -165,7 +165,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
 
     // call method specific init 
     retval = adios_read_hooks[method].adios_read_init_method_fn (comm, params);
-    free_name_value_pairs (params);
+    a2s_free_name_value_pairs (params);
 
     // init the query API; may call it multiple times here in multiple read methods' init;
     common_query_init(); 
@@ -294,12 +294,14 @@ static ADIOS_FILE * common_read_mesh (ADIOS_FILE * fp)
                     if (fp->nmeshes > 0)
                     {
                         char * meshname = NULL;
+                        meshname = (char *) malloc (sizeof(char*) * (size_t)(p-s)+1);
                         memcpy ( meshname, s, (size_t)(p-s) );
                         for (imesh=0; imesh<fp->nmeshes; imesh++)
                         {
                             if (!strcmp (meshname, tmp[imesh]))
                                 samemesh = 1;
                         }
+                        free (meshname);
                     }
                     if (!fp->nmeshes || !samemesh)
                     {
@@ -547,7 +549,7 @@ int common_read_close (ADIOS_FILE *fp)
         }
                 
         retval = internals->read_hooks[internals->method].adios_read_close_fn (fp);
-        free_namelist (internals->group_namelist, internals->ngroups);
+        a2s_free_namelist (internals->group_namelist, internals->ngroups);
         free (internals->nvars_per_group);
         free (internals->nattrs_per_group);
 
@@ -645,7 +647,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
                 adios_infocache_invalidate(internals->infocache);
 
                 /* Update group information too */
-                free_namelist (internals->group_namelist, internals->ngroups);
+                a2s_free_namelist (internals->group_namelist, internals->ngroups);
                 free (internals->nvars_per_group);
                 free (internals->nattrs_per_group);
                 adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups,

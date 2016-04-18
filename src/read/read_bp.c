@@ -242,14 +242,14 @@ static void release_step (ADIOS_FILE *fp)
 
     if (fp->var_namelist)
     {
-        free_namelist (fp->var_namelist, fp->nvars);
+        a2s_free_namelist (fp->var_namelist, fp->nvars);
         fp->var_namelist = 0;
         fp->nvars = 0;
     }
 
     if (fp->attr_namelist)
     {
-        free_namelist (fp->attr_namelist, fp->nattrs);
+        a2s_free_namelist (fp->attr_namelist, fp->nattrs);
         fp->attr_namelist = 0;
         fp->nattrs = 0;
     }
@@ -1390,13 +1390,13 @@ int adios_read_bp_close (ADIOS_FILE * fp)
 
     if (fp->var_namelist)
     {
-        free_namelist (fp->var_namelist, fp->nvars);
+        a2s_free_namelist (fp->var_namelist, fp->nvars);
         fp->var_namelist = 0;
     }
 
     if (fp->attr_namelist)
     {
-        free_namelist (fp->attr_namelist, fp->nattrs);
+        a2s_free_namelist (fp->attr_namelist, fp->nattrs);
         fp->attr_namelist = 0;
     }
 

@@ -9,7 +9,7 @@
 # 4. add files to CLEANFILES that should be deleted at 'make clean'
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 
-test_C = hashtest copy_subvolume text_to_pairstruct
+test_C = hashtest copy_subvolume text_to_pairstruct test_strutil
 if BUILD_WRITE
     test_C += transforms_specparse group_free_test
 endif
@@ -56,6 +56,12 @@ text_to_pairstruct_LDADD = $(top_builddir)/src/core/libadios_a-strutil.o
 text_to_pairstruct_LDFLAGS = $(AM_LDFLAGS) 
 text_to_pairstruct_CPPFLAGS = -I$(top_srcdir)/src
 text_to_pairstruct.o: text_to_pairstruct.c
+
+test_strutil_SOURCES=test_strutil.c
+test_strutil_LDADD = $(top_builddir)/src/core/libadios_a-strutil.o
+test_strutil_LDFLAGS = $(AM_LDFLAGS) 
+test_strutil_CPPFLAGS = -I$(top_srcdir)/src
+test_strutil.o: test_strutil.c
 
 #
 # C Tests built only with write-enabled

@@ -1060,7 +1060,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
             if (type == adios_string_array) {
                 // need to copy strings from a char** array
                 int total_length;
-                attr->value = dup_string_array ((char**)values, nelems, &total_length);
+                attr->value = a2s_dup_string_array ((char**)values, nelems, &total_length);
                 if (!attr->value) {
                     adios_error (err_no_memory, 
                             "Not enough memory to copy string array attribute %s/%s\n", 
@@ -1494,7 +1494,7 @@ int adios_common_delete_attrdefs (struct adios_group_struct * g)
         struct adios_attribute_struct * attr = g->attributes;
         g->attributes = g->attributes->next;
         if (attr->type == adios_string_array)
-            free_string_array (attr->value, attr->nelems);
+            a2s_free_string_array (attr->value, attr->nelems);
         else
             free (attr->value);
         free (attr->name);
@@ -1622,61 +1622,7 @@ int adios_common_free_group (int64_t id)
     return 0;
 }
 
-static void tokenize_dimensions (const char * str, char *** tokens, int * count)
-{
-    if (!str)
-    {
-        *tokens = 0;
-        *count = 0;
 
-        return;
-    }
-
-    char * save_str = strdup (str);
-    char * t = save_str;
-    int i;
-
-    trim_spaces (save_str);
-
-    if (strlen (save_str) > 0)
-        *count = 1;
-    else
-    {
-        *tokens = 0;
-        *count = 0;
-        free (save_str);
-
-        return;
-    }
-
-    while (*t)
-    {
-        if (*t == ',')
-            (*count)++;
-        t++;
-    }
-
-    *tokens = (char **) malloc (sizeof (char **) * *count);
-    (*tokens) [0] = strdup (strtok (save_str, ","));
-    for (i = 1; i < *count; i++)
-    {
-        (*tokens) [i] = strdup (strtok (NULL, ","));
-    }
-
-    free (save_str);
-}
-
-static void cleanup_dimensions (char *** tokens, int * count)
-{
-    int i;
-    for (i = 0; i < *count; i++)
-    {
-        free ((*tokens) [i]);
-    }
-    free (*tokens);
-    *tokens = 0;
-    *count = 0;
-}
 
 int adios_common_define_var_characteristics (struct adios_group_struct * g
         , const char * var_name
@@ -1720,7 +1666,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
             int count;
             char ** bin_tokens = 0;
 
-            tokenize_dimensions (bin_intervals, &bin_tokens, &count);
+            a2s_tokenize_dimensions (bin_intervals, &bin_tokens, &count);
 
             if (!count)
             {
@@ -1760,6 +1706,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
                 hist->max = hist->min;
 
             var->bitmap = var->bitmap | (1 << adios_statistic_hist);
+            a2s_cleanup_dimensions (bin_tokens, count);
         }
         else
         {
@@ -1927,9 +1874,9 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
 
         int i = 0;
 
-        tokenize_dimensions (dim_temp, &dim_tokens, &dim_count);
-        tokenize_dimensions (g_dim_temp, &g_dim_tokens, &g_dim_count);
-        tokenize_dimensions (lo_dim_temp, &lo_dim_tokens, &lo_dim_count);
+        a2s_tokenize_dimensions (dim_temp, &dim_tokens, &dim_count);
+        a2s_tokenize_dimensions (g_dim_temp, &g_dim_tokens, &g_dim_count);
+        a2s_tokenize_dimensions (lo_dim_temp, &lo_dim_tokens, &lo_dim_count);
 
         while (i < dim_count)
         {
@@ -1964,9 +1911,9 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
                 free (v->name);
                 free (v->path);
                 free (v);
-                cleanup_dimensions (&dim_tokens, &dim_count);
-                cleanup_dimensions (&g_dim_tokens, &g_dim_count);
-                cleanup_dimensions (&lo_dim_tokens, &lo_dim_count);
+                a2s_cleanup_dimensions (dim_tokens, dim_count);
+                a2s_cleanup_dimensions (g_dim_tokens, g_dim_count);
+                a2s_cleanup_dimensions (lo_dim_tokens, lo_dim_count);
 
                 return 0;
             }
@@ -1975,9 +1922,9 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
 
             i++;
         }
-        cleanup_dimensions (&dim_tokens, &dim_count);
-        cleanup_dimensions (&g_dim_tokens, &g_dim_count);
-        cleanup_dimensions (&lo_dim_tokens, &lo_dim_count);
+        a2s_cleanup_dimensions (dim_tokens, dim_count);
+        a2s_cleanup_dimensions (g_dim_tokens, g_dim_count);
+        a2s_cleanup_dimensions (lo_dim_tokens, lo_dim_count);
     }
 
     if (dim_temp)

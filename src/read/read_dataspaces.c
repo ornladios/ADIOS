@@ -411,7 +411,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
         fp->var_namelist[i] = (char *) malloc (namelen+1);
         if (!fp->var_namelist[i]) {
             adios_error (err_no_memory, "Could not allocate space for variable name when opening a group\n"); 
-            if (i>0) free_namelist ((fp->var_namelist),i);
+            if (i>0) a2s_free_namelist ((fp->var_namelist),i);
             return 1;
         }
         else  {
@@ -481,7 +481,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
         fp->attr_namelist[i] = (char *) malloc (namelen+1);
         if (!fp->attr_namelist[i]) {
             adios_error (err_no_memory, "Could not allocate space for attribute name when opening a group\n"); 
-            if (i>0) free_namelist ((fp->attr_namelist),i);
+            if (i>0) a2s_free_namelist ((fp->attr_namelist),i);
             return 1;
         }
         else  {
@@ -872,7 +872,7 @@ static void free_step_data (ADIOS_FILE *fp)
             free (vars[i].value);
         }
         MYFREE(ds->vars);
-        free_namelist ((fp->var_namelist),fp->nvars);
+        a2s_free_namelist ((fp->var_namelist),fp->nvars);
         fp->nvars = 0;
     }
     if (fp->nattrs) {
@@ -881,7 +881,7 @@ static void free_step_data (ADIOS_FILE *fp)
             free (attrs[i].value);
         }
         MYFREE (ds->attrs);
-        free_namelist ((fp->attr_namelist),fp->nattrs);
+        a2s_free_namelist ((fp->attr_namelist),fp->nattrs);
         fp->nattrs = 0;
     }
     MYFREE (ds->group_name);
