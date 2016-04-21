@@ -1814,7 +1814,7 @@ string(REGEX REPLACE ";" " " ADIOSLIB_INT_LDADD_M "${ADIOSLIB_INT_LDADD}")
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/adios_config.flags.cmake ${CMAKE_CURRENT_BINARY_DIR}/adios_config.flags @ONLY)
 #####################end of processing adios_config.flags.in #####################
 #####################start processing adios_config.flags.in #####################
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/adios_config.in ${CMAKE_CURRENT_BINARY_DIR}/adios_config @ONLY)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/adios_config.makesrc.in ${CMAKE_CURRENT_BINARY_DIR}/adios_config @ONLY)
 #####################end of processing adios_config.flags.in #####################
 install(FILES ${CMAKE_BINARY_DIR}/adios_config.flags DESTINATION ${sysconfdir})
 install(PROGRAMS ${CMAKE_BINARY_DIR}/adios_config DESTINATION ${bindir})
