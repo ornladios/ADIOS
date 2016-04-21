@@ -3955,8 +3955,10 @@ ADIOS_SELECTION * common_read_selection_boundingbox (int ndim, const uint64_t *s
     if (sel) {
         sel->type = ADIOS_SELECTION_BOUNDINGBOX;
         sel->u.bb.ndim = ndim;
-        sel->u.bb.start = (uint64_t *)start;
-        sel->u.bb.count = (uint64_t *)count;
+        sel->u.bb.start = (uint64_t *) malloc (ndim * sizeof(uint64_t));
+        sel->u.bb.count = (uint64_t *) malloc (ndim * sizeof(uint64_t));
+        memcpy (sel->u.bb.start, start, ndim * sizeof(uint64_t));
+        memcpy (sel->u.bb.count, count, ndim * sizeof(uint64_t));
     } else {
         adios_error(err_no_memory, "Cannot allocate memory for bounding box selection\n");
     }
@@ -4016,6 +4018,17 @@ void common_read_selection_delete (ADIOS_SELECTION *sel)
     if (sel->type == ADIOS_SELECTION_POINTS && sel->u.points.container_selection != NULL)
     {
        common_read_selection_delete (sel->u.points.container_selection);
+    }
+    else if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
+    {
+        if (sel->u.bb.start) {
+            free (sel->u.bb.start);
+            sel->u.bb.start = NULL;
+        }
+        if (sel->u.bb.count) {
+            free (sel->u.bb.count);
+            sel->u.bb.count = NULL;
+        }
     }
     free(sel);
 }
