@@ -323,6 +323,11 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
     {
         nsel->u.points.ndim = sel->u.points.ndim;
         nsel->u.points.npoints = sel->u.points.npoints;
+        if (sel->u.points.container_selection) {
+            nsel->u.points.container_selection = copy_selection(sel->u.points.container_selection);
+        } else {
+            nsel->u.points.container_selection = NULL;
+        }
         nsel->u.points.points = (uint64_t *) malloc (nsel->u.points.npoints * nsel->u.points.ndim * 8);
         assert (nsel->u.points.points);
 
