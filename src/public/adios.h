@@ -33,6 +33,7 @@ extern "C" {
 // Only processes of the provided communicator can later participate
 // in any adios activity
 int adios_init (const char * config, MPI_Comm comm);
+int adios_is_initialized(void);
 
 int adios_finalize (int mype);
 

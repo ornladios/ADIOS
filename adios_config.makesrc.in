@@ -82,7 +82,9 @@ do
         v) echo "$VERSIONSTRING"; 
            exit 0;;
         i) echo "ADIOS $VERSIONSTRING"; 
-           echo "Installed from source directory: $SRCDIR"; 
+           echo "Installed from "
+           echo "  source directory: $SRCDIR"; 
+           echo "  build directory:  $BUILDDIR"; 
            if [ ! -z "$GITLOG" ]; then echo "$GITLOG"; fi 
            if [ ! -z "$GITSTAT" ]; then echo "Git status of source directory:"; echo "$GITSTAT"; fi 
            exit 0;;
@@ -198,41 +200,41 @@ if [ "$PRINT_METHODS" == "yes" ]; then
     if [ "$OPT_SEQ" == "yes" ]; then
         if [ "$OPT_READ" == "yes" ]; then
             # ADIOSREAD + SEQ
-            if [ -x ${MYDIR}/list_methods_readonly_nompi ]; then
-                ${MYDIR}/list_methods_readonly_nompi
-            elif [ -x ./utils/list_methods/list_methods_readonly_nompi ]; then
-                ./utils/list_methods/list_methods_readonly_nompi
+            if [ -x ${MYDIR}/adios_list_methods_readonly_nompi ]; then
+                ${MYDIR}/adios_list_methods_readonly_nompi
+            elif [ -x ./utils/adios_list_methods/adios_list_methods_readonly_nompi ]; then
+                ./utils/adios_list_methods/adios_list_methods_readonly_nompi
             else
-                echo "ERROR: cannot find executable list_methods_readonly_nompi"
+                echo "ERROR: cannot find executable adios_list_methods_readonly_nompi"
             fi
         else
             # ADIOS + SEQ
-            if [ -x ${MYDIR}/list_methods_nompi ]; then
-                ${MYDIR}/list_methods_nompi
-            elif [ -x ./utils/list_methods/list_methods_nompi ]; then
-                ./utils/list_methods/list_methods_nompi
+            if [ -x ${MYDIR}/adios_list_methods_nompi ]; then
+                ${MYDIR}/adios_list_methods_nompi
+            elif [ -x ./utils/adios_list_methods/adios_list_methods_nompi ]; then
+                ./utils/adios_list_methods/adios_list_methods_nompi
             else
-               echo "ERROR: cannot find executable list_methods_nompi"
+               echo "ERROR: cannot find executable adios_list_methods_nompi"
             fi
         fi
     else
         if [ "$OPT_READ" == "yes" ]; then
             # ADIOSREAD
-            if [ -x ${MYDIR}/list_methods_readonly ]; then
-                ${MYDIR}/list_methods_readonly
-            elif [ -x ./utils/list_methods/list_methods_readonly ]; then
-                ./utils/list_methods/list_methods_readonly
+            if [ -x ${MYDIR}/adios_list_methods_readonly ]; then
+                ${MYDIR}/adios_list_methods_readonly
+            elif [ -x ./utils/adios_list_methods/adios_list_methods_readonly ]; then
+                ./utils/adios_list_methods/adios_list_methods_readonly
             else
-                echo "ERROR: cannot find executable list_methods_readonly"
+                echo "ERROR: cannot find executable adios_list_methods_readonly"
             fi
         else
             # ADIOS
-            if [ -x ${MYDIR}/list_methods ]; then
-                ${MYDIR}/list_methods
-            elif [ -x ./utils/list_methods/list_methods ]; then
-                ./utils/list_methods/list_methods
+            if [ -x ${MYDIR}/adios_list_methods ]; then
+                ${MYDIR}/adios_list_methods
+            elif [ -x ./utils/adios_list_methods/adios_list_methods ]; then
+                ./utils/adios_list_methods/adios_list_methods
             else
-               echo "ERROR: cannot find executable list_methods"
+               echo "ERROR: cannot find executable adios_list_methods"
             fi
         fi
     fi

@@ -294,12 +294,14 @@ static ADIOS_FILE * common_read_mesh (ADIOS_FILE * fp)
                     if (fp->nmeshes > 0)
                     {
                         char * meshname = NULL;
+                        meshname = (char *) malloc (sizeof(char*) * (size_t)(p-s)+1);
                         memcpy ( meshname, s, (size_t)(p-s) );
                         for (imesh=0; imesh<fp->nmeshes; imesh++)
                         {
                             if (!strcmp (meshname, tmp[imesh]))
                                 samemesh = 1;
                         }
+                        free (meshname);
                     }
                     if (!fp->nmeshes || !samemesh)
                     {
