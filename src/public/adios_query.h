@@ -85,8 +85,10 @@ typedef struct {
        then  result->selections[i] is a struct, not a pointer  
 
        FASTBIT and ALACRITY returns an array of selections, whose type is ADIOS_SELECTION_POINTS
+           Points are 1D local offsets in the bounding box returned in result->selection[i].u.points.container.
+           Read operations can be performed directly on such selections.
            Number of points that satisfy the query = npoints =
-                   = result->selection[i].u.points.npoints, i=0,..,nselections-1
+                   = SUM(result->selection[i].u.points.npoints, i=0,..,nselections-1)
            Delete the selection and the result by calling:
               for (i=0; i < result->nselections; i++) {
                   free (result->selections[i].u.points.points);
@@ -99,6 +101,8 @@ typedef struct {
            Delete all selections at once then the result itself by calling  
               free (result->selections);
               free (result);
+
+       The extra read function adios_query_read_boundingbox() works on all of these selections.
      */
 } ADIOS_QUERY_RESULT;
 
