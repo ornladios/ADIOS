@@ -10,13 +10,14 @@
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 
 test_C = hashtest copy_subvolume text_to_pairstruct
+
 if BUILD_WRITE
-    test_C += transforms_specparse group_free_test query_minmax
+    test_C += transforms_specparse group_free_test query_minmax read_points_2d read_points_3d
 endif
 
 if BUILD_FORTRAN
     test_F = selection_api
-if  BUILD_WRITE
+if BUILD_WRITE
 #    test_F += 
 endif
 endif
@@ -77,6 +78,18 @@ query_minmax_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
 query_minmax_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS)
 query_minmax_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
 query_minmax.o: query_minmax.c
+
+read_points_2d_SOURCES=read_points_2d.c
+read_points_2d_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
+read_points_2d_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS)
+read_points_2d_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
+read_points_2d.o: read_points_2d.c
+
+read_points_3d_SOURCES=read_points_3d.c
+read_points_3d_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
+read_points_3d_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS)
+read_points_3d_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
+read_points_3d.o: read_points_3d.c
 
 #
 # FORTRAN Tests

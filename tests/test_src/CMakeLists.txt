@@ -12,7 +12,7 @@ link_directories(${PROJECT_BINARY_DIR}/tests/test_src)
 set(C_PROGS_READONLY hashtest copy_subvolume)
 
 if(BUILD_WRITE)
-    set(C_PROGS_WRITE transforms_specparse group_free_test query_minmax)
+    set(C_PROGS_WRITE transforms_specparse group_free_test query_minmax read_points_2d read_points_3d)
 endif(BUILD_WRITE)
 
 if(BUILD_FORTRAN)
