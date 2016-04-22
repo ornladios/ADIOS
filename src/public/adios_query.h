@@ -64,6 +64,8 @@ typedef struct {
 
     int hasParent;
     int deleteSelectionWhenFreed;
+
+    int estimate; // 0 => the query engine does candidate check; 1 => no candidate check, leading to more results
 } ADIOS_QUERY;
    
 

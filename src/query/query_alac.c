@@ -1520,7 +1520,7 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 
 		ADIOS_ALAC_BITMAP* b;
 		if (q->onTimeStep != absoluteTimestep) { // if this is the first call to evaluate the query for a new timestep
-			b = adios_alac_process(q, timestep, false);
+			b = adios_alac_process(q, timestep, q->estimate);
 			initLastConvRid(b);
 			q->maxResultsDesired =  calSetBitsNum(b);
 			q->resultsReadSoFar = 0;
