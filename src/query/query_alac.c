@@ -58,7 +58,7 @@ double ckSetBitMap = 0.0; // timing is in the macro in which the pair of "#ifdef
 	double candidateCheckTotal = 0.0, candidateCheckStart = 0.0;
 	double ckRids = 0.0, ckReconstituteStart= 0.0, ckReconstitute=0.0;
 	uint64_t ckTotalElm = 0;
-	double decodeTotal = 0.0, decodeStart = 0.0; // timing for porc_write_block
+	double decodeTotal = 0.0, wholeDecodeTotal=0.0, decodeStart = 0.0, pgCTotal = 0.0, pgPartialTotal = 0.0; // timing for porc_write_block
     double setRidTotal = 0.0, setRidStart = 0.0;
     double alacPartitionMetaTotal=0.0, alacPartitionMetaStart = 0.0;
     int numTouchedPGs = 0;
@@ -836,6 +836,384 @@ char * readIndexAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id_t
 }
 
 
+void set_consecutive_bits(uint64_t relativeRid, uint64_t ones , ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/) {
+	uint64_t * bitmap = alacResultBitmap->bits;
+	uint64_t slot,  pass_bits, leftMask , pass_mask;
+	uint64_t allOnesMask = (uint64_t) (~0); // must have casting, otherwise, will only generate 32 1s
+	// starting point: relativeRid,  number of 1 bits: srccount[ndim-1]
+	slot =  (relativeRid >> 6);
+	pass_bits = relativeRid & 0x3F;
+
+	/*************LITTLE ENDIAN : Significant bit goes to high address (right side)*******/
+	/*       0000  | 111111111              */
+	/*   pass_bits | */
+	pass_mask = allOnesMask << pass_bits;
+	if ( ones + pass_bits <= 64 ) { // the number of bits to be set in the same slot
+		/*     111111111111111 |  0000
+		 *                     | 64-ones-pass_bits
+		 */
+		leftMask = allOnesMask >> (64 - pass_bits - ones);
+		bitmap[slot] |= (leftMask & pass_mask);
+	}else { // if it has more than one slot bits to be set
+		bitmap[slot] |= pass_mask ; // the first slot
+		uint64_t leftOnes = ones - (64 - pass_bits);
+		uint64_t spanSlot = leftOnes >> 6 ; // left ones span the number of slots
+		uint64_t  remainOnes = leftOnes & 0x3F; // remaining ones
+		uint64_t s = 1;
+		for (s = 1; s <= spanSlot; ++ s) {
+			bitmap[slot + s] |= allOnesMask ; // slot+s in generally doesn't exceed the length of bitmap
+		}
+		if ( remainOnes > 0) {
+			 /*
+			  *       1111111 | 0000
+			  *    remain_ones|
+			  */
+			uint64_t remainMask = allOnesMask >> (64- remainOnes) ;
+			bitmap[slot + spanSlot +1 ] |= remainMask;
+		}
+
+	}
+
+	alacResultBitmap->numSetBits += ones;
+}
+
+
+/*  desstart     ,      destcount        ,,      srcstart (x)        , srccount
+ *   (2, 3)      ,       (5, 6)           ,      (4, 5)          ,   (2, 3 )       => (4 + 2 -1, 5+3-1) = (5, 7)
+ *    (2,3)___________________
+ *         |__|__|__|__|__|__|           (2,3) 0 | 1 | 2 | 3 | 4 | 5 |
+ *         |__|__|__|__|__|__|           (3,3) 6 | 7 | 8 | 9 | 10 | 11 |
+ *         |__|_x|__|__|__|__|           (4,3) 12| 13| 14
+ *         |__|__|__|__|__|__|
+ *         |__|__|__|_y|__|__|
+ *         |__|__|__|__|__|__|
+ *
+ *  // 1. calculate the first relative rids (4,5)
+ *         (4-2) * 6 + (5-3)* 1 -1 = 2* 6 + 2  = 14
+ *  // 2. calculate the next consecutive rids    ( 5,  5)  (5-2)*6 + (5-3)*1 = 18 + 2 = 20, so the delta = 6 (destcount[ndim-1])
+ *  // 3. locate the bit start position using relativeRid in the bitmap, and set consecutive 3 consecutive 1s ( 3= srccount[ndim-1])
+ *  // NOTE that length argument is not used at this point
+ */
+void setBits_for_wholePG_1_2_dim(uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
+		int ndim, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/) {
+
+	uint64_t relativeRid = 0;
+	uint64_t count = 1;
+	int dim = 0;
+	//1.calculate the first relativeRids (4,5)
+	while ( dim < ndim ) {
+		relativeRid += (srcstart[ndim - dim -1 ] - deststart[ndim - dim -1 ]) * count;
+		count *= destcount[ndim - dim -1 ];
+		dim ++;
+	}
+	//2. delta between any two consecutive rids
+	uint64_t delta = destcount[ndim -1 ] ; //count / destcount[0];
+	//2.2 times of how many relativeRids
+	uint64_t times = 1;
+	dim = 0;
+	while (dim < ndim - 1) {
+		times *= srccount[dim];
+		dim ++;
+	}
+	int j ;
+	uint64_t  ones = srccount[ndim -1 ]; // the number of 1s needs to be reflected in the bitmap
+
+	for ( j = 1; j <= times; ++ j) {
+		set_consecutive_bits(relativeRid, ones, alacResultBitmap);
+		relativeRid += delta;
+	}
+
+}
+
+
+/*
+ *
+0                                  1407
+0,0,0                          0,0,1407
+0,1,0                          0,1,1407
+...
+0,1079                         0,1079,1407
+
+              relativeRid, delta, times, ones
+uint64_t zero [4] = {0, 1408, 50000, 400};
+ *
+0,0,0     0,0,399
+0,1,0     0,1,399      --- 400 -> delta
+...
+0,249,0   0,249,399
+
+1,0,0     1,0,399   --- 1080*1408 = 1520640 => gap
+1,1,0     1,1,399
+..
+1,249,0   1,249,399
+
+...
+
+199,0,0   199,0,399
+199,1,0	  199,1,399
+..
+199,249,0  199,249,399
+ *
+ */
+void setBits_for_wholePG_3_dim(uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
+		int ndim, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/) {
+
+	uint64_t relativeRid = 0, tmpRid = 0;
+	uint64_t count = 1;
+	int dim = 0;
+	//1.calculate the first relativeRids
+	while ( dim < ndim ) {
+		relativeRid += (srcstart[ndim - dim -1 ] - deststart[ndim - dim -1 ]) * count;
+		count *= destcount[ndim - dim -1 ];
+		dim ++;
+	}
+	//2. delta between any two consecutive rids
+	uint64_t delta = destcount[ndim -1 ] , gap = destcount[1]*destcount[2];
+
+	int i = 0, j = 0 ;
+	uint64_t  ones = srccount[ndim -1 ]; // the number of 1s needs to be reflected in the bitmap
+
+	for (i=0; i < srccount[0]; i++) {
+	   tmpRid = relativeRid;
+	   for (j=0; j < srccount[1]; j ++ ) {
+		   set_consecutive_bits(tmpRid,ones, alacResultBitmap);
+		   tmpRid += destcount[2];
+	   }
+	   relativeRid += gap; // move to another dimension, need to calculate the jump again
+	}
+}
+
+
+uint64_t getRealBitNum(ADIOS_ALAC_BITMAP * alacResultBitmap) {
+
+	uint64_t kk = 0, count = 0, pcount = 0;
+	uint64_t * p_bitmap = alacResultBitmap->bits;
+	for (; kk < alacResultBitmap->length; kk++) {
+
+			count =  bits_in_char [p_bitmap[kk] & 0xff]
+								   +  bits_in_char [(p_bitmap[kk] >>  8) & 0xff]
+								   +  bits_in_char [(p_bitmap[kk] >> 16) & 0xff]
+								   +  bits_in_char [(p_bitmap[kk] >> 24) & 0xff]
+								   +  bits_in_char [(p_bitmap[kk] >> 32) & 0xff]
+								   +  bits_in_char [(p_bitmap[kk] >> 40) & 0xff]
+								   +  bits_in_char [(p_bitmap[kk] >> 48) & 0xff]
+								   +  bits_in_char [(p_bitmap[kk] >> 56) & 0xff]
+								   ;
+		 pcount += count;
+	}
+	return pcount;
+}
+
+
+
+void deltaBitSetsWithPGCoveredCorderIn3D(
+		 uint32_t *input /*decoded detla list, with first element as frame of reference and the rest values are detlas*/
+		, uint32_t inputLength
+		, uint64_t *srcstart //PG region dimension
+		, uint64_t *srccount
+		, uint64_t *srcboundary //[ srccount[2], srccount[2]*srccount[1], srccount[2]*srccount[1]*srccount[0]
+		, uint64_t *deststart //region dimension of Selection box
+		, uint64_t *destcount
+		, uint64_t *destboundary // [destcount[2], destcount[2]*destcount[1], destcount[2]*destcount[1]*destcount[0]
+		, int ndim
+		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/
+		) {
+
+	uint32_t x = 0;
+
+	for (x = 0; x < inputLength ; x += PFORDELTA_CHUNK_SIZE) { // perform for every pfordetal chunk (128 elements)
+		uint32_t realSize = x + PFORDELTA_CHUNK_SIZE >= inputLength ? inputLength - x : PFORDELTA_CHUNK_SIZE ;
+		uint32_t first_rid_val = input[x];
+		int i;
+		uint64_t deltaCoordPG[ndim], coordRegion[ndim]; // coordinate in pg context
+
+		// First convert the RID in the src box to first_coordinates in the dest box
+		ridToCoordinates(ndim, 1, first_rid_val, srccount, deltaCoordPG);
+		for (i = 0; i < ndim; i++){
+			coordRegion[i] = deltaCoordPG[i] + srcstart[i] - deststart[i];
+		}
+
+		// Then, convert the coordinates in the dest box back to an RID
+		uint32_t relativeRid = 0;
+		for (i = 0; i < ndim; i++){
+			relativeRid *= destcount[i];
+			relativeRid  += coordRegion[i];
+		}
+
+		uint32_t word = (uint32_t) (relativeRid >> 6);
+		alacResultBitmap->bits[word]
+					|= (1LL << (relativeRid & 0x3F));
+
+		uint32_t j = x+1, r = 0; // skip the first frame of the reference NOTE: j = x + 1
+		//results[r++] = relativeRid;
+		uint32_t nextRelativeRid = 0;
+		for ( j = x + 1; j < x + realSize ; ++ j ) {
+			uint32_t delta = input[j];
+			uint64_t nextDim = delta + deltaCoordPG[ 2 ];
+			//update first_coordinate with detal
+			if (  nextDim < srcboundary[ 2]  ) { // have to be ndim (=3) specific , srcboundary[2]= srccount[2]
+				nextRelativeRid = relativeRid + delta;
+				deltaCoordPG[2 ] = nextDim; // along with the coordinates
+			}else  if (deltaCoordPG[1] * srccount[2] + nextDim < srcboundary[1]) { // srcboundary[1] = srccount[2]*srccount[1]
+				uint64_t inc = nextDim / srccount[2];  // increment dimension
+				uint64_t co2 = nextDim % srccount[2]; // it is the new dim number
+				if ( co2 > deltaCoordPG[2]) {
+					nextRelativeRid = relativeRid +  inc * destboundary[2] + (co2 - deltaCoordPG[2]) ;
+				}else {
+					nextRelativeRid = relativeRid +  inc * destboundary[2] - (deltaCoordPG[2] - co2) ;
+				}
+				deltaCoordPG[2] = co2;  // along with the coordinates
+			    deltaCoordPG[1] += inc;
+			}else {
+				uint64_t nextDim2 = (deltaCoordPG[1] * srcboundary[2] + nextDim);
+				uint64_t inc0 =  nextDim2 / srcboundary[1];  // this is the delta dimsion on the highest dimension
+				uint64_t remain0 = nextDim2 % srcboundary[1];
+				uint64_t coord1 = remain0 / srcboundary[2];  //they are the new dim number
+				uint64_t coord2 = remain0 % srcboundary[2];
+				if (coord1 > deltaCoordPG[1]) { // we deal with unsign data type, it doesn't have sign
+					if ( coord2 > deltaCoordPG[2]) {
+						nextRelativeRid = relativeRid + inc0 * destboundary[1] +  (coord1 - deltaCoordPG[1]) * destboundary[2] + (coord2 - deltaCoordPG[2]) ;
+					}else {
+						nextRelativeRid = relativeRid + inc0 * destboundary[1] +  (coord1 - deltaCoordPG[1]) * destboundary[2] - (deltaCoordPG[2] - coord2) ;
+					}
+
+				}else {
+					if ( coord2 > deltaCoordPG[2]) {
+						nextRelativeRid = relativeRid + inc0 * destboundary[1] -  (deltaCoordPG[1] - coord1 ) * destboundary[2] + (coord2 - deltaCoordPG[2]) ;
+					}else {
+						nextRelativeRid = relativeRid + inc0 * destboundary[1] -  (deltaCoordPG[1] - coord1 ) * destboundary[2] - (deltaCoordPG[2] - coord2) ;
+					}
+				}
+				deltaCoordPG[0] +=inc0;
+				deltaCoordPG[1] = coord1;
+				deltaCoordPG[2] = coord2;
+			}
+
+			relativeRid = nextRelativeRid;  // update the relativeRid
+
+			word = (uint32_t) (relativeRid >> 6);
+			alacResultBitmap->bits[word] |= (1LL << (relativeRid & 0x3F));
+			//results[r++] = relativeRid;
+
+		}
+	}
+}
+
+
+
+
+
+void deltaBitSetsWithPGPartialCoveredCorderIn3D(
+		 uint32_t *input /*decoded detla list, with first element as frame of reference and the rest values are detlas*/
+		, uint32_t inputLength
+		, uint64_t *srcstart //PG region dimension
+		, uint64_t *srccount
+		, uint64_t *srcboundary //[ srccount[2], srccount[2]*srccount[1], srccount[2]*srccount[1]*srccount[0]
+		, uint64_t *deststart //region dimension of Selection box
+		, uint64_t *destcount
+		, uint64_t *destboundary // [destcount[2], destcount[2]*destcount[1], destcount[2]*destcount[1]*destcount[0]
+		, int ndim
+		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/
+		) {
+	uint32_t x = 0;
+		uint64_t destend [ndim] ;
+		destend[0] = deststart[0] + destcount[0] -1 ; destend[1] = deststart[1] + destcount[1] -1 ; destend[2] = deststart[2] + destcount[2] -1 ;
+	for (x = 0; x < inputLength ; x += PFORDELTA_CHUNK_SIZE) {
+		uint32_t realSize = x + PFORDELTA_CHUNK_SIZE >= inputLength ? inputLength - x : PFORDELTA_CHUNK_SIZE ;
+
+		uint32_t first_rid_val = input[x];
+		int i;
+		uint64_t deltaCoordPG[ndim], coordRegion[ndim], tmpCoord[ndim]; // coordinate in pg context
+
+		// First convert the RID in the src box to first_coordinates in the dest box
+		ridToCoordinates(ndim, 1, first_rid_val, srccount, deltaCoordPG);
+		for (i = 0; i < ndim; i++){
+			coordRegion[i] = deltaCoordPG[i] + srcstart[i] - deststart[i];
+		}
+		// the first rid is not in the bounding box, then, the entire chunk is not as well
+		if ( coordRegion[0] < deststart[0] || coordRegion[0] > destend[0] ) continue  ;
+		if ( coordRegion[1] < deststart[1] || coordRegion[1] > destend[1] ) continue  ;
+		if ( coordRegion[2] < deststart[2] || coordRegion[2] > destend[2] ) continue  ;
+
+		// Then, convert the coordinates in the dest box back to an RID
+		uint32_t relativeRid = 0;
+		for (i = 0; i < ndim; i++){
+			relativeRid *= destcount[i];
+			relativeRid  += coordRegion[i];
+		}
+
+		uint32_t word = (uint32_t) (relativeRid >> 6);
+		alacResultBitmap->bits[word]
+					|= (1LL << (relativeRid & 0x3F));
+
+		uint32_t j = x + 1, r = 0; // skip the first frame of the reference
+		//results[r++] = relativeRid;
+		uint32_t nextRelativeRid = 0;
+		for ( j = x + 1; j < x + realSize ; ++ j ) {
+			uint32_t delta = input[j];
+			uint64_t nextDim = delta + deltaCoordPG[ 2 ];
+			//update first_coordinate with detal
+			if (  nextDim < srcboundary[ 2]  ) { // have to be ndim (=3) specific , srcboundary[2]= srccount[2]
+				nextRelativeRid = relativeRid + delta;
+				deltaCoordPG[2 ] = nextDim; // along with the coordinates
+			}else  if (deltaCoordPG[1] * srccount[2] + nextDim < srcboundary[1]) { // srcboundary[1] = srccount[2]*srccount[1]
+				uint64_t inc = nextDim / srccount[2];  // increment dimension
+				uint64_t co2 = nextDim % srccount[2]; // it is the new dim number
+				if ( co2 > deltaCoordPG[2]) {
+					nextRelativeRid = relativeRid +  inc * destboundary[2] + (co2 - deltaCoordPG[2]) ;
+				}else {
+					nextRelativeRid = relativeRid +  inc * destboundary[2] - (deltaCoordPG[2] - co2) ;
+				}
+				deltaCoordPG[2] = co2;  // along with the coordinates
+			    deltaCoordPG[1] += inc;
+			}else {
+				uint64_t nextDim2 = (deltaCoordPG[1] * srcboundary[2] + nextDim);
+				uint64_t inc0 =  nextDim2 / srcboundary[1];  // this is the delta dimsion on the highest dimension
+				uint64_t remain0 = nextDim2 % srcboundary[1];
+				uint64_t coord1 = remain0 / srcboundary[2];  //they are the new dim number
+				uint64_t coord2 = remain0 % srcboundary[2];
+				if (coord1 > deltaCoordPG[1]) { // we deal with unsign data type, it doesn't have sign
+					if ( coord2 > deltaCoordPG[2]) {
+						nextRelativeRid = relativeRid + inc0 * destboundary[1] +  (coord1 - deltaCoordPG[1]) * destboundary[2] + (coord2 - deltaCoordPG[2]) ;
+					}else {
+						nextRelativeRid = relativeRid + inc0 * destboundary[1] +  (coord1 - deltaCoordPG[1]) * destboundary[2] - (deltaCoordPG[2] - coord2) ;
+					}
+
+				}else {
+					if ( coord2 > deltaCoordPG[2]) {
+						nextRelativeRid = relativeRid + inc0 * destboundary[1] -  (deltaCoordPG[1] - coord1 ) * destboundary[2] + (coord2 - deltaCoordPG[2]) ;
+					}else {
+						nextRelativeRid = relativeRid + inc0 * destboundary[1] -  (deltaCoordPG[1] - coord1 ) * destboundary[2] - (deltaCoordPG[2] - coord2) ;
+					}
+				}
+				deltaCoordPG[0] +=inc0;
+				deltaCoordPG[1] = coord1;
+				deltaCoordPG[2] = coord2;
+			}
+
+			relativeRid = nextRelativeRid;  // update the relativeRid
+
+			tmpCoord[0] = deltaCoordPG[0] + srcstart[0] - deststart[0];
+//			tmpCoord[0] = deltaCoordPG[0] + srcstart[0] ;
+			if ( tmpCoord[0] <  deststart[0] || tmpCoord[0] > destend[0]) continue ;
+			tmpCoord[1] = deltaCoordPG[1] + srcstart[1] - deststart[1];
+//			tmpCoord[1] = deltaCoordPG[1] + srcstart[1] ;
+			if ( tmpCoord[1] <  deststart[1] || tmpCoord[1] > destend[1]) continue ;
+			tmpCoord[2] = deltaCoordPG[2] + srcstart[2] - deststart[2];
+//			tmpCoord[2] = deltaCoordPG[2] + srcstart[2] ;
+			if ( tmpCoord[2] <  deststart[2] || tmpCoord[2] > destend[2]) continue ;
+
+			word = (uint32_t) (relativeRid >> 6);
+			alacResultBitmap->bits[word] |= (1LL << (relativeRid & 0x3F));
+//			results[r++] = relativeRid;
+
+		}
+	}
+
+}
+
+
+
 void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADIOS_QUERY * adiosQuery, int startStep, bool estimate
 		, ALUnivariateQuery * alacQuery , double lb , double hb
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount
@@ -1027,15 +1405,42 @@ if ( fullyContained ) {
 			printf("*****PG [%d] is fully contained in both spatial and value selections, we set all bits at once without doing ALACRITY process\n ", gBlockId);
 #endif
 }
-			bin_id_t bin ;
-			for ( bin = low_bin; bin < hi_bin; bin++) {
-				binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
-				uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered , inputCurPtr, binCompressedLen
-						, srcstart, srccount /*PG region dimension*/ , deststart, destcount /*region dimension of Selection box*/
-						, ndim , &(alacResultBitmap->bits));
-				inputCurPtr += binCompressedLen;
-				alacResultBitmap->numSetBits += decodedElm;
-			}
+
+#ifdef BREAKDOWN
+double deS = dclock();
+uint64_t beforeBits = alacResultBitmap->numSetBits;
+#endif
+
+		if ( ndim <= 2 ) {
+				setBits_for_wholePG_1_2_dim(srcstart, srccount /*PG region dimension*/ ,
+						deststart, destcount /*region dimension of Selection box*/
+						, ndim, alacResultBitmap);
+		}else if ( ndim == 3) {
+				setBits_for_wholePG_3_dim(srcstart, srccount /*PG region dimension*/ ,
+						deststart, destcount /*region dimension of Selection box*/
+						, ndim, alacResultBitmap);
+		}else {  // the setBits_for_wholePG is hard to be generalized to any dimension.
+				 // basically, if there is a ndim, we have to have ndim-1 for-loops inside of the function
+				bin_id_t bin ;
+				for ( bin = low_bin; bin < hi_bin; bin++) {
+					binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
+					uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered , inputCurPtr, binCompressedLen
+							, srcstart, srccount /*PG region dimension*/ , deststart, destcount /*region dimension of Selection box*/
+							, ndim , &(alacResultBitmap->bits));
+					inputCurPtr += binCompressedLen;
+					alacResultBitmap->numSetBits += decodedElm;
+				}
+		}
+#ifdef BREAKDOWN
+//uint64_t realBit = getRealBitNum(alacResultBitmap);
+//if(ndim == 3)
+//printf("BitSet block_id: %d  srcstart: %"PRIu64" %"PRIu64" %"PRIu64" srccount: %"PRIu64" %"PRIu64" %"PRIu64" deststart: %"PRIu64" %"PRIu64" %"PRIu64" destcount: [%"PRIu64" %"PRIu64" %"PRIu64"] bits_before: %"PRIu64" bits_after: %"PRIu64" real_bit: %"PRIu64" exist: %s bits_add: %"PRIu64"\n"
+//			, gBlockId, srcstart[0],  srcstart[1], srcstart[2], srccount[0], srccount[1], srccount[2], deststart[0], deststart[1], deststart[2], destcount[0], destcount[1], destcount[2], beforeBits, alacResultBitmap->numSetBits, realBit, realBit == alacResultBitmap->numSetBits ? "true" : "false", alacResultBitmap->numSetBits - beforeBits );
+
+double dt= dclock() - deS;
+wholeDecodeTotal += dt;
+decodeTotal += dt;
+#endif
 
 		}else{
 			// element count of touched bins, which is also the count of low order data
@@ -1061,24 +1466,90 @@ if ( fullyContained ) {
 				bin_id_t innerlowBin = low_bin + 1;
 				bin_id_t innerHiBin = hi_bin -1;
 				bin_id_t bin;
-				// Now compress each bin in turn
-				for ( bin = innerlowBin; bin < innerHiBin; bin++) {
-					binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
+
+
+				if ( ndim == 3 && Corder == 1) {
+
+						uint64_t * destboundary = (uint64_t *) malloc(sizeof(uint64_t)*ndim);
+						destboundary[0]  = destcount[0] * destcount[1]* destcount[2]; destboundary[1] = destcount [1]* destcount[2]; destboundary[2] = destcount[2];
+						uint64_t * srcboundary = (uint64_t *) malloc(sizeof(uint64_t)*ndim);
+						srcboundary[0] = srccount[0] * srccount[1]*srccount[2]; srcboundary [1] = srccount[1]*srccount[2]; srcboundary[2] = srccount[2];
+						bin_offset_t binLen, totalBinLen = 0;
+						if (isPGCovered) {
+
+#ifdef BREAKDOWN
+double pgC= dclock();
+#endif
+							for ( bin = innerlowBin; bin < innerHiBin; bin++) {
+								binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
+								binLen = bl->binStartOffsets[bin + 1] - bl->binStartOffsets[bin];
+								rid_t *output_index = malloc(binLen * sizeof(rid_t));
+								rid_t *outputCurPtr = output_index;
+								uint64_t beforeBits = alacResultBitmap->numSetBits;
+								ALDecompressDeltas(inputCurPtr, binCompressedLen, outputCurPtr, &binLen);
+								deltaBitSetsWithPGCoveredCorderIn3D(outputCurPtr, binLen, srcstart, srccount
+								,srcboundary, deststart, destcount, destboundary, ndim, alacResultBitmap);
+								alacResultBitmap->numSetBits += binLen;
+								totalBinLen += binLen;
+								inputCurPtr += binCompressedLen;
+								free(output_index);
+
+							}
+
+#ifdef BREAKDOWN
+				double pgcTmpTotal = (dclock() - pgC);
+				pgCTotal += pgcTmpTotal;
+				decodeTotal += pgcTmpTotal;
+#endif
+						}else {
+
+#ifdef BREAKDOWN
+				double pgPartialC= dclock();
+#endif
+								for ( bin = innerlowBin; bin < innerHiBin; bin++) {
+									binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
+									binLen = bl->binStartOffsets[bin + 1] - bl->binStartOffsets[bin];
+									rid_t *output_index = malloc(binLen * sizeof(rid_t));
+									rid_t *outputCurPtr = output_index;
+
+								ALDecompressDeltas(inputCurPtr, binCompressedLen, outputCurPtr, &binLen);
+								deltaBitSetsWithPGPartialCoveredCorderIn3D(outputCurPtr, binLen, srcstart, srccount
+								,srcboundary, deststart, destcount, destboundary, ndim, alacResultBitmap);
+									alacResultBitmap->numSetBits += binLen;
+									inputCurPtr += binCompressedLen;
+									free(output_index);
+								}
+#ifdef BREAKDOWN
+				double pgTmpPartialTotal = (dclock() - pgPartialC);
+				pgPartialTotal += pgTmpPartialTotal ;
+				decodeTotal += pgTmpPartialTotal;
+#endif
+					}
+					free(destboundary);
+					free(srcboundary);
+				} else {
+								// Now compress each bin in turn
+								for ( bin = innerlowBin; bin < innerHiBin; bin++) {
+									binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
 
 #ifdef BREAKDOWN
 decodeStart= dclock();
 #endif
-					uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered
-							, inputCurPtr, binCompressedLen
-							, srcstart, srccount //PG region dimension
-							, deststart, destcount //region dimension of Selection box
-							, ndim , &(alacResultBitmap->bits));
+									uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered
+											, inputCurPtr, binCompressedLen
+											, srcstart, srccount //PG region dimension
+											, deststart, destcount //region dimension of Selection box
+											, ndim , &(alacResultBitmap->bits));
 #ifdef BREAKDOWN
 decodeTotal += dclock() - decodeStart;
 #endif
-					alacResultBitmap->numSetBits += decodedElm;
-					inputCurPtr += binCompressedLen;
+									alacResultBitmap->numSetBits += decodedElm;
+									inputCurPtr += binCompressedLen;
+								}
+
 				}
+
+
 
 				// high boundary bin
 				binCompressedLen = compBinStartOffs[hi_bin]- compBinStartOffs[hi_bin-1];
@@ -1120,6 +1591,8 @@ decodeTotal += dclock() - decodeStart;
 
 
 
+
+
 /*
  * PG selection, [startPG, endPG)
  */
@@ -1156,6 +1629,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	ckRids = 0; ckReconstitute = 0; ckSpatialCheck = 0; ckSetBitMap = 0;
 
 	decodeTotal =0;
+	wholeDecodeTotal=0;
+	pgCTotal = 0;
+	pgPartialTotal = 0;
 	setRidTotal =0;
 	preparationStart = dclock();
 #endif
@@ -1386,7 +1862,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	printf("======>Reconstitute data in Candidate check %f \n", ckReconstitute);
 	printf("======>Spatial check (whether in the BB) in Candidate check %f \n", ckSpatialCheck);
 	printf("======>Set bitmaps after pass the spatial check in Candidate check %f \n", ckSetBitMap);
-	printf("===>Decode compressed RIDs to bitmap (optional, only applied to compressed indexes): %f \n", decodeTotal);
+	printf("===>Decode compressed RIDs to bitmap (optional, only applied to compressed indexes): %f %f %f %f %f \n", decodeTotal, wholeDecodeTotal,  pgCTotal , pgPartialTotal, decodeTotal - wholeDecodeTotal - pgCTotal - pgPartialTotal);
 	printf("===>Set every RID in the bitmap (optional, only applied to uncompressed indexes): %f \n", setRidTotal);
 
 #endif
