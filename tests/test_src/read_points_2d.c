@@ -381,7 +381,6 @@ int read_points ()
     /*
      * Points without containers based tests
      */
-
     // Test 1
     // Read a single point with 2D coordinates in global space
     // middle point of first 5x5 block, = 0.22
@@ -397,6 +396,7 @@ int read_points ()
     /*
      * Points in BOUNDINGBOX based tests
      */
+    log ("  --------------- Points in Bounding Boxes -----------------------  \n");
     // Test 2
     // Read a single point with 2D coordinates in an 5x5 bounding box
     // middle point of that 5x5 block, = 3.00
@@ -514,13 +514,70 @@ int read_points ()
         goto endread;
 
 
+    // Test 8
+    // Read "center cross" with 2D offset in an 5x5 bounding box
+    // points concentrated at middle to test the reduction of reading box size
+    // 5-point center of that 5x5 block, = 1.32  1.41  3.00  2.14  2.23
+    // The box-reduction should read a 3x3=9 element box instead of the full 5x5=25 elements
+    // Limit the query to the bounding box of the middle of the global array
+    boxstart[0] = 3; boxstart[1] = 3;
+    boxcount[0] = 5; boxcount[1] = 5;
+    box = adios_selection_boundingbox (2, boxstart, boxcount);
+
+    // 5-point center cross of the 5x5 array
+    start[0] = 1; start[1] = 2;
+    start[2] = 2; start[3] = 1;
+    start[4] = 2; start[5] = 2;
+    start[6] = 2; start[7] = 3;
+    start[8] = 3; start[9] = 2;
+    pts = adios_selection_points(2, 5, start);
+    pts->u.points.container_selection = box;
+    expected[0] = 1.40;
+    expected[1] = 2.04;
+    expected[2] = 3.00;
+    expected[3] = 3.01;
+    expected[4] = 3.10;
+    log ("  Read back center cross of box with five 2D points in a 2D bounding box at one step\n");
+    err = test_read (f, pts, 0, 1, expected);
+    adios_selection_delete(pts);
+    if (err)
+        goto endread;
+
+
+    // Test 9
+    // Read "center cross" with 1D offset in an 5x5 bounding box
+    // points concentrated at middle to test the reduction of reading box size
+    // 5-point center cross of that 5x5 block, = 1.32  1.41  3.00  2.14  2.23
+    // The box-reduction should read a 3x5=15 element box instead of the full 5x5=25 elements
+    // Limit the query to the bounding box of the middle of the global array
+    // This is the same actual point as in Test 8
+    boxstart[0] = 3; boxstart[1] = 3;
+    boxcount[0] = 5; boxcount[1] = 5;
+    box = adios_selection_boundingbox (2, boxstart, boxcount);
+
+    // 5-point center cross of the 5x5 array as 1D offsets
+    start[0] = 7;
+    start[1] = 11;
+    start[2] = 12;
+    start[3] = 13;
+    start[4] = 17;
+    pts = adios_selection_points(1, 5, start);
+    pts->u.points.container_selection = box;
+    expected[0] = 1.40;
+    expected[1] = 2.04;
+    expected[2] = 3.00;
+    expected[3] = 3.01;
+    expected[4] = 3.10;
+    log ("  Read back center cross of box with five 1D offsets in a 2D bounding box at one step\n");
+    err = test_read (f, pts, 0, 1, expected);
+
 
     /*
      * Points in WRITEBLOCK based tests
      */
+    log ("  --------------- Points in WriteBlocks -----------------------  \n");
 
-
-    // Test 8
+    // Test 10
     // Read a single point with 2D coordinates in writeblock 2 (third block)
     // middle point of that 5x5 block, = 2.22
     wblock = adios_selection_writeblock(2);
@@ -537,7 +594,7 @@ int read_points ()
         goto endread;
 
 
-    // Test 9
+    // Test 11
     // Read a single point with 1D offset in an writeblock 2
     // middle point of that 5x5 block, = 2.22
     // This is the same actual point as in Test 8
@@ -553,7 +610,7 @@ int read_points ()
     if (err)
         goto endread;
 
-    // Test 10-11
+    // Test 12-13
     // Read several single points with 2D coordinates in writeblock 2
     // back diagonal of that 5x5 block, = 2.04 2.13 2.22 2.31 2.40
     wblock = adios_selection_writeblock(2);
@@ -589,10 +646,10 @@ int read_points ()
     if (err)
         goto endread;
 
-    // Test 12-13
+    // Test 14-15
     // Read several single points with 1D offset in writeblock 2
     // back diagonal of that 5x5 block, = 2.04 2.13 2.22 2.31 2.40
-    // This is the same actual point as in Test 10-11
+    // This is the same actual point as in Test 12-13
     wblock = adios_selection_writeblock(2);
 
     // back diagonal of the 5x5 array as 1D offsets

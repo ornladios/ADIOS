@@ -394,63 +394,6 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
     return found_stream;
 }
 
-//
-// calculate the spanning N-dim bounding box for a list of N-dim points
-//
-static void mGetPointlistSpan(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t* count)
-{
-    uint64_t i=0, idx=0;
-    int d=0;
-    uint64_t max[pts->ndim];
-    for (i = 0; i < pts->npoints; i++)
-    {
-        idx = i * pts->ndim;
-        //printf("%ldth = [%ld, %ld, %ld] \n", i, pts->points[idx], pts->points[idx+1], pts->points[idx+2]);
-        for (d = 0; d < pts->ndim; d++) {
-            if (i == 0) {
-                start[d] = pts->points[d]; max[d] = pts->points[d];
-                continue;
-            }
-
-            uint64_t curr = pts->points[idx+d];
-            if ((start[d] > curr)) {
-                start[d] = curr;
-            }
-            if (max[d] < curr) {
-                max[d] = curr;
-            }
-        }
-        //printf("start[0]=%ld  max[0]=%ld \n", start[0], max[0]);
-    }
-    for (d = 0; d < pts->ndim; d++) {
-        count[d] = max[d] - start[d] + 1;
-    }
-    return;
-}
-
-//
-// returns # of segments to divide for a bounding box' range
-//
-static int mGetRange(int ndim, uint64_t* start, uint64_t* count)
-{
-    int k=0;
-    uint64_t bbsize = 1;
-    for (k=0; k<ndim; k++) {
-        bbsize *= count[k] - start[k]+1;
-        log_debug ("... bb at %d dimention: [%" PRIu64 ", %" PRIu64 "]\n", k, count[k], start[k]);
-    }
-
-    const uint64_t BBSIZELIMIT = 1048576; /* 1M elements, 4-8MB data usually to read at once */
-    uint64_t nBB = bbsize/BBSIZELIMIT ;
-
-    if (nBB * BBSIZELIMIT != bbsize) {
-        nBB += 1;
-    }
-
-    log_debug ("... nBB=%" PRIu64 "\n", nBB);
-    //return bbsize;
-    return (int) nBB;
-}
 
 //
 // returns # of elements in a bounding box' range (not size in bytes!)
@@ -499,6 +442,107 @@ void adios_points_1DtoND (uint64_t npoints, uint64_t *pts1d, int ndim, uint64_t 
         p1++;
     }
  }
+
+//
+// calculate the spanning N-dim bounding box for a list of N-dim points
+//
+static void mGetPointlistSpan(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t* count)
+{
+    uint64_t i=0, idx=0;
+    int d=0;
+    uint64_t max[pts->ndim];
+    for (i = 0; i < pts->npoints; i++)
+    {
+        idx = i * pts->ndim;
+        //printf("%ldth = [%ld, %ld, %ld] \n", i, pts->points[idx], pts->points[idx+1], pts->points[idx+2]);
+        for (d = 0; d < pts->ndim; d++) {
+            if (i == 0) {
+                start[d] = pts->points[d]; max[d] = pts->points[d];
+                continue;
+            }
+
+            uint64_t curr = pts->points[idx+d];
+            if ((start[d] > curr)) {
+                start[d] = curr;
+            }
+            if (max[d] < curr) {
+                max[d] = curr;
+            }
+        }
+        //printf("start[0]=%ld  max[0]=%ld \n", start[0], max[0]);
+    }
+    for (d = 0; d < pts->ndim; d++) {
+        count[d] = max[d] - start[d] + 1;
+    }
+    return;
+}
+
+/*
+ *  Calculate the spanning N-dim bounding box for a list of 1-dim points in an N-dim box.
+ *  Simply take the smallest and largest offset, then make a bounding box that fits all of them
+ *  Note that it is not giving the smallest container box. It can only decrease the box in the
+ *  slowest dimension without converting all points to N-dimension.
+ */
+static void mGetPointlistSpan1D(ADIOS_SELECTION_POINTS_STRUCT* pts, int ndim,
+        uint64_t* boxstart, uint64_t* boxcount,
+        uint64_t* spanstart, uint64_t* spancount)
+{
+    uint64_t i=0;
+    int d=0;
+    uint64_t span[2]; // min and max offsets
+    span[0] = 0xFFFFFFFFFFFFFFFF; // 18446744073709551615, the min offset
+    span[1] = 0; // the max offset
+
+    // find min and max offsets
+    uint64_t *pt = pts->points;
+    for (i = 0; i < pts->npoints; i++)
+    {
+        if (*pt < span[0])
+            span[0] = *pt;
+        if (*pt > span[1])
+            span[1] = *pt;
+        pt++;
+    }
+
+    // convert them to N-dim
+    uint64_t spanND[2*ndim];
+    adios_points_1DtoND (2, span, ndim, boxstart, boxcount, spanND);
+
+    // correct sub-dimensions (some other points may be outside the naive span over two points
+    spanstart[0] = spanND[0];
+    spancount[0] = spanND[ndim]-spanND[0]+1;
+    for (d = 1; d < ndim; d++) {
+        spanstart[d] = boxstart[d];
+        spancount[d] = boxcount[d];
+    }
+    return;
+}
+
+#if 0
+//
+// returns # of segments to divide for a bounding box' range
+//
+static int mGetRange(int ndim, uint64_t* start, uint64_t* count)
+{
+    int k=0;
+    uint64_t bbsize = 1;
+    for (k=0; k<ndim; k++) {
+        bbsize *= count[k] - start[k]+1;
+        log_debug ("... bb at %d dimention: [%" PRIu64 ", %" PRIu64 "]\n", k, count[k], start[k]);
+    }
+
+    const uint64_t BBSIZELIMIT = 1048576; /* 1M elements, 4-8MB data usually to read at once */
+    uint64_t nBB = bbsize/BBSIZELIMIT ;
+
+    if (nBB * BBSIZELIMIT != bbsize) {
+        nBB += 1;
+    }
+
+    log_debug ("... nBB=%" PRIu64 "\n", nBB);
+    //return bbsize;
+    return (int) nBB;
+}
+#endif
 
 /*
  * Pick the points of a point list from a contiguous array of data.
@@ -1135,6 +1179,11 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
     int step, d;
     uint64_t zeros[32] = {0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
                           0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0};
+    // for statistics
+    uint64_t nelems_read = 0;
+    uint64_t nelems_container = 0;
+    uint64_t points_read = 0;
+    int nreads_performed = 0;
 
     v = bp_find_var_byid (fh, r->varid);
     size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
@@ -1176,7 +1225,6 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
         // Read the writeblock and then pick the points from memory
         ADIOS_SELECTION * wbsel = container;
         ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &wbsel->u.block;
-        uint64_t nelems;
         uint64_t ldims[32], gdims[32], offsets[32];
 
         for (step = 0; step < r->nsteps; step++)
@@ -1190,7 +1238,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                         wb->index :
                         adios_wbidx_to_pgidx (fp, nr, step);
 
-            nelems = 1;
+            uint64_t nelems = 1;
             /* get ldims for the chunk and then calculate payload size */
             bndim = v->characteristics[wbidx].dims.count;
             bp_get_dimension_characteristics(&(v->characteristics[wbidx]), ldims, gdims, offsets);
@@ -1217,15 +1265,19 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                     // for each step we need to move npoints, so fill up the output array
                     memset (dest, 0, (sel->u.points.npoints-np)*size_of_type);
                 }
+                points_read += np;
                 dest += sel->u.points.npoints * size_of_type;
 
                 free (nr->data);
                 common_read_free_chunk (wbchunk);
+                nelems_read += nelems;
+                nelems_container += nelems;
+                nreads_performed++;
             }
             else
             {
                 adios_error (err_no_memory, "Could not allocate memory to read %" PRIu64
-                        "bytes of writeblock %d\n", nelems*size_of_type, wbidx);
+                        "bytes of writeblock %d\n", nelems_read*size_of_type, wbidx);
                 memset (dest, 0, sel->u.points.npoints * size_of_type);
             }
         }
@@ -1276,10 +1328,13 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                     }
                     //memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
                     chunk = read_var_bb (fp, nr);
+                    nreads_performed++;
                     nr->data = (char *) nr->data + size_of_type;
                     common_read_free_chunk (chunk);
                 }
                 nr->from_steps++;
+                nelems_container += adios_get_nelements_of_box (bndim, container->u.bb.start, container->u.bb.count);
+                nelems_read += sel->u.points.npoints;
             }
             //dest += r->nsteps * sel->u.points.npoints * size_of_type; // == nr->data
         }
@@ -1288,6 +1343,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
             /* Points in a Bounding Box container */
             // Create smaller bounding boxes and read them, then pick the points in memory
             uint64_t start[bndim], count[bndim];
+            nelems_container = adios_get_nelements_of_box (bndim, container->u.bb.start, container->u.bb.count);
 
             if (bndim == pndim) {
                 // get the smallest box the points fit in
@@ -1297,8 +1353,9 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                     start[d] += container->u.bb.start[d];
                 }
             } else {
-                memcpy (start, container->u.bb.start, bndim*sizeof(uint64_t));
-                memcpy (count, container->u.bb.count, bndim*sizeof(uint64_t));
+                mGetPointlistSpan1D(&(sel->u.points), bndim, container->u.bb.start, container->u.bb.count, start, count);
+                //memcpy (start, container->u.bb.start, bndim*sizeof(uint64_t));
+                //memcpy (count, container->u.bb.count, bndim*sizeof(uint64_t));
             }
             uint64_t nelems = adios_get_nelements_of_box (bndim, start, count);
             const int MAX_BUFFERSIZE = 100; //8388608; // 8M max read
@@ -1370,6 +1427,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
 
                         dest += npoints * size_of_type;
                         common_read_free_chunk (chunk);
+                        nreads_performed++;
                     }
 
                     // prepare for next read
@@ -1394,7 +1452,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                         }
                     }
                 } // end while sum < nelems
-
+                nelems_read += nelems;
                 free(nr->data);
             }
             else
@@ -1428,6 +1486,11 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
         common_read_selection_delete(container);
     }
 
+    log_warn ("Point selection reading: number of points = %" PRIu64
+            ", total container elements = %" PRIu64
+            ", number of reads = %d"
+            ", elements read from file = %" PRIu64 "\n",
+            sel->u.points.npoints*r->nsteps, nelems_container, nreads_performed, nelems_read);
     return chunk;
 }
 

@@ -405,6 +405,7 @@ int read_points ()
     /*
      * Points in BOUNDINGBOX based tests
      */
+    log ("  --------------- Points in Boundinx Boxes -----------------------  \n");
     // Test 2
     // Read a single point with 3D coordinates in an 5x5x5 bounding box
     // middle point of the 5x5x5 block, = 7.00
@@ -540,11 +541,97 @@ int read_points ()
         goto endread;
 
 
+    // Test 8
+    // Read "center cross" with 3D offset in an 5x5x5 bounding box
+    // points concentrated in 3x1x3 2D X-Z center plane to test the reduction of reading box size
+    // 5-point center of that 3x1x3 block, =          5.400
+    //                                          3.004 7.000 7.001
+    //                                                7.100
+    // The box-reduction should read a 3x3=9 element box instead of
+    // the full 5x5x5=125 elements
+    // (actually read_var_bb then will read more than this because it reads contiguous arrays)
+    // Limit the query to the bounding box of the middle of the global array
+    /*
+     * See the cross in file:
+    $ bpls -l read_points_3d.bp -d data -n 5 -s "0,4,5,5" -c "1,1,1,1" -f "%6.3f " -n 1
+    real     data                       2*{10, 10, 10} = 0 / 17.444 / 8.722 / 5.50184
+    slice (0:0, 4:4, 5:5, 5:5)
+    (0,4,5,5)     5.400
+
+    $ bpls -l read_points_3d.bp -d data -n 5 -s "0,5,5,4" -c "1,1,1,3" -f "%6.3f " -n 1
+    real     data                       2*{10, 10, 10} = 0 / 17.444 / 8.722 / 5.50184
+    slice (0:0, 5:5, 5:5, 4:6)
+    (0,5,5,4)     3.004
+    (0,5,5,5)     7.000
+    (0,5,5,6)     7.001
+
+    $ bpls -l read_points_3d.bp -d data -n 5 -s "0,6,5,5" -c "1,1,1,1" -f "%6.3f " -n 1
+    real     data                       2*{10, 10, 10} = 0 / 17.444 / 8.722 / 5.50184
+    slice (0:0, 6:6, 5:5, 5:5)
+    (0,6,5,5)     7.100
+     */
+    boxstart[0] = 3; boxstart[1] = 3; boxstart[2] = 3;
+    boxcount[0] = 5; boxcount[1] = 5; boxcount[2] = 5;
+    box = adios_selection_boundingbox (3, boxstart, boxcount);
+
+    // 5-point center cross in X-Z plane of the 5x5x5 array
+    start[0]  = 1; start[1]  = 2; start[2]  = 2;
+    start[3]  = 2; start[4]  = 2; start[5]  = 1;
+    start[6]  = 2; start[7]  = 2; start[8]  = 2;
+    start[9]  = 2; start[10] = 2; start[11] = 3;
+    start[12] = 3; start[13] = 2; start[14] = 2;
+    pts = adios_selection_points(3, 5, start);
+    pts->u.points.container_selection = box;
+    expected[0] = 5.400;
+    expected[1] = 3.004;
+    expected[2] = 7.000;
+    expected[3] = 7.001;
+    expected[4] = 7.100;
+    log ("  Read back center cross in X-Z plane with five 3D points in a 3D bounding box at one step\n");
+    err = test_read (f, pts, 0, 1, expected);
+    adios_selection_delete(pts);
+    if (err)
+        goto endread;
+
+
+    // Test 9
+    // Read "center cross" with 1D offset in an 5x5x5 bounding box
+    // points concentrated in 3x1x3 2D X-Z center plane to test the reduction of reading box size
+    // 5-point center of that 3x1x3 block, = 5.400 3.004 7.000 7.001 7.100
+    // The box-reduction should read a 3x5x5=75 element box instead of
+    // the full 5x5x5=125 elements
+    // Limit the query to the bounding box of the middle of the global array
+    // Same test as Test 8 but with 1D points
+
+    boxstart[0] = 3; boxstart[1] = 3; boxstart[2] = 3;
+    boxcount[0] = 5; boxcount[1] = 5; boxcount[2] = 5;
+    box = adios_selection_boundingbox (3, boxstart, boxcount);
+
+    // 5-point center cross in X-Z plane of the 5x5x5 array
+    start[0] = 1*ldim2*ldim3 + 2*ldim2 + 2;
+    start[1] = 2*ldim2*ldim3 + 2*ldim2 + 1;
+    start[2] = 2*ldim2*ldim3 + 2*ldim2 + 2;
+    start[3] = 2*ldim2*ldim3 + 2*ldim2 + 3;
+    start[4] = 3*ldim2*ldim3 + 2*ldim2 + 2;
+
+    pts = adios_selection_points(1, 5, start);
+    pts->u.points.container_selection = box;
+    expected[0] = 5.400;
+    expected[1] = 3.004;
+    expected[2] = 7.000;
+    expected[3] = 7.001;
+    expected[4] = 7.100;
+    log ("  Read back center cross in X-Z plane with five 1D points in a 3D bounding box at one step\n");
+    err = test_read (f, pts, 0, 1, expected);
+    adios_selection_delete(pts);
+    if (err)
+        goto endread;
+
 
     /*
      * Points in WRITEBLOCK based tests
      */
-
+    log ("  --------------- Points in WriteBlocks -----------------------  \n");
 
     // Test 8
     // Read a single point with 3D coordinates in writeblock 2 (third block)
