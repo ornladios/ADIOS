@@ -55,7 +55,7 @@
 
 <method group="abc" method="MPI"/>
 
-<buffer size-MB="20" allocate-time="now"/>
+<buffer max-size-MB="20"/>
 
 </adios-config>
 

@@ -304,6 +304,7 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     int didx[MAX_DS_NDIM]; // for reordering the dimensions
     int ndims = 0;
     int hastime = 0;
+    uint64_t nelems = 1;
     gdims[0] = 0;
     struct adios_dimension_struct* var_dimensions = v->dimensions;
     // Calculate lower and upper bounds for each available dimension (up to MAX_DS_NDIM dims)
@@ -314,7 +315,11 @@ void adios_dataspaces_write (struct adios_file_struct * fd
         lb[ndims] = adios_get_dim_value (&(var_dimensions->local_offset));
         if (gdims[ndims] > 0 && dims[ndims] > 0)  {
             ub[ndims] = lb[ndims] + dims[ndims] - 1;
+            nelems *= dims[ndims];
             ndims++;
+        } else if (gdims[ndims] > 0 && dims[ndims] == 0) {
+            // piece of array with 0 elements, skip it
+            nelems *= dims[ndims];
         }   else {
             // time dimension (ldim=0 indicates this). Leave out from the dimensions.
             //ub[ndims] = lb[ndims]; 
@@ -338,6 +343,11 @@ void adios_dataspaces_write (struct adios_file_struct * fd
 
     //snprintf(dspaces_type_var_name, MAX_DS_NAMELEN, "TYPE@%s", ds_var_name);
     
+    /* The next line is just to fix adios_build_index_v1() call not to abort on 
+     * offset=0 variables (in case of files, written variables have offset > 0)
+     */
+    v->write_offset = 1; 
+
     /* non-global variables are put in space ONLY by rank = 0 process */
     if (gdims[0] == 0 && md->rank != 0) {
         //fprintf(stderr, "rank=%d var_name=%s is not global. Skip\n", md->rank, ds_var_name);
@@ -352,7 +362,6 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     //}
     
      
-    v->write_offset = 1; // only !=0 offsets will be included in build index
     /* This is not needed here, this is already called in common_adios_write() 
     adios_generate_var_characteristics_v1 (fd, v); // characteristics will be included in build index
     adios_write_var_characteristics_v1 (fd, v);
@@ -366,6 +375,13 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%s), gdim=(%s), lb=(%s), ub=(%s)\n",
             ds_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version, ndims,
             dims_str, gdims_str, lb_str, ub_str);
+
+
+    /* If variable is empty, do not push to space */
+    if (nelems == 0) {
+        log_debug ("rank=%d var_name=%s is empy variable piece. Skip\n", md->rank, ds_var_name);
+        return;
+    }
 
     /* non-timed scalars are written in the metadata at close(), not here */
     if (ndims == 0 && !hastime)

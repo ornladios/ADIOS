@@ -25,7 +25,7 @@
 
 int main (int argc, char ** argv) 
 {
-    int         rank, size, i, j, datasize;
+    int         rank, size, i, j, datasize=0;
     MPI_Comm    comm = MPI_COMM_WORLD;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
     ADIOS_SELECTION * sel;
@@ -55,12 +55,12 @@ int main (int argc, char ** argv)
             printf ("start=");
             for (j = 0; j < varinfo->ndim; j++)
             {
-                printf ("%llu ", varinfo->blockinfo[i].start[j]);
+                printf ("%" PRIu64, varinfo->blockinfo[i].start[j]);
             }
             printf ("count=");
             for (j = 0; j < varinfo->ndim; j++)
             {
-                printf ("%llu ", varinfo->blockinfo[i].count[j]);
+                printf ("%" PRIu64, varinfo->blockinfo[i].count[j]);
             }
             printf ("\n");
         }

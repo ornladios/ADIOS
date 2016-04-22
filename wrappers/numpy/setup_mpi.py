@@ -79,8 +79,8 @@ include_dirs.insert(0, np.get_include())
 extra_compile_args.insert(0, '-Wno-uninitialized')
 extra_compile_args.insert(0, '-Wno-unused-function')
 
-m1 = Extension('adios_mpi', 
-               sources=['adios_mpi.cpp'], 
+m1 = Extension('adios_mpi.adios_mpi',
+               sources=['adios_mpi.cpp'],
                define_macros=[],
                include_dirs = include_dirs,
                library_dirs = library_dirs,
@@ -121,13 +121,27 @@ class adios_test(Command):
         import sys
         errno = subprocess.call([sys.executable, 'tests/test_adios_mpi.py', 'tests/config_mpi.xml'])
         raise SystemExit(errno)
-    
-setup(name = 'adios_mpi',
-      version = '1.9.1b3',
-      description = 'Python Module for Adios MPI',
-      author = 'Jong Choi',
-      author_email = 'yyalli@gmail.com',
-      url = 'http://www.olcf.ornl.gov/center-projects/adios/',
+
+NAME = 'adios_mpi'
+DESCRIPTION = 'Python Module for Adios MPI'
+AUTHOR = 'Jong Choi'
+AUTHOR_EMAIL = 'choij@ornl.gov'
+URL = 'http://www.olcf.ornl.gov/center-projects/adios/'
+
+import re
+module_file = open("src/__init__.py").read()
+metadata = dict(re.findall("__([a-z]+)__\s*=\s*'([^']+)'", module_file))
+VERSION = metadata['version']
+
+setup(name = NAME,
+      version = VERSION,
+      description = DESCRIPTION,
+      author = AUTHOR,
+      author_email = AUTHOR_EMAIL,
+      url = URL,
       cmdclass={'test': adios_test},
       executables = [],
-      ext_modules = [m1])
+      ext_modules = [m1],
+      packages=['adios_mpi', 'adios_mpi._hl'],
+      package_dir = {'adios_mpi': 'src_mpi', 'adios_mpi._hl': '_hl'},
+      )

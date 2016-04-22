@@ -18,6 +18,7 @@
 #include "public/adios.h"
 #include "public/adios_error.h"
 #include "core/globals.h"
+#include "core/buffer.h"
 #include "core/common_adios.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
@@ -45,6 +46,10 @@ int adios_init (const char * config, MPI_Comm comm)
     return common_adios_init (config, comm);
 }
 
+int adios_is_initialized(void)
+{
+    return (adios_transports != NULL);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls

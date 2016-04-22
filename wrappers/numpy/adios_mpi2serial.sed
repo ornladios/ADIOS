@@ -15,3 +15,4 @@ s/comm.Clone()/comm/g
     int MPI_COMM_WORLD\
     int MPI_COMM_SELF/
 }
+s/adios_mpi/adios/g

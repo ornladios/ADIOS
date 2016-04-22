@@ -60,7 +60,7 @@ int main(int argc, char ** argv){
 
 	// returns 0 (buffer allocated) or 1 (seems everything fine)
 	// I guess size of the buffer in MB
-	adios_allocate_buffer(ADIOS_BUFFER_ALLOC_NOW, 20);
+	adios_set_max_buffer_size (20);
 
 	// this will hold the group id for all variables defined within this group
 	int64_t	adios_grp;
@@ -94,7 +94,7 @@ int main(int argc, char ** argv){
 	uint64_t adios_totalsize = 0;
 
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%lld, adios_totalsize=%lld, retval=%d\n",
+	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%" PRIu64 ", adios_totalsize=%" PRIu64 ", retval=%d\n",
 				rank, adios_groupsize, adios_totalsize, retval);
 
 	// init the array that I will transport over the sea

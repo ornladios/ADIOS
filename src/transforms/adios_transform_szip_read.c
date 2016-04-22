@@ -4,6 +4,7 @@
 #include "util.h"
 #include "core/transforms/adios_transforms_hooks_read.h"
 #include "core/transforms/adios_transforms_reqgroup.h"
+#include "core/adios_internals.h" // adios_get_type_size()
 
 #ifdef SZIP
 

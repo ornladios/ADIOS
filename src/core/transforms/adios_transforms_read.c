@@ -315,8 +315,6 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
                                                                       const ADIOS_SELECTION *sel, int from_steps, int nsteps, const char *param, void *data) {
     // Declares
     adios_transform_read_request *new_readreq;
-    int blockidx, timestep, timestep_blockidx;
-    int start_blockidx, end_blockidx;
 
     enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
 
@@ -407,8 +405,6 @@ static uint64_t apply_datablock_to_buffer_local_selections(
         ADIOS_SELECTION **out_inter_sel, int want_out_inter_sel,
         enum ADIOS_FLAG swap_endianness)
 {
-	int may_have_intersection = 1;
-
 	// For writeblock selections, we can use adios_patch_data_to_local,
 	// but first we must determine the bounding box of the writeblock selection
     const ADIOS_SELECTION *vb_bounds_sel = create_writeblock_bounds(&output_sel->u.block, datablock->timestep, raw_varinfo, transinfo);
@@ -417,7 +413,7 @@ static uint64_t apply_datablock_to_buffer_local_selections(
     // if we need to allocate a fitting output buffer
     if (want_out_inter_sel || !*output_buffer) {
         *out_inter_sel = adios_selection_intersect_local(datablock->bounds, output_sel, datablock->timestep, raw_varinfo, transinfo);
-        may_have_intersection = (*out_inter_sel ? 1 : 0);
+        //int may_have_intersection = (*out_inter_sel ? 1 : 0);
     }
 
     // Allocate the output buffer if needed (inter_sel is populated by previous if statement)
@@ -664,9 +660,8 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
  * request group, identifies that data (if any), and returns it as an
  * ADIOS_VARCHUNK. Additionally, free the datablock.
  */
-static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *datablock, adios_transform_read_request *reqgroup) {
-    ADIOS_SELECTION *inter_sel;
-
+static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *datablock, adios_transform_read_request *reqgroup)
+{
     assert(datablock); assert(reqgroup);
     assert(reqgroup->orig_sel);
 

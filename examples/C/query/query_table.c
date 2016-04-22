@@ -55,7 +55,7 @@ void read_rows (ADIOS_FILE *f, ADIOS_SELECTION *hits, int ncols)
     /* Get the column names, just for fun */
     ADIOS_VARINFO *v = adios_inq_var (f, "Columns");
     char *Columns = (char*) malloc (v->dims[0]*v->dims[1]);
-    //printf ("Allocate %lld bytes for column names\n", v->dims[0]*v->dims[1]);
+    //printf ("Allocate %" PRIu64 " bytes for column names\n", v->dims[0]*v->dims[1]);
     adios_schedule_read (f, NULL, "Columns", 0, 1, Columns);
     adios_perform_reads (f, 1);
 
@@ -90,7 +90,7 @@ void print_points (ADIOS_SELECTION *hits, int *KE)
     printf ("\nHit           i       j    Kinetic E\n");
     printf ("----------------------------------------------\n");
     for (n=0; n<Npoints; n++) {
-        printf ("  %3d      %4lld    %4lld      %d\n",
+        printf ("  %3d      %4" PRIu64 "    %4" PRIu64 "      %d\n",
                 n, points[2*n],points[2*n+1],KE[n]);
     }
     printf ("\n");
@@ -122,7 +122,7 @@ void query_columns(ADIOS_FILE* f, int nrows, int ncols)
             /* Evaluate query, get the list of points (of a limited number at once) */
             ADIOS_SELECTION* hits = NULL;
             int hasMore = adios_query_evaluate(q, col3, timestep, batchSize, &hits);
-            printf("Number of hits returned in batch %d = %lld \n",nBatches, hits->u.points.npoints);
+            printf("Number of hits returned in batch %d = %" PRIu64 " \n",nBatches, hits->u.points.npoints);
 
             if (hits->u.points.npoints > 0) {
                 /* Read the data of those points */
@@ -184,7 +184,7 @@ int main (int argc, char ** argv)
         return 2;
     }
 
-    printf ("Variable A has %lld rows and %lld columns\n", v->dims[0], v->dims[1]);
+    printf ("Variable A has %" PRIu64 " rows and %" PRIu64 " columns\n", v->dims[0], v->dims[1]);
 
     query_columns(f, v->dims[0], v->dims[1]); 
     adios_read_close(f);

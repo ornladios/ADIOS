@@ -59,39 +59,38 @@ double V[5][6] = {
 
 int main (int argc, char ** argv) 
 {
-	int         size, i, block;
 	MPI_Comm    comm = 0; // dummy mpi 
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
 	uint64_t  adios_groupsize, adios_totalsize;
-        int64_t   g;
-        int64_t   f;
-        int64_t   Tid, Pid, Vid; // variable IDs
-        char dimstr[32];
+	int64_t   g;
+	int64_t   f;
+	int64_t   Tid, Pid, Vid; // variable IDs
+	char dimstr[32];
 
 	sprintf (dimstr, "%d,%d", NX, NY);
 
 	adios_init_noxml (comm);
-        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1);
+	adios_set_max_buffer_size (1);
 
-        adios_declare_group (&g, "vars", "", adios_flag_yes);
-        adios_select_method (g, "POSIX", "", "");
+	adios_declare_group (&g, "vars", "", adios_flag_yes);
+	adios_select_method (g, "POSIX", "", "");
 
-        Tid = adios_define_var (g, "T" ,"", adios_double, dimstr, dimstr, "0,0");
-        adios_set_transform (Tid, "none");
-        Pid = adios_define_var (g, "P" ,"", adios_double, dimstr, dimstr, "0,0");
-        adios_set_transform (Pid, "none");
-        Vid = adios_define_var (g, "V" ,"", adios_double, dimstr, dimstr, "0,0");
-        adios_set_transform (Vid, "none");
-   
-   
-        adios_open (&f, "vars", "vars.bp", "w", comm);
-        adios_groupsize = 3*NX*NY*sizeof(double);
-        adios_group_size (f, adios_groupsize, &adios_totalsize);
+	Tid = adios_define_var (g, "T" ,"", adios_double, dimstr, dimstr, "0,0");
+	adios_set_transform (Tid, "none");
+	Pid = adios_define_var (g, "P" ,"", adios_double, dimstr, dimstr, "0,0");
+	adios_set_transform (Pid, "none");
+	Vid = adios_define_var (g, "V" ,"", adios_double, dimstr, dimstr, "0,0");
+	adios_set_transform (Vid, "none");
+
+
+	adios_open (&f, "vars", "vars.bp", "w", comm);
+	adios_groupsize = 3*NX*NY*sizeof(double);
+	adios_group_size (f, adios_groupsize, &adios_totalsize);
 	adios_write (f, "T", T);
 	adios_write (f, "P", P);
 	adios_write (f, "V", V);
-        adios_close (f);
+	adios_close (f);
 
 	adios_finalize (0);
 	return 0;

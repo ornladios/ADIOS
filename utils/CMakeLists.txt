@@ -6,7 +6,7 @@ add_subdirectory(bpls)
 add_subdirectory(bpdiff)
 add_subdirectory(bpmeta)
 add_subdirectory(bprecover)
-add_subdirectory(list_methods)
+add_subdirectory(adios_list_methods)
 
 if(BUILD_WRITE)
   add_subdirectory(adios_lint)

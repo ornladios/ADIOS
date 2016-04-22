@@ -48,7 +48,7 @@ program adios_test
 
     print '("rank=",i0," group_comm=",i0," ierr=",i0)', rank, group_comm, ierr
 
-    call adios_allocate_buffer (10, ierr);
+    call adios_set_max_buffer_size (10)
     call adios_init ("config_fortran.xml", group_comm, ierr)
     call test_write (group, filename, group_comm, small_int, big_int, small_real, big_real, z_size, z_array)
 

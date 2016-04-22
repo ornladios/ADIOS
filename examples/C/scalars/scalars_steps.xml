@@ -23,7 +23,7 @@
 
     <method group="scalars_steps" method="MPI"/>
 
-    <buffer size-MB="20" allocate-time="now"/>
+    <buffer max-size-MB="20"/>
 
 </adios-config>
 

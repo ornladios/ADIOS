@@ -25,6 +25,9 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
+        logical function adios_is_initialized ()
+        end function
+
         subroutine adios_init_noxml (comm, err)
             implicit none
             integer,        intent(in)  :: comm

@@ -29,7 +29,7 @@ static ADIOS_SELECTION * convertWBToBB(ADIOS_SELECTION *sel, int timestep, ADIOS
 
 	if (!varinfo->blockinfo) {
 		const data_view_t old_view = adios_read_set_data_view(fp, LOGICAL_DATA_VIEW);
-		adios_read_bp_inq_var_blockinfo(fp, varinfo);
+		adios_inq_var_blockinfo(fp, varinfo);
 		adios_read_set_data_view(fp, old_view);
 	}
 	ADIOS_VARBLOCK *vb = &varinfo->blockinfo[abs_wbindex];
@@ -48,7 +48,7 @@ static uint64_t computeSelectionSizeInElements(ADIOS_SELECTION *sel) {
 		return size;
 	}
 	default:
-		fprintf(stderr, "Unsupported selection type %d at %s:%s", sel->type, __FILE__, __LINE__);
+		fprintf(stderr, "Unsupported selection type %d at %s:%d", sel->type, __FILE__, __LINE__);
 		exit(1);
 		return 0;
 	}
@@ -77,8 +77,9 @@ static enum REDUCED_DATATYPE getReducedDatatype(enum ADIOS_DATATYPES datatype) {
 	case adios_complex:
 	case adios_double_complex:
 		return RD_DOUBLE_COMPLEX;
+	default:
+		return RD_UNKNOWN;
 	}
-	return RD_UNKNOWN;
 }
 
 #define ALLOCATE_REDUCED_DATATYPE(type) (type*)malloc(sizeof(type))
@@ -90,8 +91,10 @@ static void * allocateReducedDatatype(enum REDUCED_DATATYPE reduced_datatype, in
 	case RD_LONG_DOUBLE:	return ALLOCATE_REDUCED_DATATYPE(long double);
 	case RD_STRING:			return (char*)malloc(maxstrlen + 1);
 	case RD_DOUBLE_COMPLEX:
-		fprintf(stderr, "Cannot handle complex or double complex datatypes (at %s:%s)\n", __FILE__, __LINE__);
+		fprintf(stderr, "Cannot handle complex or double complex datatypes (at %s:%d)\n", __FILE__, __LINE__);
 		exit(1);
+		return NULL;
+	default:
 		return NULL;
 	}
 }
@@ -105,8 +108,10 @@ static void * parseStringAsReducedDatatype(const char *str, enum REDUCED_DATATYP
 	case RD_LONG_DOUBLE:	RETURN_REDUCED_DATATYPE(long double, strtold(str, NULL)); break;
 	case RD_STRING:			return strdup(str);
 	case RD_DOUBLE_COMPLEX:
-		fprintf(stderr, "Cannot handle complex or double complex datatypes (at %s:%s)\n", __FILE__, __LINE__);
+		fprintf(stderr, "Cannot handle complex or double complex datatypes (at %s:%d)\n", __FILE__, __LINE__);
 		exit(1);
+		return NULL;
+	default:
 		return NULL;
 	}
 }
@@ -128,7 +133,7 @@ static void castToReducedDatatype(const void *value, enum ADIOS_DATATYPES dataty
 	case adios_complex:
 	case adios_double_complex:
 	default:
-		fprintf(stderr, "Unsupported or invalid reduced datatype %d at %s:%s\n", datatype, __FILE__, __LINE__);
+		fprintf(stderr, "Unsupported or invalid reduced datatype %d at %s:%d\n", datatype, __FILE__, __LINE__);
 		exit(1);
 	}
 }
@@ -143,7 +148,7 @@ static int compareReducedDatatypeValues(const void *v1, const void *v2, enum RED
 	case RD_STRING:			return strcmp((const char*)v1, (const char*)v2);
 	case RD_DOUBLE_COMPLEX:
 	default:
-		fprintf(stderr, "Unsupported or invalid reduced datatype %d at %s:%s\n", datatype, __FILE__, __LINE__);
+		fprintf(stderr, "Unsupported or invalid reduced datatype %d at %s:%d\n", datatype, __FILE__, __LINE__);
 		exit(1);
 		return 0;
 	}
@@ -161,6 +166,7 @@ static int compareConstraintBoundValue(const void *bound, const void *value, enu
 	case ADIOS_EQ: return compare == 0;
 	case ADIOS_NE: return compare != 0;
 	}
+	return 0;
 }
 
 // Returns which points in the given buffer of data (buffer) for the given selection
@@ -386,7 +392,7 @@ static ADIOS_SELECTION * evaluateQueryTree(ADIOS_QUERY *query, int timestep) {
 		return combinedsel;
 	} else if (query->left) {
 		return evaluateQueryTree(query->left, timestep);
-	} else if (query->right) {
+	} else  {  //if (query->right) {
 		return evaluateQueryTree(query->right, timestep);
 	}
 }
@@ -417,7 +423,7 @@ static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, ADIOS_SELECTION_WRITEBLO
 		// Read the blockinfo if not already present
 		if (!q->varinfo->blockinfo) {
 			adios_read_set_data_view(q->file, LOGICAL_DATA_VIEW);
-			common_read_inq_var_blockinfo(q->file, q->varinfo);
+			adios_inq_var_blockinfo(q->file, q->varinfo);
 		}
 
 		// Note: adios_get_absolute_writeblock_index ensures that timestep and wbindex
@@ -534,7 +540,7 @@ static void printPointSelection(int timestep, ADIOS_SELECTION *sel) {
 	for (i = 0; i < npoints; ++i) {
 		printf("%d", timestep);
 		for (j = 0; j < ndim; ++j) {
-			printf(" %llu", *points++);
+			printf(" %" PRIu64, *points++);
 		}
 		printf("\n");
 	}

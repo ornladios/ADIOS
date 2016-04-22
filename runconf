@@ -634,7 +634,10 @@ elif [ `hostname | cut -c 1-6` == "edison" ]; then
     echo "Configure on EDISON for $TARGET env."
     export MPICC=cc
     export MPICXX=CC
-    export MPIFC=ftn
+    export MPIFC=ftn 
+    module unload darshan
+    module unload automake
+    module unload autoconf
     module unload hdf5
     module unload netcdf
     module unload hdf5-parallel
@@ -645,6 +648,9 @@ elif [ `hostname | cut -c 1-6` == "edison" ]; then
     module unload PrgEnv-cray
     module load PrgEnv-$TARGET
     module swap cray-libsci
+    module unload darshan
+    module load automake/1.15
+    module load autoconf
     module load python
     WITHDART=""
     if [ "$TARGET" == "pgi" ]; then
@@ -828,8 +834,8 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     export MPIFC=/usr/local/bin/mpif90
     export MPICXX=/usr/local/bin/mpicxx
 
-    CFLAGS="-g -DO_LARGEFILE=0 -fno-common" ${SRCDIR}/configure --prefix=/opt/adios \
-        --with-mxml=/opt/adios \
+    CFLAGS="-g -DO_LARGEFILE=0 -fno-common -Wall" ${SRCDIR}/configure --prefix=/opt/adios \
+        --with-mxml=/opt/mxml \
     #    --disable-fortran \
     #        --with-netcdf=/opt/netcdf \
     #        --with-phdf5=/opt/hdf5 \

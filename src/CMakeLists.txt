@@ -149,6 +149,7 @@ if(BUILD_WRITE)
                      ${transforms_write_SOURCES} 
                      ${query_C_SOURCES}
                      core/util.c 
+                     core/strutil.c 
                      core/qhashtbl.c 
                      read/read_bp.c 
                      read/read_bp_staged.c 
@@ -190,12 +191,12 @@ if(BUILD_WRITE)
                      core/adios_socket.c 
                      core/adios_logger.c 
                      core/util.c 
+                     core/strutil.c 
                      core/qhashtbl.c 
                      read/read_bp.c 
                      read/read_bp_staged.c 
                      read/read_bp_staged1.c 
-                     write/adios_posix.c 
-                     )
+                     write/adios_posix.c)
 
 #start adiosf.a and adiosf_v1.a
     if(BUILD_FORTRAN)
@@ -223,12 +224,12 @@ if(BUILD_WRITE)
                        core/adios_socket.c 
                        core/adios_logger.c 
                        core/util.c 
+                       core/strutil.c 
                        core/qhashtbl.c 
                        read/read_bp.c 
                        read/read_bp_staged.c 
                        read/read_bp_staged1.c 
-                       write/adios_posix.c 
-                       )
+                       write/adios_posix.c)
 
         set(FortranLibMPISources write/adios_mpi.c
                          write/adios_mpi_lustre.c
@@ -495,6 +496,7 @@ set(libadiosread_a_SOURCES core/adios_bp_v1.c
                       core/adios_read_hooks.c 
                       core/adios_logger.c 
                       core/util.c 
+                      core/strutil.c 
                       core/qhashtbl.c 
                       read/read_bp.c 
                       read/read_bp_staged.c 
@@ -560,6 +562,7 @@ if(BUILD_FORTRAN)
                       core/adios_read_hooks.c 
                       core/adios_logger.c 
                       core/util.c 
+                      core/strutil.c 
                       core/qhashtbl.c 
                       read/read_bp.c 
                       read/read_bp_staged.c 
@@ -681,6 +684,7 @@ set(libadiosread_nompi_a_SOURCES core/mpidummy.c
                       core/adios_read_hooks.c 
 #                      core/adios_transport_hooks.c 
                       core/util.c 
+                      core/strutil.c 
                       core/qhashtbl.c 
                       read/read_bp.c)
 
@@ -741,6 +745,7 @@ if(BUILD_FORTRAN)
                           core/globals.c 
                           core/adios_read_hooks.c 
                           core/util.c 
+                          core/strutil.c 
                           core/qhashtbl.c 
                           read/read_bp.c)
     if(HAVE_DATASPACES)
@@ -803,6 +808,7 @@ set(libadios_internal_nompi_a_SOURCES core/mpidummy.c
                                     core/adios_logger.c 
                                     core/adios_timing.c 
                                     core/util.c 
+                                    core/strutil.c 
                                     core/qhashtbl.c 
                                     core/futils.c 
                                     core/adios_transport_hooks.c)

@@ -15,7 +15,7 @@
     <method group="temperature" method="MPI"/>
     <!--method group="temperature" method="MPI"/-->
 
-    <buffer size-MB="1" allocate-time="now"/>
+    <buffer max-size-MB="1"/>
 
 </adios-config>
 

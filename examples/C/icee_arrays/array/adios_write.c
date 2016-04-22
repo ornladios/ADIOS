@@ -40,8 +40,6 @@ int main (int argc, char ** argv)
     int    cm_port = 59999;
     char*  cm_remote_host = "localhost";
     int    cm_remote_port = 59997;
-    int    is_multi_writers = 0;
-    char*  remote_list = "";
     int    max_client = 1;
     char   initstring [512];
     int    verbose_level = 3;
@@ -131,7 +129,7 @@ int main (int argc, char ** argv)
             verbose_level, cm_host, cm_port+rank, max_client, cm_transport, is_passive);
 
 	adios_init_noxml (comm);
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
+    adios_set_max_buffer_size (10);
 
     int64_t       m_adios_group;
     int64_t       m_adios_file;

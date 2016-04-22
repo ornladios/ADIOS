@@ -104,7 +104,7 @@ struct option options[] = {
 //    {"string",               no_argument,          NULL,    'S'},
 //    {"columns",              required_argument,    NULL,    'n'}, 
 //    {"format",               required_argument,    NULL,    'f'}, 
-    {"hidden_attrs",         no_argument,          &hidden_attrs,    true}, 
+    {"hidden_attrs",         no_argument,          (int*)&hidden_attrs,    true},
 //    {"decomp",               no_argument,          NULL,    'D'},
     //    {"time",                 required_argument,    NULL,    't'}, 
     {NULL,                   0,                    NULL,    0}
@@ -178,8 +178,7 @@ int main( int argc, char *argv[] ) {
     ////prgname = strdup(argv[0]);
 
     /* other variables */
-    int c, last_c='_';
-    int last_opt = -1;
+    int c;
     /* Process the arguments */
     while ((c = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
         switch (c) {
@@ -292,7 +291,6 @@ int main( int argc, char *argv[] ) {
                 printf("Processing default: %c\n", c);
                 break;
         } /* end switch */
-        last_c = c;
     } /* end while */
 
     /* Check if we have a file defined */
@@ -383,7 +381,11 @@ void init_globals(void) {
 
 
 #define PRINT_DIMS(str, v, n, loopvar) printf("%s = { ", str); \
-    for (loopvar=0; loopvar<n;loopvar++) printf("%lld ", v[loopvar]);    \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%d ", v[loopvar]);    \
+printf("}")
+
+#define PRINT_DIMS64(str, v64, n, loopvar) printf("%s = { ", str); \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%" PRId64, v64[loopvar]);    \
 printf("}")
 
 void printSettings(void) {
@@ -439,14 +441,14 @@ void print_file_size(uint64_t size)
     static const char *sm[]={"bytes", "KB", "MB", "GB", "TB", "PB", "EB"};
     uint64_t s = size, r;
     int idx = 0;
-    while ( s/1024 > 0 ) {
+    while ( s/1024 > 0 && idx < sn) {
         r = s%1024; 
         s = s/1024;
         idx++;
     }
     if (r > 511)
         s++;
-    printf ("  file size:     %lld %s\n", s, sm[idx]); 
+    printf ("  file size:     %" PRId64 " %s\n", s, sm[idx]);
 
 }
 
@@ -466,9 +468,7 @@ int doList_group (ADIOS_FILE *fp)
     ADIOS_VARINFO **vis; 
     enum ADIOS_DATATYPES vartype;
     int     i, j, n;             // loop vars
-    int     status;
     int     attrsize;                       // info about one attribute
-    int     mpi_comm_dummy=0;
     bool    matches;
     int     len, maxlen, maxtypelen;
     int     retval;
@@ -540,7 +540,7 @@ int doList_group (ADIOS_FILE *fp)
              fh->pgs_root->adios_host_language_fortran==adios_flag_yes?"Fortran":"C");
 #endif
 
-    fprintf (outf, "procs: %i\n", fh->mfooter.pgs_count);
+    fprintf (outf, "procs: %" PRIu64 "\n", fh->mfooter.pgs_count);
     fprintf (outf, "group: group1\n");
 
 
@@ -601,14 +601,14 @@ int doList_group (ADIOS_FILE *fp)
                 fprintf(outf, "    dims: ");
                 if (vi->ndim > 0) {
                     if (vi->blockinfo)
-                        fprintf(outf,"[%lld", vi->blockinfo[0].count[0]);
+                        fprintf(outf,"[%" PRId64, vi->blockinfo[0].count[0]);
                     else
-                        fprintf(outf,"[%lld", vi->dims[0]);
+                        fprintf(outf,"[%" PRId64, vi->dims[0]);
                     for (j=1; j < vi->ndim; j++) {
                         if (vi->blockinfo)
-                            fprintf(outf,", %lld", vi->blockinfo[0].count[j]);
+                            fprintf(outf,", %" PRId64, vi->blockinfo[0].count[j]);
                         else
-                            fprintf(outf,", %lld", vi->dims[j]);
+                            fprintf(outf,", %" PRId64, vi->dims[j]);
                     }
                     fprintf(outf,"],");
                 } else {
@@ -616,7 +616,7 @@ int doList_group (ADIOS_FILE *fp)
                 }
 
                 if (longopt || plot) {
-                    status = adios_inq_var_stat (fp, vi, timestep && timed, 0);
+                    adios_inq_var_stat (fp, vi, timestep && timed, 0);
                 }
 
                 if (plot && vi->statistics && vi->statistics->histogram) {
@@ -916,9 +916,10 @@ int print_data_hist(ADIOS_VARINFO * vi, char * varname)
     strcat(xtics, ")\n");
 
     fprintf(out_plot, "start = -0.5\npos(x) = start + x * 1\nset boxwidth 1\nset style fill solid border 5#5lt6#6\n");
-    fprintf(out_plot, xtics);
+    fprintf(out_plot, "%s", xtics);
     fprintf(out_plot, "plot '%s' using 3 smooth frequency w boxes\n", hist_file);
     fprintf(out_plot, "pause -1 'Press Enter to quit'\n");
+    return 0;
 }
 
 int cmpstringp(const void *p1, const void *p2)
@@ -1075,13 +1076,13 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
             ct = icount[0];
 
         if (verbose>2) 
-            printf("    j=0, st=%llu ct=%llu\n", st, ct);
+            printf("    j=0, st=%" PRIu64 " ct=%" PRIu64 "\n", st, ct);
 
         start_t[0] = st;
         count_t[0] = ct;
         nelems *= ct;
         if (verbose>1) 
-            printf("    s[0]=%llu, c[0]=%llu, n=%llu\n", 
+            printf("    s[0]=%" PRIu64 ", c[0]=%" PRIu64 ", n=%" PRIu64 "\n",
                     start_t[0], count_t[0], nelems);
         
         tidx = 1;
@@ -1099,18 +1100,18 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
             ct = icount[j+tidx];
 
         if (verbose>2) 
-            printf("    j=%d, st=%llu ct=%llu\n", j+tidx, st, ct);
+            printf("    j=%d, st=%" PRIu64 " ct=%" PRIu64 "\n", j+tidx, st, ct);
 
         start_t[j+tidx] = st;
         count_t[j+tidx] = ct;
         nelems *= ct;
         if (verbose>1) 
-            printf("    s[%d]=%llu, c[%d]=%llu, n=%llu\n", 
+            printf("    s[%d]=%" PRIu64 ", c[%d]=%" PRIu64 ", n=%" PRIu64 "\n",
                     j+tidx, start_t[j+tidx], j+tidx, count_t[j+tidx], nelems);
     }
 
     if (verbose>1) {
-        printf(" total size of data to read = %llu\n", nelems*elemsize);
+        printf(" total size of data to read = %" PRIu64 "\n", nelems*elemsize);
     }
 
     print_slice_info(vi->ndim, vi->dims, timed, vi->nsteps, start_t, count_t);
@@ -1150,7 +1151,7 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
         sum = sum * (uint64_t) count_t[i];
         actualreadn = actualreadn * readn[i];
     }
-    if (verbose>1) printf("    read %d elements at once, %lld in total (nelems=%lld)\n", actualreadn, sum, nelems);
+    if (verbose>1) printf("    read %d elements at once, %" PRId64 " in total (nelems=%" PRId64 ")\n", actualreadn, sum, nelems);
 
 
     // init s and c
@@ -1173,8 +1174,8 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
 
         if (verbose>2) {
             printf("adios_read_var name=%s ", name);
-            PRINT_DIMS("  start", s, tdims, j); 
-            PRINT_DIMS("  count", c, tdims, j); 
+            PRINT_DIMS64("  start", s, tdims, j);
+            PRINT_DIMS64("  count", c, tdims, j);
             printf("  read %d elems\n", actualreadn);
         }
 
@@ -1199,7 +1200,7 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
             return 11;
         }
 
-        //if (verbose>2) printf("  read %lld bytes\n", bytes_read);
+        //if (verbose>2) printf("  read %" PRId64 " bytes\n", bytes_read);
 
         // print slice
         print_dataset(data, vi->type, s, c, tdims, ndigits_dims); 
@@ -1343,9 +1344,9 @@ void print_slice_info(int ndim, uint64_t *dims, int timed, int nsteps, uint64_t 
             isaslice = true;
     }
     if (isaslice) {
-        fprintf(outf,"%c   slice (%lld:%lld", commentchar, s[0], s[0]+c[0]-1);
+        fprintf(outf,"%c   slice (%" PRId64 ":%" PRId64, commentchar, s[0], s[0]+c[0]-1);
         for (i=1; i<tdim; i++) {
-            fprintf(outf,", %lld:%lld", s[i], s[i]+c[i]-1);
+            fprintf(outf,", %" PRId64 ":%" PRId64, s[i], s[i]+c[i]-1);
         }
         fprintf(outf,")\n");
     }
@@ -1355,7 +1356,6 @@ int print_data_as_string(void * data, int maxlen, enum ADIOS_DATATYPES adiosvart
 {
     char *str = (char *)data;
     int len = maxlen;
-    bool cstring = false;
     switch(adiosvartype) {
         case adios_unsigned_byte:
         case adios_byte:
@@ -1407,6 +1407,7 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             else fprintf(outf, "      null  ");
             break;
         case adios_string:
+        case adios_string_array:
             break;
 
         case adios_unsigned_short:
@@ -1495,7 +1496,7 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
 
         case adios_long_double:
             //fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
-            fprintf(outf,(f ? format : "????????"));
+            fprintf(outf, "%s", (f ? format : "????????"));
             break;
 
             // TO DO
@@ -1508,6 +1509,8 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
                fprintf(outf,(f ? format : "(%g,i%g)" ), ((double *) data)[2*item], ((double *) data)[2*item+1]);
                break;
              */
+        default:
+            break;
     } // end switch
     return 0;
 }
@@ -1529,6 +1532,10 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
             break;
         case adios_string:
             fprintf(outf,(f ? format : "%s"), ((char *) data)+item);
+            break;
+        case adios_string_array:
+            // we expect one elemet of the array here
+            fprintf(outf,(f ? format : "\"%s\""), *((char **)data+item));
             break;
 
         case adios_unsigned_short:  
@@ -1563,7 +1570,7 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
 
         case adios_long_double:
             //fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
-            fprintf(outf,(f ? format : "????????"));
+            fprintf(outf, "%s", (f ? format : "????????"));
             break;
 
 
@@ -1574,6 +1581,8 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
         case adios_double_complex:
             fprintf(outf,(f ? format : "(%g,i%g)" ), ((double *) data)[2*item], ((double *) data)[2*item+1]);
             break;
+        default:
+            break;
     } // end switch
     return 0;
 }
@@ -1582,7 +1591,7 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         uint64_t *s, uint64_t *c, int tdims, int *ndigits)
 {
     int i,item, steps;
-    char idxstr[128], vstr[128], buf[16];
+    char idxstr[128], buf[16];
     uint64_t ids[MAX_DIMS];  // current indices
     bool roll;
 
@@ -1601,9 +1610,9 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         idxstr[0] = '\0'; // empty idx string
         if (nextcol == 0) {
             if (!noindex && tdims > 0) {
-                sprintf(idxstr,"    (%*lld",ndigits[0], ids[0]);
+                sprintf(idxstr,"    (%*" PRId64, ndigits[0], ids[0]);
                 for (i=1; i<tdims; i++) {
-                    sprintf(buf,",%*lld",ndigits[i],ids[i]);
+                    sprintf(buf,",%*" PRId64, ndigits[i], ids[i]);
                     strcat(idxstr, buf);
                 }
                 strcat(idxstr,")    ");
@@ -1671,27 +1680,17 @@ int print_decomp(ADIOS_VARINFO *vi)
             fprintf(outf, "        step %*d: ", ndigits_nsteps, i);
             fprintf(outf, "%d instances available\n", vi->nblocks[i]);
         }
-        return 0;
     } 
     else 
     {
         // arrays
-        int ndigits_nblocks;
-        int ndigits_dims[32];
-        for (k=0; k < vi->ndim; k++) {
-            // get digit lengths for each dimension
-            ndigits_dims[k] = ndigits (vi->dims[k]-1);
-        }
-
         for (i=0; i < /*vi->nsteps*/1; i++) { // For now, just look at the first step xx
-            fprintf(outf, "    decomposition: [", ndigits_nsteps, i);
+            fprintf(outf, "    decomposition: [");
             fprintf(outf,"\n");
-            ndigits_nblocks = ndigits (vi->nblocks[i]-1);
             for (j=0; j < vi->nblocks[i]; j++) {
                 fprintf(outf,"        [");
-                //fprintf(outf,"        block %*d: [", ndigits_nblocks, j);
                 for (k=0; k < vi->ndim; k++) {
-                    fprintf(outf, "[%lld,%lld]", 
+                    fprintf(outf, "[%" PRId64 ",%" PRId64 "]",
                             vi->blockinfo[j].start[k],
                             vi->blockinfo[j].start[k] + vi->blockinfo[j].count[k]-1);
                     if (k < vi->ndim-1)
@@ -1705,6 +1704,7 @@ int print_decomp(ADIOS_VARINFO *vi)
             fprintf(outf,"    ]\n");
         }
     }
+    return 0;
 }
 
 // parse a string "0, 3; 027" into an integer array

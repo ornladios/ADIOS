@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include "mpi.h"
 #include "adios_read.h"
@@ -14,8 +16,8 @@
 #define PRINTDIMS(ndim, dims, ivar) if (ndim==0) \
         printf("\tscalar\n"); \
     else { \
-        printf("\t%dD variable: [%lld", ndim, dims[0]); \
-        for (ivar=1; ivar<ndim; ivar++) printf(", %lld", dims[ivar]); \
+        printf("\t%dD variable: [%" PRIu64, ndim, dims[0]); \
+        for (ivar=1; ivar<ndim; ivar++) printf(", %" PRIu64, dims[ivar]); \
         printf("]\n"); \
     }
 
@@ -122,7 +124,7 @@ int main (int argc, char ** argv)
     // vnamelist[14] is not written at time step 0
     // so the function returns as error
     adios_read_var (gp, "int_2D", start, size, var);
-    printf("\tslice (%lld:%lld, %lld:%lld) = ", 
+    printf("\tslice (%" PRIu64 ":%" PRId64 ", %" PRIu64 ":%" PRId64 ") = ",
            start[0], start[0]+size[0]-1,
            start[1], start[1]+size[1]-1);
     k=0;
@@ -161,7 +163,7 @@ int main (int argc, char ** argv)
     size[2]=3;
     var = malloc ( sizeof(int) * size[0]*size[1]*size[2]);
     adios_read_var (gp, "int_3D", start, size, var);
-    printf("\t[%lld:%lld, %lld:%lld, %lld:%lld]", 
+    printf("\t[%" PRIu64 ":%" PRId64 ", %" PRIu64 ":%" PRId64 ", %" PRIu64 ":%" PRId64 "]",
            start[0], start[0]+size[0]-1,
            start[1], start[1]+size[1]-1,
            start[2], start[2]+size[2]-1

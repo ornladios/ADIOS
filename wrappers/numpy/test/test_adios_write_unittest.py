@@ -37,12 +37,12 @@ class AdiosTestCase(ut.TestCase):
         ad.finalize()
 
         f = ad.file(self.temp.path)
-        v = f.var['val']
+        v = f.vars['val']
         self.assertEqual(v.read(), npval)
 
     def test_write_scalar_int(self):
         self.write_scalar(ad.DATATYPE.integer, 123)
-        
+
     def test_write_scalar_double(self):
         self.write_scalar(ad.DATATYPE.double, 123)
 
@@ -51,4 +51,3 @@ class AdiosTestCase(ut.TestCase):
 
 if __name__ == '__main__':
     ut.main()
-        

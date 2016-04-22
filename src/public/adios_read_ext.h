@@ -16,6 +16,11 @@
 #include "adios_read_v2.h"
 #include "adios_selection.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* An opaque type defining a particular view of the data.
  * Currently, there are only two possible values: LOGICAL_DATA_VIEW and PHYSICAL_DATA_VIEW 
  */
@@ -130,5 +135,9 @@ void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections);
 int adios_read_get_dimension_order (ADIOS_FILE *);
 
 #endif  /*__INCLUDED_FROM_FORTRAN_API__*/
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ADIOS_READ_EXT_H_ */

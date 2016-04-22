@@ -71,7 +71,7 @@ int main (int argc, char ** argv)
     adios_perform_reads (f, 1);
 
     for (i = 0; i < slice_size; i++) {
-        printf ("rank %d: [%lld,%d:%lld]", rank, start[0]+i, 0, slice_size);
+        printf ("rank %d: [%" PRIu64 ",%d:%" PRIu64 "]", rank, start[0]+i, 0, slice_size);
         for (j = 0; j < v->dims[1]; j++)
             printf (" %6.6g", * ((double *)data + i * v->dims[1] + j));
         printf ("\n");

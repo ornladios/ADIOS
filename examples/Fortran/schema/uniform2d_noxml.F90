@@ -55,7 +55,7 @@ program uniform2d_f_noxml
     integer*8               :: m_adios_group
     integer*8               :: varid
     integer*4               :: comm
-    integer*4               :: rank, i, j, k, p, p1, ierr, adios_err
+    integer*4               :: rank, i, j, ierr, adios_err
     integer*4               :: ndx, ndy                            ! size of array per processor
     integer*4               :: O1, O2, S1, S2                      ! origin in x,y direction and spacing in x,y direction
     integer*4               :: offs_x, offs_y                      ! offset in x and y direction
@@ -63,7 +63,7 @@ program uniform2d_f_noxml
     integer*4               :: posx, posy                          ! position index in the array
     integer*4               :: nx_global, ny_global                ! global address
     real*8, dimension(:), allocatable       :: data
-    character(:), allocatable               :: schema_version, dimemsions, origin, spacing    
+    character(len=20)       :: schema_version, dimemsions, origin, spacing    
 
     !will work with 12 cores, which are arranged by npx=4, npy=3 (4x3)
     integer*4               :: npx                                 ! # of procs in x direction
@@ -116,7 +116,7 @@ program uniform2d_f_noxml
     enddo
 
     call adios_init_noxml (comm, adios_err)
-    call adios_allocate_buffer (50, adios_err)
+    call adios_set_max_buffer_size (50) 
     call adios_declare_group (m_adios_group, "uniform2d", "", 1, adios_err)    
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
 

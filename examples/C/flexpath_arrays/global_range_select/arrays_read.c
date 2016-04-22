@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
 					comm,
 					ADIOS_LOCKMODE_NONE, 0.0);
 
-    int i;
+    /*int i;*/
     /* for(i=0; i<afile->nvars; i++){ */
     /* 	printf("var: %s\n", afile->var_namelist[i]); */
     /* } */
@@ -90,17 +90,18 @@ int main (int argc, char ** argv)
         ADIOS_VARINFO *ny_info = adios_inq_var(afile, "/scalar/dim/NY");
 	ADIOS_VARINFO *nz_info = adios_inq_var(afile, "/scalar/dim/NZ");
 
-	ADIOS_VARINFO *size_info = adios_inq_var( afile, "size");
 	ADIOS_VARINFO *arry = adios_inq_var( afile, "var_2d_array");
 
+	/*
+	ADIOS_VARINFO *size_info = adios_inq_var( afile, "size");
 	int nx_val = *((int*)nx_info->value);
 	int ny_val = *((int*)ny_info->value);
 	int size_val = *((int*)size_info->value);
-
-	//printf("nx: %d, ny: %d, size: %d\n", nx_val, ny_val, size_val);
+	printf("nx: %d, ny: %d, size: %d\n", nx_val, ny_val, size_val);
+	*/
 	
 	// slice array along y dimension
-	uint64_t my_ystart, my_yend, my_ycount;
+	uint64_t my_ystart, my_yend;
 	slice(arry->dims[1], &my_ystart, &my_yend, rank, size);
 
 	/* printf("rank: %d my_ystart: %d, my_yend: %d\n", */

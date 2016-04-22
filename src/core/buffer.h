@@ -26,7 +26,7 @@ uint64_t adios_databuffer_get_extension_size (struct adios_file_struct *fd);
    It does NOT resize the buffer up to the maximum if size is greater than the maximum
 */
 int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size);
-int adios_databuffer_free (struct adios_file_struct *fd);
+void adios_databuffer_free (struct adios_file_struct *fd);
 
 
 

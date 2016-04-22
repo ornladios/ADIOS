@@ -23,6 +23,7 @@
 
 // Initialize the transform system for adios read-only libraries
 void adios_transform_read_init();
+int adios_transform_is_implemented (enum ADIOS_TRANSFORM_TYPE transform_type);
 
 int adios_transform_generate_read_subrequests(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup);
 

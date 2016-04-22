@@ -44,6 +44,6 @@
   <transport group="writer" method="VAR_MERGE">chunk_size=300000;io_method=MPI</transport>
   -->
 
-  <buffer size-MB="4" allocate-time="now"/>
+  <buffer max-size-MB="4"/>
 
 </adios-config>

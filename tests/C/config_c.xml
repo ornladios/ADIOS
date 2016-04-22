@@ -35,6 +35,6 @@
 -->
   <transport group="restart" method="MPI">max_storage_targets=144;max_stripe_count=144;files_number=1;overlap_factor= 0;min_stripe_count=1;split_target_count=1;split_files_count=max</transport>
 
-  <buffer size-MB="1000" allocate-time="now"/>
+  <buffer max-size-MB="1000"/>
 
 </adios-config>

@@ -9,6 +9,7 @@
 #include "public/adios.h"
 #include "public/adios_error.h"
 #include "core/adios_internals.h"
+#include "core/common_adios.h"
 #include "core/adios_timing.h"
 #include "core/adios_logger.h"
 #include <string.h>

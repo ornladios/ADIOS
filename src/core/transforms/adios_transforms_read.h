@@ -64,6 +64,9 @@ uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, c
 adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *vi, const ADIOS_TRANSINFO* ti, const ADIOS_FILE *fp,
                                                                       const ADIOS_SELECTION *sel, int from_steps, int nsteps, const char *param, void *data);
 
+
+void adios_transform_cleanup_from_previous_check_reads(adios_transform_read_request **readreqs_head);
+
 /*
  * Processes a VARCHUNK just returned by the read layer against the given list of outstanding transform
  * read requests.

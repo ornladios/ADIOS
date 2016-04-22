@@ -15,6 +15,7 @@
 
 #define ELEMENT_BYTES    8
 
+/*
 static int is_digit_str(char* input_str)
 {
     if(strlen(input_str) > 2)    // at most 2 digits for isobar
@@ -32,6 +33,7 @@ static int is_digit_str(char* input_str)
     }
     return 1;
 }
+*/
 
 int compress_isobar_pre_allocated(const void* input_data, const uint64_t input_len,
                                   void* output_data, uint64_t* output_len, int compress_level)

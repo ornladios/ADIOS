@@ -23,4 +23,4 @@ dimensions="nx,ny,nz" /><var name="HCO" type="double"
 dimensions="nx,ny,nz" /><var name="N2" type="double"
 dimensions="nx,ny,nz" /></global-bounds> </adios-group> <method
 group="restart" method="MPI_AMR"> stripe_count=1,stripe_size=25600000,block_size=25600000,num_aggregators=1920,merging_pgs=0
-</method> <buffer size-MB="200" allocate-time="now" /> </adios-config>
+</method> <buffer max-size-MB="200" /> </adios-config>

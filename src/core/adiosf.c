@@ -16,6 +16,7 @@
 #include "core/adios_transport_hooks.h"
 #include "core/futils.h"
 #include "core/globals.h"
+#include "core/buffer.h"
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
 #include "core/adios_timing.h"
@@ -30,6 +31,7 @@ extern "C"  /* prevent C++ name mangling */
 #endif
 
 extern int adios_errno;
+extern struct adios_transport_struct * adios_transports;
 
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_set_application_id, ADIOS_SET_APPLICATION_ID) (int *id, int * err)
@@ -51,6 +53,11 @@ void FC_FUNC_(adios_init, ADIOS_INIT) (const char * config, MPI_Fint * comm, int
     } else {
         *err = adios_errno;
     }
+}
+
+int FC_FUNC_(adios_is_initialized, ADIOS_IS_INITIALIZED) ()
+{
+    return (adios_transports != NULL);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

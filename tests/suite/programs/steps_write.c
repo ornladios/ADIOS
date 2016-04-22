@@ -39,7 +39,7 @@ int main (int argc, char ** argv)
 	strcpy (filename, "steps.bp");
 
 	adios_init_noxml (comm);
-        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1);
+        adios_set_max_buffer_size (1);
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;

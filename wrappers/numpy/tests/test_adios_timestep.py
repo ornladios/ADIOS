@@ -38,16 +38,16 @@ print "\n>>> Reading step-by-step ...\n"
 f = ad.file("adios_test.bp")
 f.printself()
 
-v = f.var['temperature']
+v = f.vars['temperature']
 v.printself()
 
 for i in range(10):
     val = v.read(from_steps=i, nsteps=1)
     print "step =", i
     print val
-    
+
 assert ((tt == val).all())
-    
+
 ## Testing
 print "\n>>> Test utility functions ...\n"
 
@@ -55,4 +55,3 @@ print "bpls:\n", ad.bpls('adios_test.bp')
 print "readvar:\n", ad.readvar("adios_test.bp", "temperature")
 
 print "\n>>> Done.\n"
-

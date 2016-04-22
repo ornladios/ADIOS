@@ -7,6 +7,7 @@
 #include "core/transforms/adios_transforms_write.h"
 #include "core/transforms/adios_transforms_hooks_write.h"
 #include "core/transforms/adios_transforms_util.h"
+#include "core/bp_utils.h" // bp_get_type_size()
 
 #ifdef APLOD
 

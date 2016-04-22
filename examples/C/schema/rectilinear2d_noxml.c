@@ -119,7 +119,7 @@ int main (int argc, char ** argv)
     char * dimemsions = "nx_global,ny_global";
  
 	adios_init_noxml (comm);
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 50);
+    adios_set_max_buffer_size (50);
 
     adios_declare_group (&m_adios_group, "rectilinear2d", "", adios_flag_yes);
     adios_select_method (m_adios_group, "MPI", "", "");

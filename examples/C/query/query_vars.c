@@ -34,7 +34,7 @@ void print_points (ADIOS_SELECTION *hits, double *P, double *V, double *T)
     printf ("\nHit           i       j        P      V     T\n");
     printf ("----------------------------------------------\n");
     for (n=0; n<Npoints; n++) {
-        printf ("  %3d      %4lld    %4lld      %g   %g   %g\n",
+        printf ("  %3d      %4" PRIu64 "    %4" PRIu64 "      %g   %g   %g\n",
                 n, points[2*n],points[2*n+1],P[n],V[n],T[n]);
     }
     printf ("\n");
@@ -64,7 +64,7 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f)
             /* Evaluate query, get the list of points (of a limited number at once) */
             ADIOS_SELECTION* hits = NULL;
             int hasMore = adios_query_evaluate(q, box, timestep, batchSize, &hits);
-            printf("Number of hits returned in batch %d = %lld \n",nBatches, hits->u.points.npoints);
+            printf("Number of hits returned in batch %d = %" PRIu64 " \n",nBatches, hits->u.points.npoints);
 
             if (hits->u.points.npoints > 0) {
                 /* Read the data of those points */

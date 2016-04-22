@@ -196,3 +196,7 @@ utils/query/index_fastbit
 /myrunconf
 /.cproject
 /.project
+
+# Eclipse files
+.ptp-sync/
+.ptp-sync-folder

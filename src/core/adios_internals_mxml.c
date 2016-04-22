@@ -1179,8 +1179,6 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             const char * read_flag = 0;
             const char * transform_type = 0; // NCSU ALACRITY-ADIOS
             enum ADIOS_DATATYPES t1;
-            char  * mpath1 = 0;
-            char  * mpath2 = 0;
 
             for (i = 0; i < n->value.element.num_attrs; i++)
             {
@@ -1372,10 +1370,9 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         const char * gwrite = 0;
                         const char * gread = 0;
                         const char * read_flag = 0;
-                    const char * transform_type = 0; // NCSU ALACRITY-ADIOS
+                        const char * transform_type = 0; // NCSU ALACRITY-ADIOS
                         enum ADIOS_DATATYPES t1;
-                        char * mpath1 = 0;
-                        char * mpath2 = 0;
+
 
                         for (i = 0; i < n1->value.element.num_attrs; i++)
                         {
@@ -1909,7 +1906,7 @@ static int parseMethod (mxml_node_t * node)
     const char * base_path = 0;
     const char * method = 0;
     const char * group = 0;
-    const char * parameters = 0;
+    char * parameters = 0;
     int p1;
     int i1;
     int i;
@@ -1931,14 +1928,24 @@ static int parseMethod (mxml_node_t * node)
     }
 
     // Check for parameters, if they exist
+    parameters = NULL;
+    size_t len_parameters = 0;
     n = mxmlWalkNext (node, node, MXML_DESCEND);
-    if (n != NULL)
+    while (n && n->type == MXML_TEXT)
     {
-        parameters = n->value.text.string;
-    }
-    else
-    {
-        parameters = NULL;
+        size_t len = strlen(n->value.text.string);
+        if (len)
+        {
+            char *p = realloc (parameters, len_parameters + len + 1);
+            if (p)
+            {
+                parameters = p;
+                memcpy (parameters+len_parameters, n->value.text.string, len+1);
+                len_parameters += len;
+            }
+        }
+        n = mxmlWalkNext (n, node, MXML_DESCEND);
+        //printf ("Parameters content: [%s]\n", parameters);
     }
 
     if (!priority)
@@ -1949,8 +1956,10 @@ static int parseMethod (mxml_node_t * node)
         i1 = 1;
     else
         i1 = atoi (iterations);
-    if (!parameters)
+    if (!parameters) {
         parameters = "";
+        len_parameters = 0; // to indicate that we don't need to free it at the end of this function
+    }
     if (!base_path)
         base_path = "";
     else
@@ -1971,15 +1980,10 @@ static int parseMethod (mxml_node_t * node)
     if (!method)
         method = "";
 
-    if (!adios_common_select_method (p1, method, parameters, group
-                ,base_path, i1
-                )
-       )
-    {
-        return 0;
-    }
-
-    return 1;
+    int ret = adios_common_select_method (p1, method, parameters, group, base_path, i1);
+    if (len_parameters)
+        free (parameters);
+    return ret;
 }
 
 
@@ -2023,7 +2027,7 @@ static int parseBuffer (mxml_node_t * node)
 
         if (max_size_MB)
             sizestr = max_size_MB;        
-        else if (size_MB)
+        else
             sizestr = size_MB;
 
         size = atoi (sizestr);
@@ -2075,7 +2079,6 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     mxml_node_t * root = NULL;
     int saw_datagroup = 0;
     int saw_method = 0;
-    int saw_buffer = 0;
     char * schema_version = 0;
 
     if (!adios_transports_initialized)
@@ -2261,7 +2264,6 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                 {
                     if (!parseBuffer (node))
                         break;
-                    saw_buffer = 1;
                 }
                 else
                 {
@@ -2308,14 +2310,6 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
         return 0;
     }
-    /*if (!saw_buffer)
-    {
-        adios_error (err_no_buffer_defined, "config.xml: must define the buffer element in "
-                "config.xml\n"
-                );
-
-        return 0;
-    }*/
 
     return 1;
 }
@@ -2340,7 +2334,7 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
     int verbose_level, removeit, save;
     char *end;
 
-    params = text_to_name_value_pairs (parameters);
+    params = a2s_text_to_name_value_pairs (parameters);
 
     /*
        p = params;
@@ -2397,14 +2391,14 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
                 //fprintf(stderr, "  Remove HEAD  p = %x p->next = %x\n", p, p->next);
                 p = p->next;
                 params->next = NULL;
-                free_name_value_pairs (params);
+                a2s_free_name_value_pairs (params);
                 params = p;
             } else {
                 // remove from middle of the list
                 //fprintf(stderr, "  Remove MIDDLE prev = %x p = %x p->next = %x\n", prev_p, p, p->next);
                 prev_p->next = p->next;
                 p->next = NULL;
-                free_name_value_pairs (p);
+                a2s_free_name_value_pairs (p);
                 p = prev_p->next;
             }
         } else {
@@ -2452,7 +2446,7 @@ int adios_common_select_method (int priority, const char * method
             adios_transports [new_method->m].adios_init_fn
                 (params, new_method);
 
-            free_name_value_pairs (params);
+            a2s_free_name_value_pairs (params);
         }
     }
     else
@@ -2527,7 +2521,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
             adios_transports [new_method->m].adios_init_fn
                 (params, new_method);
 
-            free_name_value_pairs (params);
+            a2s_free_name_value_pairs (params);
         }
     }
     else

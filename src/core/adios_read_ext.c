@@ -163,13 +163,11 @@ int adios_get_absolute_writeblock_index(const ADIOS_VARINFO *varinfo, int timest
 #define INITIAL_INTERSECTION_CAPACITY 16;
 ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int varid, const ADIOS_SELECTION *sel, const int from_step, const int nsteps) {
     // Declares
-    adios_transform_read_request *new_reqgroup;
     int blockidx, timestep, timestep_blockidx;
-    int curblocks, start_blockidx, end_blockidx;
-    int intersects;
-    ADIOS_VARBLOCK *raw_vb, *vb;
+    int start_blockidx, end_blockidx;
+    ADIOS_VARBLOCK *vb;
 
-    enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
+    //enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
     int to_steps = from_step + nsteps;
 
     // As long as we don't free/destroy it, using the infocache from the file will have no effect on future
