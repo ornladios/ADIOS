@@ -18,5 +18,7 @@ else(USE_PARALLEL_COMPILER)
   set_target_properties(bp2ncd PROPERTIES COMPILE_FLAGS "${bp2ncd_CPPFLAGS}")
 endif(USE_PARALLEL_COMPILER)
 
+set_property(TARGET bp2ncd PROPERTY LINKER_LANGUAGE CXX)
+
 #install(FILES bp2ncd.h DESTINATION ${PROJECT_BINARY_DIR}/utils/bp2ncd)
 install(PROGRAMS ${PROJECT_BINARY_DIR}/utils/bp2ncd/bp2ncd DESTINATION ${bindir})

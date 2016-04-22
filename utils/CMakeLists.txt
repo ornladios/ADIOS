@@ -11,14 +11,19 @@ add_subdirectory(adios_list_methods)
 if(BUILD_WRITE)
   add_subdirectory(adios_lint)
   add_subdirectory(bp2bp)
+  set_property(TARGET adios_lint PROPERTY LINKER_LANGUAGE CXX)
+  set_property(TARGET bp2bp PROPERTY LINKER_LANGUAGE CXX)
 endif(BUILD_WRITE)
 
 if(HAVE_HDF5)
   add_subdirectory(bp2h5)
+  set_property(TARGET bp2h5 PROPERTY LINKER_LANGUAGE CXX)
 endif(HAVE_HDF5)
 
 if(HAVE_NETCDF)
   add_subdirectory(bp2ncd)
+  set_property(TARGET bp2ncd PROPERTY LINKER_LANGUAGE CXX)
+  set_property(TARGET fastbit PROPERTY LINKER_LANGUAGE CXX)
 endif(HAVE_NETCDF)
 
 if(HAVE_FASTBIT)
@@ -27,6 +32,12 @@ endif()
 
 add_subdirectory(skel)
 add_subdirectory(skeldump)
+
+set_property(TARGET bprecover PROPERTY LINKER_LANGUAGE CXX)
+
+set_property(TARGET skel PROPERTY LINKER_LANGUAGE CXX)
+set_property(TARGET skeldump PROPERTY LINKER_LANGUAGE CXX)
+
 
 #find_library(ADIOS_INTERNAL_NOMPI_LIB adios_internal_nompi ${PROJECT_BINARY_DIR}/src)
 #if(${ADIOS_INTERNAL_NOMPI_LIB}-NOTFOUND)

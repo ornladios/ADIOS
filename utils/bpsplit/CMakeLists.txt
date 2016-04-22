@@ -17,4 +17,6 @@ add_executable(bpgettime bpgettime.c)
 target_link_libraries(bpgettime adios_internal_nompi ${ADIOSLIB_INT_LDADD})
 set_target_properties(bpgettime PROPERTIES COMPILE_FLAGS "${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_INT_CPPFLAGS} ${ADIOSLIB_INT_CFLAGS}")
 
+set_property(TARGET bpsplit bpappend bpgettime PROPERTY LINKER_LANGUAGE CXX)
+
 install(PROGRAMS ${CMAKE_BINARY_DIR}/utils/bpsplit/bpsplit ${CMAKE_BINARY_DIR}/utils/bpsplit/bpappend ${CMAKE_BINARY_DIR}/utils/bpsplit/bpgettime DESTINATION ${bindir})
