@@ -1231,6 +1231,82 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 }
 
 
+/*
+ * it was previously adios_query_alac_retrieval_pointsNd which returns coordinates within query bounding box,
+ * now, for the minmax branch, it returns offsets within the query bounding box
+ */
+void adios_query_alac_retrieval_offset( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
+		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/, int Corder ){
+	int d = 0, td;
+	uint64_t start_pos = 0;
+	if (!isLastConvRidInit(b))
+		start_pos =	b->lastConvRid  / 64;
+
+	uint64_t * p_bitmap = b->bits;
+	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
+	uint64_t reconstct_rid;
+	uint64_t coordinates[MAX_DIMS];
+#ifdef RIDBUG
+	printf("reconstrcuted RID relative to timestep : ");
+#endif
+	while (off < b->length ){
+		uint16_t * temp = (uint16_t *) &(p_bitmap[off]); // 2 bytes (unsigned short int)  = 16 bits
+		uint64_t offset_long_int = off * 64; // original index offset ; // 4 bytes (unsigned long int )= 64 bit
+		uint64_t offset;
+		int j , m;
+		for (j = 0; j < 4; j++) {
+			offset = offset_long_int + j * 16; // here, 16 is used because temp is 16bits (unsigned short int) pointer
+			// set_bit_count for each 2 bytes, the number of 1
+			/*
+			 * *******|               64 bits                 | => final_result_bitmap []
+			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
+			 */
+
+			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
+				reconstct_rid = offset+ set_bit_position[temp[j]][m];
+#ifdef RIDBUG
+				printf("%"PRIu64", ", reconstct_rid);
+#endif
+				if (!isLastConvRidInit(b)) {
+					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
+						points[pidx++] = reconstct_rid; // this is the change, reconstct_rid is offset
+						/*ridToCoordinates(bb->ndim, Corder, reconstct_rid, bb->count, coordinates );
+						for (d = 0; d < bb->ndim; d ++){
+							points[pidx++] = bb->start[d] + coordinates[d];
+						}*/
+						retrieveCount++;
+					}
+				}else { // lastConvRid == realElmSize+1 represents the initial state
+					// in which the RID recovering has not started yet
+					points[pidx++] = reconstct_rid; // this is the change, reconstct_rid is offset
+
+					/*ridToCoordinates(bb->ndim, Corder, reconstct_rid, bb->count, coordinates);
+					for (d = 0; d < bb->ndim; d ++){
+						points[pidx++] = bb->start[d] + coordinates[d];
+					}*/
+					retrieveCount++;
+				}
+
+				if (retrieveCount == retrieval_size){
+					b->lastConvRid = reconstct_rid; 					 // updated the status
+
+#ifdef RIDBUG
+		printf("\n");
+#endif
+					return ;
+				}
+			}
+		}
+		off ++;
+	}
+
+#ifdef RIDBUG
+		printf("\n");
+#endif
+}
+
+
+
 //void adios_query_alac_init() {} // not used
 
 void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
@@ -1300,7 +1376,22 @@ void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 #endif
 }
 
+
+/*
+ * it was adios_query_build_results_boundingbox, i copy it for the minmax branch change, which returns the offets within bounding box, rather than the coordinates
+ */
+static ADIOS_SELECTION * adios_query_build_offsets_boundingbox(ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb, int Corder) {
+
+	int ndim = 1 ; // offset is 1 dimensional data
+	const uint64_t dataSize = retrieval_size * (ndim);
+	uint64_t *points = (uint64_t *)(malloc(dataSize * sizeof(uint64_t)));
+	adios_query_alac_retrieval_offset(b,retrieval_size, bb, points,Corder);
+
+	return common_read_selection_points(ndim, retrieval_size, points);
+}
+
 static ADIOS_SELECTION * adios_query_build_results_boundingbox(ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb, int Corder) {
+
 	const uint64_t dataSize = retrieval_size * (bb->ndim);
 	uint64_t *points = (uint64_t *)(malloc(dataSize * sizeof(uint64_t)));
 	adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points,Corder);
@@ -1310,14 +1401,19 @@ static ADIOS_SELECTION * adios_query_build_results_boundingbox(ADIOS_ALAC_BITMAP
 
 void adios_query_alac_build_results(
 		uint64_t retrieval_size, ADIOS_SELECTION* outputBoundry, ADIOS_ALAC_BITMAP *b,
-		ADIOS_VARINFO *varinfo, ADIOS_SELECTION ** queryResult, int Corder)
+		ADIOS_VARINFO *varinfo,  ADIOS_QUERY_RESULT* adiosQueryResult /*ADIOS_SELECTION ** queryResult*/ , int Corder)
 {
 
 	//last bounding box / points supplied by user
 	switch (outputBoundry->type) {
 	case ADIOS_SELECTION_BOUNDINGBOX: {
 		ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundry->u.bb);
-		*queryResult = adios_query_build_results_boundingbox(b, retrieval_size, bb,Corder);
+
+		adiosQueryResult->selections = adios_query_build_offsets_boundingbox(b, retrieval_size, bb,Corder);
+		adiosQueryResult ->nselections = 1 ;
+		adiosQueryResult -> npoints = retrieval_size ;
+		adiosQueryResult ->method_used = ADIOS_QUERY_METHOD_ALACRITY;
+		// *queryResult = adios_query_build_results_boundingbox(b, retrieval_size, bb,Corder);
 		break;
 	}
 	case ADIOS_SELECTION_WRITEBLOCK : {
@@ -1402,13 +1498,83 @@ void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/)
 	memcpy(bout->bits, ptr+4, sizeof(uint64_t)*(bout->length));
 }
 
+
+
+int adios_query_alac_evaluate(ADIOS_QUERY* q,
+			  ADIOS_SELECTION* outputBoundry,
+			  int timestep,
+			  uint64_t batchSize,
+			  //ADIOS_SELECTION** result
+			  ADIOS_QUERY_RESULT* adiosQueryResult) {
+
+	double alacStart = 0, alacEnd = 0;
+
+	#ifdef BREAKDOWN
+		alacStart = dclock();
+	#endif
+		if (!isInitialized){ // if this is the very first time of calling the queries, we initialize the lookup tables
+			init_lookup();
+			isInitialized= 1;
+		}
+		const int absoluteTimestep = adios_get_actual_timestep(q, timestep);
+
+		ADIOS_ALAC_BITMAP* b;
+		if (q->onTimeStep != absoluteTimestep) { // if this is the first call to evaluate the query for a new timestep
+			b = adios_alac_process(q, timestep, false);
+			initLastConvRid(b);
+			q->maxResultsDesired =  calSetBitsNum(b);
+			q->resultsReadSoFar = 0;
+			q->onTimeStep = absoluteTimestep;
+		} else { //convert void* _internal to ADIOS_ALAC_BITMAP
+			b = (ADIOS_ALAC_BITMAP*)malloc(sizeof(ADIOS_ALAC_BITMAP));
+			convertMemstreamToALACBitmap(q->queryInternal, b);
+		}
+		uint64_t retrievalSize = q->maxResultsDesired - q->resultsReadSoFar;
+		if (retrievalSize <= 0) {
+			//adiosQueryResult = NULL;
+			adiosQueryResult ->status = ADIOS_QUERY_NO_MORE_RESULTS;
+			FreeALACBITMAP(b);
+			//q->onTimeStep = NO_EVAL_BEFORE;
+			//printf(":: ==> no more results to fetch\n");
+			return 0;
+		}
+		if (retrievalSize > batchSize) {
+			retrievalSize = batchSize;
+		}
+
+		const int Corder = !futils_is_called_from_fortran(); // Use the dimension order of the caller; the common read layer will also mimic this order
+		adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->varinfo, adiosQueryResult, Corder);
+		// b->lastConvRid is updated in the above func., so the bitmap serializing function has to wait until the above function is finished
+		q->queryInternal = convertALACBitmapTomemstream(b);
+
+		/*if (q->_maxResultDesired >= 0) {
+			FREE(b->bits); // these data is copied to q->_queryInternal
+		}
+		FREE(b); // NOTE: only free the structure*/
+		FreeALACBITMAP(b);
+		q->resultsReadSoFar += retrievalSize;
+
+	#ifdef BREAKDOWN
+		alacEnd= dclock();
+		printf("time [alac plugin + adios] : %f \n", alacEnd - alacStart);
+	#endif
+
+		int moreResults =  q->resultsReadSoFar < q->maxResultsDesired;
+		adiosQueryResult ->status = moreResults == 1 ? ADIOS_QUERY_HAS_MORE_RESULTS : ADIOS_QUERY_NO_MORE_RESULTS;
+		return moreResults ;
+
+}
+
+
+/* for non-minmax branch */
+/*
 int adios_query_alac_evaluate(ADIOS_QUERY* q,
                    int timestep,
 			       uint64_t batchSize, // limited by maxResult
 			       ADIOS_SELECTION* outputBoundry,
 			       ADIOS_SELECTION** queryResult)
 {
-	double alacStart = 0, alacEnd = 0;
+	double alacStart = 0, bimapToCoordinates= 0;
 
 #ifdef BREAKDOWN
 	alacStart = dclock();
@@ -1443,24 +1609,29 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 	}
 
 	const int Corder = !futils_is_called_from_fortran(); // Use the dimension order of the caller; the common read layer will also mimic this order
+#ifdef BREAKDOWN
+	bimapToCoordinates = dclock();
+#endif
+
 	adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->varinfo, queryResult, Corder);
+
+#ifdef BREAKDOWN
+	printf("Time of converting the final resultant bitmap to coordinates: %f \n", dclock() - bimapToCoordinates );
+#endif
+
+
 	// b->lastConvRid is updated in the above func., so the bitmap serializing function has to wait until the above function is finished
 	q->queryInternal = convertALACBitmapTomemstream(b);
 
-	/*if (q->_maxResultDesired >= 0) {
-		FREE(b->bits); // these data is copied to q->_queryInternal
-	}
-	FREE(b); // NOTE: only free the structure*/
 	FreeALACBITMAP(b);
 	q->resultsReadSoFar += retrievalSize;
 
 #ifdef BREAKDOWN
-	alacEnd= dclock();
-	printf("time [alac plugin + adios] : %f \n", alacEnd - alacStart);
+	printf("Total Time [alac plugin + adios] : %f \n", dclock() - alacStart);
 #endif
 
 	return q->resultsReadSoFar < q->maxResultsDesired;
-}
+} */
 
 int adios_query_alac_free_one_node(ADIOS_QUERY* query){
 	if (query == NULL) {
