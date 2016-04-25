@@ -42,6 +42,8 @@ typedef struct{
 
 #define MAX_DIMS 32
 
+#define PFORDELTA_CHUNK_SIZE 128 // the chunk size of PFORDELTA 
+
 // This three variables are used for timing the transformer layer,
 // the reason of being global variables is because calling transformer layer APIs scatter
 // I have to sum every place that calls transformer layer
