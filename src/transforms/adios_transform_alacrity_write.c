@@ -21,7 +21,7 @@ typedef struct {
 	int has_low_order_bytes;
 } alac_transform_conf_t;
 
-uint64_t adios_get_type_size(enum ADIOS_DATATYPES type, void *var);
+uint64_t adios_get_type_size(enum ADIOS_DATATYPES type, const void *var);
 
 uint16_t adios_transform_alacrity_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
