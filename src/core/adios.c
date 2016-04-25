@@ -46,6 +46,10 @@ int adios_init (const char * config, MPI_Comm comm)
     return common_adios_init (config, comm);
 }
 
+int adios_is_initialized(void)
+{
+    return (adios_transports != NULL);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls
