@@ -59,6 +59,11 @@ typedef struct {
 /* A list of points.
  * It is a 1D array of indices, linearized for all dimension
  *     (e.g.  [i1,j1,k1,i2,j2,k2,...,in,jn,kn] for n points in a 3D space.
+ * If a container selection is given, points are relative coordinates/offsets in the
+ * container box/writeblock.
+ * 1D offsets in N-dimensional container are allowed. Such selections are returned by
+ * FASTBIT and ALACRITY query method. File reading is supported for such selections.
+ * adios_selection_points_1DtoND() can be used to convert 1D to N-D points.
  */
 typedef struct { 
     int       ndim;
@@ -184,6 +189,16 @@ ADIOS_SELECTION* adios_selection_hyperslab (uint64_t ndim, uint64_t *start, uint
   */
 void adios_selection_delete (ADIOS_SELECTION *selection);
 
+/* Convert one selection of 1D point offsets in a bounding box,
+ * returned by FASTBIT and ALACRITY query methods, to N-dimensional points.
+ * This function works only if there is a bounding box in pointsinbox1D->u.points.container!
+ * It allocates memory for the result selection, after which the original can be freed.
+ * Return:
+ * If global==0, the points will be relative to the container, if not, the points will be
+ * global coordinates (container's starting offsets added to each point) and result's container
+ * will be NULL.
+ */
+ADIOS_SELECTION * adios_selection_points_1DtoND (ADIOS_SELECTION * pointsinbox1D, int global);
 
 #endif  /*__INCLUDED_FROM_FORTRAN_API__*/
 

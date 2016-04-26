@@ -125,5 +125,4 @@ ADIOS_SELECTION * common_read_selection_auto (char *hints);
 void common_read_selection_delete (ADIOS_SELECTION *sel);
 
 
-
 #endif

@@ -11,6 +11,7 @@
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
 #include "core/common_read.h"
+#include "core/adios_selection_util.h"
 #define BYTE_ALIGN 8
 
 
@@ -236,4 +237,8 @@ void adios_selection_delete (ADIOS_SELECTION *sel)
     common_read_selection_delete (sel);
 }
 
+ADIOS_SELECTION * adios_selection_points_1DtoND (ADIOS_SELECTION * pointsinbox1D, int global)
+{
+    return adios_selection_util_points_1DtoND (pointsinbox1D, global);
+}
 

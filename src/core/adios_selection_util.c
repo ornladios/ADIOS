@@ -15,6 +15,7 @@
 #include "adios_subvolume.h"
 #include "adios_selection_util.h"
 #include "common_read.h"
+#include "util.h"
 
 //
 // NOTE: Intersection type guarantees:
@@ -340,4 +341,102 @@ ADIOS_SELECTION * adios_selection_intersect_local(const ADIOS_SELECTION *s1, con
         adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unknown selection type %d", s1->type);
         return NULL;
     }
+}
+
+
+void adios_selection_util_points_1DtoND_box (uint64_t npoints, uint64_t *pts1d,
+                                             int ndim, uint64_t *start, uint64_t *count, int global,
+                                             uint64_t *ptsNd)
+{
+    int n, d;
+    assert (ndim > 0);
+
+    uint64_t product[ndim];
+    product[ndim-1] = count[ndim-1];
+    for (d = ndim-2; d >= 0; d--) {
+        product[d] = product[d+1] * count[d];
+    }
+    // Note, product[0] is never used
+
+    // if global conversion, add start[] to each coordinate
+    uint64_t extraoffs[ndim];
+    for (d = 0; d < ndim; d++)
+    {
+        extraoffs[d] = (global ? start[d] : 0);
+    }
+
+    uint64_t *pN = ptsNd;
+    uint64_t *p1 = pts1d;
+    uint64_t rem;
+    for (n = 0; n < npoints; n++)
+    {
+        rem = *p1;
+        for (d = 0; d < ndim-1; d++)
+        {
+            *pN = rem / product[d+1] + extraoffs[d];
+            rem = rem % product[d+1];
+            pN++;
+        }
+        *pN = rem + extraoffs[ndim-1]; // last dimension is just the remainder
+        pN++;
+        p1++;
+    }
+ }
+
+ADIOS_SELECTION * adios_selection_util_points_1DtoND (ADIOS_SELECTION * pointsinbox1D, int global)
+{
+    if (!pointsinbox1D)
+    {
+        adios_error (err_invalid_selection, "in adios_selection_points_1DtoND(): NULL selection provided\n");
+        return NULL;
+    }
+
+    if (pointsinbox1D->type != ADIOS_SELECTION_POINTS ||
+        !pointsinbox1D->u.points.container_selection)
+    {
+        adios_error (err_invalid_selection, "in adios_selection_points_1DtoND(): "
+                "Only point selections with a container selection can be converted\n");
+        return NULL;
+    }
+
+    if (pointsinbox1D->u.points.container_selection->type != ADIOS_SELECTION_BOUNDINGBOX)
+    {
+        adios_error (err_invalid_selection, "in adios_selection_points_1DtoND(): "
+                "Point selection's container can only be a bounding box\n");
+                return NULL;
+    }
+
+    if (pointsinbox1D->u.points.ndim != 1)
+    {
+        adios_error (err_invalid_selection, "in adios_selection_points_1DtoND(): "
+                "Only 1D points can be converted\n");
+                return NULL;
+    }
+
+    uint64_t *ptsNd = (uint64_t *) malloc (pointsinbox1D->u.points.container_selection->u.bb.ndim * pointsinbox1D->u.points.npoints * sizeof(uint64_t));
+    if (!ptsNd)
+    {
+        adios_error (err_no_memory, "in adios_selection_points_1DtoND(): "
+                "Not enough memory to allocate %d-dimensional point selection for %" PRIu64 "points\n",
+                pointsinbox1D->u.points.container_selection->u.bb.ndim, pointsinbox1D->u.points.npoints);
+                return NULL;
+    }
+
+    ADIOS_SELECTION * container = copy_selection (pointsinbox1D->u.points.container_selection);
+
+    adios_selection_util_points_1DtoND_box (pointsinbox1D->u.points.npoints, pointsinbox1D->u.points.points,
+                                            container->u.bb.ndim, container->u.bb.start, container->u.bb.count, global,
+                                            ptsNd);
+
+    ADIOS_SELECTION * result = common_read_selection_points(container->u.bb.ndim, pointsinbox1D->u.points.npoints, ptsNd);
+    if (global)
+    {
+        common_read_selection_delete(container);
+        container = NULL;
+    }
+    else
+    {
+        result->u.points.container_selection = container;
+    }
+    return result;
 }

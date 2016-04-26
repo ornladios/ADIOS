@@ -91,6 +91,7 @@ typedef struct {
            Read operations can be performed directly on such selections.
            Number of points that satisfy the query = npoints =
                    = SUM(result->selection[i].u.points.npoints, i=0,..,nselections-1)
+           adios_selection_points_1DtoND() can be used to convert 1D offsets to N-D points
            Delete the selection and the result by calling:
               for (i=0; i < result->nselections; i++) {
                   free (result->selections[i].u.points.points);
@@ -200,7 +201,6 @@ int adios_query_read_boundingbox (
         ADIOS_SELECTION *bb,
         void *data
    );
-
 
 
 void adios_query_free(ADIOS_QUERY* q);

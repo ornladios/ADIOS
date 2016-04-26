@@ -25,6 +25,7 @@
 #include "core/futils.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"
+#include "core/adios_selection_util.h"
 
 #include "core/transforms/adios_transforms_transinfo.h"
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
@@ -408,40 +409,6 @@ static uint64_t adios_get_nelements_of_box (int ndim, uint64_t* start, uint64_t*
     return bbsize;
 }
 
-/** Create a list of N-dimensional points from a list of 1D offsets in a bounding box defined by 'start' and 'count'.
- *  Box must be ndim dimensional
- *  pts1d is an array of npoints elements
- *  ptsNd is an array of ndim * npoints elements, pre-allocated by caller
- */
-void adios_points_1DtoND (uint64_t npoints, uint64_t *pts1d, int ndim, uint64_t *start, uint64_t *count, uint64_t *ptsNd)
-{
-    int n, d;
-    assert (ndim > 0);
-
-    uint64_t product[ndim];
-    product[ndim-1] = count[ndim-1];
-    for (d = ndim-2; d >= 0; d--) {
-        product[d] = product[d+1] * count[d];
-    }
-    // Note, product[0] is never used
-
-    uint64_t *pN = ptsNd;
-    uint64_t *p1 = pts1d;
-    uint64_t rem;
-    for (n = 0; n < npoints; n++)
-    {
-        rem = *p1;
-        for (d = 0; d < ndim-1; d++)
-        {
-            *pN = rem / product[d+1] + start[d];
-            rem = rem % product[d+1];
-            pN++;
-        }
-        *pN = rem + start[ndim-1]; // last dimension is just the remainder
-        pN++;
-        p1++;
-    }
- }
 
 //
 // calculate the spanning N-dim bounding box for a list of N-dim points
@@ -506,7 +473,7 @@ static void mGetPointlistSpan1D(ADIOS_SELECTION_POINTS_STRUCT* pts, int ndim,
 
     // convert them to N-dim
     uint64_t spanND[2*ndim];
-    adios_points_1DtoND (2, span, ndim, boxstart, boxcount, spanND);
+    adios_selection_util_points_1DtoND_box (2, span, ndim, boxstart, boxcount, 1, spanND);
 
     // correct sub-dimensions (some other points may be outside the naive span over two points
     spanstart[0] = spanND[0];
@@ -1324,7 +1291,8 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                         }
                     } else
                     {
-                        adios_points_1DtoND (1, &sel->u.points.points[i], bndim, container->u.bb.start, container->u.bb.count, nsel->u.bb.start);
+                        adios_selection_util_points_1DtoND_box (1, &sel->u.points.points[i], bndim, container->u.bb.start,
+                                                                container->u.bb.count, 1, nsel->u.bb.start);
                     }
                     //memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
                     chunk = read_var_bb (fp, nr);
