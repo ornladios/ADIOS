@@ -615,7 +615,10 @@ uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, const void * var);
 // NCSU ALACRITY-ADIOS - added this for use in the transform layer
 uint64_t adios_get_dimension_space_size (struct adios_var_struct * var
                                         ,struct adios_dimension_struct * d);
+// get the size of variable data for output (i.e. possibly after transformation)
 uint64_t adios_get_var_size (struct adios_var_struct * var, const void * data);
+// get the size of original variable data if variable is transformed (call only if it's transformed)
+uint64_t adios_transform_get_pre_transform_var_size(struct adios_var_struct *var);
 uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension);
 uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS_STAT stat_id);
 uint8_t adios_get_stat_set_count (enum ADIOS_DATATYPES type);
