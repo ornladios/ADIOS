@@ -337,9 +337,12 @@ uint64_t adios_expected_var_size (int64_t var_id)
             size = adios_get_var_size (var, var->data);
         }
         if (size == 0 || adios_errno != err_no_error) {
-            adios_error (err_dimension_required, "%s: a dimension of variable %s is not yet known. "
-                         "The dimension will be known after adios_write() of that dimension variable\n",
-                         __func__, var->name);
+            if (adios_errno == err_invalid_var_as_dimension)
+            {
+                log_error ("%s: An array size depends on the actual value of the dimension variable. "
+                         "This will be known after adios_write() of that dimension variable.\n",
+                         __func__);
+            }
         }
         /*
             enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (var);

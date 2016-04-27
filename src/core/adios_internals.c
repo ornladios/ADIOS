@@ -5725,7 +5725,7 @@ int adios_multiply_dimensions (uint64_t * size
             return 1;
 
         default:
-            adios_error (err_invalid_var_as_dimension,
+            adios_error (err_invalid_type_as_dimension,
                     "Invalid datatype for array dimension on var %s: %s\n",
                     var->name,
                     adios_type_to_string_int (type));
