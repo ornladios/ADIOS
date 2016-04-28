@@ -22,23 +22,23 @@ own different I/O patterns.
 \subsection{ADIOS-required functions}
 
 This section contains the basic functions needed to integrate ADIOS into scientific 
-applications. ADIOS is a lightweight I/O library, and there are only seven required 
+applications. ADIOS is a lightweight I/O library, and there are only six required and an optional  
 functions from which users can write scalable, portable programs with flexible 
 I/O implementation on supported platforms:
 
-\textbf{adios\_init---}initialize ADIOS and load the configuration file
+\textbf{adios\_init ---} initialize ADIOS and load the configuration file
 
-\textbf{adios\_open---}open the group associated with the file
+\textbf{adios\_open ---} open the group associated with the file
 
-\textbf{adios\_group\_size---} optional. Pass the group size to allocate the memory for buffering
+\textbf{adios\_group\_size ---} \textit{optional.} Pass the group size to allocate the memory for buffering
 
-\textbf{adios\_write---}write the data either to internal buffer or disk
+\textbf{adios\_write ---} write the data either to internal buffer or disk
 
-\textbf{adios\_read---}associate the buffer space for data read into
+\textbf{adios\_read ---} associate the buffer space for data read into
 
-\textbf{adios\_close---}commit write/read operation and close the data
+\textbf{adios\_close ---} commit write/read operation and close the data
 
-\textbf{adios\_finalize---}terminate ADIOS
+\textbf{adios\_finalize ---} terminate ADIOS
 
 You can add functions to your working knowledge incrementally without having to 
 learn everything at once. For example, you can achieve better I/O performance on 
@@ -131,11 +131,11 @@ of the data can be retrieved from the file itself. The third argument is the ret
 value for the total size of this group, which is the payload size increased with the 
 metadata overhead. The value can be used for performance benchmarks, such as I/O speed. 
 
-Note that in the XML file, you can specify a buffer size for ADIOS. The buffer is 
+Note that in the XML file, you can specify a maximum buffer size for ADIOS. The buffer is 
 used to collect all outputs between one adios\_open -- adios\_close cycle, and all data
 is written out during adios\_close. This maximizes the benefits of large I/O chunks and
 is one of the key contributors of the superior performance of ADIOS file I/O. 
-If the buffer is not sufficiently large enough to hold all data for the output,
+If the buffer is not large enough to hold all data for the output,
 ADIOS methods either fall back to write data to the target in smaller chunks, that will
 result in much worse write performance, or will simply not write more than what fits
 in the buffer (an error message will be printed).
