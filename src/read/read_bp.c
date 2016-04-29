@@ -1326,7 +1326,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                 //memcpy (count, container->u.bb.count, bndim*sizeof(uint64_t));
             }
             uint64_t nelems = adios_get_nelements_of_box (bndim, start, count);
-            const int MAX_BUFFERSIZE = 100; //8388608; // 8M max read
+            const int MAX_BUFFERSIZE = 8388608; // 8M max read
 
             // we read maximum 'maxreadn' elements at once
             uint64_t maxreadn = MAX_BUFFERSIZE/size_of_type;
