@@ -205,6 +205,9 @@ int adios_query_read_boundingbox (
 
 void adios_query_free(ADIOS_QUERY* q);
 
+/* conversion from string to query operation enum type */
+enum ADIOS_PREDICATE_MODE adios_query_getOp(const char* opStr);
+
 #endif /* __INCLUDED_FROM_FORTRAN_API__ */
 
 #ifdef __cplusplus

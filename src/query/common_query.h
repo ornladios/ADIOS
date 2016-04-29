@@ -56,6 +56,7 @@ void common_query_free(ADIOS_QUERY* q);
 // this function then calls all query methods' finalize
 void common_query_finalize();
   
+
 #ifdef __cplusplus
 }
 #endif

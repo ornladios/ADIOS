@@ -865,4 +865,20 @@ ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q,
     return result;
 }
 
+enum ADIOS_PREDICATE_MODE adios_query_getOp(const char* opStr)
+{
+    if ((strcmp(opStr, ">=") == 0) || (strcmp(opStr, "GE") == 0)) {
+        return ADIOS_GTEQ;
+    } else if ((strcmp(opStr, "<=") == 0) || (strcmp(opStr, "LE") == 0)) {
+        return ADIOS_LTEQ;
+    } else if ((strcmp(opStr, "<") == 0) || (strcmp(opStr, "LT") == 0)) {
+        return ADIOS_LT;
+    } else if ((strcmp(opStr, ">") == 0) || (strcmp(opStr, "GT") == 0)) {
+        return ADIOS_GT;
+    } else if ((strcmp(opStr, "=") == 0) || (strcmp(opStr, "EQ") == 0)) {
+        return ADIOS_EQ;
+    } else { // if (strcmp(opStr, "!=") == 0) {
+        return ADIOS_NE;
+    }
+}
 
