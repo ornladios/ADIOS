@@ -1151,6 +1151,10 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
     uint64_t nelems_container = 0;
     uint64_t points_read = 0;
     int nreads_performed = 0;
+    double t_span = 0.0, t_read = 0.0, t_pick = 0.0;
+    double te, ttemp;
+    double tb = MPI_Wtime();
+
 
     v = bp_find_var_byid (fh, r->varid);
     size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
@@ -1198,6 +1202,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
         {
             // Get the size of the writeblock
             //  but first prepare fake request to call adios_wbidx_to_pgidx
+            ttemp = MPI_Wtime();
             nr->from_steps = r->from_steps;
             nr->nsteps = r->nsteps;
             nr->sel = wbsel;
@@ -1213,7 +1218,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
             {
                 nelems *= ldims [d];
             }
-
+            t_span += MPI_Wtime() - ttemp;
 
             // Read the writeblock
             nr->data = malloc (nelems*size_of_type);
@@ -1223,15 +1228,19 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                 nr->nsteps = 1;
                 nr->datasize = nelems*size_of_type;
                 nr->sel = wbsel;
+                ttemp = MPI_Wtime();
                 ADIOS_VARCHUNK * wbchunk = read_var_wb (fp, nr);
+                t_read += MPI_Wtime() - ttemp;
 
                 // Get the points
+                ttemp = MPI_Wtime();
                 uint64_t np = pick_points_from_boundingbox (sel, size_of_type, bndim, zeros, ldims,
                                               nelems, zeros, ldims, nr->data, dest);
                 if (np < sel->u.points.npoints) {
                     // for each step we need to move npoints, so fill up the output array
                     memset (dest, 0, (sel->u.points.npoints-np)*size_of_type);
                 }
+                t_pick += MPI_Wtime() - ttemp;
                 points_read += np;
                 dest += sel->u.points.npoints * size_of_type;
 
@@ -1283,6 +1292,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
             {
                 for (i = 0; i < sel->u.points.npoints; i++)
                 {
+                    ttemp = MPI_Wtime();
                     if (pndim == bndim)
                     {
                         for (d = 0; d < bndim; d++)
@@ -1294,8 +1304,11 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                         adios_selection_util_points_1DtoND_box (1, &sel->u.points.points[i], bndim, container->u.bb.start,
                                                                 container->u.bb.count, 1, nsel->u.bb.start);
                     }
+                    t_pick += MPI_Wtime() - ttemp;
                     //memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
+                    ttemp = MPI_Wtime();
                     chunk = read_var_bb (fp, nr);
+                    t_read += MPI_Wtime() - ttemp;
                     nreads_performed++;
                     nr->data = (char *) nr->data + size_of_type;
                     common_read_free_chunk (chunk);
@@ -1313,6 +1326,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
             uint64_t start[bndim], count[bndim];
             nelems_container = adios_get_nelements_of_box (bndim, container->u.bb.start, container->u.bb.count);
 
+            ttemp = MPI_Wtime();
             if (bndim == pndim) {
                 // get the smallest box the points fit in
                 mGetPointlistSpan(&(sel->u.points), start, count);
@@ -1325,11 +1339,25 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                 //memcpy (start, container->u.bb.start, bndim*sizeof(uint64_t));
                 //memcpy (count, container->u.bb.count, bndim*sizeof(uint64_t));
             }
+            t_span += MPI_Wtime() - ttemp;
+
             uint64_t nelems = adios_get_nelements_of_box (bndim, start, count);
-            const int MAX_BUFFERSIZE = 8388608; // 8M max read
+
+            // allocate temporary array for reading block data
+            int max_buffersize = 268435456; // 256MB max read
+            if (nelems * size_of_type < max_buffersize)
+                max_buffersize = nelems * size_of_type;
+            void * readbuf = (void *) malloc (max_buffersize);
+            while (!readbuf && max_buffersize > 1024)
+            {
+                max_buffersize = max_buffersize / 2;
+                readbuf = (void *) malloc (nelems);
+            }
+
+            log_warn ("Allocated read buffer size = %d bytes (%d elements)\n", max_buffersize, max_buffersize/size_of_type);
 
             // we read maximum 'maxreadn' elements at once
-            uint64_t maxreadn = MAX_BUFFERSIZE/size_of_type;
+            uint64_t maxreadn = max_buffersize/size_of_type;
             if (nelems < maxreadn)
                 maxreadn = nelems;
 
@@ -1338,7 +1366,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
             //  - loop over 1st dimension
             //  - loop over 1st & 2nd dimension
             //  - etc
-            log_debug ("Read size strategy:\n");
+            log_debug ("Read size strategy: \n");
             uint64_t readn[bndim];
             uint64_t sum = (uint64_t) 1;
             uint64_t actualreadn = (uint64_t) 1;
@@ -1364,9 +1392,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
             memcpy (s, start, bndim * 8);
             memcpy (c, readn, bndim * 8);
 
-            // allocate data array
-            nr->data = (void *) malloc (maxreadn*size_of_type);
-
+            nr->data = readbuf;
             if (nr->data)
             {
                 // read until we have read all 'nelems' elements
@@ -1384,11 +1410,14 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                     log_debug ("  read %d elems\n", actualreadn);
                      */
 
+                    ttemp = MPI_Wtime();
                     // read a slice finally
                     chunk = read_var_bb (fp, nr);
+                    t_read += MPI_Wtime() - ttemp;
 
                     if (chunk) {
                         // Get the points
+                        ttemp = MPI_Wtime();
                         uint64_t npoints = pick_points_from_boundingbox (sel, size_of_type,
                                 bndim, container->u.bb.start, container->u.bb.count,
                                 actualreadn, s, c, nr->data, dest);
@@ -1396,6 +1425,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                         dest += npoints * size_of_type;
                         common_read_free_chunk (chunk);
                         nreads_performed++;
+                        t_pick += MPI_Wtime() - ttemp;
                     }
 
                     // prepare for next read
@@ -1421,7 +1451,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                     }
                 } // end while sum < nelems
                 nelems_read += nelems;
-                free(nr->data);
+                free(readbuf);
             }
             else
             {
@@ -1454,11 +1484,14 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
         common_read_selection_delete(container);
     }
 
+    te = MPI_Wtime();
     log_warn ("Point selection reading: number of points = %" PRIu64
             ", total container elements = %" PRIu64
             ", number of reads = %d"
-            ", elements read from file = %" PRIu64 "\n",
-            sel->u.points.npoints*r->nsteps, nelems_container, nreads_performed, nelems_read);
+            ", elements read from file = %" PRIu64
+            "\n       Time total = %6.2fs  span = %6.2fs  read = %6.2fs  picking = %6.2fs\n",
+            sel->u.points.npoints*r->nsteps, nelems_container, nreads_performed, nelems_read,
+            te-tb, t_span, t_read, t_pick);
     return chunk;
 }
 
