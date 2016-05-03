@@ -65,6 +65,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     WITHFLEX=""
     WITHFGR=""
     WITHFASTBIT=""
+    WITHALACRITY=""
     unset DATASPACES_DIR
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
@@ -72,6 +73,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         export FC=pgf90
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
         WITHFGR="--with-fgr=/ccs/proj/e2e/qliu/tap" 
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/pnorbert/ALACRITY-ADIOS/synced/build.sith/build.gnu" 
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.4.7"
         DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.pgi"
         #DATASPACES_DIR="/ccs/home/hbui/usr/software/dataspaces-dev"
@@ -82,6 +84,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         #export CFLAGS="$CFLAGS -gdwarf-3" 
         #export FCFLAGS="$FCFLAGS -gdwarf-3" 
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/pnorbert/ALACRITY-ADIOS/synced/build.sith/build.gnu" 
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
         DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.gnu"
     elif [ "$TARGET" == "intel" ]; then
@@ -108,6 +111,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --without-infiniband --with-dataspaces=$DATASPACES_DIR \
         $WITHFLEX \
         $WITHFASTBIT \
+        $WITHALACRITY \
         --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
         #--with-dimes=$DATASPACES_DIR \
