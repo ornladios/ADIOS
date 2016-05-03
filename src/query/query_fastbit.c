@@ -3140,7 +3140,8 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
                     uint64_t* currStart = malloc(bbdim*sizeof(uint64_t));
                     currCounter[0] = 20;
                     currStart[0] = 20 * (coordinates[checkpoints[i]]/(gap*4));
-                    for (int k=1; k<bbdim; k++) {
+                    int k;
+                    for (k=1; k<bbdim; k++) {
                         currCounter[k] = bbcount[k];
                         currStart[k] = 0;
                     }
