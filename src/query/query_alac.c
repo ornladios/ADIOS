@@ -18,7 +18,7 @@
 #include "core/common_read.h"
 #include "common_query.h"
 #include "query_utils.h"
-//#include <alacrity.h>
+#include <alacrity.h>
 
 
 #ifdef ALACRITY
@@ -155,7 +155,7 @@ static uint8_t bits_in_char[256] = {
 #   define B6(n) B4(n), B4(n+1), B4(n+1), B4(n+2)
 		B6(0), B6(1), B6(1), B6(2)};
 
-static isInitialized = 0; // 0: the lookup table is not initialized ; 1 : the lookup table is initialized
+static int isInitialized = 0; // 0: the lookup table is not initialized ; 1 : the lookup table is initialized
 static unsigned char set_bit_count[65536];
 static unsigned char set_bit_position[65536][16];
 
@@ -530,7 +530,7 @@ void reconstituteElementsUint64T(const ALMetadata *meta, bin_id_t start_bin, bin
 		                         char *start_bin_input, char *start_bin_output) {
 
 	const ALBinLayout * const bl = &meta->binLayout;
-	int insigbytes = insigBytesCeil(meta);
+	int insigbytes = alacrity_util_insigBytesCeil(meta);
 	int insigbits = (meta->elementSize << 3) - meta->significantBits;
 
 	uint64_t reconst_elem;
@@ -1262,7 +1262,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	alacPartitionMetaTotal += dclock() - alacPartitionMetaStart;
 #endif
 
-	const uint8_t insigbytes = insigBytesCeil(&partitionMeta);
+	const uint8_t insigbytes = alacrity_util_insigBytesCeil(&partitionMeta);
 
 	//2. find touched bin
 	bin_id_t low_bin, hi_bin;
@@ -1428,7 +1428,7 @@ uint64_t beforeBits = alacResultBitmap->numSetBits;
 					binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
 					uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered , inputCurPtr, binCompressedLen
 							, srcstart, srccount /*PG region dimension*/ , deststart, destcount /*region dimension of Selection box*/
-							, ndim , &(alacResultBitmap->bits));
+							, ndim , (void **)&(alacResultBitmap->bits));
 					inputCurPtr += binCompressedLen;
 					alacResultBitmap->numSetBits += decodedElm;
 				}
@@ -1541,7 +1541,7 @@ decodeStart= dclock();
 											, inputCurPtr, binCompressedLen
 											, srcstart, srccount //PG region dimension
 											, deststart, destcount //region dimension of Selection box
-											, ndim , &(alacResultBitmap->bits));
+											, ndim , (void**)&(alacResultBitmap->bits));
 #ifdef BREAKDOWN
 decodeTotal += dclock() - decodeStart;
 #endif

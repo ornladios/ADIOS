@@ -819,11 +819,12 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     #    export MPICXX=/opt/local/bin/openmpicxx
     #
     # But should work with default mpicc and gcc, using --disable-fortran
-    # Homebrew installation of openmpi and gfortran (from gcc 4.9.2)
+    # Homebrew installation of openmpi and gfortran (from gcc 4.9.2, 5.3.0)
     #   but using Apple's default gcc compiler
+    #export CC=/usr/local/bin/gcc-5
     export CC=/usr/bin/gcc
     export FC=/usr/local/bin/gfortran
-    export CXX=/usr/bin/g++
+    export CXX=/usr/local/bin/g++-5
     export MPICC=/usr/local/bin/mpicc
     export MPIFC=/usr/local/bin/mpif90
     export MPICXX=/usr/local/bin/mpicxx
@@ -831,11 +832,13 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     export CFLAGS="-g -O0 -DO_LARGEFILE=0 -fno-common -Wall" 
     export CXXFLAGS="-g -O0"
     export FCFLAGS="-g -O0"
-#export LIBS="-L/opt/alacrity/lib -ltimer -lridcompress -lstdc++"
-    export LIBS="-lstdc++"  # ALACRITY, FASTBIT are C++ libs
+    # ALACRITY, FASTBIT are C++ lib so we need to link with libstdc++
+    #export LIBS="-lstdc++"
+    export LIBS="/usr/local/Cellar/gcc/5.3.0/lib/gcc/5/libstdc++.dylib" 
     ${SRCDIR}/configure --prefix=/opt/adios \
         --with-mxml=/opt/mxml \
-        --with-alacrity=/opt/alacrity
+        --with-alacrity=/opt/alacrity 
+    #    --with-fastbit=/opt/fastbit \
     #    --disable-fortran \
     #        --with-netcdf=/opt/netcdf \
     #        --with-phdf5=/opt/hdf5 \
