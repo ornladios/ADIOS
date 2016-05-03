@@ -105,6 +105,7 @@ set(query_common_HDRS query/common_query.h
 
 set(query_common_SOURCES ${query_common_HDRS}
                          query/common_query.c
+                         query/common_query_read.c
                          query/adios_query_hooks.c
                          query/query_utils.c)
 
