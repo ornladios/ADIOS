@@ -2099,17 +2099,18 @@ static ADIOS_SELECTION * adios_query_build_offsets_boundingbox(ADIOS_ALAC_BITMAP
     return pts;
 }
 
-/*
+
 static ADIOS_SELECTION * adios_query_build_results_boundingbox(ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size,
-                                                               ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb, int Corder)
+                                                               ADIOS_SELECTION *box, int Corder)
 {
+    ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(box->u.bb);
 	const uint64_t dataSize = retrieval_size * (bb->ndim);
 	uint64_t *points = (uint64_t *)(malloc(dataSize * sizeof(uint64_t)));
 	adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points,Corder);
 
 	return common_read_selection_points(bb->ndim, retrieval_size, points);
 }
-*/
+
 
 void adios_query_alac_build_results(
 		uint64_t retrieval_size, ADIOS_SELECTION* outputBoundry, ADIOS_ALAC_BITMAP *b,
@@ -2121,11 +2122,14 @@ void adios_query_alac_build_results(
 	case ADIOS_SELECTION_BOUNDINGBOX: {
 		ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundry->u.bb);
 
+#ifdef ALACRITY_EVAL_1D_POINTS
 		adiosQueryResult->selections = adios_query_build_offsets_boundingbox(b, retrieval_size, outputBoundry, Corder);
-		adiosQueryResult ->nselections = 1 ;
-		adiosQueryResult -> npoints = retrieval_size ;
-		adiosQueryResult ->method_used = ADIOS_QUERY_METHOD_ALACRITY;
-		// *queryResult = adios_query_build_results_boundingbox(b, retrieval_size, bb,Corder);
+#else
+		adiosQueryResult->selections = adios_query_build_results_boundingbox(b, retrieval_size, outputBoundry, Corder);
+#endif
+        adiosQueryResult ->nselections = 1 ;
+        adiosQueryResult -> npoints = retrieval_size ;
+        adiosQueryResult ->method_used = ADIOS_QUERY_METHOD_ALACRITY;
 		break;
 	}
 	case ADIOS_SELECTION_WRITEBLOCK : {
