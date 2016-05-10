@@ -859,7 +859,7 @@ endif()
 message("setting sirius link/include paths")
 add_library(splitdoubles STATIC IMPORTED)
 set_target_properties(splitdoubles PROPERTIES
-  IMPORTED_LOCATION ${SIRIUS_LIB}
+  IMPORTED_LOCATION "${SIRIUS_LIB}"
   IMPORTED_LINK_INTERFACE_LANGUAGES "CXX"
   )
 target_link_libraries(adios splitdoubles)

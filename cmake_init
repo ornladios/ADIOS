@@ -180,7 +180,7 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
-    BUILD_STAGING=true
+    BUILD_STAGING=false
     if [ $BUILD_STAGING == "false" ]; then
     
         ################

@@ -1,6 +1,6 @@
 if(BUILD_WRITE)
   add_subdirectory(C)
-  add_subdirectory(staging)
+  #add_subdirectory(staging)
   # if(BUILD_FORTRAN)
   #   add_subdirectory(Fortran)
   # endif(BUILD_FORTRAN)
