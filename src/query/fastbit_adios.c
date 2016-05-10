@@ -535,10 +535,10 @@ uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int timestep, int rel
   for (j=0; j<v->ndim; j++) 
     {  
       blockSize *= v->blockinfo[k].count[j];
-      log_debug("%llu:%llu ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
+      log_debug_cont("%llu:%llu ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
     }
   
-  log_debug("]\n");
+  log_debug_cont("]\n");
   
   //  log_debug("\t\t   block %d, bytes: %llu \n", k, blockBytes);      
   
@@ -785,7 +785,7 @@ or is lined as
   }
   log_debug("  \tfirst %d data out of %lld:[", max, size);
   for (i=0; i<max; i++) {
-    log_debug("%s ", value_to_string(type, data, i));
+    log_debug_cont("%s ", value_to_string(type, data, i));
   }
-  log_debug("]\n");
+  log_debug_cont("]\n");
 }

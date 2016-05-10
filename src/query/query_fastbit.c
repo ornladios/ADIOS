@@ -13,7 +13,7 @@
 
 #define BITARRAY
 #define INT_BIT 32
-#define RETURN_ONE_DIM
+#undef RETURN_ONE_DIM
 
 #define BITMASK(b) (1 << ((b) % INT_BIT))
 #define BITSLOT(b) ((b) / INT_BIT)
@@ -2611,29 +2611,29 @@ void printQueryData(ADIOS_QUERY* q, FastBitDataType dataType, int timeStep) {
     for (j = 0; j < dataSize; j++) {
         if ((j < batchSize) || ((dataSize -j) < batchSize)) {
             if ((j % 10) == 0) {
-                log_debug(" \n\t\t           ");
+                log_debug_cont(" \n\t\t           ");
             }
             if (dataType == FastBitDataTypeDouble) {
-                log_debug(" %lg ", ((double *)(q->dataSlice))[j]);
+                log_debug_cont(" %lg ", ((double *)(q->dataSlice))[j]);
             } else if (dataType == FastBitDataTypeFloat) {
-                log_debug(" %g ", ((float *)(q->dataSlice))[j]);
+                log_debug_cont(" %g ", ((float *)(q->dataSlice))[j]);
             } else if (dataType == FastBitDataTypeUInt) {
-                log_debug("%d ", ((uint32_t  *)(q->dataSlice))[j]);
+                log_debug_cont("%d ", ((uint32_t  *)(q->dataSlice))[j]);
             } else if (dataType == FastBitDataTypeULong) {
-                log_debug("%lld ", ((uint64_t  *)(q->dataSlice))[j]);
+                log_debug_cont("%lld ", ((uint64_t  *)(q->dataSlice))[j]);
             } else {
                 //log_debug("\t%g ", ((uint32_t *)(q->_dataSlice))[j]);
-                log_debug(" *  ");
+                log_debug_cont(" *  ");
             }
         } else {
             if (j == batchSize) {
-                log_debug(" ... ");
+                log_debug_cont(" ... ");
             }
             continue;
             //break;
         }
     }
-    log_debug ("]\n");
+    log_debug_cont ("]\n");
 }
 
 
@@ -3020,9 +3020,9 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
             int k;
             log_debug(" spatial = [");
             for (k=0; k<dim; k++) {
-                log_debug("%lld ", spatialCoordinates[k]);
+                log_debug_cont("%lld ", spatialCoordinates[k]);
             }
-            log_debug("]\n");
+            log_debug_cont("]\n");
 
         }
 
@@ -3047,7 +3047,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
                 //printf("   points[%d] = %lld ", idx, spatialCoordinates[k]);
                 //pointArray[idx] = spatialCoordinates[k];
             }
-            log_debug("\n");
+            //log_debug("\n");
         }
 
         uint64_t* minmaxtest(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coordinates, uint64_t retrivalSize, int timeStep, uint64_t* ptsSize, ADIOS_SELECTION** containers)
