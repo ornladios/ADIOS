@@ -803,10 +803,10 @@ int main (int argc, char** argv)
       adios_open (&gAdios_write_file, gGroupNameFastbitIdx, gIdxFileName, "w", MPI_COMM_WORLD);
 
 #ifdef MULTI_BLOCK
-      int testid = adios_define_var (gAdios_group, "pack", "", adios_integer , 0, 0, 0);
+      int64_t testid = adios_define_var (gAdios_group, "pack", "", adios_integer , 0, 0, 0);
 #endif
 #ifdef BOX
-      int testid = adios_define_var (gAdios_group, "elements", "", adios_integer , 0, 0, 0);
+      int64_t testid = adios_define_var (gAdios_group, "elements", "", adios_integer , 0, 0, 0);
 #endif
       //uint64_t estimatedbytes = (nb+nk+no)*adios_type_size(adios_double, NULL);
       int jobCounter = getJobCounter(f);
