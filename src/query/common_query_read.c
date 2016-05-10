@@ -134,14 +134,15 @@ static void adios_query_copy_points_to_bb (
         }
     }
 
-    if (!contained)
-    {
-        for (n=0; n < npoints; n++) {
-            // point coordinates = pointsel->u.points.points[n*ndim..(n+1)*ndim-1] into data[]
-            falls_outside = 0;
-            coord_idx = n*ndim;
-            for (d=0; d < ndim; d++) {
-                coord = pointsel->points[coord_idx];
+
+    for (n=0; n < npoints; n++) {
+        // point coordinates = pointsel->u.points.points[n*ndim..(n+1)*ndim-1] into data[]
+        falls_outside = 0;
+        coord_idx = n*ndim;
+        for (d=0; d < ndim; d++) {
+            coord = pointsel->points[coord_idx];
+            if (!contained)
+            {
                 // check if point is in the box in the first place
                 log_debug ("   check point %" PRIu64 " dim %d (idx=%" PRIu64 ") = %" PRIu64 "\n", n, d, coord_idx, coord);
 
@@ -149,16 +150,16 @@ static void adios_query_copy_points_to_bb (
                     falls_outside = 1;
                     break;
                 }
-                // calculate the local point coordinate in bb
-                lcoords[d] = coord - bb->u.bb.start[d];
-                coord_idx++;
             }
-            if (!falls_outside) {
-                // copy elemsize bytes from &pointvalues[n*elemsize] into data[X]
-                // where X is the local coordinate of point n in the boundingbox bb
-                coord_idx = adios_query_calc_position(ndim, bb->u.bb.count, lcoords);
-                memcpy (data+coord_idx*elemsize, pointvalues+n*elemsize, elemsize);
-            }
+            // calculate the local point coordinate in bb
+            lcoords[d] = coord - bb->u.bb.start[d];
+            coord_idx++;
+        }
+        if (!falls_outside) {
+            // copy elemsize bytes from &pointvalues[n*elemsize] into data[X]
+            // where X is the local coordinate of point n in the boundingbox bb
+            coord_idx = adios_query_calc_position(ndim, bb->u.bb.count, lcoords);
+            memcpy (data+coord_idx*elemsize, pointvalues+n*elemsize, elemsize);
         }
     }
 }
