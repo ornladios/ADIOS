@@ -12,6 +12,22 @@
 #include "core/util.h"
 #include "query_utils.h"
 
+/*static void print_points (char *indent, ADIOS_SELECTION_POINTS_STRUCT * pts)
+{
+    int d;
+    uint64_t n;
+    if (adios_verbose_level >= 4) {
+        log_debug ("%s Number of points: %" PRIu64 "\n", indent, pts->npoints);
+        for (n = 0; n < pts->npoints; ++n) {
+            log_debug_cont ("%s   point %" PRIu64 "\t(%" PRIu64, indent, n, pts->points[n*pts->ndim]);
+            for (d = 1; d < pts->ndim; ++d) {
+                log_debug_cont (", %" PRIu64, pts->points[n*pts->ndim+d]);
+            }
+            log_debug_cont(")\n");
+        }
+    }
+}*/
+
 // get the number of elements in a block (not size in bytes)
 // size in bytes = get_nelements(v,i) * adios_type_size (v->type, NULL)
 static uint64_t get_nelements (int ndim, uint64_t *dims)
@@ -87,30 +103,62 @@ static void adios_query_copy_points_to_bb (
     assert (pointsel->ndim <= 32);
     uint64_t npoints = pointsel->npoints;
     int ndim = pointsel->ndim;
-    uint64_t n, i, coord_idx, coord;
+    int d;
+    uint64_t n, coord_idx, coord;
     int falls_outside;
     uint64_t lcoords[32];
 
-    for (n=0; n < npoints; n++) {
-        // point coordinates = pointsel->u.points.points[n*ndim..(n+1)*ndim-1] into data[]
-        falls_outside = 0;
-        coord_idx = n*ndim;
-        for (i=0; i < ndim; i++) {
-            coord = pointsel->points[coord_idx];
-            // check if point is in the box in the first place
-            if (coord < bb->u.bb.start[n] || bb->u.bb.start[n]+bb->u.bb.count[n] <= coord) {
-                falls_outside = 1;
+    /*if (adios_verbose_level >= 4) {
+        log_debug ("%s: points:\n", __func__);
+        print_points("  ", pointsel);
+        log_debug ("   bb: { %" PRIu64 ":%" PRIu64, bb->u.bb.start[0], bb->u.bb.start[0]+bb->u.bb.count[0]-1);
+        for (d = 1; d < bb->u.bb.ndim; ++d) {
+            log_debug_cont (", %" PRIu64 ":%" PRIu64, bb->u.bb.start[d], bb->u.bb.start[d]+bb->u.bb.count[d]-1);
+        }
+        log_debug_cont("}\n");
+    }*/
+
+    /* Check if we need to boundary check each point: i.e. if bb is not fully contained in container box */
+    int contained = 1;
+    if (pointsel->container_selection && pointsel->container_selection->type == ADIOS_SELECTION_BOUNDINGBOX)
+    {
+
+        ADIOS_SELECTION_BOUNDINGBOX_STRUCT * contbb = &pointsel->container_selection->u.bb;
+        for (d=0; d < ndim; d++) {
+            if ( bb->u.bb.start[d] < contbb->start[d] ||
+                 contbb->start[d] + contbb->count[d] <  bb->u.bb.start[d]+bb->u.bb.count[d])
+            {
+                contained = 0;
                 break;
             }
-            // calculate the local point coordinate in bb
-            lcoords[i] = coord - bb->u.bb.start[i];
-            coord_idx++;
         }
-        if (!falls_outside) {
-            // copy elemsize bytes from &pointvalues[n*elemsize] into data[X]
-            // where X is the local coordinate of point n in the boundingbox bb
-            coord_idx = adios_query_calc_position(ndim, bb->u.bb.count, lcoords);
-            memcpy (data+coord_idx*elemsize, pointvalues+n*elemsize, elemsize);
+    }
+
+    if (!contained)
+    {
+        for (n=0; n < npoints; n++) {
+            // point coordinates = pointsel->u.points.points[n*ndim..(n+1)*ndim-1] into data[]
+            falls_outside = 0;
+            coord_idx = n*ndim;
+            for (d=0; d < ndim; d++) {
+                coord = pointsel->points[coord_idx];
+                // check if point is in the box in the first place
+                log_debug ("   check point %" PRIu64 " dim %d (idx=%" PRIu64 ") = %" PRIu64 "\n", n, d, coord_idx, coord);
+
+                if (coord < bb->u.bb.start[d] || bb->u.bb.start[d]+bb->u.bb.count[d] <= coord) {
+                    falls_outside = 1;
+                    break;
+                }
+                // calculate the local point coordinate in bb
+                lcoords[d] = coord - bb->u.bb.start[d];
+                coord_idx++;
+            }
+            if (!falls_outside) {
+                // copy elemsize bytes from &pointvalues[n*elemsize] into data[X]
+                // where X is the local coordinate of point n in the boundingbox bb
+                coord_idx = adios_query_calc_position(ndim, bb->u.bb.count, lcoords);
+                memcpy (data+coord_idx*elemsize, pointvalues+n*elemsize, elemsize);
+            }
         }
     }
 }
