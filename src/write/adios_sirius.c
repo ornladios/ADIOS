@@ -528,15 +528,16 @@ void adios_sirius_write (struct adios_file_struct * fd
                 var->path = strdup (v->path);
                 var->type = adios_byte;
 
-                for(int i = 0; i < ndims && i < 16; i ++)
+                int i; // I guess the default settings on Titan is C89
+                for(i = 0; i < ndims && i < 16; i ++)
                 {
                     alldims[i] = ldims[i];                                        
                 }
-                for( int i = 0; i < ndims && i < 16; i ++)
+                for(i = 0; i < ndims && i < 16; i ++)
                 {
                     alldims[i+ndims] = gdims[i];                                        
                 }
-                for( int i = 0; i < ndims && i < 16; i ++)
+                for(i = 0; i < ndims && i < 16; i ++)
                 {
                     alldims[i+ndims*2] = offsets[i];                                        
                 }

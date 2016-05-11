@@ -186,10 +186,12 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ################
         # Titan #
         ################
-        TARGET=pgi
+        TARGET=gnu
         echo "Configure on TITAN (XK7) for $TARGET env."
         #export CFLAGS="-Wall -g" 
         source /opt/modules/default/etc/modules.sh
+        unset CRAY_UGNI_DIR
+        unset CRAY_PMI_DIR
         module unload szip
         module unload hdf5
         module unload netcdf
@@ -208,8 +210,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module load cray-mpich
         module load szip
         module load mxml
-        export CRAY_UGNI_DIR="/opt/cray/ugni/4.0-1.0401.5928.9.5.gem"
-        export CRAY_PMI_DIR="/opt/cray/pmi/4.0.1-1.0000.9421.73.3.gem"
+        #export CRAY_UGNI_DIR="/opt/cray/ugni/4.0-1.0401.5928.9.5.gem"
+        #export CRAY_PMI_DIR="/opt/cray/pmi/4.0.1-1.0000.9421.73.3.gem"
         export LUSTRE_DIR="/usr/lib64"
     	export BUILD_WRITE=ON
     	export BUILD_FORTRAN=ON
