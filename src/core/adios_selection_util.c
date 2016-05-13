@@ -39,13 +39,15 @@ ADIOS_SELECTION * adios_selection_intersect_bb_bb(const ADIOS_SELECTION_BOUNDING
         return NULL;
     }
 
+    ADIOS_SELECTION * bb;
     if (intersect_bb(bb1, bb2, new_start, NULL, NULL, new_count)) {
-        return common_read_selection_boundingbox(ndim, new_start, new_count);
+        bb = common_read_selection_boundingbox(ndim, new_start, new_count);
     } else {
-        free(new_start);
-        free(new_count);
-        return NULL;
+        bb = NULL;
     }
+    free(new_start);
+    free(new_count);
+    return bb;
 }
 
 ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
