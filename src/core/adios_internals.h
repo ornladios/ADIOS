@@ -463,7 +463,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
                                   ,const char * path
                                   ,enum ADIOS_DATATYPES type
                                   ,int nelems
-                                  ,void * values
+                                  ,const void * values
                                   );
 
 void adios_append_method (struct adios_method_struct * method);

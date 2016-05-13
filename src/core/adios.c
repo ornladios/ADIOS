@@ -408,7 +408,7 @@ int adios_delete_attrdefs (int64_t id)
 
 int adios_define_attribute_byvalue (int64_t group, 
                             const char * name, const char * path, 
-                            enum ADIOS_DATATYPES type, int  nelems, void * values
+                            enum ADIOS_DATATYPES type, int  nelems, const void * values
                            )
 {
     adios_errno = err_no_error;
