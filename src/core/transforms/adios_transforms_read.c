@@ -216,6 +216,7 @@ static int generate_read_request_for_pg(
     } else {
     	abort(); // Should never be called with other types of selections
     }
+    common_read_selection_delete(pg_writeblock_sel);
 
     // If there is an intersection, generate a corresponding PG read request
     if (pg_intersection_sel) {
