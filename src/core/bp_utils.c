@@ -512,6 +512,7 @@ int bp_close (BP_FILE * fh)
 
     /* Free variable structures */
     /* alloc in bp_utils.c: bp_parse_vars() */
+    /* FIXME: this while loop is identical to adios_internals.c:adios_clear_vars_index_v1() */
     while (vars_root) {
         vr = vars_root;
         vars_root = vars_root->next;
@@ -553,6 +554,9 @@ int bp_close (BP_FILE * fh)
 
                 free (vr->characteristics[j].stats);
                 vr->characteristics[j].stats = 0;
+
+                // NCSU ALACRITY-ADIOS - Clear the transform metadata
+                adios_transform_clear_transform_characteristic(&vr->characteristics[j].transform);
             }
         }
         if (vr->characteristics)
