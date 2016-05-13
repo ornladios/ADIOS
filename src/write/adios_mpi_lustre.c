@@ -602,8 +602,7 @@ int adios_mpi_lustre_open (struct adios_file_struct * fd
         if (!fd->group->prev_timing_obj)
             fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
     }
-
-
+    free (timer_names);
 #endif
 
     START_TIMER (ADIOS_TIMER_AD_OPEN);
@@ -1762,6 +1761,7 @@ void adios_mpi_lustre_finalize (int mype, struct adios_method_struct * method)
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
     adios_free_index_v1 (md->index);
+    adios_buffer_struct_clear (&md->b);
 
     if (adios_mpi_lustre_initialized)
         adios_mpi_lustre_initialized = 0;

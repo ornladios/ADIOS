@@ -130,7 +130,6 @@ int adios_posix_open (struct adios_file_struct * fd
 
     char *temp_string, *m_size;
 
-    temp_string = (char *) malloc (strlen (method->parameters) + 1);
     strcpy (temp_string, method->parameters);
     trim_spaces (temp_string);
 
@@ -149,6 +148,7 @@ int adios_posix_open (struct adios_file_struct * fd
         // by default, write metadata file. 
         p->g_have_mdf = 1;
     }
+    free (temp_string);
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     int timer_count = 8;
@@ -174,8 +174,7 @@ int adios_posix_open (struct adios_file_struct * fd
         if (!fd->group->prev_timing_obj)
             fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
     }
-
-
+    free (timer_names);
 #endif
 
 START_TIMER (ADIOS_TIMER_AD_OPEN);

@@ -1215,8 +1215,7 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
         if (!fd->group->prev_timing_obj)
             fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
     }
-
-
+    free (timer_names);
 #endif
 
     // need to dealloc/realloc buffer because of supporting append mode
@@ -2138,6 +2137,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
     }
 
     adios_clear_index_v1 (md->index);
+    adios_buffer_struct_clear (&md->b);
     return;
 }
 
@@ -2733,6 +2733,7 @@ void adios_mpi_amr_finalize (int mype, struct adios_method_struct * method)
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
     adios_free_index_v1 (md->index);
+    adios_buffer_struct_clear (&md->b);
 
 #ifdef HAVE_FGR
     fgr_finalize ();
