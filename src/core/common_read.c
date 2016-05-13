@@ -1139,6 +1139,7 @@ void common_read_free_varinfo (ADIOS_VARINFO *vp)
         if (vp->value)   MYFREE(vp->value);
         if (vp->nblocks) MYFREE(vp->nblocks);
         if (vp->meshinfo) MYFREE(vp->meshinfo);
+        if (vp->attr_ids) MYFREE(vp->attr_ids);
         free(vp);
     }
 }
