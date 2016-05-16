@@ -545,6 +545,18 @@ void adios_timing_destroy (struct adios_timing_struct * timing_obj)
         {
             free (timing_obj->times);
         }
+        if (timing_obj->names)
+        {
+            int i;
+            for (i = 0; i < timing_obj->internal_count; i++)
+            {
+                if (timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i])
+                {
+                    free(timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]);
+                }
+            }
+            free (timing_obj->names);
+        }
         free (timing_obj);
     }
 }
