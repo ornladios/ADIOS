@@ -2604,7 +2604,9 @@ void adios_cleanup ()
     while (adios_groups)
     {
         struct adios_group_list_struct * groups = adios_groups->next;
+        adios_common_free_groupstruct (adios_groups->group);
 
+#if 0
         if (adios_groups->group->name)
             free (adios_groups->group->name);
 
@@ -2815,7 +2817,8 @@ void adios_cleanup ()
     adios_groups->group->meshs = meshs;
     }*/
 
-    free (adios_groups->group);
+    //free (adios_groups->group);
+#endif
     free (adios_groups);
     adios_groups = groups;
     }
