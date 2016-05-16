@@ -707,7 +707,7 @@ cdef class file(object):
         def __get__(self):
             return self.version
 
-    property file_sizec:
+    property file_size:
         """ The size of Adios file. """
         def __get__(self):
             return self.file_size

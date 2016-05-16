@@ -2342,7 +2342,7 @@ static PyObject *__pyx_pf_5adios_4file_12current_step___get__(struct __pyx_obj_5
 static PyObject *__pyx_pf_5adios_4file_9last_step___get__(struct __pyx_obj_5adios_file *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5adios_4file_10endianness___get__(struct __pyx_obj_5adios_file *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5adios_4file_7version___get__(struct __pyx_obj_5adios_file *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_5adios_4file_10file_sizec___get__(struct __pyx_obj_5adios_file *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_5adios_4file_9file_size___get__(struct __pyx_obj_5adios_file *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_5adios_4file_9is_stream___get__(struct __pyx_obj_5adios_file *__pyx_v_self); /* proto */
 static int __pyx_pf_5adios_4file___init__(struct __pyx_obj_5adios_file *__pyx_v_self, char *__pyx_v_fname, char *__pyx_v_method_name, MPI_Comm __pyx_v_comm, PyObject *__pyx_v_is_stream, ADIOS_LOCKMODE __pyx_v_lock_mode, float __pyx_v_timeout_sec); /* proto */
 static PyObject *__pyx_pf_5adios_4file_2__del__(struct __pyx_obj_5adios_file *__pyx_v_self); /* proto */
@@ -9718,7 +9718,7 @@ static PyObject *__pyx_pf_5adios_4file_7version___get__(struct __pyx_obj_5adios_
  *         def __get__(self):
  *             return self.version             # <<<<<<<<<<<<<<
  * 
- *     property file_sizec:
+ *     property file_size:
  */
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->version); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 709; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -9747,7 +9747,7 @@ static PyObject *__pyx_pf_5adios_4file_7version___get__(struct __pyx_obj_5adios_
 }
 
 /* "adios.pyx":713
- *     property file_sizec:
+ *     property file_size:
  *         """ The size of Adios file. """
  *         def __get__(self):             # <<<<<<<<<<<<<<
  *             return self.file_size
@@ -9755,19 +9755,19 @@ static PyObject *__pyx_pf_5adios_4file_7version___get__(struct __pyx_obj_5adios_
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5adios_4file_10file_sizec_1__get__(PyObject *__pyx_v_self); /*proto*/
-static PyObject *__pyx_pw_5adios_4file_10file_sizec_1__get__(PyObject *__pyx_v_self) {
+static PyObject *__pyx_pw_5adios_4file_9file_size_1__get__(PyObject *__pyx_v_self); /*proto*/
+static PyObject *__pyx_pw_5adios_4file_9file_size_1__get__(PyObject *__pyx_v_self) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__ (wrapper)", 0);
-  __pyx_r = __pyx_pf_5adios_4file_10file_sizec___get__(((struct __pyx_obj_5adios_file *)__pyx_v_self));
+  __pyx_r = __pyx_pf_5adios_4file_9file_size___get__(((struct __pyx_obj_5adios_file *)__pyx_v_self));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5adios_4file_10file_sizec___get__(struct __pyx_obj_5adios_file *__pyx_v_self) {
+static PyObject *__pyx_pf_5adios_4file_9file_size___get__(struct __pyx_obj_5adios_file *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -9791,7 +9791,7 @@ static PyObject *__pyx_pf_5adios_4file_10file_sizec___get__(struct __pyx_obj_5ad
   goto __pyx_L0;
 
   /* "adios.pyx":713
- *     property file_sizec:
+ *     property file_size:
  *         """ The size of Adios file. """
  *         def __get__(self):             # <<<<<<<<<<<<<<
  *             return self.file_size
@@ -9801,7 +9801,7 @@ static PyObject *__pyx_pf_5adios_4file_10file_sizec___get__(struct __pyx_obj_5ad
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_AddTraceback("adios.file.file_sizec.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("adios.file.file_size.__get__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -27307,8 +27307,8 @@ static PyObject *__pyx_getprop_5adios_4file_version(PyObject *o, CYTHON_UNUSED v
   return __pyx_pw_5adios_4file_7version_1__get__(o);
 }
 
-static PyObject *__pyx_getprop_5adios_4file_file_sizec(PyObject *o, CYTHON_UNUSED void *x) {
-  return __pyx_pw_5adios_4file_10file_sizec_1__get__(o);
+static PyObject *__pyx_getprop_5adios_4file_file_size(PyObject *o, CYTHON_UNUSED void *x) {
+  return __pyx_pw_5adios_4file_9file_size_1__get__(o);
 }
 
 static PyObject *__pyx_getprop_5adios_4file_is_stream(PyObject *o, CYTHON_UNUSED void *x) {
@@ -27384,7 +27384,7 @@ static struct PyGetSetDef __pyx_getsets_5adios_file[] = {
   {(char *)"last_step", __pyx_getprop_5adios_4file_last_step, 0, __pyx_k_The_last_timestep_index, 0},
   {(char *)"endianness", __pyx_getprop_5adios_4file_endianness, 0, __pyx_k_The_endianness_of_the_stored_da, 0},
   {(char *)"version", __pyx_getprop_5adios_4file_version, 0, __pyx_k_The_version_of_Adios, 0},
-  {(char *)"file_sizec", __pyx_getprop_5adios_4file_file_sizec, 0, __pyx_k_The_size_of_Adios_file, 0},
+  {(char *)"file_size", __pyx_getprop_5adios_4file_file_size, 0, __pyx_k_The_size_of_Adios_file, 0},
   {(char *)"is_stream", __pyx_getprop_5adios_4file_is_stream, 0, __pyx_k_Indicating_reader_type_file_rea, 0},
   {(char *)"vars", __pyx_getprop_5adios_4file_vars, __pyx_setprop_5adios_4file_vars, __pyx_k_vars_dict, 0},
   {(char *)"attrs", __pyx_getprop_5adios_4file_attrs, __pyx_setprop_5adios_4file_attrs, __pyx_k_attrs_dict, 0},
