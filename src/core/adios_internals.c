@@ -1033,7 +1033,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
         ,const char * path
         ,enum ADIOS_DATATYPES type
         ,int nelems
-        ,void * values
+        ,const void * values
         )
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group;
@@ -1060,7 +1060,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
             if (type == adios_string_array) {
                 // need to copy strings from a char** array
                 int total_length;
-                attr->value = a2s_dup_string_array ((char**)values, nelems, &total_length);
+                attr->value = a2s_dup_string_array ((const char**)values, nelems, &total_length);
                 if (!attr->value) {
                     adios_error (err_no_memory, 
                             "Not enough memory to copy string array attribute %s/%s\n", 
@@ -5725,7 +5725,7 @@ int adios_multiply_dimensions (uint64_t * size
             return 1;
 
         default:
-            adios_error (err_invalid_var_as_dimension,
+            adios_error (err_invalid_type_as_dimension,
                     "Invalid datatype for array dimension on var %s: %s\n",
                     var->name,
                     adios_type_to_string_int (type));

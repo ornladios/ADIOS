@@ -128,6 +128,14 @@ int64_t adios_define_var (int64_t group_id,
 // for the next output step.
 int adios_delete_vardefs (int64_t id);
 
+// Return the expected size (in bytes) of a defined variable.
+// It is simply the product of local dimensions and byte-size of type.
+// It works only if the variable is defined with numeric dimensions or
+// the dimension variables are already written with adios_write().
+// Input is id returned by adios_define_var().
+// Returns 0 on error, check adios_errno for error code
+uint64_t adios_expected_var_size (int64_t var_id);
+
 // To set the transform method for a variable just defined 
 // var_id is the value returned by adios_define_var
 // returns adios_errno (0=OK)
@@ -149,7 +157,7 @@ int adios_define_attribute_byvalue (int64_t group,
                             const char * path, 
                             enum ADIOS_DATATYPES type,
                             int  nelems,
-                            void * values
+                            const void * values
                            );
 
 int adios_delete_attrdefs (int64_t id);

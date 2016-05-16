@@ -11,7 +11,7 @@
 
 // copy an array of strings with allocation, return pointer
 // also return the sum of string lengths in 'total_length'
-char ** a2s_dup_string_array (char ** v, int nelems, int * total_length) 
+char ** a2s_dup_string_array (const char ** v, int nelems, int * total_length)
 {
     *total_length = 0;
 

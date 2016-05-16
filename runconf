@@ -23,12 +23,12 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload netcdf
     module unload mxml
     module unload python
-    module unload PE-gnu
-    module unload PE-pgi
-    module unload PE-intel
-    module unload PE-pathscale
-    module unload pgi gcc intel pathscale
-    module load PE-$TARGET
+    #module unload PE-gnu
+    #module unload PE-pgi
+    #module unload PE-intel
+    #module unload PE-pathscale
+    #module unload pgi gcc intel pathscale
+    #module load PE-$TARGET
     module load mxml/2.9
     MXMLDIR=$MXML_DIR
     module unload mxml
@@ -54,7 +54,9 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload netcdf
     #module load szip
     module load bzip2
-    #module load dataspaces/1.5.0
+    module unload dataspaces
+    unset DATASPACES_DIR
+    module load dataspaces/1.6.0
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -65,7 +67,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     WITHFLEX=""
     WITHFGR=""
     WITHFASTBIT=""
-    unset DATASPACES_DIR
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
         export CXX=pgCC
@@ -73,7 +74,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
         WITHFGR="--with-fgr=/ccs/proj/e2e/qliu/tap" 
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.4.7"
-        DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.pgi"
+        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.pgi"
         #DATASPACES_DIR="/ccs/home/hbui/usr/software/dataspaces-dev"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
@@ -83,7 +84,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         #export FCFLAGS="$FCFLAGS -gdwarf-3" 
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
-        DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.gnu"
+        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.gnu"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
@@ -101,15 +102,15 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-mxml=$MXMLDIR \
         --with-hdf5=${SEQ_HDF5_DIR} \
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
-        --with-netcdf=${SEQ_NC_DIR} \
-        --with-netcdf-libs="${SEQ_NC_CLIB}" \
         --with-zlib \
         --with-bzip2=$BZIP2_DIR \
-        --without-infiniband --with-dataspaces=$DATASPACES_DIR \
+        --with-dataspaces=$DATASPACES_DIR \
         $WITHFLEX \
-        $WITHFASTBIT \
         --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
+        #$WITHFASTBIT \
+        #--with-netcdf=${SEQ_NC_DIR} \
+        #--with-netcdf-libs="${SEQ_NC_CLIB}" \
         #--with-dimes=$DATASPACES_DIR \
         #--with-glib=/ccs/proj/e2e/qliu/glib
         #$WITHFGR \

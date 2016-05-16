@@ -39,6 +39,9 @@ a specific transport method.
 POSIX method with a particular ADIOS group. The transport methods that are supported 
 can be found in Chapter \ref{chapter-methods}.
 
+\textbf{adios\_expected\_var\_size ---} the expected size in bytes of the variable identified by the ID returned by adios\_define\_var.
+
+
 \subsection{adios\_init\_noxml}
 
 As opposed to adios\_init(), adios\_init\_noxml initializes ADIOS without loading
@@ -367,6 +370,28 @@ Fortran example:
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
 call adios_select_method (m_adios_group, "MPI", "", "", ierr)
 \end{lstlisting}
+
+
+\subsection{adios\_expected\_var\_size}
+
+This function returns the expected size (in bytes) of a defined variable. ADIOS expects this many bytes of data in the buffer passed in adios\_write(). 
+The size is simply the product of the variable's local dimensions and byte-size of its type.
+If the variable local dimensions are defined with other variables this calculation only works when the dimension variables are already written with adios\_write(). Otherwise an error is printed and 0 is returned.
+
+Although an application is usually aware of the byte-size of a variable it intends to write, some framework applications may use this function for simplifying their bookkeeping on many output variables. 
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+uint64_t adios_expected_var_size (int64_t var_id)
+\end{lstlisting}
+
+Input: 
+\begin{itemize}
+\item The variable ID returned by adios\_define\_var()
+\end{itemize}
+
+Return value is the size of the variable in bytes as known by ADIOS from the definition of the variable. 0 indicates failure and adios\_errno is set.
+
+
 
 \section{Create a no-XML ADIOS program}
 

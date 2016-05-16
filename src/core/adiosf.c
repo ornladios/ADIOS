@@ -633,7 +633,7 @@ void FC_FUNC_(adios_define_attribute, ADIOS_DEFINE_ATTRIBUTE)
 
 void FC_FUNC_(adios_define_attribute_byvalue, ADIOS_DEFINE_ATTRIBUTE_BYVALUE) 
     (int64_t * group, const char * name, const char * path, int * type, int * nelems, 
-     void * values, int * err, int name_size, int path_size)
+     const void * values, int * err, int name_size, int path_size)
 {
     char * buf1 = 0;
     char * buf2 = 0;

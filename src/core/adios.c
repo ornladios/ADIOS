@@ -323,6 +323,51 @@ int adios_delete_vardefs (int64_t id)
     return adios_errno;
 }
 
+// Return the expected size (in bytes) of a defined variable
+// It is simply the product of local dimensions and byte-size of type
+uint64_t adios_expected_var_size (int64_t var_id)
+{
+    adios_errno = err_no_error;
+    uint64_t size = 0;
+    if (var_id != 0) {
+        struct adios_var_struct * var = (struct adios_var_struct *) var_id;
+        if (var->transform_type != adios_transform_none) {
+            size = adios_transform_get_pre_transform_var_size (var);
+        } else {
+            size = adios_get_var_size (var, var->data);
+        }
+        if (size == 0 || adios_errno != err_no_error) {
+            if (adios_errno == err_invalid_var_as_dimension)
+            {
+                log_error ("%s: An array size depends on the actual value of the dimension variable. "
+                         "This will be known after adios_write() of that dimension variable.\n",
+                         __func__);
+            }
+        }
+        /*
+            enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (var);
+            size = adios_get_type_size(original_var_type, NULL);
+            struct adios_dimension_struct * d = var->dimensions;
+            int i=1;
+            while (d)
+            {
+                size *= adios_get_dim_value (&d->dimension);
+                if (size == 0 || adios_errno != err_no_error) {
+                    adios_error (err_dimension_required, "%s: the %d. dimension of variable %s is not yet known. "
+                                 "The dimension will be known after adios_write() of that dimension variable\n",
+                                 __func__, i, var->name);
+                }
+                d = d->next;
+                i++;
+            }
+         */
+    } else {
+        adios_error (err_invalid_varid, "%s called with invalid variable ID\n", __func__);
+    }
+
+    return size;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_set_transform is in adios_internals.c
 // set the transform method for the selected variable (default is "none")
@@ -363,7 +408,7 @@ int adios_delete_attrdefs (int64_t id)
 
 int adios_define_attribute_byvalue (int64_t group, 
                             const char * name, const char * path, 
-                            enum ADIOS_DATATYPES type, int  nelems, void * values
+                            enum ADIOS_DATATYPES type, int  nelems, const void * values
                            )
 {
     adios_errno = err_no_error;
