@@ -130,6 +130,7 @@ int adios_posix_open (struct adios_file_struct * fd
 
     char *temp_string, *m_size;
 
+    temp_string = (char *) malloc (strlen (method->parameters) + 1);
     strcpy (temp_string, method->parameters);
     trim_spaces (temp_string);
 
