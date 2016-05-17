@@ -62,7 +62,7 @@ int main (int argc, char ** argv)
     data = malloc (slice_size * sizeof (double));
     if (data == NULL)
     {
-        log_error (stderr, "malloc failed.\n");
+        log_error ("malloc failed.\n");
         return -1;
     }
 

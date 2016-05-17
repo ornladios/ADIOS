@@ -109,6 +109,7 @@ void fini_vars()
 
 int write_file (int step);
 int read_file ();
+int read_stream ();
 
 int main (int argc, char ** argv) 
 {
