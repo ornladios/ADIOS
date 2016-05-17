@@ -12,6 +12,7 @@
 #include <assert.h>
 #include "adios_selection.h"
 #include "adios_query.h"
+#include "core/strutil.h"
 #include <mxml.h>
 #include <sys/stat.h>
 
@@ -70,7 +71,7 @@ static ADIOS_QUERY * queryPop(QueryStack* queryStack)
     return queryStack->stack[--queryStack->size];
 }
 
-void trim_spaces(char * str); // in adios_internals.c
+
 static void tokenize_dimensions2 (const char * str, char *** tokens, int * count) {
     if (!str) {
         *tokens = 0;
@@ -79,19 +80,17 @@ static void tokenize_dimensions2 (const char * str, char *** tokens, int * count
         return;
     }
 
-    char * save_str = strdup (str);
-    char * t = save_str;
     int i;
+    char * temp_str = trim_spaces (str);
+    char * t = temp_str;
 
-    trim_spaces (save_str);
-
-    if (strlen (save_str) > 0)
+    if (strlen (temp_str) > 0)
         *count = 1;
     else
     {
         *tokens = 0;
         *count = 0;
-        free (save_str);
+        free (temp_str);
 
         return;
     }
@@ -104,13 +103,13 @@ static void tokenize_dimensions2 (const char * str, char *** tokens, int * count
     }
 
     *tokens = (char **) malloc (sizeof (char **) * *count);
-    (*tokens) [0] = strdup (strtok (save_str, ","));
+    (*tokens) [0] = strdup (strtok (temp_str, ","));
     for (i = 1; i < *count; i++)
     {
         (*tokens) [i] = strdup (strtok (NULL, ","));
     }
 
-    free (save_str);
+    free (temp_str);
 }
 //end of stolen functions
 

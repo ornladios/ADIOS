@@ -307,10 +307,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
     int fd, old_mask, perm, n_ost_skipping, n_ost, n, i, should_striping;
     int random_offset_flag;
 
-    temp_string = (char *) malloc (strlen (parameters) + 1);
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_count = strstr (temp_string, "striping")) )
     {
         char * p = strchr (p_count, '=');
@@ -329,10 +326,9 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
     {
         return;
     }
+    free (temp_string);
 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_count = strstr (temp_string, "stripe_count")) )
     {
         char * p = strchr (p_count, '=');
@@ -347,10 +343,9 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
         // By default, set stripe count to 1 to maximize concurrency.
         striping_count = DEFAULT_STRIPE_COUNT;
     }
+    free (temp_string);
 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_count = strstr (temp_string, "random_offset")) )
     {
         char * p = strchr (p_count, '=');
@@ -365,10 +360,9 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
         // By default, set stripe count to 1 to maximize concurrency.
         random_offset_flag = 0;
     }
+    free (temp_string);
 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "stripe_size")) )
     {
         char * p = strchr (p_size, '=');
@@ -383,7 +377,6 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
         //stripe size shouldn't matter here. Simply set it to 1 MB here. 
         striping_unit = DEFAULT_STRIPE_SIZE;
     }
-
     free (temp_string);
 
     old_mask = umask(022);
@@ -463,11 +456,8 @@ printf ("why is here\n");
 static void
 adios_mpi_amr_set_have_mdf (char * parameters, struct adios_MPI_data_struct * md)
 {
-    char *temp_string, *p_size;
-
-    temp_string = (char *) malloc (strlen (parameters) + 1);
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
+    char *p_size;
+    char *temp_string = trim_spaces (parameters);
 
     if ( (p_size = strstr (temp_string, "have_metadata_file")) )
     {
@@ -484,7 +474,6 @@ adios_mpi_amr_set_have_mdf (char * parameters, struct adios_MPI_data_struct * md
         // by default, write metadata file. 
         md->g_have_mdf = 1;
     }
-
     free (temp_string);
 }
 
@@ -495,12 +484,8 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     int nproc = md->size, rank = md->rank;
     char *temp_string, *p_size;
 
-    temp_string = (char *) malloc (strlen (parameters) + 1);
-
     // set up the number of OST to use
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "num_ost")) )
     {
         char * p = strchr (p_size, '=');
@@ -513,10 +498,9 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     else
     {
     }
+    free (temp_string);
 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "local-fs")) )
     {
         char * p = strchr (p_size, '=');
@@ -530,11 +514,10 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     {
         md->is_local_fs = 0;
     }
-
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
+    free (temp_string);
 
     // set up # of aggregators
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "num_aggregators")) )
     {
         char * p = strchr (p_size, '=');
@@ -555,14 +538,13 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
             md->g_num_aggregators = md->g_num_ost;
         }
     }
+    free (temp_string);
 
     // Get 'color' parameter. If 'color' is set,
     // the num_aggregators will be disregarded.
     // The actual # of aggregators will be caculated
     // according to color. 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "color")) )
     {
         char * p = strchr (p_size, '=');
@@ -579,10 +561,9 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
         // by default, use BG
         md->g_io_type = ADIOS_MPI_AMR_IO_BG;
     }
+    free (temp_string);
 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "have_metadata_file")) )
     {
         char * p = strchr (p_size, '=');
@@ -598,11 +579,10 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
         // by default, write metadata file. 
         md->g_have_mdf = 1;
     }
+    free (temp_string);
 
     // set up whether to thread IO ops
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "threading")) )
     {
         char * p = strchr (p_size, '=');
@@ -617,10 +597,10 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
         // by default, threading is disabled.
         md->g_threading = 0;
     }
+    free (temp_string);
 
     // set up which ost's to skip
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
+    temp_string = trim_spaces (parameters);
 
     md->g_ost_skipping_list = allocOSTList (md->g_num_ost);
 
@@ -634,10 +614,10 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
         else
             md->g_ost_skipping_list = parseOSTSkipping (md->g_ost_skipping_list, p + 1, md->g_num_ost);
     }
+    free (temp_string);
 
-    // set up which ost's to skip
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
+    // set up aggregation type
+    temp_string = trim_spaces (parameters);
 
     if ( (p_size = strstr (temp_string, "aggregation_type")) )
     {
@@ -654,7 +634,6 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
         // by default, use BG
         md->g_io_type = ADIOS_MPI_AMR_IO_BG;
     }
-
     free (temp_string);
 
     if (md->g_num_aggregators > nproc || md->g_num_aggregators <= 0)

@@ -9,7 +9,7 @@
 # 4. add files to CLEANFILES that should be deleted at 'make clean'
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 
-test_C = hashtest copy_subvolume text_to_pairstruct points_1DtoND
+test_C = hashtest copy_subvolume text_to_pairstruct points_1DtoND trim_spaces
 
 if BUILD_WRITE
     test_C += transforms_specparse group_free_test query_minmax read_points_2d read_points_3d
@@ -64,6 +64,11 @@ points_1DtoND_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_SEQ_LDFLAGS)
 points_1DtoND_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSREADLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
 points_1DtoND.o: points_1DtoND.c
 
+trim_spaces_SOURCES=trim_spaces.c
+trim_spaces_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_SEQ_LDADD)
+trim_spaces_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_SEQ_LDFLAGS)
+trim_spaces_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSREADLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
+trim_spaces.o: trim_spaces.c
 #
 # C Tests built only with write-enabled
 #

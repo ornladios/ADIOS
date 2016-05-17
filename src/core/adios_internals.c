@@ -1630,49 +1630,6 @@ int adios_common_free_group (int64_t id)
     return 0;
 }
 
-static void tokenize_dimensions (const char * str, char *** tokens, int * count)
-{
-    if (!str)
-    {
-        *tokens = 0;
-        *count = 0;
-
-        return;
-    }
-
-    char * save_str = strdup (str);
-    char * t = save_str;
-    int i;
-
-    trim_spaces (save_str);
-
-    if (strlen (save_str) > 0)
-        *count = 1;
-    else
-    {
-        *tokens = 0;
-        *count = 0;
-        free (save_str);
-
-        return;
-    }
-
-    while (*t)
-    {
-        if (*t == ',')
-            (*count)++;
-        t++;
-    }
-
-    *tokens = (char **) malloc (sizeof (char **) * *count);
-    (*tokens) [0] = strdup (strtok (save_str, ","));
-    for (i = 1; i < *count; i++)
-    {
-        (*tokens) [i] = strdup (strtok (NULL, ","));
-    }
-
-    free (save_str);
-}
 
 static void cleanup_dimensions (char *** tokens, int * count)
 {

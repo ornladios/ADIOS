@@ -22,7 +22,7 @@
 #include <inttypes.h>
 #include <mxml.h>
 #include <sys/stat.h>
-//#include "core/adios_internals.c"
+#include "core/strutil.h" // trim_spaces()
 
 //#define GET_ATTR(n,attr,var,en)
 #define GET_ATTR2(n,attr,var,en)                                 \
@@ -40,66 +40,6 @@
     }   
 
 
-void trim_spaces2 (char * str)
-{
-    char * t = str, * p = NULL;
-    while (*t != '\0')
-    {
-        if (*t == ' ')
-        {
-            p = t + 1;
-            strcpy (t, p);
-        }
-        else
-            t++;
-    }
-
-}
-
-void tokenize_dimensions2 (const char * str, char *** tokens, int * count)
-{
-    if (!str)
-    {
-        *tokens = 0;
-        *count = 0;
-
-        return;
-    }
-
-    char * save_str = strdup (str);
-    char * t = save_str;
-    int i;
-
-    trim_spaces (save_str);
-
-    if (strlen (save_str) > 0)
-        *count = 1;
-    else
-    {
-        *tokens = 0;
-        *count = 0;
-        free (save_str);
-
-        return;
-    }
-
-    while (*t)
-    {
-        if (*t == ',')
-            (*count)++;
-        t++;
-    }
-
-    *tokens = (char **) malloc (sizeof (char **) * *count);
-    (*tokens) [0] = strdup (strtok (save_str, ","));
-    for (i = 1; i < *count; i++)
-    {
-        (*tokens) [i] = strdup (strtok (NULL, ","));
-    }
-
-    free (save_str);
-}
-//end of stolen functions
 
 struct dimensions {
     uint8_t ndims;
@@ -560,8 +500,8 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 		mxmlRelease(doc);
 		return 0;
 	}
-	tokenize_dimensions2 (dataDimS, &dim_tokens, &dim_count);
-	tokenize_dimensions2 (pgDimS, &pgDimTokens, &pgCount);
+	tokenize_dimensions (dataDimS, &dim_tokens, &dim_count);
+	tokenize_dimensions (pgDimS, &pgDimTokens, &pgCount);
 	if (dim_count != numDim || pgCount != numDim){
 		printf("input dimension does not match expected number dimension \n");
 		mxmlRelease(doc);
@@ -666,7 +606,7 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 	}
 
         for (i = 0; i < nPG; i++) {
-            tokenize_dimensions2 (pgoffValueS[i], &pgoffValue_tokens, &numDim);
+            tokenize_dimensions (pgoffValueS[i], &pgoffValue_tokens, &numDim);
             for (j = 0; j < numDim; j++) {
                 (*pgOff)->off[i*numDim+j] = atoi(pgoffValue_tokens[j]);
             }

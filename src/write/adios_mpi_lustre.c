@@ -250,10 +250,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
     //num_ost = 0;
 #endif
 
-    temp_string = (char *) malloc (strlen (parameters) + 1);
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_count = strstr (temp_string, "stripe_count")) )
     {
         char * p = strchr (p_count, '=');
@@ -272,10 +269,9 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
         striping_count = 4;
 #endif
     }
+    free (temp_string);
 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "stripe_size")))
     {
         char * p = strchr (p_size, '=');
@@ -290,10 +286,9 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
         if (md->striping_unit <= 0)
             md->striping_unit = 1048576;
     }
+    free (temp_string);
 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "stripe_offset")) )
     {
         char * p = strchr (p_size, '=');
@@ -308,8 +303,6 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
         // let Lustre manage stripe offset
         stripe_offset = -1;
     }
-
-
     free (temp_string);
 
     if (fd != -1) {
@@ -338,10 +331,7 @@ adios_mpi_lustre_set_block_unit(uint64_t *block_unit, char *parameters)
 {
     char *temp_string, *p_size;
 
-    temp_string = (char *) malloc (strlen (parameters) + 1);
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
+    temp_string = trim_spaces (parameters);
     if ( (p_size = strstr (temp_string, "block_size")) )
     {
         char * p = strchr (p_size, '=');

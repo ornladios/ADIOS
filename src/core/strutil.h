@@ -9,7 +9,8 @@ void free_string_array (char ** v, int nelems);
 void alloc_namelist (char ***namelist, int length);
 void free_namelist (char **namelist, int length);
 
-void trim_spaces (char * str);
+char * trim_spaces (const char * str);
+void tokenize_dimensions (const char * str, char *** tokens, int * count);
 
 /*******************************************************
    Processing parameter lists
