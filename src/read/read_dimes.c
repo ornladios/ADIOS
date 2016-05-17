@@ -1369,7 +1369,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
                 /* We cannot do this with DataSpaces yet (fp->nwriter == 1) */
                 /* Read the whole variable */
                 s = (uint64_t *) calloc (var->ndims, sizeof(uint64_t));
-                r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
+                r->sel = a2sel_boundingbox(var->ndims, s, var->dims);
                 for (i=0; i<var->ndims; i++) 
                     reqsize *= var->dims[i];
                 break;
@@ -1401,14 +1401,14 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
                     if (ld0 > 0) {
                         s[0] = off0;
                         c[0] = ld0;
-                        r->sel = common_read_selection_boundingbox(
+                        r->sel = a2sel_boundingbox(
                                 var->ndims, s, c);
                     }
                     for (i=0; i<var->ndims; i++) 
                         reqsize *= c[i];
                 } else {
                     /* Scalar: just read it for each process */
-                    r->sel = common_read_selection_boundingbox(0, 0, 0);
+                    r->sel = a2sel_boundingbox(0, 0, 0);
                 }
 
                 break;
@@ -1416,7 +1416,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
     } else {
         // NULL selection means the whole variable
         s = (uint64_t *) calloc (var->ndims, sizeof(uint64_t));
-        r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
+        r->sel = a2sel_boundingbox(var->ndims, s, var->dims);
         for (i=0; i<var->ndims; i++) 
             reqsize *= var->dims[i];
     }
@@ -1580,7 +1580,7 @@ int adios_read_dimes_perform_reads (const ADIOS_FILE *fp, int blocking)
         ds->req_list = ds->req_list->next;
         // FIXME: if we allocated start/count arrays in schedule read for r->sel,
         // we need to manually free them here
-        common_read_selection_delete(r->sel);
+        a2sel_free(r->sel);
         free(r);
         ds->nreq--;
     }

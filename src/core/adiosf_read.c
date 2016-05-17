@@ -528,27 +528,27 @@ void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR)
 void FC_FUNC_(adios_selection_boundingbox, ADIOS_SELECTION_BOUNDINGBOX) 
            (int64_t * fsel, int *ndim, uint64_t *start, uint64_t *count)
 {   
-    ADIOS_SELECTION * sel = common_read_selection_boundingbox (*ndim, start, count);
+    ADIOS_SELECTION * sel = a2sel_boundingbox (*ndim, start, count);
     *fsel = (int64_t) sel;
 }
 
 void FC_FUNC_(adios_selection_points, ADIOS_SELECTION_POINTS) 
             (int64_t *fsel, int *ndim, uint64_t *npoints, uint64_t *points)
 {
-    ADIOS_SELECTION * sel = common_read_selection_points (*ndim, *npoints, points);
+    ADIOS_SELECTION * sel = a2sel_points (*ndim, *npoints, points, NULL, 0);
     *fsel = (int64_t) sel;
 }
 
 void FC_FUNC_(adios_selection_writeblock, ADIOS_SELECTION_WRITEBLOCK) (int64_t *fsel, int *index)
 {
-    ADIOS_SELECTION * sel = common_read_selection_writeblock (*index);
+    ADIOS_SELECTION * sel = a2sel_writeblock (*index);
     *fsel = (int64_t) sel;
 }
 
 void FC_FUNC_(adios_selection_auto, ADIOS_SELECTION_AUTO) (int64_t *fsel, char *hints, int hints_len)
 {
     char *hintstr = futils_fstr_to_cstr(hints, hints_len);
-    ADIOS_SELECTION * sel = common_read_selection_auto (hintstr);
+    ADIOS_SELECTION * sel = a2sel_auto (hintstr);
     *fsel = (int64_t) sel;
     /* Cannot free hintstr here because the selection simply uses the pointer without copy */
 }
@@ -560,7 +560,7 @@ void FC_FUNC_(adios_selection_delete, ADIOS_SELECTION_AUTO) (int64_t *fsel)
         /* free here the autoselection hints string */
         free (sel->u.autosel.hints);
     }
-    common_read_selection_delete (sel);
+    a2sel_free (sel);
     *fsel = 0;
 }
 

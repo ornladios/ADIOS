@@ -296,7 +296,7 @@ ADIOS_VARINFO * bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 
     v = bp_find_var_byid (fh, varid);
 
-    varinfo = (ADIOS_VARINFO *) malloc (sizeof (ADIOS_VARINFO));
+    varinfo = (ADIOS_VARINFO *) calloc (1, sizeof (ADIOS_VARINFO));
     assert (varinfo);
 
     /* Note: set varid as the real varid.

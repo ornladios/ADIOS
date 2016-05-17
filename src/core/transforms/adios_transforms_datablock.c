@@ -11,6 +11,7 @@
 #include "public/adios_error.h"
 #include "public/adios_types.h"
 #include "core/common_read.h"
+#include "core/a2sel.h"
 
 #include "core/transforms/adios_transforms_common.h"
 #include "core/transforms/adios_transforms_read.h"
@@ -79,7 +80,7 @@ adios_datablock * adios_datablock_new_ragged_offset(
     adios_datablock *datablock = malloc(sizeof(adios_datablock));
 
     datablock->elem_type = elem_type;
-    datablock->bounds = copy_selection(bounds);
+    datablock->bounds = a2sel_copy(bounds);
     datablock->timestep = timestep;
     datablock->ragged_offset = ragged_offset;
     datablock->data = data;
@@ -92,7 +93,7 @@ void adios_datablock_free(adios_datablock **datablock_ptr, int free_data) {
     adios_datablock *datablock = *datablock_ptr;
     if (datablock) {
         if (datablock->bounds)
-            common_read_selection_delete((ADIOS_SELECTION*)datablock->bounds);
+            a2sel_free((ADIOS_SELECTION*)datablock->bounds);
         if (free_data)
             MYFREE(datablock->data);
     }

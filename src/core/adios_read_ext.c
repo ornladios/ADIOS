@@ -10,6 +10,7 @@
 #include <assert.h>
 
 #include "public/adios_read_ext.h"
+#include "core/a2sel.h"
 #include "core/common_read.h"
 #include "core/transforms/adios_transforms_common.h"
 #include "core/transforms/adios_transforms_transinfo.h"
@@ -82,8 +83,8 @@ void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections){
 	int i = 0;
 	for(i=0; i < intsec->npg; i++){
 		ADIOS_PG_INTERSECTION inter = intsec->intersections[i];
-		common_read_selection_delete(inter.pg_bounds_sel);
-		common_read_selection_delete(inter.intersection_sel);
+		a2sel_free(inter.pg_bounds_sel);
+		a2sel_free(inter.intersection_sel);
 	}
 	intsec->npg = 0;
 	intsec->intersections = NULL;
@@ -100,7 +101,7 @@ adios_transform_type_t adios_get_transform_type_by_uid(const char *transform_uid
 // within a variable. An element is a single value of whatever the varaible's datatype is (i.e.,
 // 1 element = 1 double if the variable type is double, 1 byte if the variable type is byte, etc.)
 ADIOS_SELECTION * adios_selection_writeblock_bounded(int index, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative) {
-	ADIOS_SELECTION *sel = common_read_selection_writeblock(index);
+	ADIOS_SELECTION *sel = a2sel_writeblock(index);
 	sel->u.block.is_absolute_index = !is_timestep_relative;
 	sel->u.block.is_sub_pg_selection = 1;
 	sel->u.block.element_offset = start_elem;
@@ -132,7 +133,7 @@ static void compute_blockidx_range(const ADIOS_VARINFO *raw_varinfo, int from_st
 }
 
 inline static ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK *orig_vb) {
-    return common_read_selection_boundingbox(ndim, orig_vb->start, orig_vb->count);
+    return a2sel_boundingbox(ndim, orig_vb->start, orig_vb->count);
 }
 
 int adios_get_absolute_writeblock_index(const ADIOS_VARINFO *varinfo, int timestep_relative_idx, int timestep) {
@@ -238,7 +239,7 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
         	resulting_intersections->npg++;
         } else {
             // Cleanup
-            common_read_selection_delete(pg_bounds_sel); // OK to delete, because this function only frees the outer struct, not the arrays within
+            a2sel_free(pg_bounds_sel); // OK to delete, because this function only frees the outer struct, not the arrays within
         }
 
         // Increment block indexes

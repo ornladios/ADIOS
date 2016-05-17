@@ -145,6 +145,7 @@ libadios_a_SOURCES = core/adios.c \
                      core/adios_logger.c \
                      core/util.c \
                      core/strutil.c \
+                     core/a2sel.c \
                      core/qhashtbl.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
@@ -189,6 +190,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_logger.c \
                      core/util.c \
                      core/strutil.c \
+                     core/a2sel.c \
                      core/qhashtbl.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
@@ -224,6 +226,7 @@ FortranLibSources = core/adiosf.c \
                      core/adios_logger.c \
                      core/util.c \
                      core/strutil.c \
+                     core/a2sel.c \
                      core/qhashtbl.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
@@ -325,20 +328,20 @@ endif
 adios_nssi_config.c: adios_nssi_args.c
 
 adios_nssi_args.h:  $(srcdir)/nssi/adios_nssi_args.x Makefile.am
-	rm -f $@
-#	@echo "#include <lwfs/lwfs_config.h>" >> $@
-#	@echo "#ifndef LWFS_HAVE_STRUCT_SOCKADDR_IN" >> $@
-#	@echo "#define LWFS_HAVE_STRUCT_SOCKADDR_IN" >> $@
-#	@echo "struct sockaddr_in { " >> $@
-#	@echo '  int a;' >> $@
-#	@echo '};' >> $@
-#	@echo '#endif' >> $@;
-	rpcgen -h $(srcdir)/nssi/adios_nssi_args.x >> $@
+        rm -f $@
+#        @echo "#include <lwfs/lwfs_config.h>" >> $@
+#        @echo "#ifndef LWFS_HAVE_STRUCT_SOCKADDR_IN" >> $@
+#        @echo "#define LWFS_HAVE_STRUCT_SOCKADDR_IN" >> $@
+#        @echo "struct sockaddr_in { " >> $@
+#        @echo '  int a;' >> $@
+#        @echo '};' >> $@
+#        @echo '#endif' >> $@;
+        rpcgen -h $(srcdir)/nssi/adios_nssi_args.x >> $@
 
 adios_nssi_args.c: adios_nssi_args.h 
-	rm -f adios_nssi_args.c
-	rpcgen -c $(srcdir)/nssi/adios_nssi_args.x \
-		| grep -v "include \"\.\." > adios_nssi_args.c
+        rm -f adios_nssi_args.c
+        rpcgen -c $(srcdir)/nssi/adios_nssi_args.x \
+                | grep -v "include \"\.\." > adios_nssi_args.c
 
 CLEANFILES += adios_nssi_args.c adios_nssi_args.h
 
@@ -421,8 +424,8 @@ include_HEADERS += public/adios.h \
                    public/adios_read_v2.h \
                    public/adios_read_v2_fwd.h \
                    public/adios_selection.h \
-		   public/adios_schema.h \
-		   public/adios_link.h \
+                   public/adios_schema.h \
+                   public/adios_link.h \
                    public/adios_read_ext.h \
                    public/adios_query.h
 
@@ -445,6 +448,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_logger.c \
                       core/util.c \
                       core/strutil.c \
+                      core/a2sel.c \
                       core/qhashtbl.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
@@ -493,6 +497,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/adios_logger.c \
                       core/util.c \
                       core/strutil.c \
+                      core/a2sel.c \
                       core/qhashtbl.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
@@ -566,10 +571,11 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read_hooks.c \
                       core/util.c \
                       core/strutil.c \
+                      core/a2sel.c \
                       core/qhashtbl.c \
                       read/read_bp.c 
 
-					  
+                                          
 #if HAVE_DATASPACES
 #libadiosread_nompi_a_SOURCES += read/read_dataspaces.c
 #endif
@@ -617,6 +623,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/adios_read_hooks.c \
                           core/util.c \
                           core/strutil.c \
+                          core/a2sel.c \
                           core/qhashtbl.c \
                           read/read_bp.c 
 #if HAVE_DATASPACES
@@ -666,6 +673,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_timing.c \
                                     core/util.c \
                                     core/strutil.c \
+                                    core/a2sel.c \
                                     core/qhashtbl.c \
                                     core/futils.c \
                                     core/adios_transport_hooks.c 
@@ -694,39 +702,39 @@ CXX=$(MPICXX)
 #nodist_adios_flags_SOURCES = adios_flags.h 
 #adios_flags_SOURCES = adios_flags.c 
 #adios_flags.h:  
-#	rm -f $@
-#	@echo "#define ADIOS_CFLAGS \"$(libadios_a_CPPFLAGS)\"" >> $@
-#	@echo "#define ADIOS_LDFLAGS \"$(libadios_a_LDFLAGS)\"" >> $@
-#	@echo "#define ADIOSF_CFLAGS \"$(libadiosf_a_CPPFLAGS)\"" >> $@
-#	@echo "#define ADIOSF_LDFLAGS \"$(libadiosf_a_LDFLAGS)\"" >> $@
-#	@echo "#define ADIOSREAD_CFLAGS \"$(libadiosread_a_CPPFLAGS)\"" >> $@
-#	@echo "#define ADIOSREAD_LDFLAGS \"$(libadiosread_a_LDFLAGS)\"" >> $@
-#	@echo "#define ADIOSREADF_CFLAGS \"$(libadiosreadf_a_CPPFLAGS)\"" >> $@
-#	@echo "#define ADIOSREADF_LDFLAGS \"$(libadiosreadf_a_LDFLAGS)\"" >> $@
-#	@echo "#define ADIOSREAD_NOMPI_CFLAGS \"$(libadiosread_nompi_a_CPPFLAGS)\"" >> $@
-#	@echo "#define ADIOSREAD_NOMPI_LDFLAGS \"$(libadiosread_nompi_a_LDFLAGS)\"" >> $@
-#	@echo "#define ADIOSREADF_NOMPI_CFLAGS \"$(libadiosreadf_nompi_a_CPPFLAGS)\"" >> $@
-#	@echo "#define ADIOSREADF_NOMPI_LDFLAGS \"$(libadiosreadf_nompi_a_LDFLAGS)\"" >> $@
+#        rm -f $@
+#        @echo "#define ADIOS_CFLAGS \"$(libadios_a_CPPFLAGS)\"" >> $@
+#        @echo "#define ADIOS_LDFLAGS \"$(libadios_a_LDFLAGS)\"" >> $@
+#        @echo "#define ADIOSF_CFLAGS \"$(libadiosf_a_CPPFLAGS)\"" >> $@
+#        @echo "#define ADIOSF_LDFLAGS \"$(libadiosf_a_LDFLAGS)\"" >> $@
+#        @echo "#define ADIOSREAD_CFLAGS \"$(libadiosread_a_CPPFLAGS)\"" >> $@
+#        @echo "#define ADIOSREAD_LDFLAGS \"$(libadiosread_a_LDFLAGS)\"" >> $@
+#        @echo "#define ADIOSREADF_CFLAGS \"$(libadiosreadf_a_CPPFLAGS)\"" >> $@
+#        @echo "#define ADIOSREADF_LDFLAGS \"$(libadiosreadf_a_LDFLAGS)\"" >> $@
+#        @echo "#define ADIOSREAD_NOMPI_CFLAGS \"$(libadiosread_nompi_a_CPPFLAGS)\"" >> $@
+#        @echo "#define ADIOSREAD_NOMPI_LDFLAGS \"$(libadiosread_nompi_a_LDFLAGS)\"" >> $@
+#        @echo "#define ADIOSREADF_NOMPI_CFLAGS \"$(libadiosreadf_nompi_a_CPPFLAGS)\"" >> $@
+#        @echo "#define ADIOSREADF_NOMPI_LDFLAGS \"$(libadiosreadf_nompi_a_LDFLAGS)\"" >> $@
 #adios_flags.c: adios_flags.h
 
 
 EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
              core/adios_read_hooks.h core/adios_socket.h core/adios_timing.h \
-	     core/adios_icee.h \
+             core/adios_icee.h core/a2sel.h \
              core/adios_socket.h core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/adios_infocache.h core/futils.h core/globals.h core/ds_metadata.h \
-             core/types.h core/util.h core/strutil.c core/flexpath.h core/qhashtbl.h \
-	     public/adios_version.h.in \
+             core/types.h core/util.h core/strutil.h core/flexpath.h core/qhashtbl.h \
+             public/adios_version.h.in \
              $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
              $(query_common_HDRS) $(query_method_HDRS) \
              transforms/transform_plugins.h \
-	     transforms/adios_transform_identity_read.h \
-	     transforms/adios_transform_szip.h \
-	     transforms/adios_transform_alacrity_common.h \
-	     transforms/adios_transform_template_read.c \
-	     transforms/adios_transform_template_write.c \
+             transforms/adios_transform_identity_read.h \
+             transforms/adios_transform_szip.h \
+             transforms/adios_transform_alacrity_common.h \
+             transforms/adios_transform_template_read.c \
+             transforms/adios_transform_template_write.c \
              query/Makefile.plugins.cmake \
              nssi/adios_nssi_config.h nssi/aggregation.h nssi/io_timer.h 
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "core/a2sel.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"
 #include "core/futils.h"
@@ -522,12 +523,12 @@ static int adios_bmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *bu
     uint64_t bms_start[] = {start};
     uint64_t bms_count[] = {count};
 
-    ADIOS_SELECTION* bmsSel = common_read_selection_boundingbox(bmsV->ndim, bms_start, bms_count);
+    ADIOS_SELECTION* bmsSel = a2sel_boundingbox(bmsV->ndim, bms_start, bms_count);
     // idx file has one timestep
     common_read_schedule_read(itn->_idxFile, bmsSel, itn->_bmsVarName, 0, 1, NULL, buf);
     common_read_perform_reads(itn->_idxFile,1);
     common_read_free_varinfo(bmsV);
-    common_read_selection_delete(bmsSel);
+    a2sel_free(bmsSel);
 
     //casestudyLogger_bms_writeout(&startT,
     casestudyLogger_bms_writeout(&startT, "bmreader_adv visited ");
@@ -2542,7 +2543,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
             free(q->dataSlice);
             q->dataSlice = malloc(common_read_type_size(v->type, v->value)*blockSize);
 
-            ADIOS_SELECTION* box = common_read_selection_writeblock(blockIdx);
+            ADIOS_SELECTION* box = a2sel_writeblock(blockIdx);
             common_read_inq_var_blockinfo(dataFile, v);
 
             int errorCode = 0;
@@ -2563,7 +2564,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
             FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->predicateOp);
 
             setQueryInternal(q, compareOp, dataType, blockSize, blockDataName);
-            common_read_selection_delete(box);
+            a2sel_free(box);
             return;
         }
 
@@ -3147,7 +3148,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
                     }
 
                     //printf("      [%ld, %ld, %ld] to [%ld. %ld, %ld]\n", currStart[0], currStart[1], currStart[2], currCounter[0], currCounter[1], currCounter[2]);
-                    ADIOS_SELECTION* c = common_read_selection_boundingbox(bbdim, currStart, currCounter);
+                    ADIOS_SELECTION* c = a2sel_boundingbox(bbdim, currStart, currCounter);
                     (*containers)[(i-1)/2] = *c;
                 }
             }
@@ -3170,7 +3171,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
 
                 fillUp(var->ndim, spatialCoordinates, i, pointArray, isFortranClient);
             }
-            ADIOS_SELECTION* result =  common_read_selection_points(var->ndim, retrivalSize, pointArray);
+            ADIOS_SELECTION* result =  a2sel_points(var->ndim, retrivalSize, pointArray, NULL, 0);
             //free(pointArray); // user has to free this
             return result;
         }
@@ -3197,7 +3198,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
 
                         fillUp(bb->ndim, spatialCoordinates, i, pointArray, 0); // already fortran coordinates from posToSpace(.. isFortranClient ..)
                     }
-                    ADIOS_SELECTION* result =  common_read_selection_points(bb->ndim, retrivalSize, pointArray);
+                    ADIOS_SELECTION* result =  a2sel_points(bb->ndim, retrivalSize, pointArray, NULL, 0);
                     //free(pointArray); // user has to free this
                     return result;
                     break;
@@ -3214,7 +3215,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
                         getCoordinateFromPoints(coordinates[i], points, spatialCoordinates);
                         fillUp(points->ndim, spatialCoordinates, i, pointArray, isFortranClient);
                     }
-                    ADIOS_SELECTION* result = common_read_selection_points(points->ndim, retrivalSize, pointArray);
+                    ADIOS_SELECTION* result = a2sel_points(points->ndim, retrivalSize, pointArray, NULL, 0);
                     //free(pointArray); // user has to free this
                     return result;
                     //printOneSpatialCoordinate(points->ndim, spatialCoordinates);
@@ -3240,7 +3241,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
                         //fillUp(v->ndim, spatialCoordinates, i, pointArray, isFortranClient);
                         fillUp(v->ndim, spatialCoordinates, i, pointArray, 0); // already fortran coordinates from posToSpace(.. isFortranClient ..)
                     }
-                    ADIOS_SELECTION* result = common_read_selection_points(v->ndim, retrivalSize, pointArray);
+                    ADIOS_SELECTION* result = a2sel_points(v->ndim, retrivalSize, pointArray, NULL, 1);
                     //free(pointArray); // user has to free this
                     return result;
                     break;
@@ -3331,7 +3332,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
             q->resultsReadSoFar += retrivalSize;
 
 #ifdef RETURN_ONE_DIM
-            queryResult->selections = common_read_selection_points(1, retrivalSize, coordinates);
+            queryResult->selections = a2sel_points(1, retrivalSize, coordinates);
 #else // return N-Dim
             if (outputBoundary == 0) {
                 if (firstLeaf->sel == NULL) {
@@ -3367,14 +3368,14 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
                 for (i=1; i<partsSize; i=i+2) {
                     uint64_t bundleSize = parts[i]-parts[i-1] + 1;
 #ifdef RETURN_ONE_DIM
-                    multiSets[(i-1)/2] = *(common_read_selection_points(1, bundleSize, pts+counter));
+                    multiSets[(i-1)/2] = *(a2sel_points(1, bundleSize, pts+counter, &containers[(i-1)/2], 1));
                     counter += bundleSize;
 #else
-                    multiSets[(i-1)/2] = *(common_read_selection_points(firstLeaf->varinfo->ndim, bundleSize, pts+counter));
+                    multiSets[(i-1)/2] = *(a2sel_points(firstLeaf->varinfo->ndim, bundleSize, pts+counter, &containers[(i-1)/2], 1));
                     counter += bundleSize * firstLeaf->varinfo->ndim;
 #endif
 
-                    multiSets[(i-1)/2].u.points.container_selection = &containers[(i-1)/2];
+                    //multiSets[(i-1)/2].u.points.container_selection = &containers[(i-1)/2];
                     //free(containers);
                 }
                 free(queryResult->selections);

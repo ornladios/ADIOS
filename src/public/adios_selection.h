@@ -67,6 +67,7 @@ typedef struct {
  */
 typedef struct { 
     int       ndim;
+    int       _free_points_on_delete;     // user provided points are not copied, won't free either
     uint64_t  npoints;
     uint64_t *points;
     ADIOS_SELECTION *container_selection; // a writeblock, a bounding box, or NULL

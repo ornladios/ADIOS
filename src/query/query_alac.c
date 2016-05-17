@@ -15,6 +15,7 @@
 #include "public/adios_query.h"
 #include "public/adios_selection.h"
 #include "transforms/adios_transform_alacrity_common.h"
+#include "core/a2sel.h"
 #include "core/common_read.h"
 #include "common_query.h"
 #include "query_utils.h"
@@ -183,7 +184,7 @@ void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 	common_read_perform_reads(fp, 1);
 	// adios_selection_writeblock_bounded internally malloc data for adios_selection
 	// so I need to free it before the next usage
-	common_read_selection_delete(sel);
+	a2sel_free(sel);
 }
 
 void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, int startStep,
@@ -1918,13 +1919,19 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 		return result;
 	}
 
-	if (q->left)
+	if (q->left) {
 		lbitmap = adios_alac_process((ADIOS_QUERY*) q->left, timestep, estimate);
+		result = q->left;
+	}
 
-	if (q->right)
+	if (q->right) {
 		rbitmap = adios_alac_process((ADIOS_QUERY*) q->right, timestep, estimate);
+		result = q->right;
+	}
 
-	result = adios_alac_bitsOp(lbitmap, rbitmap, q->combineOp);
+	if (q->left && q->right) {
+	    result = adios_alac_bitsOp(lbitmap, rbitmap, q->combineOp);
+	}
 
 #ifdef ADIOS_ALAC_QUERY_DEBUG
 	fprintf(stderr, "op %s = ", (q->combineOp == ADIOS_QUERY_OP_AND ? "AND" : "OR"));
@@ -2093,10 +2100,7 @@ static ADIOS_SELECTION * adios_query_build_offsets_boundingbox(ADIOS_ALAC_BITMAP
     uint64_t *points = (uint64_t *)(malloc(dataSize * sizeof(uint64_t)));
     adios_query_alac_retrieval_offset(b,retrieval_size, bb, points,Corder);
 
-    //return common_read_selection_points(ndim, retrieval_size, points);
-    ADIOS_SELECTION * pts = common_read_selection_points(ndim, retrieval_size, points);
-    pts->u.points.container_selection = box;
-    return pts;
+    return a2sel_points(ndim, retrieval_size, points, box, 1);
 }
 
 
@@ -2108,7 +2112,7 @@ static ADIOS_SELECTION * adios_query_build_results_boundingbox(ADIOS_ALAC_BITMAP
 	uint64_t *points = (uint64_t *)(malloc(dataSize * sizeof(uint64_t)));
 	adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points,Corder);
 
-	return common_read_selection_points(bb->ndim, retrieval_size, points);
+	return a2sel_points(bb->ndim, retrieval_size, points, box, 1);
 }
 
 

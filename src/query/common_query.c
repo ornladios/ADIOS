@@ -7,6 +7,7 @@
 #include "common_query.h"
 #include "adios_query_hooks.h"
 #include "public/adios_error.h"
+#include "core/a2sel.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"
 #include "query_utils.h"
@@ -42,7 +43,7 @@ static ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v)
     count[i] = v->dims[i];
   }   
 
-  ADIOS_SELECTION* result =  common_read_selection_boundingbox(v->ndim, start, count);
+  ADIOS_SELECTION* result =  a2sel_boundingbox(v->ndim, start, count);
   return result;
 }
 #endif
@@ -239,7 +240,7 @@ void common_query_free(ADIOS_QUERY* q)
   }
 
   if (q->deleteSelectionWhenFreed) {
-    common_read_selection_delete(q->sel);
+    a2sel_free(q->sel);
   }
 
   // Only call a specialized free method if this query has been evaluated using
@@ -774,7 +775,7 @@ static ADIOS_SELECTION * convertWriteblockToBoundingBox(ADIOS_QUERY *q, ADIOS_SE
     if (!pg_bounds)
         return NULL;
 
-    ADIOS_SELECTION *bb = common_read_selection_boundingbox(pg_ndim, pg_bounds->start, pg_bounds->count);
+    ADIOS_SELECTION *bb = a2sel_boundingbox(pg_ndim, pg_bounds->start, pg_bounds->count);
 
     return bb;
 }
@@ -848,7 +849,7 @@ ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q,
     {
         query_hooks[m].adios_query_evaluate_fn(q, timeStep, batchSize, outputBoundary, result);
         result->method_used = m;
-        if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
+        if (freeOutputBoundary) a2sel_free(outputBoundary);
     } 
     else 
     { 

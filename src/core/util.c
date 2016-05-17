@@ -10,6 +10,7 @@
 #include "config.h"
 #include "core/util.h"
 #include "core/bp_utils.h"
+#include "core/common_read.h"
 #include "core/adios_endianness.h"
 #include "core/adios_logger.h"
 
@@ -257,7 +258,7 @@ void list_free_read_request (read_request * h)
     {
         n = h->next;
 
-        free_selection (h->sel);
+        a2sel_free (h->sel);
         if (h->priv)
         {
             free (h->priv);
@@ -288,7 +289,7 @@ read_request * copy_read_request (const read_request * r)
     newreq = (read_request *) malloc (sizeof (read_request));
     assert (newreq);
 
-    newreq->sel = copy_selection (r->sel);
+    newreq->sel = a2sel_copy (r->sel);
     newreq->varid = r->varid;
     newreq->from_steps = r->from_steps;
     newreq->nsteps = r->nsteps;
@@ -300,77 +301,6 @@ read_request * copy_read_request (const read_request * r)
     return newreq;
 }
 
-ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
-{
-    ADIOS_SELECTION * nsel;
-
-    nsel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
-    assert (nsel);
-
-    nsel->type = sel->type;
-
-    if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
-    {
-        nsel->u.bb.ndim = sel->u.bb.ndim;
-        nsel->u.bb.start = (uint64_t *) malloc (sel->u.bb.ndim * 8);
-        nsel->u.bb.count = (uint64_t *) malloc (sel->u.bb.ndim * 8);
-        assert (nsel->u.bb.start && nsel->u.bb.count);
-
-        memcpy (nsel->u.bb.start, sel->u.bb.start, sel->u.bb.ndim * 8);
-        memcpy (nsel->u.bb.count, sel->u.bb.count, sel->u.bb.ndim * 8);
-    }
-    else if (sel->type == ADIOS_SELECTION_POINTS)
-    {
-        nsel->u.points.ndim = sel->u.points.ndim;
-        nsel->u.points.npoints = sel->u.points.npoints;
-        if (sel->u.points.container_selection) {
-            nsel->u.points.container_selection = copy_selection(sel->u.points.container_selection);
-        } else {
-            nsel->u.points.container_selection = NULL;
-        }
-        nsel->u.points.points = (uint64_t *) malloc (nsel->u.points.npoints * nsel->u.points.ndim * 8);
-        assert (nsel->u.points.points);
-
-        memcpy (nsel->u.points.points, sel->u.points.points, sel->u.points.npoints * sel->u.points.ndim * 8);
-    }
-    else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
-    {
-        nsel->u.block.index = sel->u.block.index;
-        // NCSU ALACRITY-ADIOS: Copy the new fields
-        nsel->u.block.is_absolute_index = sel->u.block.is_absolute_index;
-        nsel->u.block.is_sub_pg_selection = sel->u.block.is_sub_pg_selection;
-        nsel->u.block.element_offset = sel->u.block.element_offset;
-        nsel->u.block.nelements = sel->u.block.nelements;
-    }
-    else if (sel->type == ADIOS_SELECTION_AUTO)
-    {
-        //TODO
-    }
-    else
-    {
-        //adios_error (err_invalid_argument, "Wrong ADIOS selection type.\n");
-    }
-
-    return nsel;
-}
-
-void free_selection (ADIOS_SELECTION * sel)
-{
-    if (!sel)
-        return;
-
-    if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
-    {
-        free (sel->u.bb.start);
-        free (sel->u.bb.count);
-    }
-    else if (sel->type == ADIOS_SELECTION_POINTS)
-    {
-        free (sel->u.points.points);
-    }
-
-    free (sel);
-}
 
 int unique (uint32_t * nids, int size)
 {

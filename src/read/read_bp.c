@@ -25,6 +25,7 @@
 #include "core/futils.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"
+#include "core/a2sel.h"
 #include "core/adios_selection_util.h"
 
 #include "core/transforms/adios_transforms_transinfo.h"
@@ -473,7 +474,7 @@ static void mGetPointlistSpan1D(ADIOS_SELECTION_POINTS_STRUCT* pts, int ndim,
 
     // convert them to N-dim
     uint64_t spanND[2*ndim];
-    adios_selection_util_points_1DtoND_box (2, span, ndim, boxstart, boxcount, 1, spanND);
+    a2sel_points_1DtoND_box (2, span, ndim, boxstart, boxcount, 1, spanND);
 
     // correct sub-dimensions (some other points may be outside the naive span over two points
     spanstart[0] = spanND[0];
@@ -1122,7 +1123,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
     chunk->from_steps = r->from_steps;
     chunk->nsteps = r->nsteps;
-    chunk->sel = copy_selection (r->sel);
+    chunk->sel = a2sel_copy (r->sel);
     chunk->data = r->data;
     return chunk;
 }
@@ -1182,7 +1183,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
     {
         // create full bounding box as container
         ADIOS_VARINFO * vinfo = adios_read_bp_inq_var_byid (fp, r->varid);
-        container = common_read_selection_boundingbox (vinfo->ndim, zeros, vinfo->dims);
+        container = a2sel_boundingbox (vinfo->ndim, zeros, vinfo->dims);
         free_container = 1;
         sel->u.points.container_selection = container; // save the container instead of NULL to be used in pick_points_from_boundingbox
         common_read_free_varinfo (vinfo);
@@ -1301,7 +1302,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                         }
                     } else
                     {
-                        adios_selection_util_points_1DtoND_box (1, &sel->u.points.points[i], bndim, container->u.bb.start,
+                        a2sel_points_1DtoND_box (1, &sel->u.points.points[i], bndim, container->u.bb.start,
                                                                 container->u.bb.count, 1, nsel->u.bb.start);
                     }
                     t_pick += MPI_Wtime() - ttemp;
@@ -1461,7 +1462,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
             }
         }
 
-        free_selection (nsel);
+        a2sel_free (nsel);
     }
 
     if (nerr > 0)
@@ -1476,12 +1477,13 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
     chunk->type = v->type;
     chunk->from_steps = r->from_steps;
     chunk->nsteps = r->nsteps;
-    chunk->sel = copy_selection (r->sel);
+    chunk->sel = a2sel_copy (r->sel);
     chunk->data = r->data;
 
     if (free_container)
     {
-        common_read_selection_delete(container);
+        a2sel_free(container);
+        sel->u.points.container_selection = NULL;
     }
 
     te = MPI_Wtime();
@@ -3204,7 +3206,7 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
 
     /* copy selection since we don't want to operate on user memory.
      */
-    r->sel = (!nullsel ? copy_selection (sel) : nullsel);
+    r->sel = (!nullsel ? a2sel_copy (sel) : nullsel);
     r->varid = mapped_varid;
     if (!p->streaming)
     {
@@ -3265,7 +3267,7 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
         // remove head from list
         r = p->local_read_request_list;
         p->local_read_request_list = p->local_read_request_list->next;
-        free_selection (r->sel); //common_read_selection_delete (r->sel);
+        a2sel_free (r->sel);
         r->sel = NULL;
         free(r);
 
@@ -3527,7 +3529,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             // remove head from list
             r = p->local_read_request_list;
             p->local_read_request_list = p->local_read_request_list->next;
-            free_selection (r->sel); //common_read_selection_delete (r->sel);
+            a2sel_free (r->sel);
             r->sel = NULL;
             free(r);
 
@@ -3558,7 +3560,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
                 // remove head from list
                 r = p->local_read_request_list;
                 p->local_read_request_list = p->local_read_request_list->next;
-                free_selection (r->sel); //common_read_selection_delete (r->sel);
+                a2sel_free (r->sel);
                 r->sel = NULL;
                 free(r);
 
@@ -3580,7 +3582,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             // remove head from list
             r = p->local_read_request_list;
             p->local_read_request_list = p->local_read_request_list->next;
-            free_selection (r->sel); //common_read_selection_delete (r->sel);
+            a2sel_free (r->sel);
             r->sel = NULL;
             free(r);
 
@@ -3603,7 +3605,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
                 // remove head from list
                 r = p->local_read_request_list;
                 p->local_read_request_list = p->local_read_request_list->next;
-                free_selection (r->sel); //common_read_selection_delete (r->sel);
+                a2sel_free (r->sel);
                 r->sel = NULL;
                 free(r);
 
@@ -4256,7 +4258,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
     chunk->from_steps = r->from_steps;
     chunk->nsteps = r->nsteps;
-    chunk->sel = copy_selection (r->sel);
+    chunk->sel = a2sel_copy (r->sel);
     chunk->data = data;
 
     return chunk;

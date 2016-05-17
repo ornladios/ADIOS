@@ -1391,7 +1391,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 	}
 
 	if (tmpvars->sel) {
-	    common_read_selection_delete(tmpvars->sel);
+	    a2sel_free(tmpvars->sel);
 	    tmpvars->sel = NULL;
 	}
 
@@ -1577,7 +1577,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 	}
 
 	if (tmpvars->sel) {
-	    common_read_selection_delete(tmpvars->sel);
+	    a2sel_free(tmpvars->sel);
 	    tmpvars->sel = NULL;
 	}
 
@@ -1637,7 +1637,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     // within before doing release/advance step. Might need a better way to
     // manage the ADIOS selections.
     if (fpvar->sel) {
-	common_read_selection_delete(fpvar->sel);
+	a2sel_free(fpvar->sel);
 	fpvar->sel = NULL;
     }
     if (!sel) { // null selection; read whole variable
@@ -1647,7 +1647,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	uint64_t *starts = calloc(fpvar->ndims, sizeof(uint64_t));
 	uint64_t *counts = calloc(fpvar->ndims, sizeof(uint64_t));
 	memcpy(counts, fpvar->global_dims, fpvar->ndims*sizeof(uint64_t));
-	fpvar->sel = common_read_selection_boundingbox(fpvar->ndims, starts, counts);
+	fpvar->sel = a2sel_boundingbox(fpvar->ndims, starts, counts);
     } else {
 	fpvar->sel = copy_selection(sel);
     }

@@ -85,7 +85,7 @@ inline static uint64_t adios_patch_data_bb_to_bb(void *dst, uint64_t dst_ragged_
     // Cleanup
     free(inter_off_relative_to_dst);
     free(inter_off_relative_to_src);
-    common_read_selection_delete(inter_sel);
+    a2sel_free(inter_sel);
 
     return volume;
 }

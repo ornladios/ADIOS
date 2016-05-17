@@ -3706,8 +3706,7 @@ void common_read_free_chunk (ADIOS_VARCHUNK *chunk)
      */
      if (chunk) {
         if (chunk->sel) {
-            free_selection(chunk->sel);
-            //free(chunk->sel);
+            a2sel_free(chunk->sel);
             chunk->sel = NULL;
         }
         free(chunk);
@@ -3948,90 +3947,5 @@ void common_read_print_fileinfo (const ADIOS_FILE *fp)
 }
 
 
-/**    SELECTIONS   **/
-ADIOS_SELECTION * common_read_selection_boundingbox (int ndim, const uint64_t *start, const uint64_t *count)
-{
-    adios_errno = err_no_error;
-    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
-    if (sel) {
-        sel->type = ADIOS_SELECTION_BOUNDINGBOX;
-        sel->u.bb.ndim = ndim;
-        sel->u.bb.start = (uint64_t *) malloc (ndim * sizeof(uint64_t));
-        sel->u.bb.count = (uint64_t *) malloc (ndim * sizeof(uint64_t));
-        memcpy (sel->u.bb.start, start, ndim * sizeof(uint64_t));
-        memcpy (sel->u.bb.count, count, ndim * sizeof(uint64_t));
-    } else {
-        adios_error(err_no_memory, "Cannot allocate memory for bounding box selection\n");
-    }
-    return sel;
-}
-
-
-ADIOS_SELECTION * common_read_selection_points (int ndim, uint64_t npoints, const uint64_t *points)
-{
-    adios_errno = err_no_error;
-    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
-    if (sel) {
-        sel->type = ADIOS_SELECTION_POINTS;
-        sel->u.points.ndim = ndim;
-        sel->u.points.npoints = npoints;
-        sel->u.points.points = (uint64_t *) points;
-        sel->u.points.container_selection = NULL;
-    } else {
-        adios_error(err_no_memory, "Cannot allocate memory for points selection\n");
-    }
-    return sel;
-}
-
-ADIOS_SELECTION * common_read_selection_writeblock (int index)
-{
-    adios_errno = err_no_error;
-    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
-    if (sel) {
-        sel->type = ADIOS_SELECTION_WRITEBLOCK;
-        sel->u.block.index = index;
-        // NCSU ALACRITY-ADIOS: Set the writeblock selection to be a full-PG selection by default
-        sel->u.block.is_absolute_index = 0;
-        sel->u.block.is_sub_pg_selection = 0;
-        sel->u.block.element_offset = 0;
-        sel->u.block.nelements = 0;
-    } else {
-        adios_error(err_no_memory, "Cannot allocate memory for writeblock selection\n");
-    }
-    return sel;
-}
-
-ADIOS_SELECTION * common_read_selection_auto (char *hints)
-{
-    adios_errno = err_no_error;
-    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
-    if (sel) {
-        sel->type = ADIOS_SELECTION_AUTO;
-        sel->u.autosel.hints = hints;
-    } else {
-        adios_error(err_no_memory, "Cannot allocate memory for auto selection\n");
-    }
-    return sel;
-}
-
-void common_read_selection_delete (ADIOS_SELECTION *sel)
-{
-    if (sel->type == ADIOS_SELECTION_POINTS && sel->u.points.container_selection != NULL)
-    {
-       common_read_selection_delete (sel->u.points.container_selection);
-    }
-    else if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
-    {
-        if (sel->u.bb.start) {
-            free (sel->u.bb.start);
-            sel->u.bb.start = NULL;
-        }
-        if (sel->u.bb.count) {
-            free (sel->u.bb.count);
-            sel->u.bb.count = NULL;
-        }
-    }
-    free(sel);
-}
 
 
