@@ -197,6 +197,11 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
 void adios_write_timing_variables (struct adios_file_struct * fd)
 {
+#ifdef _INTERNAL
+    /* the internal library does not need this and would result in link errors 
+       since common_adios_write_byid() is not included in that library */
+    return;
+#else
     if (!fd)
     {
         adios_error (err_invalid_file_pointer,
@@ -295,11 +300,11 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
 
     free (timers);
 
+#endif /* _INTERNAL */
 }
 
 int adios_add_timing_variables (struct adios_file_struct * fd)
 {
-
     if (!fd)
     {
         adios_error (err_invalid_file_pointer,
