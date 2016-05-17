@@ -224,7 +224,7 @@ program tri2d_f_noxml
     dimemsions = "nx_global,ny_global"
 
     call adios_init_noxml (comm, adios_err)
-    call adios_allocate_buffer (10, adios_err)
+    call adios_set_max_buffer_size (10) 
 
     !!
     !! Define the Data group

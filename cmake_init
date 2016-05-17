@@ -588,6 +588,24 @@ elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
     export PAR_NC_DIR=/opt/nc4par
     export PAR_NC_LIBS="-L/opt/nc4par/lib -lnetcdf"
 
+elif [ `hostname | cut -c 1-9` == "PC0098504" ]; then
+
+    #######################
+    #  Hasan's Linux PC   #
+    #######################
+    echo "Configure on Hasan's PC."
+    export BUILD_WRITE=ON
+    export BUILD_FORTRAN=ON
+    export adios_timers=ON
+    export CC=mpicc
+    export CXX=mpicxx
+    export FC=mpif90
+    export INSTALL_PREFIX="/home/pnb/adios/1.9"
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
+    export LDFLAGS="-lpthread"
+    export MXML_DIR=/usr
+
 elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
 
     #######################

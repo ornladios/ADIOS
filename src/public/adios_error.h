@@ -72,6 +72,7 @@ enum ADIOS_ERRCODES {
     err_invalid_type_attr               = -70,
     err_invalid_value_attr              = -71,
     err_histogram_error                 = -72,
+    err_invalid_type_as_dimension       = -73,
 
     // Write method errors
     err_invalid_file_mode               = -100,

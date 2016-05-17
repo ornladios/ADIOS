@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
 
 
 	adios_init_noxml (comm);
-        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
+        adios_set_max_buffer_size (10);
 
         int64_t   groupid[NGROUPS];
         int64_t   var_ids[NGROUPS][NBLOCKS];

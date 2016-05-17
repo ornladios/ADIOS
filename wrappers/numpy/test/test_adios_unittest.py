@@ -20,7 +20,8 @@ class AdiosTestCase(ut.TestCase):
         ad.define_var(g, "temperature", "", ad.DATATYPE.double, "size,NX", "size,NX", "0,0")
         self.msg = "this is a test"
         self.unit = "C"
-        ad.define_attribute(g, "desc", "", ad.DATATYPE.string, self.msg, "")
+        ## attr must be <varpath> + / + something without / (line 857, common_read.c)
+        ad.define_attribute(g, "temperature/desc", "", ad.DATATYPE.string, self.msg, "")
         ad.define_attribute(g, "temperature/unit", "", ad.DATATYPE.string, self.unit, "")
         ad.select_method(g, "POSIX1", "verbose=3", "")
 
@@ -52,13 +53,14 @@ class AdiosTestCase(ut.TestCase):
         self.assertEqual(self.f.nvars, 3)
         self.assertEqual(self.f.current_step, 0)
         self.assertEqual(self.f.last_step, 0)
-        self.assertEqual(sorted(self.f.var.keys()),
+        self.assertEqual(sorted(self.f.vars.keys()), \
                          sorted(['NX', 'size', 'temperature']))
-        self.assertEqual(self.f.attr.keys(), ['temperature/unit', 'desc'])
+        self.assertEqual(sorted(self.f.attrs.keys()), \
+                         sorted(['temperature/unit', 'temperature/desc']))
 
     def test_adios_attr(self):
-        self.assertEqual(self.f.attr['desc'].value, self.msg)
-        self.assertEqual(self.f.attr['desc'].dtype, np.dtype('S14'))
+        self.assertEqual(self.f.attrs['temperature/desc'].value, self.msg)
+        self.assertEqual(self.f.attrs['temperature/desc'].dtype, np.dtype('S14'))
 
     def test_adios_file_getitem(self):
         self.assertRaises(TypeError, self.f.__getitem__, Slicee()[1])

@@ -36,7 +36,7 @@ int output_init(MPI_Comm comm, int bufsizeMB)
     MPI_Comm_rank (comm, &rank);
     adios_init_noxml(comm);
     adios_declare_group(&gh,"writer","",adios_flag_yes);
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, bufsizeMB);
+    adios_set_max_buffer_size (bufsizeMB);
 
     // Select output method
     wmethodname = getenv("ADIOSMETHOD");

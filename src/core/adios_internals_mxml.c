@@ -2334,7 +2334,7 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
     int verbose_level, removeit, save;
     char *end;
 
-    params = text_to_name_value_pairs (parameters);
+    params = a2s_text_to_name_value_pairs (parameters);
 
     /*
        p = params;
@@ -2391,14 +2391,14 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
                 //fprintf(stderr, "  Remove HEAD  p = %x p->next = %x\n", p, p->next);
                 p = p->next;
                 params->next = NULL;
-                free_name_value_pairs (params);
+                a2s_free_name_value_pairs (params);
                 params = p;
             } else {
                 // remove from middle of the list
                 //fprintf(stderr, "  Remove MIDDLE prev = %x p = %x p->next = %x\n", prev_p, p, p->next);
                 prev_p->next = p->next;
                 p->next = NULL;
-                free_name_value_pairs (p);
+                a2s_free_name_value_pairs (p);
                 p = prev_p->next;
             }
         } else {
@@ -2446,7 +2446,7 @@ int adios_common_select_method (int priority, const char * method
             adios_transports [new_method->m].adios_init_fn
                 (params, new_method);
 
-            free_name_value_pairs (params);
+            a2s_free_name_value_pairs (params);
         }
     }
     else
@@ -2521,7 +2521,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
             adios_transports [new_method->m].adios_init_fn
                 (params, new_method);
 
-            free_name_value_pairs (params);
+            a2s_free_name_value_pairs (params);
         }
     }
     else

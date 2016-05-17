@@ -43,6 +43,6 @@
 
   <method group="genarray" method="POSIX"/>
 
-  <buffer size-MB="256" allocate-time="now"/>
+  <buffer max-size-MB="256"/>
 
 </adios-config>

@@ -5,6 +5,8 @@
 """
 
 cdef extern from "mpi-compat.h": pass
+cdef extern from "string.h" nogil:
+    char   *strdup  (const char *s)
 
 import numpy as np
 cimport numpy as np
@@ -284,6 +286,10 @@ class READ_METHOD:
     FLEXPATH      = 5
     ICEE          = 6
 
+class LOCKMODE:
+    NONE = 0
+    CURRENT = 1
+    ALL =2
 
 cpdef __parse_index(index, ndim):
     # Fix index, handling ellipsis and incomplete slices.
@@ -347,7 +353,13 @@ cpdef int write (int64_t fd_p, char * name, val, dtype=None):
     else:
         val_ = np.array(val, dtype=dtype)
 
-    return adios_write (fd_p, name, <void *> val_.data)
+    cdef void * ptr
+    if (val_.dtype.char == 'S'):
+        ptr = <void *> PyString_AsString(str(val_))
+    else:
+        ptr = <void *> val_.data
+
+    return adios_write (fd_p, name, ptr)
 
 cpdef int write_int (int64_t fd_p, char * name, int val):
     return adios_write (fd_p, name, &val)
@@ -443,7 +455,7 @@ cpdef int define_attribute_byvalue (int64_t group,
     cdef char ** pt2
     if (val_.dtype.char == 'S'):
         if (val_.size == 1):
-            pt1 = PyString_AsString(val)
+            pt1 = PyString_AsString(str(val))
             adios_define_attribute_byvalue (group,
                                             name,
                                             path,
@@ -655,10 +667,10 @@ cdef class file(object):
     cpdef bint is_stream
 
     ## Public Memeber
-    cpdef public dict var
-    cpdef public dict attr
-    cpdef public vars
-    cpdef public attrs
+    cpdef public dict vars
+    cpdef public dict attrs
+    cpdef public var
+    cpdef public attr
 
     property name:
         """ The filename (or stream name) associated with. """
@@ -695,7 +707,7 @@ cdef class file(object):
         def __get__(self):
             return self.version
 
-    property file_sizec:
+    property file_size:
         """ The size of Adios file. """
         def __get__(self):
             return self.file_size
@@ -712,8 +724,8 @@ cdef class file(object):
                  ADIOS_LOCKMODE lock_mode = ADIOS_LOCKMODE_ALL,
                  float timeout_sec = 0.0):
         self.fp = NULL
-        self.var = {}
-        self.attr = {}
+        self.vars = {}
+        self.attrs = {}
         self.is_stream = is_stream
         cdef method = str2adiosreadmethod(method_name)
 
@@ -735,13 +747,13 @@ cdef class file(object):
         self.file_size = self.fp.file_size
 
         for name in [self.fp.attr_namelist[i] for i in range(self.nattrs)]:
-            self.attr[name] = attr(self, name)
+            self.attrs[name] = attr(self, name)
 
         for name in [self.fp.var_namelist[i] for i in range(self.nvars)]:
-            self.var[name] = var(self, name)
+            self.vars[name] = var(self, name)
 
-        self.attrs = self.attr
-        self.vars = self.var
+        self.var = self.vars
+        self.attr = self.attrs
 
     def __del__(self):
         """ Close file on destruction. """
@@ -760,6 +772,10 @@ cdef class file(object):
         print '%15s : %lu' % ('fp', <unsigned long> self.fp)
         printfile(self.fp)
 
+    cpdef release_step(self):
+        """ Release the current step lock and let the writer code to progress """
+        adios_release_step(self.fp)
+
     cpdef advance(self, int last = 0, float timeout_sec = 0.0):
         """
         Advance a timestep for stream reader.
@@ -776,7 +792,7 @@ cdef class file(object):
             self.current_step = self.fp.current_step
             self.last_step = self.fp.last_step
 
-            for v in self.var.values():
+            for v in self.vars.values():
                 v.advance()
 
         return val
@@ -802,22 +818,32 @@ cdef class file(object):
             if not isinstance(key_, str):
                 raise TypeError("Unhashable type")
 
-            if key_ in self.var.keys():
-                return self.var.get(key_)
-            elif key_ in self.attr.keys():
-                return self.attr.get(key_)
-            else:
-                raise KeyError(key_)
+            if key_ in self.vars.keys():
+                return self.vars.get(key_)
+            elif key_ in self.attrs.keys():
+                return self.attrs.get(key_)
+
+            #TODO: return group (self, groupname)
+            for name in self.vars.keys():
+                if key_ == os.path.dirname(name):
+                    return group(self, key_)
+
+            for name in self.attrs.keys():
+                if key_ == os.path.dirname(name):
+                    return group(self, key_)
+
+        raise KeyError(key_)
+
 
     def __repr__(self):
         """ Return string representation. """
-        return ("AdiosFile (path=%r, nvars=%r, var=%r, nattrs=%r, attr=%r, "
+        return ("AdiosFile (path=%r, nvars=%r, vars=%r, nattrs=%r, attrs=%r, "
                 "current_step=%r, last_step=%r, file_size=%r)") % \
                 (self.fp.path,
                  self.nvars,
-                 self.var.keys(),
+                 self.vars.keys(),
                  self.nattrs,
-                 self.attr.keys(),
+                 self.attrs.keys(),
                  self.current_step,
                  self.last_step,
                  self.file_size)
@@ -903,11 +929,11 @@ cdef class var(object):
             self.dtype = adios2npdtype(self.vp.type)
 
         self.attrs = {}
-        for name in self.file.attr.keys():
+        for name in self.file.attrs.keys():
             if name.startswith(self.name + '/'):
-                self.attrs[name.replace(self.name + '/', '')] = self.file.attr[name]
+                self.attrs[name.replace(self.name + '/', '')] = self.file.attrs[name]
             if name.startswith('/' + self.name + '/'):
-                self.attrs[name.replace('/' + self.name + '/', '')] = self.file.attr[name]
+                self.attrs[name.replace('/' + self.name + '/', '')] = self.file.attrs[name]
 
     def __del__(self):
         self.close()
@@ -1104,8 +1130,9 @@ cdef class var(object):
         printvar(self.vp)
 
     def __repr__(self):
-        return "AdiosVar (varid=%r, dtype=%r, ndim=%r, dims=%r, nsteps=%r)" % \
+        return "AdiosVar (varid=%r, name=%r, dtype=%r, ndim=%r, dims=%r, nsteps=%r)" % \
                (self.varid,
+                self.name,
                 self.dtype,
                 self.ndim,
                 self.dims,
@@ -1235,10 +1262,82 @@ cdef class attr(object):
         else:
             raise KeyError(name)
 
+    def __getitem__(self, args):
+        val = self.value[args]
+        if (val.ndim == 0):
+            return np.asscalar(val)
+        else:
+            return val
+
     def __repr__(self):
         return "AdiosAttr (name=%r, dtype=%r, value=%r)" % \
                (self.name, self.dtype, self.value)
 
+cdef class group(object):
+    """
+    Adios group class.
+
+    Note:
+        Users do not need to create this class manually.
+    """
+    cdef file file
+    cpdef bytes name
+
+    ## Public Memeber
+    cpdef public dict vars
+    cpdef public dict attrs
+
+    def __init__(self, file file, char * name):
+        self.file = file
+        self.name = name.rstrip('/')
+
+        self.vars = {}
+        for name in self.file.vars.keys():
+            if name.startswith(self.name + '/'):
+                self.vars[name.replace(self.name + '/', '', 1)] = self.file.vars[name]
+            if name.startswith('/' + self.name + '/'):
+                self.vars[name.replace('/' + self.name + '/', '', 1)] = self.file.vars[name]
+
+        self.attrs = {}
+        for name in self.file.attrs.keys():
+            if name.startswith(self.name + '/'):
+                self.attrs[name.replace(self.name + '/', '', 1)] = self.file.attrs[name]
+            if name.startswith('/' + self.name + '/'):
+                self.attrs[name.replace('/' + self.name + '/', '', 1)] = self.file.attrs[name]
+
+    def __getitem__(self, varname):
+        """
+        Return Adios variable or attribute.
+
+        Args:
+            varname (str): variable or attribute name.
+
+        Raises:
+            KeyError: If no name exists.
+
+        """
+        if not isinstance(varname, tuple):
+            varname = (varname,)
+
+        if len(varname) > 1:
+            raise KeyError(varname)
+
+        for key_ in varname:
+            if not isinstance(key_, str):
+                raise TypeError("Unhashable type")
+
+            if key_ in self.vars.keys():
+                return self.vars.get(key_)
+            elif key_ in self.attrs.keys():
+                return self.attrs.get(key_)
+
+        raise KeyError(key_)
+
+    def __repr__(self):
+        """ Return string representation. """
+        return ("AdiosGroup (vars=%r, attrs=%r)") % \
+                (self.vars.keys(),
+                 self.attrs.keys())
 
 ## Helper dict
 cdef class smartdict(dict):
@@ -1278,8 +1377,8 @@ cdef class writer(object):
     cpdef bytes mode
     cpdef MPI.Comm comm
 
-    cpdef dict var
-    cpdef dict attr
+    cpdef dict vars
+    cpdef dict attrs
 
     property fname:
         """ The filename to write. """
@@ -1301,15 +1400,15 @@ cdef class writer(object):
         def __get__(self):
             return self.mode
 
-    property var:
+    property vars:
         """ Dictionary of variables to write. """
         def __get__(self):
-            return self.var
+            return self.vars
 
-    property attr:
+    property attrs:
         """ Dictionary of attributes to write. """
         def __get__(self):
-            return self.attr
+            return self.attrs
 
     def __init__(self,char * fname,
                  bint is_noxml = True,
@@ -1321,8 +1420,8 @@ cdef class writer(object):
         self.is_noxml = is_noxml
         self.mode = mode
         self.comm = comm
-        self.var = dict()
-        self.attr = dict()
+        self.vars = dict()
+        self.attrs = dict()
 
     ##def __var_factory__(self, name, value):
     ##    print "var_factory:", name, value
@@ -1372,7 +1471,7 @@ cdef class writer(object):
         >>>  fw.define_var ('temperature', (2,3))
 
         """
-        self.var[varname] = varinfo(varname, ldim, gdim, offset)
+        self.vars[varname] = varinfo(varname, ldim, gdim, offset)
 
     def define_attr(self, char * attrname):
         """
@@ -1382,25 +1481,25 @@ cdef class writer(object):
             attrname (str): attribute name.
         """
 
-        self.attr[attrname] = attrinfo(attrname, is_static=True)
+        self.attrs[attrname] = attrinfo(attrname, is_static=True)
 
     def define_dynamic_attr(self, char * attrname,
                             char * varname,
                             dtype):
-        self.attr[attrname] = attrinfo(attrname, varname, dtype, is_static=False)
+        self.attrs[attrname] = attrinfo(attrname, varname, dtype, is_static=False)
     def __setitem__(self, name, val):
-        if self.var.has_key(name):
-            self.var[name] = val
-        elif self.attr.has_key(name):
-            self.attr[name] = val
+        if self.vars.has_key(name):
+            self.vars[name] = val
+        elif self.attrs.has_key(name):
+            self.attrs[name] = val
         else:
-            self.var[name] = val
+            self.vars[name] = val
 
     def __getitem__(self, name):
-        if self.var.has_key(name):
-            return self.var[name]
-        elif self.attr.has_key(name):
-            return self.attr[name]
+        if self.vars.has_key(name):
+            return self.vars[name]
+        elif self.attrs.has_key(name):
+            return self.attrs[name]
         else:
             raise KeyError(name)
 
@@ -1410,50 +1509,50 @@ cdef class writer(object):
         """
         fd = open(self.gname, self.fname, self.mode)
 
-        extra_var = dict()
-        extra_attr = dict()
+        extra_vars = dict()
+        extra_attrs = dict()
 
-        for key, val in self.var.iteritems():
+        for key, val in self.vars.iteritems():
             if not isinstance(val, varinfo):
                 n = np.array(val)
-                extra_var[key] = varinfo(key, n.shape)
-                extra_var[key].value = val
+                extra_vars[key] = varinfo(key, n.shape)
+                extra_vars[key].value = val
             else:
                 if self.is_noxml: val.define(self.gid)
 
-        for key, val in extra_var.iteritems():
+        for key, val in extra_vars.iteritems():
             if self.is_noxml: val.define(self.gid)
-            self.var[key] = val
+            self.vars[key] = val
 
-        for key, val in self.attr.iteritems():
+        for key, val in self.attrs.iteritems():
             if not isinstance(val, attrinfo):
-                extra_attr[key] = attrinfo(key, val, np.array(val).dtype)
+                extra_attrs[key] = attrinfo(key, val, np.array(val).dtype)
             else:
                 if self.is_noxml: val.define(self.gid)
 
-        for key, val in extra_attr.iteritems():
+        for key, val in extra_attrs.iteritems():
             if self.is_noxml: val.define(self.gid)
 
         groupsize = 0
-        for var in self.var.values():
+        for var in self.vars.values():
             groupsize = groupsize + var.bytes()
 
         set_group_size(fd, groupsize)
 
-        for var in self.var.values():
+        for var in self.vars.values():
             var.write(fd)
 
         close(fd)
 
     def __repr__(self):
         return ("AdiosWriter (fname=%r, gname=%r, "
-                "method=%r, method_params=%r, var=%r, attr=%r, mode=%r)") % \
+                "method=%r, method_params=%r, vars=%r, attrs=%r, mode=%r)") % \
                 (self.fname,
                  self.gname,
                  self.method,
                  self.method_params,
-                 self.var.keys(),
-                 self.attr.keys(),
+                 self.vars.keys(),
+                 self.attrs.keys(),
                  self.mode)
 
 cdef class attrinfo(object):
@@ -1595,10 +1694,10 @@ def readvar(fname, varname):
         NumPy ndarray: variable value
     """
     f = file(fname, comm=MPI.COMM_SELF)
-    if not f.var.has_key(varname):
+    if not f.vars.has_key(varname):
         raise KeyError(varname)
 
-    v = f.var[varname]
+    v = f.vars[varname]
     return v.read(from_steps=0, nsteps=v.nsteps)
 
 def bpls(fname):
@@ -1613,7 +1712,7 @@ def bpls(fname):
     f = file(fname, comm=MPI.COMM_SELF)
     return {'nvars': f.nvars,
             'nattrs': f.nattrs,
-            'vars': tuple([ k for k in f.var.iterkeys() ]),
-            'attrs': tuple([ k for k in f.attr.iterkeys() ]),
+            'vars': tuple([ k for k in f.vars.iterkeys() ]),
+            'attrs': tuple([ k for k in f.attrs.iterkeys() ]),
             'time_steps': (f.current_step, f.last_step),
             'file_size': f.file_size}

@@ -33,7 +33,7 @@ fw.define_var('temperature', ldim=(1,NX), gdim=gdim, offset=offset)
 fw['NX'] = NX
 fw['size'] = size
 fw['temperature'] = t
-fw.attr['/temperature/description'] = "Global array written from 'size' processes"
+fw.attrs['/temperature/description'] = "Global array written from 'size' processes"
 fw.close()
 
 ## Reading
@@ -41,11 +41,10 @@ if rank == 0:
     print "\n>>> Reading ...\n"
 
     f = ad.file(fname, comm=MPI.COMM_SELF)
-    for key, val in f.var.iteritems():
+    for key, val in f.vars.iteritems():
         print key, '=', val.read()
 
-    for key, val in f.attr.iteritems():
+    for key, val in f.attrs.iteritems():
         print key, '=', val.value
 
     print "\n>>> Done.\n"
-

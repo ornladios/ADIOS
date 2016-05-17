@@ -22,7 +22,7 @@
 #include <inttypes.h>
 #include <mxml.h>
 #include <sys/stat.h>
-#include "core/strutil.h" // trim_spaces()
+#include "core/strutil.h" 
 
 //#define GET_ATTR(n,attr,var,en)
 #define GET_ATTR2(n,attr,var,en)                                 \
@@ -500,8 +500,8 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 		mxmlRelease(doc);
 		return 0;
 	}
-	tokenize_dimensions (dataDimS, &dim_tokens, &dim_count);
-	tokenize_dimensions (pgDimS, &pgDimTokens, &pgCount);
+	a2s_tokenize_dimensions (dataDimS, &dim_tokens, &dim_count);
+	a2s_tokenize_dimensions (pgDimS, &pgDimTokens, &pgCount);
 	if (dim_count != numDim || pgCount != numDim){
 		printf("input dimension does not match expected number dimension \n");
 		mxmlRelease(doc);
@@ -515,7 +515,10 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 		inputPGDim[j] = atoi(pgDimTokens[j]);
 	}
 
-	(*dataDim) = initDimension(numDim, elmSize);
+    a2s_cleanup_dimensions (dim_tokens, dim_count);
+    a2s_cleanup_dimensions (pgDimTokens, pgCount);
+
+    (*dataDim) = initDimension(numDim, elmSize);
 	memcpy((*dataDim)->dims, inputDataDim, sizeof(uint32_t)* (*dataDim)->ndims);
 	(*pgDim )= initDimension(numDim, elmSize);
 	memcpy((*pgDim)->dims, inputPGDim, sizeof(uint32_t)* (*pgDim)->ndims);
@@ -606,10 +609,11 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 	}
 
         for (i = 0; i < nPG; i++) {
-            tokenize_dimensions (pgoffValueS[i], &pgoffValue_tokens, &numDim);
+            a2s_tokenize_dimensions (pgoffValueS[i], &pgoffValue_tokens, &numDim);
             for (j = 0; j < numDim; j++) {
                 (*pgOff)->off[i*numDim+j] = atoi(pgoffValue_tokens[j]);
             }
+            a2s_cleanup_dimensions (pgoffValue_tokens, numDim);
         }
 
         for (i = 0; i < nPG; i++) {

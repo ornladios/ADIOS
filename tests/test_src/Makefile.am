@@ -9,7 +9,7 @@
 # 4. add files to CLEANFILES that should be deleted at 'make clean'
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 
-test_C = hashtest copy_subvolume text_to_pairstruct points_1DtoND trim_spaces
+test_C = hashtest copy_subvolume text_to_pairstruct test_strutil points_1DtoND trim_spaces
 
 if BUILD_WRITE
     test_C += transforms_specparse group_free_test query_minmax read_points_2d read_points_3d
@@ -58,6 +58,12 @@ text_to_pairstruct_LDFLAGS = $(AM_LDFLAGS)
 text_to_pairstruct_CPPFLAGS = -I$(top_srcdir)/src
 text_to_pairstruct.o: text_to_pairstruct.c
 
+test_strutil_SOURCES=test_strutil.c
+test_strutil_LDADD = $(top_builddir)/src/core/libadios_a-strutil.o
+test_strutil_LDFLAGS = $(AM_LDFLAGS) 
+test_strutil_CPPFLAGS = -I$(top_srcdir)/src
+test_strutil.o: test_strutil.c
+
 points_1DtoND_SOURCES=points_1DtoND.c
 points_1DtoND_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_SEQ_LDADD)
 points_1DtoND_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_SEQ_LDFLAGS)
@@ -69,6 +75,7 @@ trim_spaces_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_SEQ_
 trim_spaces_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_SEQ_LDFLAGS)
 trim_spaces_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSREADLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
 trim_spaces.o: trim_spaces.c
+
 #
 # C Tests built only with write-enabled
 #

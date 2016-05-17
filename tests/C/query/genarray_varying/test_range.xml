@@ -46,6 +46,6 @@
 
   <method group="range" method="MPI">verbose=3</method>
 
-  <buffer size-MB="80" allocate-time="now"/>
+  <buffer max-size-MB="80"/>
 
 </adios-config>

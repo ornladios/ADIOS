@@ -16,6 +16,6 @@
 
   <method group="testbp" method="POSIX"/>
 
-  <buffer size-MB="1" allocate-time="now"/>
+  <buffer max-size-MB="1"/>
 
 </adios-config>

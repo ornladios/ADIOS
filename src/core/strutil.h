@@ -3,11 +3,28 @@
 
 // copy an array of strings with allocation, return pointer
 // also return the sum of string lengths in 'total_length'
-char ** dup_string_array (char ** v, int nelems, int * total_length);
-void free_string_array (char ** v, int nelems);
+char ** a2s_dup_string_array (const char ** v, int nelems, int * total_length);
+void a2s_free_string_array (char ** v, int nelems);
 
-void alloc_namelist (char ***namelist, int length);
-void free_namelist (char **namelist, int length);
+void a2s_alloc_namelist (char ***namelist, int length);
+void a2s_free_namelist (char **namelist, int length);
+
+/* Remove leading and trailing white spaces.
+ * They return a pointer inside str, they do not allocate new memory.
+ */
+char * a2s_trimL  (char * str);
+char * a2s_trimR  (char * str);
+char * a2s_trimLR (char * str);
+
+/* Create a char** array of elements from a "n,m,z" type string used as dimension
+ * specification in adios. It trims all elements for easy processing later
+ */
+void a2s_tokenize_dimensions (const char * str, char *** tokens, int * count);
+
+/* Free the dimension char ** array which was created by tokenize_dimensions.
+ * It expects the pointers to array and counter, so it can set them to NULL / 0.
+ */
+void a2s_cleanup_dimensions (char ** tokens, int count);
 
 char * trim_spaces (const char * str);
 void tokenize_dimensions (const char * str, char *** tokens, int * count);
@@ -30,8 +47,8 @@ struct PairStruct {
 };
 typedef struct PairStruct PairStruct;
 
-PairStruct * text_to_name_value_pairs (const char * text);
-void free_name_value_pairs (PairStruct * pairs);
+PairStruct * a2s_text_to_name_value_pairs (const char * text);
+void a2s_free_name_value_pairs (PairStruct * pairs);
 
 
 #endif

@@ -90,7 +90,7 @@ int write_blocks ()
     gdims        = (uint64_t*) malloc (sizeof(uint64_t) * nsteps);
 
     adios_init_noxml (comm);
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
+    adios_set_max_buffer_size (10);
 
     int64_t       m_adios_group;
     int64_t       m_adios_file;

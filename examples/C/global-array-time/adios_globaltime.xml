@@ -21,7 +21,7 @@
 
   <method group="restart" method="MPI"/>
 
-  <buffer max-size-MB="0"/>
+  <buffer max-size-MB="1"/>
 
 </adios-config>
 

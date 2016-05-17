@@ -20,6 +20,7 @@
 */
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <string.h>
 #include "mpi.h"
 #include "public/adios.h"
@@ -35,7 +36,8 @@ int main (int argc, char ** argv)
 	int         rank, size, i, block;
 	int         NX = 100, Global_bounds, Offsets; 
 	double      t[NX];
-        int         sub_blocks = 3;
+	int         sub_blocks = 3;
+	int64_t     var_ids[sub_blocks];
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
@@ -50,7 +52,7 @@ int main (int argc, char ** argv)
 	strcpy (filename, "adios_global_no_xml.bp");
 
 	adios_init_noxml (comm);
-        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
+        adios_set_max_buffer_size (10);
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;
@@ -73,11 +75,20 @@ int main (int argc, char ** argv)
                         ,"", adios_integer
                         ,0, 0, 0);
    
-           int64_t varid;
-           varid = adios_define_var (m_adios_group, "temperature"
+           var_ids[i] = adios_define_var (m_adios_group, "temperature"
                         ,"", adios_double
                         ,"NX", "Global_bounds", "Offsets");
-           adios_set_transform (varid, "none");
+           adios_set_transform (var_ids[i], "identity");
+
+           /* This is here just for test and will cause errors.
+            * adios_expected_var_size() does not work here because the definition of the variable depends
+            * on the "NX" dimension variable and it's value known to adios only after adios_write("NX")
+            */
+           /*
+           uint64_t varsize = adios_expected_var_size(var_ids[i]);
+           fprintf (stderr, "Temperature block %d is %" PRIu64 " bytes\n", i, varsize);
+           */
+
         }
    
         adios_open (&m_adios_file, "restart", filename, "w", comm);
@@ -95,6 +106,12 @@ int main (int argc, char ** argv)
 
            for (i = 0; i < NX; i++)
                t[i] = Offsets + i;
+
+           /*  This is here just for fun */
+           uint64_t varsize = adios_expected_var_size(var_ids[block]);
+           /* adios_expected_var_size() works here because NX's value is known by adios at this point */
+           fprintf (stderr, "Temperature block %d is %" PRIu64 " bytes\n", block, varsize);
+
 
            adios_write(m_adios_file, "temperature", t);
         }

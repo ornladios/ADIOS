@@ -70,6 +70,9 @@ dnl generates HAVE_STRINGIZE
 AC_FUNC_STRTOLD
 dnl generates HAVE_STRTOLD
 
+dnl check if -lm is needed to be added
+AC_SEARCH_LIBS([ceil], [m])
+
 AC_ARG_ENABLE(write,
     [AS_HELP_STRING([--disable-write],[disable building the write methods in ADIOS.])])
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
@@ -235,11 +238,11 @@ ADIOSLIB_EXTRA_CPPFLAGS="${MACRODEFFLAG}_FILE_OFFSET_BITS=64 ${MACRODEFFLAG}_LAR
 ADIOSLIB_CPPFLAGS="${MXML_CPPFLAGS}"
 ADIOSLIB_CFLAGS=
 ADIOSLIB_LDFLAGS="${MXML_LDFLAGS}"
-ADIOSLIB_LDADD="-lm ${MXML_LIBS}"
+ADIOSLIB_LDADD="${MXML_LIBS}"
 ADIOSLIB_SEQ_CPPFLAGS="${MACRODEFFLAG}_NOMPI ${MXML_CPPFLAGS}"
 ADIOSLIB_SEQ_CFLAGS=
 ADIOSLIB_SEQ_LDFLAGS="${MXML_LDFLAGS}"
-ADIOSLIB_SEQ_LDADD="-lm ${MXML_LIBS}"
+ADIOSLIB_SEQ_LDADD="${MXML_LIBS}"
 ADIOSLIB_INT_CPPFLAGS="${MACRODEFFLAG}_NOMPI"
 ADIOSLIB_INT_CFLAGS=
 ADIOSLIB_INT_LDFLAGS=
@@ -247,16 +250,16 @@ ADIOSLIB_INT_LDADD=
 if test "x$enable_write" != "xno"; then
     ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} ${MXML_CPPFLAGS}"
     ADIOSLIB_INT_LDFLAGS="${MXML_LDFLAGS}"
-    ADIOSLIB_INT_LDADD="-lm ${MXML_LIBS}"
+    ADIOSLIB_INT_LDADD="${MXML_LIBS}"
 fi
 ADIOSREADLIB_CPPFLAGS=
 ADIOSREADLIB_CFLAGS=
 ADIOSREADLIB_LDFLAGS=
-ADIOSREADLIB_LDADD="-lm"
+ADIOSREADLIB_LDADD=""
 ADIOSREADLIB_SEQ_CPPFLAGS="${MACRODEFFLAG}_NOMPI"
 ADIOSREADLIB_SEQ_CFLAGS=
 ADIOSREADLIB_SEQ_LDFLAGS=
-ADIOSREADLIB_SEQ_LDADD="-lm"
+ADIOSREADLIB_SEQ_LDADD=""
 if test "x${datatap}" != "xdisable"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DT_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${DT_CFLAGS}"
@@ -799,7 +802,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bpls/Makefile
                  utils/bpdiff/Makefile
                  utils/bp2bp/Makefile
-                 utils/list_methods/Makefile
+                 utils/adios_list_methods/Makefile
                  utils/bpmeta/Makefile
                  utils/bprecover/Makefile
 		 utils/fastbit/Makefile
@@ -827,8 +830,8 @@ AC_CONFIG_FILES([Makefile
                  examples/Fortran/global-array/Makefile
                  examples/Fortran/global-array-time/Makefile
                  examples/Fortran/schema/Makefile
-                 adios_config
-                 adios_config.flags
+                 adios_config.flags.makesrc
+                 adios_config.makesrc
                  src/public/adios_version.h
                 ])
 

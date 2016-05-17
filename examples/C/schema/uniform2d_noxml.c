@@ -113,7 +113,7 @@ int main (int argc, char ** argv)
             data[i*ndy + j] = 1.0*rank;
     
 	adios_init_noxml (comm);
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 50);
+    adios_set_max_buffer_size (50);
 
     adios_declare_group (&m_adios_group, "uniform2d", "", adios_flag_yes);
     adios_select_method (m_adios_group, "MPI", "", "");

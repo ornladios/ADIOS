@@ -31,6 +31,7 @@ extern "C"  /* prevent C++ name mangling */
 #endif
 
 extern int adios_errno;
+extern struct adios_transport_struct * adios_transports;
 
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_set_application_id, ADIOS_SET_APPLICATION_ID) (int *id, int * err)
@@ -52,6 +53,11 @@ void FC_FUNC_(adios_init, ADIOS_INIT) (const char * config, MPI_Fint * comm, int
     } else {
         *err = adios_errno;
     }
+}
+
+int FC_FUNC_(adios_is_initialized, ADIOS_IS_INITIALIZED) ()
+{
+    return (adios_transports != NULL);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -627,7 +633,7 @@ void FC_FUNC_(adios_define_attribute, ADIOS_DEFINE_ATTRIBUTE)
 
 void FC_FUNC_(adios_define_attribute_byvalue, ADIOS_DEFINE_ATTRIBUTE_BYVALUE) 
     (int64_t * group, const char * name, const char * path, int * type, int * nelems, 
-     void * values, int * err, int name_size, int path_size)
+     const void * values, int * err, int name_size, int path_size)
 {
     char * buf1 = 0;
     char * buf2 = 0;

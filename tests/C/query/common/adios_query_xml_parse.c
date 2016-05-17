@@ -71,48 +71,6 @@ static ADIOS_QUERY * queryPop(QueryStack* queryStack)
     return queryStack->stack[--queryStack->size];
 }
 
-
-static void tokenize_dimensions2 (const char * str, char *** tokens, int * count) {
-    if (!str) {
-        *tokens = 0;
-        *count = 0;
-
-        return;
-    }
-
-    int i;
-    char * temp_str = trim_spaces (str);
-    char * t = temp_str;
-
-    if (strlen (temp_str) > 0)
-        *count = 1;
-    else
-    {
-        *tokens = 0;
-        *count = 0;
-        free (temp_str);
-
-        return;
-    }
-
-    while (*t)
-    {
-        if (*t == ',')
-            (*count)++;
-        t++;
-    }
-
-    *tokens = (char **) malloc (sizeof (char **) * *count);
-    (*tokens) [0] = strdup (strtok (temp_str, ","));
-    for (i = 1; i < *count; i++)
-    {
-        (*tokens) [i] = strdup (strtok (NULL, ","));
-    }
-
-    free (temp_str);
-}
-//end of stolen functions
-
 #define CHECK_ERROR_DATA(data, num, check) {                     \
 		 uint64_t di = 0;                                        \
 		 for(di = 0; di < (num); di++){                          \
@@ -222,14 +180,21 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 			return NULL;
 		}
 		else {
-			outputDim = atoi(outputDimS);
-			if (outputDim > MAXDIM) {
+			int specifiedDim = atoi(outputDimS);
+			if (specifiedDim > MAXDIM) {
 				fprintf(stderr, "QueryDim exceeds 10, readjust MAXDIM to larger value, exiting...\n");
 				abort();
 			}
 
-			tokenize_dimensions2(outputStartS, &outputStartTokens, &outputDim);
-			tokenize_dimensions2(outputCountS, &outputCountTokens, &outputDim);
+			a2s_tokenize_dimensions(outputStartS, &outputStartTokens, &outputDim);
+			a2s_tokenize_dimensions(outputCountS, &outputCountTokens, &outputDim);
+
+            if (specifiedDim != outputDim) {
+                fprintf(stderr, "Specified # of dimensions (%d)  "
+                        "!= number of dimensions (%d) in start/count, exiting...\n",
+                        specifiedDim, outputDim);
+                abort();
+            }
 
 			// Allocate arrays to give to the bounding box constructor
 			uint64_t *outputStart = malloc(outputDim * sizeof(uint64_t));
@@ -238,11 +203,9 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 			for (j = 0; j < outputDim; j ++){
 				outputStart[j] = atoi(outputStartTokens[j]);
 				outputCount[j] = atoi(outputCountTokens[j]);
-				free(outputStartTokens[j]);
-				free(outputCountTokens[j]);
 			}
-			free(outputStartTokens);
-			free(outputCountTokens);
+			/* a2s_cleanup_dimensions(outputStartTokens, outputDim); */
+            /* a2s_cleanup_dimensions(outputCountTokens, outputDim); */
 
 			outputBox = adios_selection_boundingbox(outputDim, outputStart, outputCount);
 
@@ -300,9 +263,8 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 			entryNode = mxmlFindElement(root, root, "entry", NULL, NULL, MXML_DESCEND_FIRST);
 		}
 		else {
-			// this is the only way I found for getting the next <entry> or <combine> node
 			entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND);
-			entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND);
+			/* entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND); */
 		}
 
 		// check if current node is <combine>
@@ -379,15 +341,22 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
         				return NULL;
         			}
         			else {
-        				queryDim = atoi(dimS);
-        				if (queryDim > MAXDIM) {
-        					fprintf(stderr, "QueryDim exceeds 10, readjust MAXDIM to larger value, exiting...\n");
+        		        int specifiedDim = atoi(dimS);
+        		        if (specifiedDim > MAXDIM) {
+        				    fprintf(stderr, "QueryDim exceeds 10, readjust MAXDIM to larger value, exiting...\n");
         					abort();
         				}
         
-        				tokenize_dimensions2(startS, &queryStartTokens, &queryDim);
-        				tokenize_dimensions2(countS, &queryCountTokens, &queryDim);
-        
+        				a2s_tokenize_dimensions(startS, &queryStartTokens, &queryDim);
+        				a2s_tokenize_dimensions(countS, &queryCountTokens, &queryDim);
+
+        	            if (specifiedDim != outputDim) {
+        	                fprintf(stderr, "Specified # of dimensions (%d)  "
+        	                        "!= number of dimensions (%d) in start/count, exiting...\n",
+        	                        specifiedDim, outputDim);
+        	                abort();
+        	            }
+
         				// Allocate arrays to give to the bounding box constructor
         				uint64_t *queryStart = malloc(queryDim * sizeof(uint64_t));
         				uint64_t *queryCount = malloc(queryDim * sizeof(uint64_t));
@@ -395,11 +364,9 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
         				for (j = 0; j < queryDim; j ++){
         					queryStart[j] = atoi(queryStartTokens[j]);
         					queryCount[j] = atoi(queryCountTokens[j]);
-        					free(queryStartTokens[j]);
-        					free(queryCountTokens[j]);
         				}
-        				free(queryStartTokens);
-        				free(queryCountTokens);
+        	            /* a2s_cleanup_dimensions(outputStartTokens, outputDim); */
+        	            /* a2s_cleanup_dimensions(outputCountTokens, outputDim); */
         
         				inputSelection = adios_selection_boundingbox(queryDim, queryStart, queryCount);
                                 }

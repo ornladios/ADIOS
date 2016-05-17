@@ -1,5 +1,8 @@
 ...
     - Fortran API for inquiring selections
+    - bprecover utility
+      - recover a BP file which has a damaged index data
+    - adios_group_size() optional now
     - fix: bpmeta does not skip any subfiles when used with threads
 
 1.9.0 Release Jul 2015
