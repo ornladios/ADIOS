@@ -31,7 +31,7 @@ int dotest (const char * text, const char *expected)
 {
     int nerrors = 0;
     printf("text=[%s]\n", text);
-    char * str = trim_spaces (text);
+    char * str = a2s_trim_spaces (text);
 
     /* Check value */
     if (strcmp(expected,str))

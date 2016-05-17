@@ -26,8 +26,7 @@ void a2s_tokenize_dimensions (const char * str, char *** tokens, int * count);
  */
 void a2s_cleanup_dimensions (char ** tokens, int count);
 
-char * trim_spaces (const char * str);
-void tokenize_dimensions (const char * str, char *** tokens, int * count);
+char * a2s_trim_spaces (const char * str);
 
 /*******************************************************
    Processing parameter lists

@@ -173,7 +173,7 @@ void a2s_cleanup_dimensions (char ** tokens, int count)
         free (tokens);
 }
 
-void trim_spaces (char * str)
+char * a2s_trim_spaces (const char * str)
 {
     char * result = strdup (str);
     char * r = result;
@@ -192,49 +192,6 @@ void trim_spaces (char * str)
     }
     *r = '\0';
     return result;
-}
-
-void tokenize_dimensions (const char * str, char *** tokens, int * count)
-{
-    if (!str)
-    {
-        *tokens = 0;
-        *count = 0;
-
-        return;
-    }
-
-    int i;
-    char * temp_str = trim_spaces (str);
-    char * t = temp_str;
-
-
-    if (strlen (temp_str) > 0)
-        *count = 1;
-    else
-    {
-        *tokens = 0;
-        *count = 0;
-        free (temp_str);
-
-        return;
-    }
-
-    while (*t)
-    {
-        if (*t == ',')
-            (*count)++;
-        t++;
-    }
-
-    *tokens = (char **) malloc (sizeof (char **) * *count);
-    (*tokens) [0] = strdup (strtok (temp_str, ","));
-    for (i = 1; i < *count; i++)
-    {
-        (*tokens) [i] = strdup (strtok (NULL, ","));
-    }
-
-    free (temp_str);
 }
 
 

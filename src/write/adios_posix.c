@@ -130,7 +130,7 @@ int adios_posix_open (struct adios_file_struct * fd
 
     char *temp_string, *m_size;
 
-    temp_string = trim_spaces (method->parameters);
+    temp_string = a2s_trim_spaces (method->parameters);
     if ( (m_size = strstr (temp_string, "have_metadata_file")) )
     {
         char * m = strchr (m_size, '=');
