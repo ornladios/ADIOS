@@ -83,6 +83,8 @@ ADIOS_SELECTION * a2sel_auto (char *hints)
 
 void a2sel_free (ADIOS_SELECTION *sel)
 {
+    if (!sel)
+        return;
     if (sel->type == ADIOS_SELECTION_POINTS)
     {
         if (sel->u.points.container_selection != NULL)
