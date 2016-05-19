@@ -205,11 +205,16 @@ static void build_dataset_from_specs(
 		for (pg_in_timestep = 0; pg_in_timestep < global_spec->num_pgs_per_ts; ++pg_in_timestep) {
 			// (Re-)open the file in write or append mode, depending on whether or not this is the first PG written
 			const int is_first_pg = (timestep == 0 && pg_in_timestep == 0);
-			adios_open(&adios_file, xml_spec->group_name, bp_filename, is_first_pg ? "w" : "a", MPI_COMM_WORLD);
+			char mode[] = "a";
+			if (timestep == 0 && pg_in_timestep == 0)
+			    mode[0] = 'w';
+            // Pin the timestep to allow multiple adios_open/adios_close cycles to write
+            // to the same timestep (this simulates a parallel file write with fewer core)
+            //adios_pin_timestep(timestep + 1); // +1 because we want the timesteps to be 1-based
+			if (pg_in_timestep != 0)
+			    mode[0] = 'u';
 
-			// Pin the timestep to allow multiple adios_open/adios_close cycles to write
-			// to the same timestep (this simulates a parallel file write with fewer core)
-			adios_pin_timestep(timestep + 1); // +1 because we want the timesteps to be 1-based
+			adios_open(&adios_file, xml_spec->group_name, bp_filename, mode, MPI_COMM_WORLD);
 
 			const dataset_pg_spec_t *pg_spec = &pg_specs[timestep][pg_in_timestep];
 

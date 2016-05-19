@@ -256,19 +256,20 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 	QueryStack queryStack;
 	queryStackInit(&queryStack);
 
-	for (entryIter = 0; entryIter < (numQuery*2-1); entryIter++) {
+	entryNode = mxmlFindElement(root, root, "entry", NULL, NULL, MXML_DESCEND_FIRST);
+	entryIter = 0;
+	for ( ; entryNode; entryNode = mxmlWalkNext (entryNode, root, MXML_NO_DESCEND))
+    {
+        if (entryNode->type != MXML_ELEMENT)
+        {
+            continue;
+        }
 
-		// Find entry node
-		if (entryIter == 0) {
-			entryNode = mxmlFindElement(root, root, "entry", NULL, NULL, MXML_DESCEND_FIRST);
-		}
-		else {
-			entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND);
-			/* entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND); */
-		}
+        if (entryIter >= numQuery)
+            break;
 
 		// check if current node is <combine>
-		if ( strcmp( (&(entryNode->value.element.attrs[0]))->name, "op") == 0 ) {
+		if ( strcmp(entryNode->value.element.name, "combine") == 0 ) {
 			queryCombineOp = (&(entryNode->value.element.attrs[0]))->value;
 			/* fprintf(stderr, "Found combine op %s\n", queryCombineOp); */
 			// pop up two query and perform the op
@@ -411,8 +412,8 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 			return NULL;
 		}
 
-	        queryPush(&queryStack,q);
-
+		queryPush(&queryStack,q);
+		entryIter++;
 		/* fprintf(stderr, "Parsed entry: var=%s op=%s constraint=%s\n", varNameS, opS, constraintS); */
 	}
 

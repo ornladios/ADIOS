@@ -3091,7 +3091,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
             uint64_t range = coordinates[retrivalSize-1] - coordinates[0];
             uint64_t gap = sheet*5;
             if (range < gap*4) {
-                printf("As is.\n");
+                //printf("As is.\n");
                 return NULL;
             }
 

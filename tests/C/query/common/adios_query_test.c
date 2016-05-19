@@ -73,47 +73,74 @@ void performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_strea
                             queryInfo->batchSize
                         );
             if (currBatch == NULL) {
+                fprintf(stderr, "Unexpected error status in querying evaluation, returned NULL as result. "
+                        "ADIOS error message: %s \n", adios_errmsg());
         		break;
         	}
             if (currBatch->status == ADIOS_QUERY_RESULT_ERROR) {
                 fprintf(stderr, "ERROR in querying evaluation: %s \n", adios_errmsg());
                 break;
             }
+            if (currBatch->nselections == 0) {
+                /* this is normal, we processed everything in previous loop or there is 0 total result */
+                break;
+            }
 
-        	assert(currBatch->selections->type == ADIOS_SELECTION_POINTS);
-        	const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->selections->u.points);
-        	/* fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints); */
+            int n;
+        	if (currBatch->selections->type == ADIOS_SELECTION_POINTS)
+        	{
+        	    for (n = 0; n < currBatch->nselections; n++)
+        	    {
+        	        const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->selections[n].u.points);
+        	        /* fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints); */
 
-        	if (print_points) {
-        		printPoints(retrievedPts, timestep);
+        	        if (print_points) {
+        	            printPoints(retrievedPts, timestep);
+        	        }
+
+        	        if (read_results) {
+        	            int elmSize = adios_type_size(tempVar->type, NULL);
+        	            void *data = malloc(retrievedPts->npoints * elmSize);
+
+        	            // read returned temp data
+        	            adios_schedule_read (f, &currBatch->selections[n], queryInfo->varName, use_streaming ? 0 : timestep, 1, data);
+        	            adios_perform_reads(f, 1);
+
+        	            free(data);
+        	        }
+
+        	        fprintf(stderr,"Total points retrieved %"PRIu64" in %d blocks\n",
+        	                currBatch->npoints, currBatch->nselections);
+        	        /* if (tempVar->type == adios_double) { */
+        	        /*     for (i = 0; i < retrievedPts->npoints; i++) { */
+        	        /*         fprintf(stderr,"%.6f\t", ((double*)data)[i]); */
+        	        /*     } */
+        	        /*     fprintf(stderr,"\n"); */
+        	        /* } */
+        	        /* else if (tempVar->type == adios_real) { */
+        	        /*     for (i = 0; i < retrievedPts->npoints; i++) { */
+        	        /*         fprintf(stderr,"%.6f\t", ((float*)data)[i]); */
+        	        /*     } */
+        	        /*     fprintf(stderr,"\n"); */
+        	        /* } */
+        	    }
         	}
-
-        	if (read_results) {
-        		int elmSize = adios_type_size(tempVar->type, NULL);
-        		void *data = malloc(retrievedPts->npoints * elmSize);
-
-        		// read returned temp data
-        		adios_schedule_read (f, currBatch->selections, queryInfo->varName, use_streaming ? 0 : timestep, 1, data);
-        		adios_perform_reads(f, 1);
-
-        		free(data);
+        	else if  (currBatch->selections->type == ADIOS_SELECTION_WRITEBLOCK)
+        	{
+                fprintf(stderr,"Number of blocks retrieved: %d\n", currBatch->nselections);
+                if (print_points) {
+                    for (n = 0; n < currBatch->nselections; n++)
+                    {
+                        fprintf(stdout,"%d %d\n", timestep, currBatch->selections[n].u.block.index);
+                    }
+                }
         	}
-
-        	fprintf(stderr,"Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
-        	/* if (tempVar->type == adios_double) { */
-        	/*     for (i = 0; i < retrievedPts->npoints; i++) { */
-        	/*         fprintf(stderr,"%.6f\t", ((double*)data)[i]); */
-        	/*     } */
-        	/*     fprintf(stderr,"\n"); */
-        	/* } */
-        	/* else if (tempVar->type == adios_real) { */
-        	/*     for (i = 0; i < retrievedPts->npoints; i++) { */
-        	/*         fprintf(stderr,"%.6f\t", ((float*)data)[i]); */
-        	/*     } */
-        	/*     fprintf(stderr,"\n"); */
-        	/* } */
-
         	free(currBatch->selections);
+        	if (currBatch->status == ADIOS_QUERY_NO_MORE_RESULTS) {
+        	    free (currBatch);
+        	    break;
+        	}
+
         	free(currBatch);
         }
 
@@ -144,7 +171,7 @@ int main(int argc, char ** argv) {
     MPI_Init(&argc, &argv);
 
     if (argc < 4 || argc > 7) {
-        fprintf(stderr," usage: %s {input bp file} {xml file} {query engine (ALACRITY/FASTBIT)} [mode (FILE/stream)] [print points? (TRUE/false)] [read results? (true/FALSE)]\n", argv[0]);
+        fprintf(stderr," usage: %s {input bp file} {xml file} {query engine (ALACRITY/FASTBIT/MINMAX)} [mode (FILE/stream)] [print points? (TRUE/false)] [read results? (true/FALSE)]\n", argv[0]);
         MPI_Abort(comm, 1);
     }
     else {
@@ -162,6 +189,12 @@ int main(int argc, char ** argv) {
     	query_method = ADIOS_QUERY_METHOD_FASTBIT;
     	//fprintf(stderr,"FastBit not supported in this test yet, exiting...\n");
     	//MPI_Abort(comm, 1);
+    }
+    else if (strcasecmp(argv[3], "MINMAX") == 0) {
+        // init with minmax
+        query_method = ADIOS_QUERY_METHOD_MINMAX;
+        //fprintf(stderr,"Minmax not supported in this test yet, exiting...\n");
+        //MPI_Abort(comm, 1);
     }
     else {
     	fprintf(stderr,"Unsupported query engine %s, exiting...\n", argv[3]);

@@ -796,7 +796,7 @@ int main (int argc, char** argv)
   gIdxFileName = fastbit_adios_util_getFastbitIndexFileName(argv[1]);
   unlink(gIdxFileName);
 
-      adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 500); // +5MB for extra room in buffer
+      //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 500); // +5MB for extra room in buffer
       adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_flag_yes);
       adios_select_method (gAdios_group, "MPI", "", "");
 

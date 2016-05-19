@@ -121,6 +121,7 @@ fi
 # NO FURTHER CONFIGURATION VARIABLES BELOW THIS POINT
 #
 
+N_INVALID_RESULTS=0
 function init_work_directory() {
   echo "STEP 1: INITIALIZING THE TEST WORKING DIRECTORY..."
   
@@ -178,6 +179,15 @@ function build_indexed_datasets_fastbit() {
   $MPIRUN_SERIAL $FASTBIT_INDEXER_EXE_LOCAL "$DSOUTPUT".bp "<binning precision=5/>"||
     die "ERROR: $FASTBIT_INDEXER_EXE_LOCAL failed with exit code $?"
   set +o xtrace
+}
+
+function build_indexed_datasets_minmax() {
+  local DSID="$1"
+  local DSOUTPUT="$2"
+  [[ $# -eq 2 ]] || die "ERROR: Internal testing error, invalid parameters to build_indexed_datasets_minmax: $@"
+  
+  invoke_dataset_builder "$DSID" "$DSOUTPUT" "none"
+  echo "Minmax method uses data as is, no index file is built"
 }
 
 function build_datasets() {
@@ -251,6 +261,10 @@ function query_datasets() {
 
         # Run the query for each query engine implementation and compare to the expected results
         for QUERY_ENGINE in $ALL_QUERY_ENGINES; do
+          case $QUERY_ENGINE in *minmax*) 
+              echo --- Skip evaluating with MINMAX method ---; 
+              continue 
+          esac
           local QE_WORKDIR="./$QUERY_ENGINE"
 
           for INDEXED_DS in "$QE_WORKDIR/$DSID.$QUERY_ENGINE".*bp; do
@@ -280,7 +294,7 @@ function query_datasets() {
                 echo "ERROR: ADIOS Query does not return the expected points matching query $QUERY_NAME on dataset $DSID in $FILEMODE mode using query engine $QUERY_ENGINE"
                 echo "Compare \"$EXPECTED_POINTS_FILE\" (expected points) vs. \"$OUTPUT_POINTS_FILE\" (returned points) in \"$PWD\""
                 echo "The BP file queried is \"$INDEXED_DS\" and the query is specified by \"$QUERY_XML_LOCAL\""
-                exit 1  
+                let "N_INVALID_RESULTS=N_INVALID_RESULTS+1"  
               fi
             done
           done
@@ -290,8 +304,10 @@ function query_datasets() {
 }
 
 # FINALLY, CALL THE FUNCTIONS IN SEQUENCE
-echo "NOTE: Testing query methods: $ALL_QUERY_METHODS"
-echo "NOTE: Testing on datasets: $ALL_DATASETS"
+echo "NOTE: Testing query methods: $ALL_QUERY_ENGINES"
+echo "NOTE: Testing on datasets: $ALL_DATASET_IDS"
 init_work_directory
 build_datasets
 query_datasets
+echo "NOTE: Number of tests that ran but produced a result different from the expected : $N_INVALID_RESULTS"
+exit $N_INVALID_RESULTS
