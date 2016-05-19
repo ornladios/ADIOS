@@ -167,7 +167,7 @@ int main (int argc, char ** argv)
 
 void define_vars ()
 {
-    int i, block;
+    int i;
 
     adios_define_var (m_adios_group, "ldim1", "", adios_integer, 0, 0, 0);
     adios_define_var (m_adios_group, "ldim2", "", adios_integer, 0, 0, 0);
@@ -269,39 +269,14 @@ void reset_readvars()
 static const char minstr[] = "11.0";
 static const char maxstr[] = "21.0";
 
-int query_as_file ()
+int query_test (ADIOS_FILE *f, ADIOS_SELECTION *boxsel)
 {
-    ADIOS_SELECTION *sel2;
-    ADIOS_FILE * f;
-    ADIOS_VARINFO * vi;
+    int nerr = 0;
+    int step;
     ADIOS_QUERY  *q1, *q2, *q;
-    int err=0,n;
-    int block,step,var; // loop variables
-    size_t iMacro,jMacro,kMacro; // loop variable in macros
     double        tb, te;
     double        teb, t_eval; // time for just evaluating query for one step
 
-    uint64_t start[2] = {0,0};
-    uint64_t count[2] = {gdim1,gdim2};
-    
-    reset_readvars();
-
-    log ("Query data in %s\n", FILENAME);
-    tb = MPI_Wtime();
-    f = adios_read_open_file (FILENAME, ADIOS_READ_METHOD_BP, comm);
-    if (f == NULL) {
-        printE ("Error at opening file: %s\n", adios_errmsg());
-        return 1;
-    }
-    te = MPI_Wtime();
-    log ("  File opening time for step %d was %6.3lfs\n", step, te-tb);
-
-    log ("  Check variable definitions... %s\n", FILENAME);
-    CHECK_VARINFO("data", 2, NSTEPS)
-    MPI_Barrier (comm);
-
-    // limit the query to the bounding box of this process
-    ADIOS_SELECTION *boxsel = adios_selection_boundingbox (2, start, count);
     q1 = adios_query_create (f, boxsel, "data", ADIOS_GTEQ, minstr);
     q2 = adios_query_create (f, boxsel, "data", ADIOS_LTEQ, maxstr);
     q  = adios_query_combine (q1, ADIOS_QUERY_OP_AND, q2);
@@ -314,7 +289,6 @@ int query_as_file ()
     // We can call this with unknown too, just testing the default behavior here
     adios_query_set_method (q, ADIOS_QUERY_METHOD_MINMAX);
 
-    log ("  Query variable content...\n");
     for (step=0; step<NSTEPS; step++) {
         tb = MPI_Wtime();
         t_eval = 0;
@@ -329,12 +303,14 @@ int query_as_file ()
 
         if (result->status == ADIOS_QUERY_RESULT_ERROR) {
             log ("ERROR: Query evaluation failed with error: %s\n", adios_errmsg());
+            nerr++;
         }
         else if (result->status == ADIOS_QUERY_HAS_MORE_RESULTS)
         {
             log ("ERROR: Query retrieval failure: "
                    "it says it has more results to retrieve, although we "
                    "tried to get all at once\n");
+            nerr++;
         }
 
         log ("    Query returned %d blocks as result\n", result->nselections);
@@ -343,13 +319,54 @@ int query_as_file ()
         MPI_Barrier (comm);
         te = MPI_Wtime();
         log ("  Processing time for step %d was %6.3lfs, query evaluation was %6.3lfs\n",
-        		step, te-tb, t_eval);
-    } 
+                step, te-tb, t_eval);
+    }
 
-    adios_selection_delete (boxsel);
     adios_query_free(q);
     adios_query_free(q2);
     adios_query_free(q1);
+    return nerr;
+}
+
+
+int query_as_file ()
+{
+    ADIOS_FILE * f;
+    ADIOS_VARINFO * vi;
+    int err=0;
+    double        tb, te;
+
+    uint64_t start[2] = {0,0};
+    uint64_t count[2] = {gdim1,gdim2};
+    
+    reset_readvars();
+
+    log ("Query data in %s\n", FILENAME);
+    tb = MPI_Wtime();
+    f = adios_read_open_file (FILENAME, ADIOS_READ_METHOD_BP, comm);
+    if (f == NULL) {
+        printE ("Error at opening file: %s\n", adios_errmsg());
+        return 1;
+    }
+    te = MPI_Wtime();
+    log ("  File opening time was %6.3lfs\n", te-tb);
+
+    log ("  Check variable definitions... %s\n", FILENAME);
+    CHECK_VARINFO("data", 2, NSTEPS)
+    MPI_Barrier (comm);
+
+
+    // limit the query to the bounding box of this process
+    ADIOS_SELECTION *boxsel = adios_selection_boundingbox (2, start, count);
+    log ("  Query variable content with a bounding box selection...\n");
+    err += query_test (f, boxsel);
+    adios_selection_delete (boxsel);
+
+    // test with NULL bounding box selection, too
+    if (!err) {
+        log ("  Query variable content with NULL as bounding box selection...\n");
+        err += query_test (f, NULL);
+    }
 
 endread:
 
