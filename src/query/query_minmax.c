@@ -536,13 +536,13 @@ static int can_evaluate(ADIOS_QUERY* q, int timestep, ADIOS_SELECTION **sel, int
         {
             if (!q->varinfo)
                 q->varinfo = common_read_inq_var (q->file, q->varName); // get per block statistics
-            if (!q->varinfo->statistics)
+            if (q->varinfo && !q->varinfo->statistics)
                 common_read_inq_var_stat (q->file, q->varinfo, 0, 1); // get per block statistics
-            if (!q->varinfo->blockinfo)
+            if (q->varinfo && !q->varinfo->blockinfo)
                 common_read_inq_var_blockinfo (q->file, q->varinfo); // get per block dimensions
             if (q->varinfo  && q->varinfo->statistics  && q->varinfo->statistics->blocks && q->varinfo->blockinfo) {
                 supported = 1;
-                if (q->sel->type == ADIOS_SELECTION_BOUNDINGBOX && q->sel->u.bb.ndim != q->varinfo->ndim) {
+                if (q->sel && q->sel->type == ADIOS_SELECTION_BOUNDINGBOX && q->sel->u.bb.ndim != q->varinfo->ndim) {
                     supported = 0;
                 }
                 if (q->varinfo->type == adios_complex || q->varinfo->type == adios_double_complex ||
