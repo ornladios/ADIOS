@@ -106,7 +106,6 @@ typedef struct {
 /** Selection for reading a subset of a variable. 
  *   A selection is an additive list of bounding boxes and point-sets 
  */
-typedef struct ADIOS_SELECTION_STRUCT  ADIOS_SELECTION; 
 struct ADIOS_SELECTION_STRUCT  {
        enum ADIOS_SELECTION_TYPE    type; /* Type of selection */
        union {

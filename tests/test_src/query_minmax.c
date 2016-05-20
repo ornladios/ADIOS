@@ -44,18 +44,20 @@ int NSTEPS = 1;  // number of output steps
 static const char FILENAME[] = "query_minmax.bp";
 #define VALUE(rank, step) (step * 1000 + rank + 1)
 
-static const int ldim1 = 5;
-static const int ldim2 = 5;
+#define LDIM1 5
+#define LDIM2 5
+static const int ldim1 = LDIM1;
+static const int ldim2 = LDIM2;
 int gdim1, gdim2;
 int offs1, offs2;
 
 int64_t       m_adios_group;
 
 /* Variables to write */
-float  a2[ldim1*ldim2];
+float  a2[LDIM1*LDIM2];
 
 /* Variables to read */
-float  r2[ldim1*ldim2];
+float  r2[LDIM1*LDIM2];
 
 MPI_Comm    comm = MPI_COMM_SELF; // dummy comm for sequential code
 int rank;
@@ -137,7 +139,6 @@ int main (int argc, char ** argv)
         NSTEPS = i;
     }
     adios_init_noxml (comm);
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 4400);
     err = adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=2");
     if (err) {
         printE ("%s\n", adios_errmsg());

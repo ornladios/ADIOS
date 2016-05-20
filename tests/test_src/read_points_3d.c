@@ -76,9 +76,13 @@ int NSTEPS = 2;  // number of output steps
 static const char FILENAME[] = "read_points_3d.bp";
 #define VALUE(rank, step) (step * 1000 + rank + 1)
 
-static const int ldim1 = 5;
-static const int ldim2 = 5;
-static const int ldim3 = 5;
+#define LDIM1 5
+#define LDIM2 5
+#define LDIM3 5
+
+static const int ldim1 = LDIM1;
+static const int ldim2 = LDIM2;
+static const int ldim3 = LDIM3;
 
 int gdim1, gdim2, gdim3;
 int offs1, offs2, offs3;
@@ -86,10 +90,10 @@ int offs1, offs2, offs3;
 int64_t       m_adios_group;
 
 /* Variables to write */
-float  a3[ldim1*ldim2*ldim3];
+float  a3[LDIM1*LDIM2*LDIM3];
 
 /* Variables to read */
-float  r3[ldim1*ldim2*ldim3];
+float  r3[LDIM1*LDIM2*LDIM3];
 
 MPI_Comm    comm = MPI_COMM_SELF; // dummy comm for sequential code
 int rank;
@@ -105,14 +109,14 @@ void set_gdim()
 
 void set_offsets (int row, int col, int z)
 {
-	offs1 = row*ldim1;
-	offs2 = col*ldim2;
+    offs1 = row*ldim1;
+    offs2 = col*ldim2;
     offs3 = z*ldim3;
 }
 
 void fill_block(int step, int row, int col, int z)
 {
-	int n;
+    int n;
     float v_intpart = 10*step + row*N + col + z*N*N;
     float v;
     int i, j, k, idx;
@@ -139,7 +143,7 @@ void Usage()
 {
     printf("Usage: read_points <N> <nsteps>\n"
             "    <N>:       Number of blocks in each of X and Y direction\n"
-    		"    <nsteps>:  Number of write cycles (to same file)\n");
+            "    <nsteps>:  Number of write cycles (to same file)\n");
 }
 
 void define_vars ();
@@ -218,10 +222,10 @@ void define_vars ()
     adios_define_var (m_adios_group, "offs3", "", adios_integer, 0, 0, 0);
 
     for (i=0; i<N*N*N; i++) {
-    	adios_define_var (m_adios_group, "data", "", adios_real,
-    			"ldim1,ldim2,ldim3",
-				"gdim1,gdim2,gdim3",
-				"offs1,offs2,offs3");
+        adios_define_var (m_adios_group, "data", "", adios_real,
+                "ldim1,ldim2,ldim3",
+                "gdim1,gdim2,gdim3",
+                "offs1,offs2,offs3");
     }
 }
 
@@ -246,7 +250,7 @@ int write_file (int step)
 
     tb = MPI_Wtime();
     for (i=0; i<N; i++) {
-    	for (j=0; j<N; j++) {
+        for (j=0; j<N; j++) {
             for (k=0; k<N; k++) {
                 set_offsets (i, j, k);
                 fill_block (step, i, j, k);
@@ -261,7 +265,7 @@ int write_file (int step)
                 adios_write (fh, "offs3", &offs3);
                 adios_write (fh, "data", a3);
             }
-     	}
+         }
     }
     adios_close (fh);
     te = MPI_Wtime();

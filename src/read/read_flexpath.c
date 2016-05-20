@@ -39,7 +39,7 @@
 #include "public/adios_read_v2.h"
 #include "core/adios_read_hooks.h"
 #include "core/adios_logger.h"
-#include "core/common_read.h"
+#include "core/a2sel.h"
 #include "public/adios_error.h"
 #include "core/flexpath.h"
 
@@ -1649,7 +1649,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	memcpy(counts, fpvar->global_dims, fpvar->ndims*sizeof(uint64_t));
 	fpvar->sel = a2sel_boundingbox(fpvar->ndims, starts, counts);
     } else {
-	fpvar->sel = copy_selection(sel);
+	fpvar->sel = a2sel_copy(sel);
     }
 
     switch(fpvar->sel->type)

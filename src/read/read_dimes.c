@@ -24,7 +24,7 @@
 #include "core/adios_read_hooks.h"
 #include "core/futils.h"
 #include "core/ds_metadata.h"
-#include "core/common_read.h" // common_read_selection_* functions
+#include "core/a2sel.h" // selection functions
 
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
@@ -1348,7 +1348,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
                     }
                     reqsize *= sel->u.bb.count[i];
                 }
-                r->sel = copy_selection (sel);
+                r->sel = a2sel_copy (sel);
                 break;
 
             case ADIOS_SELECTION_POINTS:
@@ -1361,7 +1361,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
                     return err_out_of_bound;
                 }
                 reqsize *= sel->u.points.npoints;
-                r->sel = copy_selection (sel);
+                r->sel = a2sel_copy (sel);
                 break;
 
             case ADIOS_SELECTION_WRITEBLOCK:

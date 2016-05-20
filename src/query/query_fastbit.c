@@ -3380,7 +3380,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
                 }
                 free(queryResult->selections);
                 queryResult->selections = multiSets;
-                queryResult->nselections = (partsSize-1)/2;
+                queryResult->nselections = (partsSize)/2;
                 free(parts);
             }
 

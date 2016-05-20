@@ -70,18 +70,21 @@ int NSTEPS = 1;  // number of output steps
 static const char FILENAME[] = "read_points_2d.bp";
 #define VALUE(rank, step) (step * 1000 + rank + 1)
 
-static const int ldim1 = 5;
-static const int ldim2 = 5;
+#define LDIM1 5
+#define LDIM2 5
+
+static const int ldim1 = LDIM1;
+static const int ldim2 = LDIM2;
 int gdim1, gdim2;
 int offs1, offs2;
 
 int64_t       m_adios_group;
 
 /* Variables to write */
-float  a2[ldim1*ldim2];
+float  a2[LDIM1*LDIM2];
 
 /* Variables to read */
-float  r2[ldim1*ldim2];
+float  r2[LDIM1*LDIM2];
 
 MPI_Comm    comm = MPI_COMM_SELF; // dummy comm for sequential code
 int rank;
@@ -96,13 +99,13 @@ void set_gdim()
 
 void set_offsets (int row, int col)
 {
-	offs1 = row*ldim1;
-	offs2 = col*ldim2;
+    offs1 = row*ldim1;
+    offs2 = col*ldim2;
 }
 
 void fill_block(int step, int row, int col)
 {
-	int n;
+    int n;
     float v_intpart = 10*step + row*N + col;
     float v;
     int i, j, k;
@@ -111,13 +114,13 @@ void fill_block(int step, int row, int col)
     //log ("  Fill up array of %d elements starting from value %f...\n",n,v_start);
     k = 0;
     for (i=0; i<ldim1; i++) {
-    	v = v_intpart + i*0.1;
+        v = v_intpart + i*0.1;
         //log ("      row %d starts from value %f... (element %d)\n",i,v,k);
-    	for (j=0; j<ldim2; j++) {
-    		a2[k] = v;
-    		k++;
-    		v += 0.01;
-    	}
+        for (j=0; j<ldim2; j++) {
+            a2[k] = v;
+            k++;
+            v += 0.01;
+        }
     }
 }
 
@@ -126,7 +129,7 @@ void Usage()
 {
     printf("Usage: read_points <N> <nsteps>\n"
             "    <N>:       Number of blocks in each of X and Y direction\n"
-    		"    <nsteps>:  Number of write cycles (to same file)\n");
+            "    <nsteps>:  Number of write cycles (to same file)\n");
 }
 
 void define_vars ();
@@ -202,10 +205,10 @@ void define_vars ()
     adios_define_var (m_adios_group, "offs2", "", adios_integer, 0, 0, 0);
 
     for (i=0; i<N*N; i++) {
-    	adios_define_var (m_adios_group, "data", "", adios_real,
-    			"ldim1,ldim2",
-				"gdim1,gdim2",
-				"offs1,offs2");
+        adios_define_var (m_adios_group, "data", "", adios_real,
+                "ldim1,ldim2",
+                "gdim1,gdim2",
+                "offs1,offs2");
     }
 }
 
@@ -230,29 +233,29 @@ int write_file (int step)
 
     tb = MPI_Wtime();
     for (i=0; i<N; i++) {
-    	for (j=0; j<N; j++) {
-    		set_offsets (i, j);
-    		fill_block (step, i, j);
-    		adios_write (fh, "gdim1", &gdim1);
-    		adios_write (fh, "gdim2", &gdim2);
-    		adios_write (fh, "ldim1", &ldim1);
-    		adios_write (fh, "ldim2", &ldim2);
-    		adios_write (fh, "offs1", &offs1);
-    		adios_write (fh, "offs2", &offs2);
-    		/*
-    		int k=0, l, m;
-    		for (l=0; l<ldim1; l++) {
-    	        printf ("      a[%d,*] = ",l);
-    	    	for (m=0; m<ldim2; m++) {
-        	        printf ("%2.0f ",a2[k]);
-    	    		k++;
-    	    	}
-    	    	printf ("\n");
-    	    }
-	    	printf ("\n");
-	    	*/
-    		adios_write (fh, "data", a2);
-     	}
+        for (j=0; j<N; j++) {
+            set_offsets (i, j);
+            fill_block (step, i, j);
+            adios_write (fh, "gdim1", &gdim1);
+            adios_write (fh, "gdim2", &gdim2);
+            adios_write (fh, "ldim1", &ldim1);
+            adios_write (fh, "ldim2", &ldim2);
+            adios_write (fh, "offs1", &offs1);
+            adios_write (fh, "offs2", &offs2);
+            /*
+            int k=0, l, m;
+            for (l=0; l<ldim1; l++) {
+                printf ("      a[%d,*] = ",l);
+                for (m=0; m<ldim2; m++) {
+                    printf ("%2.0f ",a2[k]);
+                    k++;
+                }
+                printf ("\n");
+            }
+            printf ("\n");
+            */
+            adios_write (fh, "data", a2);
+         }
     }
     adios_close (fh);
     te = MPI_Wtime();
