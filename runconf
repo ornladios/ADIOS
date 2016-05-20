@@ -68,7 +68,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     WITHFGR=""
     WITHFASTBIT=""
     WITHALACRITY=""
-    unset DATASPACES_DIR
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
         export CXX=pgCC
