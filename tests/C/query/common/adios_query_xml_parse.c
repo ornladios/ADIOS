@@ -265,9 +265,6 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
             continue;
         }
 
-        if (entryIter >= numQuery)
-            break;
-
 		// check if current node is <combine>
 		if ( strcmp(entryNode->value.element.name, "combine") == 0 ) {
 			queryCombineOp = (&(entryNode->value.element.attrs[0]))->value;
@@ -294,6 +291,8 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 			continue;
 		}
 
+        if (entryIter >= numQuery)
+            break;
 
 		// Make sure all *S are NULL for verification
 		varNameS=NULL, opS=NULL, constraintS=NULL;
