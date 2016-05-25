@@ -81,7 +81,9 @@ class AdiosTestCase(ut.TestCase):
         v = self.f['temperature']
         self.assertEqual(v.ndim, 2)
         self.assertEqual(v.dims, (2L, 10L))
+        self.assertEqual(v.shape, (2L, 10L))
         self.assertEqual(v.nsteps, 1)
+        self.assertEqual(v.size, 20L)
 
         val = v.read()
         self.assertEqual(val.dtype, np.dtype('float64'))

@@ -901,6 +901,16 @@ cdef class var(object):
         def __get__(self):
             return self.dims
 
+    property shape:
+        """ The shape of the variable. """
+        def __get__(self):
+            return self.dims
+
+    property size:
+        """ The number of elements in the array. """
+        def __get__(self):
+            return np.prod(self.dims)
+
     property nsteps:
         """ The number of time steps of the variable. """
         def __get__(self):
