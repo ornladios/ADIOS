@@ -820,16 +820,16 @@ cdef class file(object):
 
             if key_ in self.vars.keys():
                 return self.vars.get(key_)
-            elif key_ in self.attrs.keys():
+
+            if key_ in self.attrs.keys():
                 return self.attrs.get(key_)
 
-            #TODO: return group (self, groupname)
             for name in self.vars.keys():
-                if key_ == os.path.dirname(name):
+                if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
                     return group(self, key_)
 
             for name in self.attrs.keys():
-                if key_ == os.path.dirname(name):
+                if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
                     return group(self, key_)
 
         raise KeyError(key_)
