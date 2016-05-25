@@ -1,0 +1,17 @@
+#!/bin/bash
+echo ">>> Working on adios ..."
+python setup.py register 
+python setup.py sdist upload
+echo ">>> Done."
+
+echo ">>> Working on adios_mpi ..."
+mv setup.py setup.py.nompi
+mv setup_mpi.py setup.py
+
+python setup.py register 
+python setup.py sdist upload
+echo ">>> Done."
+
+mv setup.py setup_mpi.py
+mv setup.py.nompi setup.py
+echo ">>> All done."
