@@ -217,7 +217,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
     	export BUILD_FORTRAN=ON
         export CFLAGS="-g -fPIC -O0" 
     	export adios_timers=ON
-    	export INSTALL_PREFIX="/ccs/home/jya/ADIOS/titan.$TARGET"
+    	export INSTALL_PREFIX="/ccs/proj/e2e/qliu/adios.$TARGET"
             
     else 
     
