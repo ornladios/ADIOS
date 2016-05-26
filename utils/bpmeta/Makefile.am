@@ -7,7 +7,7 @@ bin_PROGRAMS = bpmeta
 
 bpmeta_SOURCES = bpmeta.c
 bpmeta_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_INT_CFLAGS)
-bpmeta_LDFLAGS = $(ADIOSLIB_INT_LDFLAGS)
+bpmeta_LDFLAGS = $(ADIOSLIB_INT_LDFLAGS) $(PTHREAD_LIBS)
 bpmeta_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
 bpmeta_LDADD += $(ADIOSLIB_INT_LDADD)
 
