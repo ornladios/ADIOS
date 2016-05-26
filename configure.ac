@@ -94,6 +94,7 @@ AC_PROG_DATASPACES
 AC_PROG_DIMES
 AC_DMALLOC
 AC_LUSTRE
+AC_SIRIUS
 AC_FGR
 AC_GLIB
 AC_DATATAP
@@ -951,6 +952,17 @@ if test -z "${HAVE_LUSTRE_TRUE}"; then
         echo
 else
         echo "  - No LUSTRE"
+fi
+
+if test -z "${HAVE_SIRIUS_TRUE}"; then
+        echo "  - SIRIUS";
+        echo "      - SIRIUS_CFLAGS = $SIRIUS_CFLAGS";
+        echo "      - SIRIUS_CPPFLAGS = $SIRIUS_CPPFLAGS";
+        echo "      - SIRIUS_LDFLAGS = $SIRIUS_LDFLAGS";
+        echo "      - SIRIUS_LIBS = $SIRIUS_LIBS";
+        echo
+else
+        echo "  - No SIRIUS"
 fi
 
 if test -z "${HAVE_FGR_TRUE}"; then

@@ -311,7 +311,7 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
-    BUILD_STAGING=true
+    BUILD_STAGING=false
     #source /opt/modules/default/etc/modules.sh
     TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
     if [ $BUILD_STAGING == "false" ]; then
@@ -345,9 +345,11 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
+        #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
         CFLAGS="-g -fPIC -O0" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
             --enable-dependency-tracking \
-            --with-lustre
+            --with-lustre \
+            --with-sirius=/ccs/proj/e2e/qliu/sirius
             #--with-fgr=/ccs/proj/e2e/qliu/tap \
             #--with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
             #--with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
