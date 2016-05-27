@@ -68,7 +68,7 @@ class AdiosTestCase(ut.TestCase):
         tt = t.reshape((size, NX))
 
         fw = ad.writer(self.temp.path)
-        fw.declare_group('group', method='POSIX1')
+        fw.declare_group('mygroup', method='POSIX1')
 
         fw['/data/0/fields/FieldE/x'] = tt
         fw['/data/0/fields/FieldE/y'] = tt*2

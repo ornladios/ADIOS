@@ -841,7 +841,7 @@ cdef class file(object):
         """ Return string representation. """
         return ("AdiosFile (path=%r, nvars=%r, vars=%r, nattrs=%r, attrs=%r, "
                 "current_step=%r, last_step=%r, file_size=%r)") % \
-                (self.fp.path,
+                (self.fp.path if self.fp != NULL else None,
                  self.nvars,
                  self.vars.keys(),
                  self.nattrs,
@@ -1435,6 +1435,7 @@ cdef class writer(object):
         self.vars = dict()
         self.attrs = dict()
 
+        init_noxml(comm)
     ##def __var_factory__(self, name, value):
     ##    print "var_factory:", name, value
     ##
@@ -1519,6 +1520,9 @@ cdef class writer(object):
         """
         Write variables and attributes to a file and close the writer.
         """
+        if self.gname is None:
+            self.declare_group("group")
+
         fd = open(self.gname, self.fname, self.mode)
 
         extra_vars = dict()
