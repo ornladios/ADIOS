@@ -851,7 +851,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
         --with-mxml=/opt/mxml \
         --with-zlib \
         --with-alacrity=/opt/alacrity \
-        --with-fastbit=/opt/fastbit 
+        --with-fastbit=/opt/fastbit  \
         --with-phdf5=/usr/local
     #    --disable-fortran \
     #        --with-netcdf=/opt/netcdf \

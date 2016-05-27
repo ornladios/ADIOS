@@ -6,6 +6,7 @@
 #include "core/common_read.h"
 #include "core/adios_logger.h"
 #include "core/futils.h"
+#include "core/a2sel.h"
 #include "fastbit_adios.h"
 #include "common_query.h"
 #include <iapi.h>
@@ -522,14 +523,13 @@ static int adios_bmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *bu
   uint64_t bms_start[] = {start};
   uint64_t bms_count[] = {count};
 
-  //ADIOS_SELECTION* bmsSel = common_read_selection_boundingbox(bmsV->ndim, bms_start, bms_count);
-  ADIOS_SELECTION* bmsSel = adios_selection_boundingbox(bmsV->ndim, bms_start, bms_count);
+  ADIOS_SELECTION* bmsSel = a2sel_boundingbox(bmsV->ndim, bms_start, bms_count);
   // idx file has one timestep
   common_read_schedule_read(itn->_idxFile, bmsSel, itn->_bmsVarName, 0, 1, NULL, buf);
   common_read_perform_reads(itn->_idxFile,1);
   common_read_free_varinfo(bmsV);
-  //common_read_selection_delete(bmsSel);
-  adios_selection_delete(bmsSel);
+
+  a2sel_free(bmsSel);
 
   //casestudyLogger_bms_writeout(&startT, 
   casestudyLogger_bms_writeout(&startT, "bmreader_adv visited ");
@@ -627,7 +627,7 @@ void clear_fastbit_internal(ADIOS_QUERY* query)
   
   if (query->hasParent == 0) {
     fastbit_selection_free(s->_handle); 
-    s->_handle == NULL;
+    s->_handle = NULL;
   }   
 
   //s = NULL;
@@ -1520,6 +1520,7 @@ int mEvaluateBBRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int t
   ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;
 
   checkHits(v, q, eleBoxStarts, regionStart, regionCount, eleStarts, eleEnds); 
+  return 0;
 }
 
 
@@ -1920,6 +1921,7 @@ int mEvaluateWithIdxOnBBoxWithBitArrayOnVar(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
  
     casestudyLogger_setPrefix(" summarized evaluation for bb");
     //fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, bitsArrayName);
+    return 0;
 }
 //
 // for index that based on one block 
@@ -2072,6 +2074,7 @@ int evaluateWithIdxOnBBoxWithBitArrayOnVar0(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
  
     casestudyLogger_setPrefix(" summarized evaluation for bb");
     //fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, bitsArrayName);
+    return 0;
 }
 
 
@@ -2453,6 +2456,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     casestudyLogger_setPrefix(" summarized evaluation for bb");
     //fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, bitsArrayName);
   }
+  return 0;
 }
 
 FastBitSelectionHandle createHandle(ADIOS_QUERY* q, const char* registeredArrayName)
@@ -2492,11 +2496,6 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     
     ADIOS_FILE* dataFile = q->file;
 
-    /*
-    // read data from dataFile
-    ADIOS_SELECTION* box = common_read_selection_writeblock(blockIdx);
-    common_read_inq_var_blockinfo(dataFile, v);
-    */
     if (v->blockinfo == NULL) {
       common_read_inq_var_blockinfo(dataFile, v);
     }
@@ -2532,9 +2531,8 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       // no idx for this variable, read from file:
       free(q->dataSlice);
       q->dataSlice = malloc(common_read_type_size(v->type, v->value)*blockSize);
-      
-      //ADIOS_SELECTION* box = common_read_selection_writeblock(blockIdx);   
-      ADIOS_SELECTION* box = adios_selection_writeblock(blockIdx);   
+
+      ADIOS_SELECTION* box = a2sel_writeblock(blockIdx);
       common_read_inq_var_blockinfo(dataFile, v);        
 
       int errorCode = 0;
@@ -2555,8 +2553,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->predicateOp);
 
       setQueryInternal(q, compareOp, dataType, blockSize, blockDataName);
-      //common_read_selection_delete(box);
-      adios_selection_delete(box);
+      a2sel_free(box);
       return;
     }
 
@@ -3168,8 +3165,7 @@ int minmaxtestBlocks(ADIOS_VARINFO *varinfo, ADIOS_SELECTION_POINTS_STRUCT* pts,
       }
 #endif
 
-      ADIOS_SELECTION* sel = adios_selection_points (pts->ndim, counter[i-firstBlock], ptsInBlock);
-      sel->u.points.container_selection = adios_selection_writeblock (i);
+      ADIOS_SELECTION* sel = a2sel_points (pts->ndim, counter[i-firstBlock], ptsInBlock, a2sel_writeblock(i), 1);
       (*containers)[cc++] = *sel; 
   }
 
@@ -3286,8 +3282,7 @@ uint64_t* minmaxtestSlice(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coord
       }
       
       //printf("      [%ld, %ld, %ld] to [%ld. %ld, %ld]\n", currStart[0], currStart[1], currStart[2], currCounter[0], currCounter[1], currCounter[2]);
-      //ADIOS_SELECTION* c = common_read_selection_boundingbox(bbdim, currStart, currCounter);
-      ADIOS_SELECTION* c = adios_selection_boundingbox(bbdim, currStart, currCounter);
+      ADIOS_SELECTION* c = a2sel_boundingbox(bbdim, currStart, currCounter);
       (*containers)[(i-1)/2] = *c;
     }
   }
@@ -3310,9 +3305,7 @@ ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coor
     
     fillUp(var->ndim, spatialCoordinates, i, pointArray, isFortranClient);
   }
-  //ADIOS_SELECTION* result =  common_read_selection_points(var->ndim, retrivalSize, pointArray);
-  ADIOS_SELECTION* result =  adios_selection_points(var->ndim, retrivalSize, pointArray);
-  //free(pointArray); // user has to free this
+  ADIOS_SELECTION* result =  a2sel_points(var->ndim, retrivalSize, pointArray, NULL, 1);
   return result;
 }
 
@@ -3338,9 +3331,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 
 	   fillUp(bb->ndim, spatialCoordinates, i, pointArray, 0); // already fortran coordinates from posToSpace(.. isFortranClient ..)
       }
-      //ADIOS_SELECTION* result =  common_read_selection_points(bb->ndim, retrivalSize, pointArray);    
-      ADIOS_SELECTION* result =  adios_selection_points(bb->ndim, retrivalSize, pointArray);    
-      //free(pointArray); // user has to free this
+      ADIOS_SELECTION* result =  a2sel_points(bb->ndim, retrivalSize, pointArray, NULL, 1);
       return result;
       break;
     }
@@ -3356,9 +3347,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	getCoordinateFromPoints(coordinates[i], points, spatialCoordinates);
 	fillUp(points->ndim, spatialCoordinates, i, pointArray, isFortranClient);
       }
-      //ADIOS_SELECTION* result = common_read_selection_points(points->ndim, retrivalSize, pointArray);	      
-      ADIOS_SELECTION* result = adios_selection_points(points->ndim, retrivalSize, pointArray);	      
-      //free(pointArray); // user has to free this
+      ADIOS_SELECTION* result = a2sel_points(points->ndim, retrivalSize, pointArray, NULL, 1);
       return result;
       //printOneSpatialCoordinate(points->ndim, spatialCoordinates);      
       
@@ -3383,8 +3372,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	   //fillUp(v->ndim, spatialCoordinates, i, pointArray, isFortranClient); 
 	   fillUp(v->ndim, spatialCoordinates, i, pointArray, 0); // already fortran coordinates from posToSpace(.. isFortranClient ..)
       }
-      //ADIOS_SELECTION* result = common_read_selection_points(v->ndim, retrivalSize, pointArray);
-      ADIOS_SELECTION* result = adios_selection_points(v->ndim, retrivalSize, pointArray);
+      ADIOS_SELECTION* result = a2sel_points(v->ndim, retrivalSize, pointArray, NULL, 1);
       //free(pointArray); // user has to free this
       return result;
       break;      
@@ -3475,8 +3463,7 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   q->resultsReadSoFar += retrivalSize;
   
 #ifdef RETURN_ONE_DIM
-  //queryResult->selections = common_read_selection_points(1, retrivalSize, coordinates);
-  queryResult->selections = adios_selection_points(1, retrivalSize, coordinates);
+  queryResult->selections = a2sel_points(1, retrivalSize, coordinates);
 #else // return N-Dim
   if (outputBoundary == 0) {
     if (firstLeaf->sel == NULL) {
@@ -3503,9 +3490,9 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   uint64_t minmaxStart = fastbit_adios_getCurrentTimeMillis();
   int nsets = minmaxtestBlocks(getFirstLeaf(q)->varinfo, &(queryResult->selections[0].u.points),  &multiSets);
   uint64_t minmaxEnd = fastbit_adios_getCurrentTimeMillis();
-  printf("    minmax block took: %ld millisecs = %ld sec", minmaxEnd-minmaxStart, (minmaxEnd-minmaxStart)/1000);
-  free(queryResult->selections->u.points.points);
-  adios_selection_delete(queryResult->selections);
+  //printf("    minmax block took: %ld millisecs = %ld sec", minmaxEnd-minmaxStart, (minmaxEnd-minmaxStart)/1000);
+  //free(queryResult->selections->u.points.points);
+  a2sel_free(queryResult->selections);
   //free(queryResult->selections);
   queryResult->selections = multiSets;
   queryResult->nselections = nsets;
@@ -3538,8 +3525,8 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
 	currPts[j] = pts[j+counter] - offset;
       }
       printf(".... ..... ..... TEMP .... .... QUICK OFFSET .... idx = %d, bundle: %llu offset= %lu, start %llu, end %llu\n", (i-1)/2, bundleSize, offset, currPts[0], currPts[bundleSize-1]);
-      multiSets[(i-1)/2] = *(common_read_selection_points(1, bundleSize, currPts));
-      //multiSets[(i-1)/2] = *(common_read_selection_points(1, bundleSize, pts+counter));
+      multiSets[(i-1)/2] = *(a2sel_points(1, bundleSize, currPts));
+      //multiSets[(i-1)/2] = *(a2sel_points(1, bundleSize, pts+counter));
       counter += bundleSize;
 #else
       uint64_t* currPts = (uint64_t*)calloc(bundleSize*ndim, sizeof(uint64_t));
@@ -3548,8 +3535,8 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
 	    currPts[j*ndim+k] = pts[j*ndim+k+counter] - containers[(i-1)/2].u.bb.start[k];
 	  }
       }
-      //multiSets[(i-1)/2] = *(common_read_selection_points(ndim, bundleSize, pts+counter));
-      multiSets[(i-1)/2] = *(common_read_selection_points(ndim, bundleSize, currPts));
+      //multiSets[(i-1)/2] = *(a2sel_points(ndim, bundleSize, pts+counter));
+      multiSets[(i-1)/2] = *(a2sel_points(ndim, bundleSize, currPts));
       counter += bundleSize * ndim;
 #endif
 
@@ -3565,7 +3552,7 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
     coordinates = NULL;
   }
   */
-  printf(" <-- \n");
+  //printf(" <-- \n");
 #ifdef RETURN_ONE_DIM
   // used directly in return 1-D pts, client should free
 #else
@@ -3611,7 +3598,7 @@ void  adios_query_fastbit_free(ADIOS_QUERY* query)
   free(query->predicateValue);
   free(query->condition);
   
-  //adios_selection_delete(query->_sel);
+  //a2sel_free(query->_sel);
   common_read_free_varinfo(query->varinfo);
 
   // can free _queryInternal only once
@@ -3781,22 +3768,6 @@ void createBox(ADIOS_VARINFO* v, char* dimDef, uint64_t* start, uint64_t* count)
 }
 */
 
-enum ADIOS_PREDICATE_MODE getOp(const char* opStr) 
-{
-  if ((strcmp(opStr, ">=") == 0) || (strcmp(opStr, "GE") == 0)) {
-    return ADIOS_GTEQ;
-  } else if ((strcmp(opStr, "<=") == 0) || (strcmp(opStr, "LE") == 0)) {
-    return ADIOS_LTEQ;
-  } else if ((strcmp(opStr, "<") == 0) || (strcmp(opStr, "LT") == 0)) {
-    return ADIOS_LT;
-  } else if ((strcmp(opStr, ">") == 0) || (strcmp(opStr, "GT") == 0)) {
-    return ADIOS_GT;
-  } else if ((strcmp(opStr, "=") == 0) || (strcmp(opStr, "EQ") == 0)) {
-    return ADIOS_EQ;
-  } else { // if (strcmp(opStr, "!=") == 0) {
-    return ADIOS_NE;
-  }
-}
 
 /*
 ADIOS_QUERY* getQuery(const char* condition, ADIOS_FILE* f) 
@@ -3851,7 +3822,7 @@ ADIOS_QUERY* getQuery(const char* condition, ADIOS_FILE* f)
 
     createBox(v, dimDef, start, count);
 
-    ADIOS_SELECTION* sel =adios_selection_boundingbox (v->ndim, start, count);
+    ADIOS_SELECTION* sel =a2sel_boundingbox (v->ndim, start, count);
     
     common_read_free_varinfo(v);
 
