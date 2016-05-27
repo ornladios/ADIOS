@@ -140,6 +140,7 @@ ADIOS_SELECTION * a2sel_copy (const ADIOS_SELECTION * sel)
             nsel->u.points.container_selection = NULL;
         }
         nsel->u.points.points = (uint64_t *) malloc (nsel->u.points.npoints * nsel->u.points.ndim * 8);
+	nsel->u.points._free_points_on_delete = 1; // junmin
         assert (nsel->u.points.points);
 
         memcpy (nsel->u.points.points, sel->u.points.points, sel->u.points.npoints * sel->u.points.ndim * 8);

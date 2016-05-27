@@ -664,8 +664,10 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   uint64_t count_key[] = {keyV->dims[0]};
   uint64_t count_offset[] = {offsetV->dims[0]};
 
-  ADIOS_SELECTION* keySel = common_read_selection_boundingbox(keyV->ndim, start, count_key);
-  ADIOS_SELECTION* offsetSel = common_read_selection_boundingbox(offsetV->ndim, start, count_offset);
+  //ADIOS_SELECTION* keySel = common_read_selection_boundingbox(keyV->ndim, start, count_key);
+  //ADIOS_SELECTION* offsetSel = common_read_selection_boundingbox(offsetV->ndim, start, count_offset);
+  ADIOS_SELECTION* keySel = adios_selection_boundingbox(keyV->ndim, start, count_key);
+  ADIOS_SELECTION* offsetSel = adios_selection_boundingbox(offsetV->ndim, start, count_offset);
 
   // idx file has one timestep
   common_read_schedule_read(idxFile, keySel, keyVarName, 0, 1, NULL, *keys);
@@ -679,10 +681,14 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   log_debug(" /key/offset data: length=%lld/%lld\n", *nk, *no);
   
   //printData(*bms, bmsV->type, *nb);
-  common_read_selection_delete(keySel);
+  //common_read_selection_delete(keySel);
+  adios_selection_delete(keySel);
+
   common_read_free_varinfo(keyV);
 
-  common_read_selection_delete(offsetSel);
+  //common_read_selection_delete(offsetSel);
+  adios_selection_delete(offsetSel);
+
   common_read_free_varinfo(offsetV);
 
   return 0;
@@ -727,9 +733,14 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   uint64_t count_key[] = {keyV->dims[0]};
   uint64_t count_offset[] = {offsetV->dims[0]};
 
-  ADIOS_SELECTION* bmsSel = common_read_selection_boundingbox(bmsV->ndim, start, count_bms);
-  ADIOS_SELECTION* keySel = common_read_selection_boundingbox(keyV->ndim, start, count_key);
-  ADIOS_SELECTION* offsetSel = common_read_selection_boundingbox(offsetV->ndim, start, count_offset);
+  //ADIOS_SELECTION* bmsSel = common_read_selection_boundingbox(bmsV->ndim, start, count_bms);
+  //ADIOS_SELECTION* keySel = common_read_selection_boundingbox(keyV->ndim, start, count_key);
+  //ADIOS_SELECTION* offsetSel = common_read_selection_boundingbox(offsetV->ndim, start, count_offset);
+
+  ADIOS_SELECTION* bmsSel = adios_selection_boundingbox(bmsV->ndim, start, count_bms);
+  ADIOS_SELECTION* keySel = adios_selection_boundingbox(keyV->ndim, start, count_key);
+  ADIOS_SELECTION* offsetSel = adios_selection_boundingbox(offsetV->ndim, start, count_offset);
+
 
   // idx file has one timestep
   common_read_schedule_read(idxFile, bmsSel, bmsVarName, 0, 1, NULL, *bms);
@@ -745,13 +756,16 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   log_debug(" bms/key/offset data: length=%lld/%lld/%lld\n", *nb, *nk, *no);
   
   //printData(*bms, bmsV->type, *nb);
-  common_read_selection_delete(bmsSel);
+  //common_read_selection_delete(bmsSel);
+  adios_selection_delete(bmsSel);
   common_read_free_varinfo(bmsV);
 
-  common_read_selection_delete(keySel);
+  //common_read_selection_delete(keySel);
+  adios_selection_delete(keySel);
   common_read_free_varinfo(keyV);
 
-  common_read_selection_delete(offsetSel);
+  //common_read_selection_delete(offsetSel);
+  adios_selection_delete(offsetSel);
   common_read_free_varinfo(offsetV);
 
   return 0;
