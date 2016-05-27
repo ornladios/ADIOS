@@ -63,7 +63,7 @@ dnl g/^hardcode_libdir_flag_spec=".*"/s//hardcode_libdir_flag_spec=""/
 dnl g/^hardcode_libdir_flag_spec_ld=".*"/s//hardcode_libdir_flag_spec_ld=""/
 
 AC_SEARCH_LIBS([nanosleep], [rt])
-AC_CHECK_FUNCS([nanosleep strncpy strerror gettimeofday])
+AC_CHECK_FUNCS([nanosleep gettimeofday clock_gettime clock_get_time strncpy strerror])
 
 AC_C_STRINGIZE
 dnl generates HAVE_STRINGIZE

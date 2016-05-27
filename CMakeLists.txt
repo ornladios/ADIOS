@@ -556,8 +556,17 @@ set(FC_FUNC_ FC_GLOBAL_)
 # Define to 1 if you have the <Attributes.h> header file.
 CHECK_INCLUDE_FILES(Attributes.h HAVE_ATTRIBUTES_H)
 
+# Define to 1 if you have the `nanosleep' function.
+CHECK_FUNCTION_EXISTS(nanosleep HAVE_NANOSLEEP)
+
+# Define to 1 if you have the `gettimeofday' function.
+CHECK_FUNCTION_EXISTS(gettimeofday HAVE_GETTIMEOFDAY)
+
 # Define to 1 if you have the `clock_gettime' function.
 CHECK_FUNCTION_EXISTS(clock_gettime HAVE_CLOCK_GETTIME)
+
+# Define to 1 if you have the `clock_get_time' function. On OSX. 
+CHECK_FUNCTION_EXISTS(clock_get_time HAVE_CLOCK_GET_TIME)
 
 # Define if you have CRAY_PMI.
 set(HAVE_CRAY_PMI 0)
@@ -845,9 +854,6 @@ if(FASTBIT)
   endif()
 endif()
 
-# Define to 1 if you have the `gettimeofday' function.
-CHECK_FUNCTION_EXISTS(gettimeofday HAVE_GETTIMEOFDAY)
-
 set(HAVE_MPI 0)
 
 # Define if you have the MPI library.
@@ -942,8 +948,6 @@ if(MXML_LIBS AND HAVE_MXML_H)
 #  set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
 endif()
 
-# Define to 1 if you have the `nanosleep' function.
-CHECK_FUNCTION_EXISTS(nanosleep HAVE_NANOSLEEP)
 
 # Define if you have NETCDF.
 if(NETCDF)
