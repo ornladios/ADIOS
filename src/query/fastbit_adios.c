@@ -3,6 +3,7 @@
 #include <string.h>
 #include "core/common_read.h"
 #include "core/adios_logger.h"
+#include "core/adios_clock.h"
 #include <iapi.h>
 
 #include "fastbit_adios.h"
@@ -106,9 +107,9 @@ extern void casestudyLogger_ends(const char* ref)
 extern void casestudyLogger_getRealtime(struct timespec* spec)
 {
 #ifdef CLOCK_MONOTONIC
-  clock_gettime(CLOCK_MONOTONIC, spec);
+  adios_clock_gettime(CLOCK_MONOTONIC, spec);
 #else
-  clock_gettime(CLOCK_REALTIME, spec);
+  adios_clock_gettime(CLOCK_REALTIME, spec);
 #endif
 }
 
@@ -268,17 +269,7 @@ extern void casestudyLogger_bms_writeout(struct timespec* start,
 //
 long fastbit_adios_getCurrentTimeMillis() 
 {
-  time_t          s;  // Seconds
-  struct timespec spec;
-
-#ifdef CLOCK_MONOTONIC
-  clock_gettime(CLOCK_MONOTONIC, &spec);
-#else
-  clock_gettime(CLOCK_REALTIME, &spec);
-#endif
-  s  = spec.tv_sec;
-  long ms = round(spec.tv_nsec/1.0e6) + s*1000; // Convert nanoseconds to milliseconds
-  return ms;
+  return adios_gettime_ms();
 }
 
 
@@ -664,10 +655,8 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   uint64_t count_key[] = {keyV->dims[0]};
   uint64_t count_offset[] = {offsetV->dims[0]};
 
-  //ADIOS_SELECTION* keySel = common_read_selection_boundingbox(keyV->ndim, start, count_key);
-  //ADIOS_SELECTION* offsetSel = common_read_selection_boundingbox(offsetV->ndim, start, count_offset);
-  ADIOS_SELECTION* keySel = adios_selection_boundingbox(keyV->ndim, start, count_key);
-  ADIOS_SELECTION* offsetSel = adios_selection_boundingbox(offsetV->ndim, start, count_offset);
+  ADIOS_SELECTION* keySel = a2sel_boundingbox(keyV->ndim, start, count_key);
+  ADIOS_SELECTION* offsetSel = a2sel_boundingbox(offsetV->ndim, start, count_offset);
 
   // idx file has one timestep
   common_read_schedule_read(idxFile, keySel, keyVarName, 0, 1, NULL, *keys);
@@ -681,14 +670,10 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   log_debug(" /key/offset data: length=%lld/%lld\n", *nk, *no);
   
   //printData(*bms, bmsV->type, *nb);
-  //common_read_selection_delete(keySel);
-  adios_selection_delete(keySel);
-
+  a2sel_free(keySel);
   common_read_free_varinfo(keyV);
 
-  //common_read_selection_delete(offsetSel);
-  adios_selection_delete(offsetSel);
-
+  a2sel_free(offsetSel);
   common_read_free_varinfo(offsetV);
 
   return 0;

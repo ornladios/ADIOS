@@ -15,15 +15,6 @@ extern "C" {
 #include "public/adios_query.h"
 #include "query_utils.h"
 
-#ifdef __MACH__
-#  include <mach/mach_time.h>
-#  define CLOCK_REALTIME 0
-#  define CLOCK_MONOTONIC 0
-int clock_gettime(int clk_id, struct timespec *t);
-#else
-#  include <time.h>
-#endif
-
 #include <math.h>
 
 /** A simple reader to be used by FastBit for index reconstruction.  In

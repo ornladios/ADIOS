@@ -53,14 +53,6 @@ int list_get_length (read_request * h);
 // This helper routine returns a vector of unique NID's
 int get_nids (MPI_Comm comm, uint32_t * nids);
 
-/**********************************************************
-   Timing
-**********************************************************/
-/* sleep for a bit */
-void adios_nanosleep (int sec, int nanosec);
-/* get current time as double (in seconds) */
-double adios_gettime();
-
 void * bufdup(const void *buf, uint64_t elem_size, uint64_t count);
 
 #endif

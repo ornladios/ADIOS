@@ -26,6 +26,7 @@
 #include "core/common_read.h"
 #include "core/adios_logger.h"
 #include "core/a2sel.h"
+#include "core/adios_clock.h"
 #include "core/adios_selection_util.h"
 
 #include "core/transforms/adios_transforms_transinfo.h"
@@ -332,7 +333,7 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
 static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int last_tidx, float timeout_sec)
 {
     BP_FILE * new_fh;
-    double t1 = adios_gettime();
+    double t1 = adios_gettime_double();
 
     log_debug ("enter get_new_step\n");
     /* First check if the file has been updated with more steps. */
@@ -377,7 +378,7 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
             {
                 stay_in_poll_loop = 1;
             }
-            else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
+            else if (timeout_sec > 0.0 && (adios_gettime_double () - t1 > timeout_sec))
             {
                 log_debug ("Time is out in get_new_step()\n");
                 stay_in_poll_loop = 0;
@@ -1215,6 +1216,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
             /* get ldims for the chunk and then calculate payload size */
             bndim = v->characteristics[wbidx].dims.count;
             bp_get_dimension_characteristics(&(v->characteristics[wbidx]), ldims, gdims, offsets);
+#error  "FIXME: order is Fortran for Fortran files. Need to swap order."
             for (d = 0; d < bndim; d++)
             {
                 nelems *= ldims [d];
@@ -1564,7 +1566,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     BP_FILE * fh;
     int stay_in_poll_loop = 1;
     int file_ok = 0;
-    double t1 = adios_gettime();
+    double t1 = adios_gettime_double();
 
     MPI_Comm_rank (comm, &rank);
     // We need to first check if this is a valid ADIOS-BP file. This is done by
@@ -1605,7 +1607,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
                             (int)(((uint64_t)poll_interval_msec * 1000000L)%1000000000L));
                         stay_in_poll_loop = 1;
                     }
-                    else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
+                    else if (timeout_sec > 0.0 && (adios_gettime_double () - t1 > timeout_sec))
                     {
                         stay_in_poll_loop = 0;
                     }

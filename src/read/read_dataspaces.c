@@ -602,7 +602,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
     int err, i;
     char ds_vname[MAX_DS_NAMELEN];
     char ds_fname[MAX_DS_NAMELEN];
-    double t1 = adios_gettime();
+    double t1 = adios_gettime_double();
     enum STEP_STATUS step_status = STEP_OK;
 
     snprintf(ds_vname, MAX_DS_NAMELEN, "VERSION@%s",fp->path);
@@ -721,7 +721,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
 
         // check if we need to stay in loop 
         if (stay_in_poll_loop) {
-            if (timeout_sec >= 0.0 && (adios_gettime()-t1 > timeout_sec))
+            if (timeout_sec >= 0.0 && (adios_gettime_double()-t1 > timeout_sec))
                 stay_in_poll_loop = 0;
             else
                 adios_nanosleep (poll_interval_msec/1000, 

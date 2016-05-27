@@ -146,6 +146,7 @@ libadios_a_SOURCES = core/adios.c \
                      core/util.c \
                      core/strutil.c \
                      core/a2sel.c \
+                     core/adios_clock.c \
                      core/qhashtbl.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
@@ -191,6 +192,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/util.c \
                      core/strutil.c \
                      core/a2sel.c \
+                     core/adios_clock.c \
                      core/qhashtbl.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
@@ -227,6 +229,7 @@ FortranLibSources = core/adiosf.c \
                      core/util.c \
                      core/strutil.c \
                      core/a2sel.c \
+                     core/adios_clock.c \
                      core/qhashtbl.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
@@ -449,6 +452,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/util.c \
                       core/strutil.c \
                       core/a2sel.c \
+                      core/adios_clock.c \
                       core/qhashtbl.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
@@ -498,6 +502,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/util.c \
                       core/strutil.c \
                       core/a2sel.c \
+                      core/adios_clock.c \
                       core/qhashtbl.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
@@ -572,6 +577,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/util.c \
                       core/strutil.c \
                       core/a2sel.c \
+                      core/adios_clock.c \
                       core/qhashtbl.c \
                       read/read_bp.c 
 
@@ -624,6 +630,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/util.c \
                           core/strutil.c \
                           core/a2sel.c \
+                          core/adios_clock.c \
                           core/qhashtbl.c \
                           read/read_bp.c 
 #if HAVE_DATASPACES
@@ -674,6 +681,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/util.c \
                                     core/strutil.c \
                                     core/a2sel.c \
+                                    core/adios_clock.c \
                                     core/qhashtbl.c \
                                     core/futils.c \
                                     core/adios_transport_hooks.c 
@@ -721,7 +729,7 @@ CXX=$(MPICXX)
 EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
              core/adios_read_hooks.h core/adios_socket.h core/adios_timing.h \
-             core/adios_icee.h core/a2sel.h \
+             core/adios_icee.h core/a2sel.h core/adios_clock.h \
              core/adios_socket.h core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/adios_infocache.h core/futils.h core/globals.h core/ds_metadata.h \

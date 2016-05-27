@@ -163,7 +163,7 @@ static struct adios_dimes_stream_info* lookup_dimes_stream_info(const char* fnam
 static int check_read_status_var(const char* fname, int last_version)
 {
     int stay_in_poll_loop = 1;
-    double t1 = adios_gettime();
+    double t1 = adios_gettime_double();
 
     uint64_t lb[MAX_DS_NDIM], ub[MAX_DS_NDIM], gdims[MAX_DS_NDIM];
     int elemsize, ndim;
@@ -191,7 +191,7 @@ static int check_read_status_var(const char* fname, int last_version)
 
         // check if we need to stay in loop
         if (stay_in_poll_loop) {
-            double elapsed_time = adios_gettime() - t1;
+            double elapsed_time = adios_gettime_double() - t1;
             if (check_read_status_timeout_sec >= 0.0 &&
                 elapsed_time > check_read_status_timeout_sec) {
                 stay_in_poll_loop = 0;
