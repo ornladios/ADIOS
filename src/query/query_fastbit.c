@@ -522,12 +522,14 @@ static int adios_bmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *bu
   uint64_t bms_start[] = {start};
   uint64_t bms_count[] = {count};
 
-  ADIOS_SELECTION* bmsSel = common_read_selection_boundingbox(bmsV->ndim, bms_start, bms_count);
+  //ADIOS_SELECTION* bmsSel = common_read_selection_boundingbox(bmsV->ndim, bms_start, bms_count);
+  ADIOS_SELECTION* bmsSel = adios_selection_boundingbox(bmsV->ndim, bms_start, bms_count);
   // idx file has one timestep
   common_read_schedule_read(itn->_idxFile, bmsSel, itn->_bmsVarName, 0, 1, NULL, buf);
   common_read_perform_reads(itn->_idxFile,1);
   common_read_free_varinfo(bmsV);
-  common_read_selection_delete(bmsSel);
+  //common_read_selection_delete(bmsSel);
+  adios_selection_delete(bmsSel);
 
   //casestudyLogger_bms_writeout(&startT, 
   casestudyLogger_bms_writeout(&startT, "bmreader_adv visited ");
@@ -2531,7 +2533,8 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       free(q->dataSlice);
       q->dataSlice = malloc(common_read_type_size(v->type, v->value)*blockSize);
       
-      ADIOS_SELECTION* box = common_read_selection_writeblock(blockIdx);   
+      //ADIOS_SELECTION* box = common_read_selection_writeblock(blockIdx);   
+      ADIOS_SELECTION* box = adios_selection_writeblock(blockIdx);   
       common_read_inq_var_blockinfo(dataFile, v);        
 
       int errorCode = 0;
@@ -2552,7 +2555,8 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->predicateOp);
 
       setQueryInternal(q, compareOp, dataType, blockSize, blockDataName);
-      common_read_selection_delete(box);
+      //common_read_selection_delete(box);
+      adios_selection_delete(box);
       return;
     }
 
@@ -3282,7 +3286,8 @@ uint64_t* minmaxtestSlice(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coord
       }
       
       //printf("      [%ld, %ld, %ld] to [%ld. %ld, %ld]\n", currStart[0], currStart[1], currStart[2], currCounter[0], currCounter[1], currCounter[2]);
-      ADIOS_SELECTION* c = common_read_selection_boundingbox(bbdim, currStart, currCounter);
+      //ADIOS_SELECTION* c = common_read_selection_boundingbox(bbdim, currStart, currCounter);
+      ADIOS_SELECTION* c = adios_selection_boundingbox(bbdim, currStart, currCounter);
       (*containers)[(i-1)/2] = *c;
     }
   }
@@ -3305,7 +3310,8 @@ ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coor
     
     fillUp(var->ndim, spatialCoordinates, i, pointArray, isFortranClient);
   }
-  ADIOS_SELECTION* result =  common_read_selection_points(var->ndim, retrivalSize, pointArray);
+  //ADIOS_SELECTION* result =  common_read_selection_points(var->ndim, retrivalSize, pointArray);
+  ADIOS_SELECTION* result =  adios_selection_points(var->ndim, retrivalSize, pointArray);
   //free(pointArray); // user has to free this
   return result;
 }
@@ -3332,7 +3338,8 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 
 	   fillUp(bb->ndim, spatialCoordinates, i, pointArray, 0); // already fortran coordinates from posToSpace(.. isFortranClient ..)
       }
-      ADIOS_SELECTION* result =  common_read_selection_points(bb->ndim, retrivalSize, pointArray);    
+      //ADIOS_SELECTION* result =  common_read_selection_points(bb->ndim, retrivalSize, pointArray);    
+      ADIOS_SELECTION* result =  adios_selection_points(bb->ndim, retrivalSize, pointArray);    
       //free(pointArray); // user has to free this
       return result;
       break;
@@ -3349,7 +3356,8 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	getCoordinateFromPoints(coordinates[i], points, spatialCoordinates);
 	fillUp(points->ndim, spatialCoordinates, i, pointArray, isFortranClient);
       }
-      ADIOS_SELECTION* result = common_read_selection_points(points->ndim, retrivalSize, pointArray);	      
+      //ADIOS_SELECTION* result = common_read_selection_points(points->ndim, retrivalSize, pointArray);	      
+      ADIOS_SELECTION* result = adios_selection_points(points->ndim, retrivalSize, pointArray);	      
       //free(pointArray); // user has to free this
       return result;
       //printOneSpatialCoordinate(points->ndim, spatialCoordinates);      
@@ -3375,7 +3383,8 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	   //fillUp(v->ndim, spatialCoordinates, i, pointArray, isFortranClient); 
 	   fillUp(v->ndim, spatialCoordinates, i, pointArray, 0); // already fortran coordinates from posToSpace(.. isFortranClient ..)
       }
-      ADIOS_SELECTION* result = common_read_selection_points(v->ndim, retrivalSize, pointArray);
+      //ADIOS_SELECTION* result = common_read_selection_points(v->ndim, retrivalSize, pointArray);
+      ADIOS_SELECTION* result = adios_selection_points(v->ndim, retrivalSize, pointArray);
       //free(pointArray); // user has to free this
       return result;
       break;      
@@ -3466,7 +3475,8 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   q->resultsReadSoFar += retrivalSize;
   
 #ifdef RETURN_ONE_DIM
-  queryResult->selections = common_read_selection_points(1, retrivalSize, coordinates);
+  //queryResult->selections = common_read_selection_points(1, retrivalSize, coordinates);
+  queryResult->selections = adios_selection_points(1, retrivalSize, coordinates);
 #else // return N-Dim
   if (outputBoundary == 0) {
     if (firstLeaf->sel == NULL) {
@@ -3494,7 +3504,9 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   int nsets = minmaxtestBlocks(getFirstLeaf(q)->varinfo, &(queryResult->selections[0].u.points),  &multiSets);
   uint64_t minmaxEnd = fastbit_adios_getCurrentTimeMillis();
   printf("    minmax block took: %ld millisecs = %ld sec", minmaxEnd-minmaxStart, (minmaxEnd-minmaxStart)/1000);
-  free(queryResult->selections);
+  free(queryResult->selections->u.points.points);
+  adios_selection_delete(queryResult->selections);
+  //free(queryResult->selections);
   queryResult->selections = multiSets;
   queryResult->nselections = nsets;
 
