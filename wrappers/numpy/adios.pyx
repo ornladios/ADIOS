@@ -826,11 +826,13 @@ cdef class file(object):
                 return self.attrs.get(key_)
 
             for name in self.vars.keys():
-                if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
+                #if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
+                if name.startswith(key_) or name.startswith('/'+key_):
                     return group(self, key_)
 
             for name in self.attrs.keys():
-                if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
+                #if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
+                if name.startswith(key_) or name.startswith('/'+key_):
                     return group(self, key_)
 
         raise KeyError(key_)

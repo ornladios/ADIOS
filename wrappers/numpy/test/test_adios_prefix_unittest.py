@@ -118,7 +118,8 @@ class AdiosTestCase(ut.TestCase):
         self.assertEqual(v.attrs['unit'].value, 'C')
 
     def test_adios_group(self):
-        self.assertRaises(KeyError, self.f.__getitem__, Slicee()['/subgroup'])
+        # No error anymore (as of May 27, 2016)
+        #self.assertRaises(KeyError, self.f.__getitem__, Slicee()['/subgroup'])
 
         g = self.f['/subgroup/subsubgroup']
         self.assertEqual(g.vars.keys(), ['othervar'])
