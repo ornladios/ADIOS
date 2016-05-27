@@ -8,6 +8,7 @@
 #include "adios_query_hooks.h"
 #include "public/adios_error.h"
 #include "core/common_read.h"
+#include "core/a2sel.h"
 #include "core/adios_logger.h"
 #include "query_utils.h"
 static struct adios_query_hooks_struct * query_hooks = 0;
