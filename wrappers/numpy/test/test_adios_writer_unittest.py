@@ -119,5 +119,13 @@ class AdiosTestCase(ut.TestCase):
         self.assertTrue((f['val1'][:] == val1).all())
         self.assertTrue((f['val2'][:] == val2).all())
 
+    def test_writer_default_group(self):
+        self.temp = TempFile()
+        fw = ad.writer(self.temp.path)
+        fw.close()
+
+        f = ad.file(self.temp.path)
+        f.close()
+
 if __name__ == '__main__':
     ut.main()

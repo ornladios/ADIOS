@@ -821,16 +821,18 @@ cdef class file(object):
 
             if key_ in self.vars.keys():
                 return self.vars.get(key_)
-            elif key_ in self.attrs.keys():
+
+            if key_ in self.attrs.keys():
                 return self.attrs.get(key_)
 
-            #TODO: return group (self, groupname)
             for name in self.vars.keys():
-                if key_ == os.path.dirname(name):
+                #if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
+                if name.startswith(key_) or name.startswith('/'+key_):
                     return group(self, key_)
 
             for name in self.attrs.keys():
-                if key_ == os.path.dirname(name):
+                #if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
+                if name.startswith(key_) or name.startswith('/'+key_):
                     return group(self, key_)
 
         raise KeyError(key_)
@@ -840,7 +842,7 @@ cdef class file(object):
         """ Return string representation. """
         return ("AdiosFile (path=%r, nvars=%r, vars=%r, nattrs=%r, attrs=%r, "
                 "current_step=%r, last_step=%r, file_size=%r)") % \
-                (self.fp.path,
+                (self.fp.path if self.fp != NULL else None,
                  self.nvars,
                  self.vars.keys(),
                  self.nattrs,
@@ -900,6 +902,16 @@ cdef class var(object):
         """ The shape of the variable. """
         def __get__(self):
             return self.dims
+
+    property shape:
+        """ The shape of the variable. """
+        def __get__(self):
+            return self.dims
+
+    property size:
+        """ The number of elements in the array. """
+        def __get__(self):
+            return np.prod(self.dims)
 
     property nsteps:
         """ The number of time steps of the variable. """
@@ -1424,6 +1436,7 @@ cdef class writer(object):
         self.vars = dict()
         self.attrs = dict()
 
+        init_noxml(comm)
     ##def __var_factory__(self, name, value):
     ##    print "var_factory:", name, value
     ##
@@ -1508,6 +1521,9 @@ cdef class writer(object):
         """
         Write variables and attributes to a file and close the writer.
         """
+        if self.gname is None:
+            self.declare_group("group")
+
         fd = open(self.gname, self.fname, self.mode)
 
         extra_vars = dict()
