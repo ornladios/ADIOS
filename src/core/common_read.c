@@ -1011,29 +1011,39 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
     ADIOS_TRANSINFO *ti;
 
     int retval = err_no_error;
-    // If the blockinfo is already loaded, don't load it again
-    if (!varinfo->blockinfo) {
-        // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
-        // If we're in logical view mode, and if this variable is transformed, use the transformed blockinfo
-        if (internals->data_view == LOGICAL_DATA_VIEW) {
-            ti = common_read_inq_transinfo(fp, varinfo);
-            if (ti && ti->transform_type != adios_transform_none) {
-                retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
-                if (retval != err_no_error)
-                    return retval;
-
-                patch_varinfo_with_transform_blockinfo(varinfo, ti);
-            }
-            common_read_free_transinfo(varinfo, ti);
-        }
-
-        // If we haven't set the blockinfo yet, either we're in physical view
-        // mode, or the variable isn't transformed. Either way, use the normal
-        // blockinfo
-        if (!varinfo->blockinfo) {
-            retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
+    // If the blockinfo has already been created
+    if (varinfo->blockinfo) {
+        if (fp->is_streaming) {
+            // free it and start again - because it may change in streaming
+            common_read_free_blockinfo (&varinfo->blockinfo, varinfo->sum_nblocks);
+            varinfo->blockinfo = NULL;
+        } else {
+            // return without modification
+            return retval;
         }
     }
+
+    // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
+    // If we're in logical view mode, and if this variable is transformed, use the transformed blockinfo
+    if (internals->data_view == LOGICAL_DATA_VIEW) {
+        ti = common_read_inq_transinfo(fp, varinfo);
+        if (ti && ti->transform_type != adios_transform_none) {
+            retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
+            if (retval != err_no_error)
+                return retval;
+
+            patch_varinfo_with_transform_blockinfo(varinfo, ti);
+        }
+        common_read_free_transinfo(varinfo, ti);
+    }
+
+    // If we haven't set the blockinfo yet, either we're in physical view
+    // mode, or the variable isn't transformed. Either way, use the normal
+    // blockinfo
+    if (!varinfo->blockinfo) {
+        retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
+    }
+
     return retval;
 }
 
