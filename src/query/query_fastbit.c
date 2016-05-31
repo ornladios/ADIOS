@@ -3276,7 +3276,8 @@ uint64_t* minmaxtestSlice(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coord
       currCounter[0] = nLayers;
       currStart[0] = nLayers * (coordinates[checkpoints[i]]/(gap));
 
-      for (int k=1; k<bbdim; k++) {
+      int k;
+      for (k=1; k<bbdim; k++) {
 	currCounter[k] = bbcount[k];
 	currStart[k] = 0;
       }
