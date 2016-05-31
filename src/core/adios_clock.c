@@ -53,13 +53,13 @@ unsigned long adios_gettime_ms()
     return ms;
 }
 
-#ifdef HAVE_CLOCK_GETTIME
+#if HAVE_CLOCK_GETTIME
     int adios_clock_gettime(clockid_t clk_id, struct timespec *ts)
     {
         return clock_gettime(clk_id, ts);
     }
 #else
-#   ifdef HAVE_CLOCK_GET_TIME
+#   if HAVE_CLOCK_GET_TIME
 #       ifdef __MACH__
 #          include <mach/clock.h>
 #          include <mach/mach.h>

@@ -152,6 +152,7 @@ if(BUILD_WRITE)
                      core/util.c 
                      core/strutil.c 
                      core/a2sel.c 
+                     core/adios_clock.c 
                      core/qhashtbl.c 
                      read/read_bp.c 
                      read/read_bp_staged.c 
@@ -195,6 +196,7 @@ if(BUILD_WRITE)
                      core/util.c 
                      core/strutil.c 
                      core/a2sel.c 
+                     core/adios_clock.c 
                      core/qhashtbl.c 
                      read/read_bp.c 
                      read/read_bp_staged.c 
@@ -229,6 +231,7 @@ if(BUILD_WRITE)
                        core/util.c 
                        core/strutil.c 
                        core/a2sel.c 
+                       core/adios_clock.c 
                        core/qhashtbl.c 
                        read/read_bp.c 
                        read/read_bp_staged.c 
@@ -502,6 +505,7 @@ set(libadiosread_a_SOURCES core/adios_bp_v1.c
                       core/util.c 
                       core/strutil.c 
                       core/a2sel.c
+                      core/adios_clock.c 
                       core/qhashtbl.c 
                       read/read_bp.c 
                       read/read_bp_staged.c 
@@ -569,6 +573,7 @@ if(BUILD_FORTRAN)
                       core/util.c 
                       core/strutil.c 
                       core/a2sel.c
+                      core/adios_clock.c 
                       core/qhashtbl.c 
                       read/read_bp.c 
                       read/read_bp_staged.c 
@@ -692,6 +697,7 @@ set(libadiosread_nompi_a_SOURCES core/mpidummy.c
                       core/util.c 
                       core/strutil.c 
                       core/a2sel.c
+                      core/adios_clock.c 
                       core/qhashtbl.c 
                       read/read_bp.c)
 
@@ -754,6 +760,7 @@ if(BUILD_FORTRAN)
                           core/util.c 
                           core/strutil.c 
                           core/a2sel.c
+                          core/adios_clock.c 
                           core/qhashtbl.c 
                           read/read_bp.c)
     if(HAVE_DATASPACES)
@@ -818,6 +825,7 @@ set(libadios_internal_nompi_a_SOURCES core/mpidummy.c
                                     core/util.c 
                                     core/strutil.c 
                                     core/a2sel.c
+                                    core/adios_clock.c 
                                     core/qhashtbl.c 
                                     core/futils.c 
                                     core/adios_transport_hooks.c)
