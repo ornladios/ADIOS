@@ -78,7 +78,8 @@ int main (int argc, char ** argv)
     }
 
     free (data);
-
+    adios_selection_delete (sel);
+    adios_free_varinfo (v);
     adios_read_close (f);
     MPI_Barrier (comm);
     adios_read_finalize_method (method);
