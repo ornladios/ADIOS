@@ -518,8 +518,28 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     # Mac #
     #######
     echo "Configure on Mac"
-    # Installed Homebrew, gfortran and OpenMPI 1.6.5 in /usr/local
-    # But should work with default mpicc and gcc, using --disable-fortran
+    # Installed Homebrew, gcc/gfortran 5.3.0 and OpenMPI 1.10.2 in /usr/local
+    # But should work with default mpicc and gcc, using --disable-fortran or with Homebrew gfortran
+    #
+    USE_GCC5=false
+    if [ $USE_GCC5 == "true" ]; then
+        # If want to use gcc/gfortran 5.3.0
+        export OMPI_CC=/usr/local/bin/gcc-5
+        export OMPI_CXX=/usr/local/bin/g++-5
+        export OMPI_FC=/usr/local/bin/gfortran
+        export ALACRITY_DIR="/opt/alacrity/gcc5"
+        unset FASTBIT_DIR
+        echo "Configure using gcc-5"
+    else
+        # If want to use clang C/C++ and gfortran 5.3.0
+        unset OMPI_CC
+        unset OMPI_CXX
+        unset OMPI_FC
+        export FASTBIT_DIR="/opt/fastbit"
+        export ALACRITY_DIR="/opt/alacrity/clang"
+        echo "Configure using clang"
+    fi
+    # The rest is common for all
     export CC=/usr/local/bin/mpicc
     export FC=/usr/local/bin/mpif90
     export CXX=/usr/local/bin/mpicxx
@@ -537,8 +557,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     unset SEQ_NC_LIBS
     unset PAR_NC_DIR
     unset PAR_NC_LIBS
-    export FASTBIT_DIR="/opt/fastbit"
-    export ALACRITY_DIR="/opt/alacrity"
+
 
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
 
