@@ -663,6 +663,9 @@ libadiosreadf_nompi_v1_a_SOURCES = $(FortranReadSeqLibSource) core/adiosf_read_v
 libadiosreadf_nompi_v1_a_CPPFLAGS = $(libadiosreadf_nompi_a_CPPFLAGS)
 libadiosreadf_nompi_v1_a_CFLAGS = $(libadiosreadf_nompi_a_CFLAGS)
 
+libadiosreadf_nompi_a_SOURCES += core/adiosf_defs_mod.f90 \
+                   	         core/adiosf_read_mod.f90 \
+                        	 query/adios_query_mod.f90
 endif  #BUILD_FORTRAN
 
 noinst_LIBRARIES = libadios_internal_nompi.a
