@@ -179,8 +179,14 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
              q->varName, adios_get_last_errmsg());
     return -1;
       }
+
       if (q->varinfo != NULL) {
-    common_read_free_varinfo(q->varinfo);
+          if (q->varinfo->blockinfo != NULL) {
+              // if varinfo had blockinfo for any reason, let's have it in
+              // the new step's varinfo too
+              common_read_inq_var_blockinfo(q->file, v);
+          }
+          common_read_free_varinfo(q->varinfo);
       }
       q->varinfo = v;
 
