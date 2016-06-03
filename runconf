@@ -822,21 +822,44 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     # Mac #
     #######
     echo "Configure on Mac"
-    # Originally installed MacPorts and GCC4.4 and OpenMPI 1.4.2 ports 
-    #    export CC=/opt/local/bin/gcc-mp-4.4
-    #    export FC=/opt/local/bin/gfortran-mp-4.4
-    #    export CXX=/opt/local/bin/g++-mp-4.4
-    #    export MPICC=/opt/local/bin/openmpicc
-    #    export MPIFC=/opt/local/bin/openmpif90
-    #    export MPICXX=/opt/local/bin/openmpicxx
-    #
-    # But should work with default mpicc and gcc, using --disable-fortran
-    # Homebrew installation of openmpi and gfortran (from gcc 4.9.2, 5.3.0)
     #   but using Apple's default gcc compiler
-    #export CC=/usr/local/bin/gcc-5
-    export CC=/usr/bin/gcc
-    export FC=/usr/local/bin/gfortran
-    export CXX=/usr/local/bin/g++-5
+#    export OMPI_CC=$CC
+#    export OMPI_FC=$FC
+#    export OMPI_CXX=$CXX
+    # Installed Homebrew, gcc/gfortran 5.3.0 and OpenMPI 1.10.2 in /usr/local
+    # But should work with default mpicc and gcc, using --disable-fortran or with Homebrew gfortran
+    #
+    USE_GCC5=false
+    if [ $USE_GCC5 == "true" ]; then
+        # If want to use gcc/gfortran 5.3.0
+        export CC=/usr/local/bin/gcc-5
+        export CXX=/usr/local/bin/g++-5
+        export FC=/usr/local/bin/gfortran
+        export OMPI_CC=/usr/local/bin/gcc-5
+        export OMPI_CXX=/usr/local/bin/g++-5
+        export OMPI_FC=/usr/local/bin/gfortran
+        export WITHALACRITY="--with-alacrity=/opt/alacrity/gcc5"
+        export WITHFASTBIT="--without-fastbit"
+        # ALACRITY, FASTBIT are C++ lib so we need to link with the actual libstdc++
+        # if the automatically added -lstdc++ does not work
+        #export LIBS="/usr/local/Cellar/gcc/5.3.0/lib/gcc/5/libstdc++.dylib" 
+        echo "Configure using gcc-5"
+    else
+        # If want to use clang C/C++ and gfortran 5.3.0
+        export CC=/usr/bin/gcc
+        export CXX=/usr/bin/g++
+        export FC=/usr/local/bin/gfortran
+        unset OMPI_CC
+        unset OMPI_CXX
+        unset OMPI_FC
+        export WITHALACRITY="--with-alacrity=/opt/alacrity/clang"
+        export WITHFASTBIT="--with-fastbit=/opt/fastbit"
+        echo "Configure using clang"
+        # Problem: test/test_src/selection_api.F90 link will fail because
+        #   gfortran is used which finds the gcc-5 libstdc++ library instead of the system libstdc++
+        # Manual fix: use mpif90 for that build command, or use "gfortran ... -Wl,-flat_namespace" command
+    fi
+    # The rest is common for all
     export MPICC=/usr/local/bin/mpicc
     export MPIFC=/usr/local/bin/mpif90
     export MPICXX=/usr/local/bin/mpicxx
@@ -844,14 +867,11 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     export CFLAGS="-g -O0 -DO_LARGEFILE=0 -fno-common -Wall" 
     export CXXFLAGS="-g -O0"
     export FCFLAGS="-g -O0"
-    # ALACRITY, FASTBIT are C++ lib so we need to link with libstdc++
-    #export LIBS="-lstdc++"
-    export LIBS="/usr/local/Cellar/gcc/5.3.0/lib/gcc/5/libstdc++.dylib" 
     ${SRCDIR}/configure --prefix=/opt/adios \
         --with-mxml=/opt/mxml \
         --with-zlib \
-        --with-alacrity=/opt/alacrity \
-        --with-fastbit=/opt/fastbit  \
+        ${WITHALACRITY} \
+        ${WITHFASTBIT} \
         --with-phdf5=/usr/local
     #    --disable-fortran \
     #        --with-netcdf=/opt/netcdf \
