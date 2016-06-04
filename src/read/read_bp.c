@@ -1215,8 +1215,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
             uint64_t nelems = 1;
             /* get ldims for the chunk and then calculate payload size */
             bndim = v->characteristics[wbidx].dims.count;
-            bp_get_dimension_characteristics(&(v->characteristics[wbidx]), ldims, gdims, offsets);
-#warning  "FIXME: order is Fortran for Fortran files. Need to swap order."
+            bp_get_dimension_characteristics_notime(&(v->characteristics[wbidx]), ldims, gdims, offsets, is_fortran_file (fh));
             for (d = 0; d < bndim; d++)
             {
                 nelems *= ldims [d];
