@@ -92,6 +92,7 @@ static uint64_t adios_query_calc_position (int ndim, uint64_t * dims, uint64_t *
  */
 static void adios_query_copy_points_to_bb (
                 ADIOS_SELECTION_POINTS_STRUCT * pointsel,
+                uint64_t *wboffs,
                 char * pointvalues,
                 int elemsize,
                 ADIOS_SELECTION * bb,
@@ -140,7 +141,7 @@ static void adios_query_copy_points_to_bb (
         falls_outside = 0;
         coord_idx = n*ndim;
         for (d=0; d < ndim; d++) {
-            coord = pointsel->points[coord_idx];
+            coord = pointsel->points[coord_idx]+wboffs[d];
             if (!contained)
             {
                 // check if point is in the box in the first place
@@ -557,7 +558,20 @@ int common_query_read_boundingbox (
         }
         else // ADIOS_SELECTION_POINTS
         {
-            adios_query_copy_points_to_bb(&(selections[n].u.points), d, elemsize, bb, data);
+            uint64_t * wboffs = calloc (bb->u.bb.ndim, sizeof(uint64_t));
+            if (selections[n].u.points.container_selection &&
+                    selections[n].u.points.container_selection->type == ADIOS_SELECTION_WRITEBLOCK)
+            {
+                int i;
+                int blockidx = selections[n].u.points.container_selection->u.block.index;
+                for (i = 0; i < timestep-1; i++)
+                    blockidx += vinfo->nblocks[i];
+
+                for (i = 0; i < selections[n].u.points.ndim; ++i) {
+                    wboffs[i] = vinfo->blockinfo[blockidx].start[i];
+                }
+            }
+            adios_query_copy_points_to_bb(&(selections[n].u.points), wboffs, d, elemsize, bb, data);
         }
 
         free (d);
