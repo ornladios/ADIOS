@@ -251,7 +251,7 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
 	    }
 
             char * labels = (char*)
-                              malloc ( (max_label_len+1) * timer_count * sizeof (char) );
+                              calloc ( (max_label_len+1) * timer_count, sizeof (char) );
 
 	    for (i = 0; i < g->prev_timing_obj->user_count; i++)
 	    {
