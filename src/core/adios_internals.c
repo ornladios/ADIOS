@@ -1580,6 +1580,12 @@ void adios_common_free_groupstruct (struct adios_group_struct * g)
     if (g->group_by)         free (g->group_by);
     if (g->group_comm)       free (g->group_comm);
     if (g->time_index_name)  free (g->time_index_name);
+    while (g->methods)
+    {
+        struct adios_method_list_struct * m = g->methods->next;
+        free (g->methods);
+        g->methods = m;
+    }
 
     adios_common_delete_vardefs (g);
     adios_common_delete_attrdefs (g);
