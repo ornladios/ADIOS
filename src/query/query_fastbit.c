@@ -3487,6 +3487,10 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
       queryResult->npoints = 0;
   }
 
+  if (getFirstLeaf(q)->varinfo->blockinfo == NULL) {
+    common_read_inq_var_blockinfo(getFirstLeaf(q)->file, getFirstLeaf(q)->varinfo);
+  }
+
   ADIOS_SELECTION* multiSets = NULL;
   uint64_t minmaxStart = fastbit_adios_getCurrentTimeMillis();
   int nsets = minmaxtestBlocks(getFirstLeaf(q)->varinfo, &(queryResult->selections[0].u.points),  &multiSets);
@@ -3827,7 +3831,7 @@ ADIOS_QUERY* getQuery(const char* condition, ADIOS_FILE* f)
     
     common_read_free_varinfo(v);
 
-    ADIOS_QUERY* q = adios_query_create(f, varName, sel, getOp(opStr), valueStr);
+    ADIOS_QUERY* q = adios_query_create(f, varName, sel, adios_query_getOp(opStr), valueStr);
 
 
     free(valueStr);free(opStr);free(varStr);free(varName);free(str);
