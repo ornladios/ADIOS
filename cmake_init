@@ -44,7 +44,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export INSTALL_PREFIX="/ccs/home/jya/ADIOS/sith.$TARGET"
     export APLOD_DIR="/ccs/proj/e2e/ncsu/sith.gnu"
     export ISOBAR_DIR="/ccs/proj/e2e/ncsu/sith.gnu"
-    export ALACRITY_DIR
+    export ALACRITY_DIR="/ccs/proj/e2e/pnorbert/ALACRITY-ADIOS/synced/build.sith/build.gnu" 
     export NCSU_TIMER_DIR
     if [ "$TARGET" == "pgi" ]; then
         module load hdf5/1.8.10
@@ -66,7 +66,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
-        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
+        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
     elif [ "$TARGET" == "gnu" ]; then
         module load hdf5/1.8.10
         export SEQ_HDF5_DIR=$HDF5_DIR
@@ -86,7 +86,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 #        module unload netcdf/4.1.3_par
 #        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
-        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
+        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
     elif [ "$TARGET" == "intel" ]; then
         module load hdf5/1.8.10
         export SEQ_HDF5_DIR=$HDF5_DIR
