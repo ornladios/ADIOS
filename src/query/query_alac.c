@@ -557,6 +557,96 @@ void reconstituteElementsUint64T(const ALMetadata *meta, bin_id_t start_bin, bin
 	}
 }
 
+void reconstituteElementsUint32T(const ALMetadata *meta, bin_id_t start_bin, bin_id_t end_bin,
+		                         char *start_bin_input, char *start_bin_output) {
+
+	const ALBinLayout * const bl = &meta->binLayout;
+	int insigbytes = alacrity_util_insigBytesCeil(meta);
+	int insigbits = (meta->elementSize << 3) - meta->significantBits;
+
+	uint32_t reconst_elem;
+	uint32_t high_mask;
+	uint32_t *next_output = (uint32_t*)start_bin_output;
+	char *next_input = (char*)start_bin_input;
+
+	// First reconstitute the values // Iterate through the bins backwards
+	bin_id_t bin = start_bin;
+	for (; bin < end_bin; bin++) {
+		const bin_offset_t off_start = bl->binStartOffsets[bin];
+		const bin_offset_t off_end = bl->binStartOffsets[bin + 1];
+
+		high_mask = ((uint32_t)bl->binValues[bin]) << insigbits;
+		// Iterate through the elements backwards
+		bin_offset_t off = off_start;
+		for (; off < off_end; off++) {
+			GET_BUFFER_ELEMENT(reconst_elem, next_input, insigbytes);
+			reconst_elem |= high_mask;
+			*next_output++ = reconst_elem;
+			next_input += insigbytes;
+		}
+	}
+}
+
+void reconstituteElementsUint16T(const ALMetadata *meta, bin_id_t start_bin, bin_id_t end_bin,
+		                         char *start_bin_input, char *start_bin_output) {
+
+	const ALBinLayout * const bl = &meta->binLayout;
+	int insigbytes = alacrity_util_insigBytesCeil(meta);
+	int insigbits = (meta->elementSize << 3) - meta->significantBits;
+
+	uint16_t reconst_elem;
+	uint16_t high_mask;
+	uint16_t *next_output = (uint16_t*)start_bin_output;
+	char *next_input = (char*)start_bin_input;
+
+	// First reconstitute the values // Iterate through the bins backwards
+	bin_id_t bin = start_bin;
+	for (; bin < end_bin; bin++) {
+		const bin_offset_t off_start = bl->binStartOffsets[bin];
+		const bin_offset_t off_end = bl->binStartOffsets[bin + 1];
+
+		high_mask = ((uint16_t)bl->binValues[bin]) << insigbits;
+		// Iterate through the elements backwards
+		bin_offset_t off = off_start;
+		for (; off < off_end; off++) {
+			GET_BUFFER_ELEMENT(reconst_elem, next_input, insigbytes);
+			reconst_elem |= high_mask;
+			*next_output++ = reconst_elem;
+			next_input += insigbytes;
+		}
+	}
+}
+
+void reconstituteElementsUint8T(const ALMetadata *meta, bin_id_t start_bin, bin_id_t end_bin,
+		                         char *start_bin_input, char *start_bin_output) {
+
+	const ALBinLayout * const bl = &meta->binLayout;
+	int insigbytes = alacrity_util_insigBytesCeil(meta);
+	int insigbits = (meta->elementSize << 3) - meta->significantBits;
+
+	uint8_t reconst_elem;
+	uint8_t high_mask;
+	uint8_t *next_output = (uint8_t*)start_bin_output;
+	char *next_input = (char*)start_bin_input;
+
+	// First reconstitute the values // Iterate through the bins backwards
+	bin_id_t bin = start_bin;
+	for (; bin < end_bin; bin++) {
+		const bin_offset_t off_start = bl->binStartOffsets[bin];
+		const bin_offset_t off_end = bl->binStartOffsets[bin + 1];
+
+		high_mask = ((uint8_t)bl->binValues[bin]) << insigbits;
+		// Iterate through the elements backwards
+		bin_offset_t off = off_start;
+		for (; off < off_end; off++) {
+			GET_BUFFER_ELEMENT(reconst_elem, next_input, insigbytes);
+			reconst_elem |= high_mask;
+			*next_output++ = reconst_elem;
+			next_input += insigbytes;
+		}
+	}
+}
+
 /*
  * reassemble the low-order byte & bin header value to the original value
  * for lower-order bins ( [start_bin , end_bin) )
@@ -569,13 +659,13 @@ void reconstituteData2(const ALMetadata *meta, bin_id_t start_bin, bin_id_t end_
 		reconstituteElementsUint64T( meta, start_bin, end_bin, start_bin_input, start_bin_output);
 		break;
 	case sizeof(uint32_t):
-		 //TODO
+		reconstituteElementsUint32T( meta, start_bin, end_bin, start_bin_input, start_bin_output);
 		break;
 	case sizeof(uint16_t):
-		//TODO
+		reconstituteElementsUint16T( meta, start_bin, end_bin, start_bin_input, start_bin_output);
 		break;
 	case sizeof(uint8_t):
-		//TODO:
+		reconstituteElementsUint8T( meta, start_bin, end_bin, start_bin_input, start_bin_output);
 		break;
 	default:
 		eprintf("Unsupported element size %d in %s\n", (int)meta->elementSize, __FUNCTION__);
