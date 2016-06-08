@@ -979,7 +979,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export FC=gfortran
 
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    ${SRCDIR}/configure --prefix=/opt/adios/1.9 \
+    ${SRCDIR}/configure --prefix=/opt/adios/1.10 \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --with-mxml=/opt/mxml \
@@ -989,9 +989,9 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-isobar=/opt/isobar \
         --with-flexpath=/opt/chaos \
         --with-fastbit=/opt/fastbit \
-        --with-hdf5=/opt/hdf5-1.8.12 \
-        --with-phdf5=/opt/hdf5-1.8.12-parallel \
-        --with-netcdf=/opt/netcdf-4.3.0 \
+        --with-hdf5=/opt/hdf5-1.8.17 \
+        --with-phdf5=/opt/hdf5-1.8.17-parallel \
+        --with-netcdf=/opt/netcdf-4.4.0 \
         --enable-timers \
         --disable-timer-events
 
