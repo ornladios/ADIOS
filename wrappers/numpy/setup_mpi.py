@@ -130,7 +130,7 @@ AUTHOR_EMAIL = 'choij@ornl.gov'
 URL = 'http://www.olcf.ornl.gov/center-projects/adios/'
 
 import re
-module_file = open("src/__init__.py").read()
+module_file = open("src_mpi/__init__.py").read()
 metadata = dict(re.findall("__([a-z]+)__\s*=\s*'([^']+)'", module_file))
 VERSION = metadata['version']
 
