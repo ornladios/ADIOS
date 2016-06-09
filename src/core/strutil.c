@@ -155,7 +155,7 @@ void a2s_tokenize_dimensions (const char * str, char *** tokens, int * count)
         *tokens = (char **) malloc (sizeof (char **) * *count);
         for (i = 0; i < *count; i++)
         {
-            (*tokens) [i] = strdup (dims[i]);
+            (*tokens) [i] = dims[i];
         }
     }
 

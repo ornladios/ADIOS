@@ -74,7 +74,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         export FC=pgf90
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
         WITHFGR="--with-fgr=/ccs/proj/e2e/qliu/tap" 
-        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/pnorbert/ALACRITY-ADIOS/synced/build.sith/build.gnu" 
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/pgi"
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.4.7"
         #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.pgi"
         #DATASPACES_DIR="/ccs/home/hbui/usr/software/dataspaces-dev"
@@ -85,13 +85,15 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         #export CFLAGS="$CFLAGS -gdwarf-3" 
         #export FCFLAGS="$FCFLAGS -gdwarf-3" 
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
-        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/pnorbert/ALACRITY-ADIOS/synced/build.sith/build.gnu" 
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/gnu"
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
         #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.gnu"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/intel"
+        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
@@ -482,13 +484,8 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
       module unload netcdf
       module unload netcdf-hdf5parallel
       module unload hdf5-parallel
-      module unload PrgEnv-gnu
-      module unload PrgEnv-pgi
-      module unload PrgEnv-intel
-      module unload PrgEnv-cray
       module unload papi
       module unload pmi
-      module load PrgEnv-$TARGET
       if [ "$TARGET" == "pgi" ]; then
           # NSSI needs -pgcpplibs flag 
           export LDFLAGS="-pgcpplibs" 
@@ -530,19 +527,20 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       module unload netcdf
       module unload netcdf-hdf5parallel
       module unload hdf5-parallel
-      module unload PrgEnv-gnu
-      module unload PrgEnv-pgi
-      module unload PrgEnv-intel
-      module unload PrgEnv-cray
-      module unload papi
-      module unload pmi
-      module load PrgEnv-$TARGET
-      module swap cray-libsci
       module swap craype-interlagos craype-istanbul
-      module load dataspaces/1.4.0
-      unset FLEXPATH
+      module load dataspaces/1.6.0
+      module load fastbit
+      WITHFASTBIT=""
+      WITHALACRITY=""
       if [ "$TARGET" == "pgi" ]; then
-          # NSSI needs -pgcpplibs flag 
+          export CC=pgcc
+          export FC=pgf90
+          export CXX=pgc++
+          export MPICC=cc
+          export MPIFC=ftn
+          export MPICXX=CC
+          # FASTBIT, ALACRITY need -pgcpplibs flag 
+          WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/xk6/pgi"
           export LDFLAGS="-pgcpplibs" 
           unset EXTRA_LIBS 
       elif [ "$TARGET" == "gnu" ]; then
@@ -552,27 +550,24 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           export MPICC=cc
           export MPIFC=ftn
           export MPICXX=CC
-          # NSSI needs libstdc++
-          unset LDFLAGS 
-          export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
+          # FASTBIT, ALACRITY needs libstdc++
+          # PROBLEM: there is libstdc++.so and libtool uses that in any case leading to link error 
+          #WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/xk6/gnu"
+          #WITHFASTBIT="--with-fastbit=${FASTBIT_DIR}"
+          #export LDFLAGS="-static -static-libstdc++"
+          #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
           export FLEXPATH="--with-flexpath=/ccs/proj/e2e/chaos/titan/gnu"
           #module swap gcc gcc/4.4.4
       elif [ "$TARGET" == "cray" ]; then
           export EXTRA_CFLAGS="-h gnu"
+          WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/xk6/cray"
       else
           unset LDFLAGS 
           unset EXTRA_LIBS 
           unset EXTRA_CFLAGS 
       fi
-      #module load szip
-      #module load xt-papi
-      module load mxml
-      module load pmi
-      module load rca
-      # use the two lines below for openmpi
-      #export CC=mpicc
-      #export FC=mpif90
-      CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" LDFLAGS="$CRAY_RCA_POST_LINK_OPTS" \
+      module load mxml/2.9
+      CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" LDFLAGS="$LDFLAGS $CRAY_RCA_POST_LINK_OPTS" \
       ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
@@ -581,6 +576,8 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           --with-dataspaces=$DATASPACES_DIR \
           --with-dimes=$DATASPACES_DIR \
           $FLEXPATH \
+          $WITHALACRITY \
+          $WITHFASTBIT \
           --without-infiniband 
 #            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr \
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET \
