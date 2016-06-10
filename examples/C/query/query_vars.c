@@ -19,12 +19,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include "adios.h"       /* includes dummy MPI */
 #include "adios_query.h" /* includes the read API */
 
 const char filename[] = "vars.bp";
 
-void print_points (ADIOS_SELECTION *hits, double *P, double *V, double *T)
+void print_points (ADIOS_SELECTION *hits, uint64_t *wboffs, double *P, double *V, double *T)
 {
     int n;
     int Npoints = hits->u.points.npoints;
@@ -35,7 +36,8 @@ void print_points (ADIOS_SELECTION *hits, double *P, double *V, double *T)
     printf ("----------------------------------------------\n");
     for (n=0; n<Npoints; n++) {
         printf ("  %3d      %4" PRIu64 "    %4" PRIu64 "      %g   %g   %g\n",
-                n, points[2*n],points[2*n+1],P[n],V[n],T[n]);
+                n, points[2*n]+wboffs[0],points[2*n+1]+wboffs[1],
+                P[n],V[n],T[n]);
     }
     printf ("\n");
 }
@@ -56,7 +58,7 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method)
     printf("\n====== querying with one bound box for all variables =======\n");
     uint64_t start[] = {0,0};
     uint64_t count[] = {5,6};
-
+    int i;
     ADIOS_SELECTION* box = adios_selection_boundingbox(2, start, count);
     ADIOS_QUERY *q1, *q2, *q3, *q4, *q;
     q1 = adios_query_create(f, box, "P", ADIOS_GT, "80.0");
@@ -67,6 +69,9 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method)
     printf("File : %s\n",filename);
     printf("Query: %s\n",q->condition);
     adios_query_set_method (q, method);
+    ADIOS_VARINFO *vP = adios_inq_var (f, "P");
+    adios_inq_var_blockinfo(f, vP);
+
 
     if (q!= NULL) {
         int timestep = 0;
@@ -88,12 +93,30 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method)
 
             if (result->selections->type == ADIOS_SELECTION_POINTS)
             {
-                // we have one selection which contains the points
-                ADIOS_SELECTION* hits = result->selections;
-                printf("Number of hits returned in batch %d = %lld \n",nBatches,
-                        hits->u.points.npoints);
+                // we have selection(s) and each one contains the points
+                printf("Number of hits returned in batch %d = %lld points in %d containers\n",
+                        nBatches, result->npoints, result->nselections);
 
-                if (hits->u.points.npoints > 0) {
+                for (i=0; i < result->nselections; i++)
+                {
+                    ADIOS_SELECTION* hits = &(result->selections[i]);
+                    const ADIOS_SELECTION_POINTS_STRUCT * pts = &(hits->u.points);
+                    uint64_t * wboffs = calloc (pts->ndim, sizeof(uint64_t));
+                    if (pts->container_selection &&
+                            pts->container_selection->type == ADIOS_SELECTION_WRITEBLOCK)
+                    {
+                        int i;
+                        int blockidx = pts->container_selection->u.block.index;
+                        // calculate actual block index if multiple timesteps are available
+                        for (i = 0; i < timestep-1; i++)
+                            blockidx += vP->nblocks[i];
+                        // now record the offset of this block in global space
+                        // point coordinates are relative to block
+                        for (i = 0; i < pts->ndim; ++i) {
+                            wboffs[i] = vP->blockinfo[blockidx].start[i];
+                        }
+                    }
+
                     /* Read the data of those points */
                     double *P = (double *) malloc (sizeof(double)*hits->u.points.npoints);
                     double *V = (double *) malloc (sizeof(double)*hits->u.points.npoints);
@@ -103,24 +126,20 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method)
                     adios_schedule_read (f, hits, "T", timestep, 1, T);
                     adios_perform_reads (f, 1);
 
-                    print_points (hits, P, V, T);
+                    print_points (hits, wboffs, P, V, T);
                     free (P);
                     free (V);
                     free (T);
-                }
+                    free (wboffs);
 
-                /* free resources used in case of point based queries */
-                free(hits->u.points.points);
+                }
             }
             else if (result->selections->type == ADIOS_SELECTION_WRITEBLOCK)
             {
                 // we have multiple selections, each one is a writeblock
                 printf("Number of blocks returned in batch %d = %d \n",nBatches,
                         result->nselections);
-                ADIOS_VARINFO *vP = adios_inq_var (f, "P");
-                adios_inq_var_blockinfo(f, vP);
 
-                int i;
                 for (i=0; i < result->nselections; i++)
                 {
                     uint64_t nelems = 1;
@@ -145,10 +164,16 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method)
                 }
             }
 
+            /* free resources used only in this batch */
+            for (i=0; i < result->nselections; i++) {
+                adios_selection_delete (&(result->selections[i]));
+            }
+
             if (result->status == ADIOS_QUERY_NO_MORE_RESULTS) {
+                free (result);
                 break;
             }
-            free (result->selections);
+
             free (result);
             nBatches++;
         }
@@ -161,24 +186,70 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method)
     adios_query_free(q4);
     adios_query_free(q);
     adios_selection_delete(box);
+    adios_free_varinfo(vP);
+}
+
+void printUsage(char *prgname)
+{
+    printf ("Usage: %s [fastbit|alacrity]\n"
+           "  Choose the query method to use.\n"
+           "  For ALACRITY, you need to build write_vars with and ADIOS which has ALACRITY transformation.\n"
+           "  For FastBit, you need to run 'adios_index_fastbit vars.bp' to generate the index 'vars.idx'.\n"
+           ,prgname);
 }
 
 int main (int argc, char ** argv) 
 {
     ADIOS_FILE * f;
     MPI_Comm    comm_dummy = 0;  /* MPI_Comm is defined through adios.h/adios_read.h */
-    enum ADIOS_QUERY_METHOD method;
+    enum ADIOS_QUERY_METHOD query_method;
 
     adios_read_init_method(ADIOS_READ_METHOD_BP,0,"");
-    if (adios_query_is_method_available(ADIOS_QUERY_METHOD_ALACRITY)) {
-        method = ADIOS_QUERY_METHOD_ALACRITY;
-        printf ("Set query method to ALACRITY\n");
-    } else if (adios_query_is_method_available(ADIOS_QUERY_METHOD_FASTBIT)) {
-        method = ADIOS_QUERY_METHOD_FASTBIT;
-        printf ("Set query method to FASTBIT\n");
+    if (!adios_query_is_method_available(ADIOS_QUERY_METHOD_ALACRITY) &&
+        !adios_query_is_method_available(ADIOS_QUERY_METHOD_FASTBIT))
+    {
+        printf ("This query test on tabular data is only supported by accurate "
+                "point-based query methods like FASTBIT and ALACRITY. "
+                "No such method is available in this ADIOS build.\n");
+        return 1;
+    }
+
+    if (argc > 1) {
+        if (!strncasecmp (argv[1], "alacrity", 8)) {
+            if (adios_query_is_method_available(ADIOS_QUERY_METHOD_ALACRITY)) {
+                query_method = ADIOS_QUERY_METHOD_ALACRITY;
+                printf ("Set query method to ALACRITY\n");
+            } else {
+                printf ("ERROR: The ALACRITY method is not available in this ADIOS build.\n"
+                        "Try FASTBIT but first run 'adios_index_fastbit table.bp'\n");
+                return 1;
+            }
+        } else if (!strncasecmp (argv[1], "fastbit", 7)) {
+            if (adios_query_is_method_available(ADIOS_QUERY_METHOD_FASTBIT)) {
+                query_method = ADIOS_QUERY_METHOD_FASTBIT;
+                printf ("Set query method to FASTBIT\n");
+            } else {
+                printf ("ERROR: The FASTBIT method is not available in this ADIOS build.\n"
+                        "Try ALACRITY but first run the write_table code with alacrity transformation!\n");
+                return 1;
+            }
+        } else if (!strncasecmp (argv[1], "minmax", 7)) {
+            if (adios_query_is_method_available(ADIOS_QUERY_METHOD_MINMAX)) {
+                query_method = ADIOS_QUERY_METHOD_MINMAX;
+                printf ("Set query method to MINMAX\n");
+            } else {
+                printf ("ERROR: The MINMAX method is not available in this ADIOS build.\n"
+                        "Try ALACRITY or FASTBIT query methods\n");
+                return 1;
+            }
+        } else {
+            printUsage(argv[0]);
+            return 1;
+        }
     } else {
-        method = ADIOS_QUERY_METHOD_UNKNOWN;
-        printf ("Let the query engine select the query method\n");
+        query_method = ADIOS_QUERY_METHOD_UNKNOWN;
+        //printUsage(argv[0]);
+        //return 1;
     }
 
     f = adios_read_open_file (filename, ADIOS_READ_METHOD_BP, comm_dummy);
@@ -187,7 +258,7 @@ int main (int argc, char ** argv)
         return 1;
     }
 
-    query_OneBoundBoxForAllVars(f, method);
+    query_OneBoundBoxForAllVars(f, query_method);
     //testNoBoxOnSelection(f);
     // testDefaultBoundBox(f);
     //testMultiBoundBox(f);
