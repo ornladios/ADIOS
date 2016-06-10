@@ -1356,7 +1356,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
                 readbuf = (void *) malloc (nelems);
             }
 
-            log_warn ("Allocated read buffer size = %d bytes (%d elements)\n", max_buffersize, max_buffersize/size_of_type);
+            log_debug ("Allocated read buffer size = %d bytes (%d elements)\n", max_buffersize, max_buffersize/size_of_type);
 
             // we read maximum 'maxreadn' elements at once
             uint64_t maxreadn = max_buffersize/size_of_type;
@@ -1488,7 +1488,7 @@ static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
     }
 
     te = MPI_Wtime();
-    log_warn ("Point selection reading: number of points = %" PRIu64
+    log_info ("Point selection reading: number of points = %" PRIu64
             ", total container elements = %" PRIu64
             ", number of reads = %d"
             ", elements read from file = %" PRIu64

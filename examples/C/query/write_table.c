@@ -28,6 +28,7 @@
 #include <string.h>
 #include "adios.h"
 #include "adios_types.h"
+#include "adios_query.h" // to ask about availability of ALACRITY
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -98,7 +99,11 @@ int main (int argc, char ** argv)
 	adios_select_method (g, "POSIX", "", "");
 
 	sprintf (dimstr, "%d,%d", NX, NY);
-	adios_define_var (g, "A" ,"", adios_integer, dimstr, dimstr, "0,0");
+	int64_t varA = adios_define_var (g, "A" ,"", adios_integer, dimstr, dimstr, "0,0");
+    if (adios_query_is_method_available (ADIOS_QUERY_METHOD_ALACRITY)) {
+        adios_set_transform (varA, "alacrity");
+        printf ("Turned on ALACRITY transformation for table A");
+    }
 	sprintf (dimstr, "%d,%d", n_of_elements, Elements_length);
 	adios_define_var (g, "Elements" ,"", adios_byte, dimstr, dimstr, "0,0");
 	sprintf (dimstr, "%d,%d", NY, Columns_length);
