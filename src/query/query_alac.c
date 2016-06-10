@@ -1561,7 +1561,7 @@ decodeTotal += dt;
 				bin_id_t bin;
 
 
-				if ( ndim == 3 && Corder == 1) {
+/*				if ( ndim == 3 && Corder == 1) {
 
 						uint64_t * destboundary = (uint64_t *) malloc(sizeof(uint64_t)*ndim);
 						destboundary[0]  = destcount[0] * destcount[1]* destcount[2]; destboundary[1] = destcount [1]* destcount[2]; destboundary[2] = destcount[2];
@@ -1620,7 +1620,7 @@ double pgC= dclock();
 					}
 					free(destboundary);
 					free(srcboundary);
-				} else {
+				} else {*/
 								// Now compress each bin in turn
 								for ( bin = innerlowBin; bin < innerHiBin; bin++) {
 									binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
@@ -1640,7 +1640,7 @@ decodeTotal += dclock() - decodeStart;
 									inputCurPtr += binCompressedLen;
 								}
 
-				}
+			//	}
 
 
 
