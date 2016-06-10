@@ -2215,11 +2215,12 @@ void adios_query_alac_build_results(
 	switch (outputBoundry->type) {
 	case ADIOS_SELECTION_BOUNDINGBOX: {
 		ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundry->u.bb);
+		ADIOS_SELECTION *box_copy = a2sel_boundingbox(bb->ndim, bb->start, bb->count);
 
 #ifdef ALACRITY_EVAL_1D_POINTS
-		adiosQueryResult->selections = adios_query_build_offsets_boundingbox(b, retrieval_size, outputBoundry, Corder);
+		adiosQueryResult->selections = adios_query_build_offsets_boundingbox(b, retrieval_size, box_copy, Corder);
 #else
-		adiosQueryResult->selections = adios_query_build_results_boundingbox(b, retrieval_size, outputBoundry, Corder);
+		adiosQueryResult->selections = adios_query_build_results_boundingbox(b, retrieval_size, box_copy, Corder);
 #endif
         adiosQueryResult ->nselections = 1 ;
         adiosQueryResult -> npoints = retrieval_size ;
@@ -2393,15 +2394,22 @@ int adios_query_alac_free_one_node(ADIOS_QUERY* query){
 }
 
 int adios_query_alac_free(ADIOS_QUERY* query) {
-
-	// free the tree in a bottom-to-up manner
+    /*
+       Do not free the tree in a bottom-to-up manner
+       because every query piece is supposed to be freed
+       by the user one by one
+    */
+    if (query == NULL)
+        return 0;
+    adios_query_alac_free_one_node (query);
+    /*
 	if (query->left == NULL && query->right == NULL) {
 		return adios_query_alac_free_one_node(query);
 	}else if  (query->right){
 		return adios_query_alac_free(query->right);
 	}else if (query->left) {
 		return adios_query_alac_free(query->left);
-	}
+	}*/
 
 	return 1;
 }
