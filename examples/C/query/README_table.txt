@@ -8,7 +8,7 @@ i.e.  "column 1 of A is 0" AND "column 2 < 96"
 =================================
 
 $ ./write_table
-$ bpls -l table.bp -d A -n 7 -f "%4d "
+$ bpls -l table.bp -d A -n 7 -f "%3g "
   integer  A         {10, 7} = -1 / 201 / 18.9714 / 40.7168 
     (0,0)       0    0   97   15    8    0    7 
     (1,0)       1    0   96   16    5   -1    7 
@@ -40,7 +40,7 @@ $ bpls -l table.bp -d -S Elements Columns
     (6, 0)    "Position Z"
 
 
-2. If ADIOS was built with FastBit, create the index file (optional)
+2.a If ADIOS was built with FastBit, create the index file (optional)
 ====================================================================
 
 $ adios_index_fastbit table.bp
@@ -53,11 +53,17 @@ $ du -sh  table.*
 4.0K	table.bp
 8.0K	table.idx
 
+2.b If ADIOS was built with Alacrity, the variable A will be indexed inside the table.bp
+=========================================================================================
+
 
 3. Evaluate the query
 =====================
 
-$ ./query_table 
+$ ./query_table fastbit
+or
+$ ./query_table alacrity
+
 File : table.bp
 Variable A has 10 rows and 7 columns
 

@@ -37,7 +37,7 @@ void read_rows (ADIOS_FILE *f, ADIOS_SELECTION *hits, int ncols)
     uint64_t *points = hits->u.points.points;
 
     /* Just read all data at once here, assuming it fits in memory */
-    int32_t *data = (int32_t*) malloc (Npoints * ncols * sizeof(int32_t));
+    float *data = (float*) malloc (Npoints * ncols * sizeof(float));
 
     /* We use one bounding box selection of a single row repeatedly, 
        modifying the offset based on the actual point's row number.
@@ -68,7 +68,7 @@ void read_rows (ADIOS_FILE *f, ADIOS_SELECTION *hits, int ncols)
     printf ("\n----------------------------------------------------------------------------\n");
     for (n=0; n<Npoints; n++) {
         for (i=0; i<ncols; i++) {
-            printf ("%5d      ", data[n*ncols+i]);
+            printf ("%5g      ", data[n*ncols+i]);
         }
         printf ("\n");
     }
@@ -81,7 +81,7 @@ void read_rows (ADIOS_FILE *f, ADIOS_SELECTION *hits, int ncols)
     free (Columns);
 }
 
-void print_points (ADIOS_SELECTION *hits, int *KE, uint64_t *wboffs)
+void print_points (ADIOS_SELECTION *hits, float *KE, uint64_t *wboffs)
 {
     int n;
     int Npoints = hits->u.points.npoints;
@@ -91,7 +91,7 @@ void print_points (ADIOS_SELECTION *hits, int *KE, uint64_t *wboffs)
     printf ("\nHit           i       j    Kinetic E\n");
     printf ("----------------------------------------------\n");
     for (n=0; n<Npoints; n++) {
-        printf ("  %3d      %4" PRIu64 "    %4" PRIu64 "      %d\n",
+        printf ("  %3d      %4" PRIu64 "    %4" PRIu64 "      %g\n",
                 n, points[2*n]+wboffs[0],points[2*n+1]+wboffs[1],KE[n]);
     }
     printf ("\n");
@@ -145,35 +145,32 @@ void query_columns(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method, ADIOS_VARINFO 
             {
                 ADIOS_SELECTION* hits = &(result->selections[n]);
                 const ADIOS_SELECTION_POINTS_STRUCT * pts = &(hits->u.points);
-
-                if (pts->npoints > 0) {
-                    uint64_t * wboffs = calloc (pts->ndim, sizeof(uint64_t));
-                    if (pts->container_selection &&
+                uint64_t * wboffs = calloc (pts->ndim, sizeof(uint64_t));
+                if (pts->container_selection &&
                         pts->container_selection->type == ADIOS_SELECTION_WRITEBLOCK)
-                    {
-                        int i;
-                        int blockidx = pts->container_selection->u.block.index;
-                        // calculate actual block index if multiple timesteps are available
-                        for (i = 0; i < timestep-1; i++)
-                            blockidx += vi->nblocks[i];
-                        // now record the offset of this block in global space
-                        // point coordinates are relative to block
-                        for (i = 0; i < pts->ndim; ++i) {
-                            wboffs[i] = vi->blockinfo[blockidx].start[i];
-                        }
+                {
+                    int i;
+                    int blockidx = pts->container_selection->u.block.index;
+                    // calculate actual block index if multiple timesteps are available
+                    for (i = 0; i < timestep-1; i++)
+                        blockidx += vi->nblocks[i];
+                    // now record the offset of this block in global space
+                    // point coordinates are relative to block
+                    for (i = 0; i < pts->ndim; ++i) {
+                        wboffs[i] = vi->blockinfo[blockidx].start[i];
                     }
-
-                    /* Read the data of those points */
-                    int *KE = (int *) malloc (sizeof(double)*pts->npoints);
-                    adios_schedule_read (f, hits, "A", timestep, 1, KE);
-                    adios_perform_reads (f, 1);
-
-                    print_points (hits, KE, wboffs);
-                    free (KE);
-                    free (wboffs);
-
-                    read_rows (f, hits, ncols);
                 }
+
+                /* Read the data of those points */
+                float *KE = (float *) malloc (sizeof(double)*pts->npoints);
+                adios_schedule_read (f, hits, "A", timestep, 1, KE);
+                adios_perform_reads (f, 1);
+
+                print_points (hits, KE, wboffs);
+                free (KE);
+                free (wboffs);
+
+                read_rows (f, hits, ncols);
             } 
 
             /* free resources used only in this batch */
