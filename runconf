@@ -982,6 +982,8 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     ${SRCDIR}/configure --prefix=/opt/adios/1.10 \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
+        --enable-timers \
+        --disable-timer-events \
         --with-mxml=/opt/mxml \
         --with-zlib \
         --with-bzip2 \
@@ -992,9 +994,6 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-hdf5=/opt/hdf5-1.8.17 \
         --with-phdf5=/opt/hdf5-1.8.17-parallel \
         --with-netcdf=/opt/netcdf-4.4.0 \
-        --enable-timers \
-        --disable-timer-events
-
 
 
 else

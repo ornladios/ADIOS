@@ -85,6 +85,18 @@ if test -z "${HAVE_MXML_FALSE}" -a -z "${BUILD_WRITE_TRUE}"; then
     dnl AM_CONDITIONAL([BUILD_WRITE], false)
 fi
 
+
+# Make sure we find Python2
+m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
+                  [python2 python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python])
+AM_PATH_PYTHON([2.0])
+AS_VERSION_COMPARE([${PYTHON_VERSION}], [3.0], [HAVE_PYTHON2=yes], [HAVE_PYTHON2=no], [HAVE_PYTHON2=no])
+if test "x${HAVE_PYTHON2}" == "xno"; then 
+    AC_MSG_ERROR([ADIOS requires python 2.x installed.])
+fi
+dnl Set PYTHON_EXECUTABLE to have the same variable as with CMake
+AC_SUBST(PYTHON_EXECUTABLE,${PYTHON})
+
 dnl AC_PROG_GENGETOPT
 AC_PAMI
 AC_DCMF
@@ -795,6 +807,7 @@ AC_CONFIG_FILES([Makefile
                  utils/skel/lib/skel_have_adios_timing.py
                  utils/adios_lint/Makefile
                  utils/gpp/Makefile
+                 utils/gpp/gpp.py
                  utils/bpdump/Makefile
                  utils/bp2h5/Makefile
                  utils/bp2ncd/Makefile

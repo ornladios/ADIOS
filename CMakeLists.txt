@@ -33,6 +33,20 @@ set(libdir ${exec_prefix}/lib)
 set(includedir ${prefix}/include)
 set(sysconfdir ${prefix}/etc)
 
+set(Python_ADDITIONAL_VERSIONS 2.7 2.6 2.5 2.4 2.3 2.2 2.1 2.0)
+find_package(PythonInterp 2.0)
+#message(STATUS "PYTHON_EXECUTABLE = ${PYTHON_EXECUTABLE}")
+#message(STATUS "PYTHONINTERP_FOUND = ${PYTHONINTERP_FOUND}")
+#message(STATUS "PYTHON_VERSION_STRING = ${PYTHON_VERSION_STRING}")
+#message(STATUS "PYTHON_VERSION_MAJOR = ${PYTHON_VERSION_MAJOR}")
+if (NOT PYTHONINTERP_FOUND OR ${PYTHON_VERSION_MAJOR} GREATER 2)
+    message(FATAL_ERROR "Python 2.x is required to build ADIOS.")
+else()
+    message(STATUS "Python ${PYTHON_VERSION_STRING} will be used in building ADIOS")
+endif()
+
+
+
 if(DEFINED ENV{MACRODEFFLAG})
   set(MACRODEFFLAG $ENV{MACRODEFFLAG})
 else()

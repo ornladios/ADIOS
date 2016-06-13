@@ -9,7 +9,7 @@ add_executable(global_array_time_write_C global_array_time_write_C.c)
 target_link_libraries(global_array_time_write_C adios ${ADIOSLIB_LDADD})
 add_custom_command(
         OUTPUT gwrite_restart.ch
-        COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py
+        COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py
         ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array_time/global_array_time_C.xml
         DEPENDS global_array_C.xml
         )
@@ -38,7 +38,7 @@ if(BUILD_FORTRAN)
     target_link_libraries(global_array_time_write_F adiosf ${ADIOSLIB_LDADD})
     add_custom_command(
         OUTPUT gwrite_restart.fh
-        COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py
+        COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py
         ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array_time/global_array_time_F.xml
         DEPENDS global_array_F.xml
         )

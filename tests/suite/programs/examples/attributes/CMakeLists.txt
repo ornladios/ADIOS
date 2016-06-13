@@ -15,7 +15,7 @@ endif()
 target_link_libraries(attributes_write_C adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
 add_custom_command(
 	OUTPUT gwrite_temperature.ch
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/attributes/attributes_C.xml
+	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/attributes/attributes_C.xml
 	DEPENDS attributes_C.xml
 	)
 
