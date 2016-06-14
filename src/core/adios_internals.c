@@ -1590,8 +1590,10 @@ void adios_common_free_groupstruct (struct adios_group_struct * g)
     adios_common_delete_vardefs (g);
     adios_common_delete_attrdefs (g);
     g->hashtbl_vars->free(g->hashtbl_vars);
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     adios_timing_destroy(g->timing_obj);
     adios_timing_destroy(g->prev_timing_obj);
+#endif
     free (g);
 }
 
