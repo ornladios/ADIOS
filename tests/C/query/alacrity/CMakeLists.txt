@@ -5,7 +5,7 @@ include_directories(${PROJECT_BINARY_DIR}/src/public)
 include_directories(${MXML_INCLUDE_DIR})
 link_directories(${PROJECT_BINARY_DIR}/src)
 link_directories(${CMAKE_CURRENT_BINARY_DIR}../common)
-link_directories(${MXML_INCLUDE_DIR}/../lib)
+link_directories(${MXML_LIB_DIR})
 
 
 add_executable(adios_read_block adios_read_block.c)

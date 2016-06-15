@@ -4,7 +4,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../common)
 include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/src)
 link_directories(${CMAKE_CURRENT_BINARY_DIR}../common)
-link_directories(${MXML_INCLUDE_DIR}/../lib)
+link_directories(${MXML_LIB_DIR})
 include_directories(${MXML_INCLUDE_DIR})
 
 add_executable(fastbit_tests fastbit_tests.c)

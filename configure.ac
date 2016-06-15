@@ -81,8 +81,19 @@ AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 AC_MXML
 dnl MXML is required for Write API, turn off Write if MXML is not present
 if test -z "${HAVE_MXML_FALSE}" -a -z "${BUILD_WRITE_TRUE}"; then
-    AC_MSG_ERROR([The ADIOS libraries for writing cannot be built without the MXML library. Either specify where the MXML library is found, or use --disable-write to build ADIOS for reading only.])
+    AC_MSG_NOTICE([External MXML library not provided. Build the included MXML source])
+    AM_CONDITIONAL(HAVE_MXML,true)
+    AM_CONDITIONAL(BUILD_MXML,true)
+    MXML_CPPFLAGS="-I\$(top_srcdir)/mxml/mxml-2.9"
+    MXML_LDFLAGS="-L\$(top_builddir)/mxml"
+    MXML_LIBS="-lmxml" 
+    AC_SUBST(MXML_LIBS)
+    AC_SUBST(MXML_LDFLAGS)
+    AC_SUBST(MXML_CPPFLAGS)
+    dnl AC_MSG_ERROR([The ADIOS libraries for writing cannot be built without the MXML library. Either specify where the MXML library is found, or use --disable-write to build ADIOS for reading only.])
     dnl AM_CONDITIONAL([BUILD_WRITE], false)
+else
+    AM_CONDITIONAL(BUILD_MXML,false)
 fi
 
 
@@ -771,6 +782,9 @@ AC_SUBST(VERSION_MICRO)
 
 
 
+if test -z "${BUILD_MXML_TRUE}" -a -z "${BUILD_WRITE_TRUE}"; then
+    AC_CONFIG_FILES([mxml/Makefile])
+fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  tests/Makefile

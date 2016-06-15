@@ -939,28 +939,44 @@ endif(LUSTRE)
 # Define to 1 if you have the <memory.h> header file.
 CHECK_INCLUDE_FILES(memory.h HAVE_MEMORY_H)
 
-# Define to 1 if you have the <mxml.h> header file.
-find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS ${MXML_DIR}/include)
-if(NOT MXML_INCLUDE_DIR-NOTFOUND)
-  message(STATUS "find mxml header")
-  set(HAVE_MXML_H 1)
-#include_directories(${MXML_INCLUDE_DIR})
-  set(MXML_CPPFLAGS "-I${MXML_INCLUDE_DIR}")
-#  set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
-endif(NOT MXML_INCLUDE_DIR-NOTFOUND)
-
-# Define if you have the MXML.
-# MXML: /sw/analysis-x64/mxml/2.6/centos5.5_pgi10./9
 set(HAVE_MXML 0)
-find_library(MXML_LIBS NAMES mxml PATHS ${MXML_DIR}/lib)
-if(MXML_LIBS)
-  message(STATUS "find mxml library")
-endif()
-if(MXML_LIBS AND HAVE_MXML_H)
+if (MXML_DIR)
+  # Use a preinstalled MXML library pointed by the user
+  # Define to 1 if you have the <mxml.h> header file.
+  find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS ${MXML_DIR}/include)
+  if(NOT MXML_INCLUDE_DIR-NOTFOUND)
+    message(STATUS "find mxml header")
+    set(HAVE_MXML_H 1)
+    #include_directories(${MXML_INCLUDE_DIR})
+    set(MXML_CPPFLAGS "-I${MXML_INCLUDE_DIR}")
+    #set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
+  endif(NOT MXML_INCLUDE_DIR-NOTFOUND)
+
+  # Define if you have the MXML.
+  # MXML: /sw/analysis-x64/mxml/2.6/centos5.5_pgi10./9
+  find_library(MXML_LIBS NAMES mxml PATHS ${MXML_DIR}/lib)
+  if(MXML_LIBS)
+    message(STATUS "find mxml library")
+  endif()
+  if(MXML_LIBS AND HAVE_MXML_H)
+    set(HAVE_MXML 1)
+    set(MXML_LIB_DIR ${MXML_DIR}/lib)
+    #set(LIBS "${LIBS} ${MXML_LIBS})
+    # set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
+  endif()
+endif(MXML_DIR)
+
+if (NOT HAVE_MXML)
+  # Build the supplied mxml directory
+  message(STATUS "MXML will be built for ADIOS in ./mxml")
   set(HAVE_MXML 1)
-#  set(LIBS "${LIBS} ${MXML_LIBS})
-#  set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
-endif()
+  set(BUILD_MXML 1)
+  add_subdirectory(mxml)
+  set(MXML_CPPFLAGS "-I${PROJECT_SOURCE_DIR}/mxml/mxml-2.9")
+  set(MXML_LIBS "${PROJECT_BINARY_DIR}/mxml/libmxml.a") 
+  set(MXML_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/mxml/mxml-2.9)
+  set(MXML_LIB_DIR ${PROJECT_BINARY_DIR}/mxml)
+endif (NOT HAVE_MXML)
 
 
 # Define if you have NETCDF.
@@ -1803,7 +1819,6 @@ endif()
 
 if(HAVE_MXML)
   message("  - MXML")
-  message("      - MXML_CFLAGS = ${MXML_CFLAGS}")
   message("      - MXML_CPPFLAGS = ${MXML_CPPFLAGS}")
   message("      - MXML_LIBS = ${MXML_LIBS}")
   message("")

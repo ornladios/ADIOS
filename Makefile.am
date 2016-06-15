@@ -1,6 +1,10 @@
 ACLOCAL_AMFLAGS=-I config
 
-SUBDIRS=src utils tests examples
+SUBDIRS=
+if BUILD_MXML
+SUBDIRS += mxml 
+endif
+SUBDIRS += src utils tests examples
 
 EXTRA_DIST = runconf \
              KNOWN_BUGS \

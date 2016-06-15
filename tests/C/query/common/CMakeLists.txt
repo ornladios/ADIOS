@@ -2,7 +2,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/src)
-link_directories(${MXML_INCLUDE_DIR}/../lib)
+link_directories(${MXML_LIB_DIR})
 include_directories(${MXML_INCLUDE_DIR})
 
 add_library(parse_test_query_xml adios_query_xml_parse.c adios_query_xml_parse.h)
