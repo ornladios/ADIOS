@@ -171,6 +171,8 @@ cdef extern from "adios_selection.h":
                                                    uint64_t npoints,
                                                    const uint64_t *points)
 
+    cdef ADIOS_SELECTION * adios_selection_writeblock (int index)
+
     cdef void adios_selection_delete (ADIOS_SELECTION * sel)
 
 cdef extern from "adios_read.h":
@@ -206,6 +208,13 @@ cdef extern from "adios_read.h":
         void     * value
         int      * nblocks
         int        sum_nblocks
+        ADIOS_VARBLOCK *blockinfo
+
+    ctypedef struct ADIOS_VARBLOCK:
+        uint64_t * start
+        uint64_t * count
+        uint32_t process_id
+        uint32_t time_index
 
     cdef int adios_read_init_method (ADIOS_READ_METHOD method,
                                      MPI_Comm comm,
@@ -224,6 +233,7 @@ cdef extern from "adios_read.h":
     cdef void adios_release_step (ADIOS_FILE *fp)
     cdef ADIOS_VARINFO * adios_inq_var (ADIOS_FILE *fp, const char * varname)
     cdef ADIOS_VARINFO * adios_inq_var_byid (ADIOS_FILE *fp, int varid)
+    cdef int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
     cdef void adios_free_varinfo (ADIOS_VARINFO *cp)
     cdef int adios_schedule_read (const ADIOS_FILE * fp,
                                   const ADIOS_SELECTION * sel,
@@ -929,6 +939,7 @@ cdef class var(object):
         assert self.file.fp != NULL, 'Not an open file'
         self.vp = adios_inq_var(self.file.fp, name)
         assert self.vp != NULL, 'Not a valid var'
+        adios_inq_var_blockinfo(self.file.fp, self.vp)
 
         self.name = name
         self.varid = self.vp.varid
@@ -1017,6 +1028,32 @@ cdef class var(object):
         adios_perform_reads(self.file.fp, 1)
         adios_selection_delete(sel)
 
+        return var
+
+    cpdef read_writeblock(self, int rank, from_steps = None, nsteps = None):
+        if from_steps is None:
+            from_steps = 0 ##self.file.current_step
+
+        if nsteps is None:
+            nsteps = self.file.last_step - from_steps + 1
+
+        assert self.dtype is not None, 'Data type is not supported yet'
+        assert rank < self.vp.sum_nblocks, 'Rank is out of range (nblock=%r)' % (self.vp.sum_nblocks)
+
+        if (self.nsteps > 0) and (from_steps + nsteps > self.nsteps):
+            raise IndexError('Step index is out of range: from_steps=%r, nsteps=%r' % (from_steps, nsteps))
+
+        shape = [self.vp.blockinfo[rank].count[i] for i in range(self.vp.ndim)]
+        if (nsteps>1):
+            shape.insert(0, nsteps)
+        cdef np.ndarray var = np.zeros(shape, dtype=self.dtype)
+
+        cdef ADIOS_SELECTION * sel
+        sel = adios_selection_writeblock (rank)
+
+        adios_schedule_read_byid (self.file.fp, sel, self.vp.varid, from_steps, nsteps, <void *> var.data)
+        adios_perform_reads(self.file.fp, 1)
+        adios_selection_delete(sel)
         return var
 
     cpdef read(self, tuple offset = (), tuple count = (), tuple scalar = (),
