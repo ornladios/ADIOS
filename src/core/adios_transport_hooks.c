@@ -68,7 +68,9 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #    endif
     //Tian's method
     ASSIGN_FNS(var_merge,ADIOS_METHOD_VAR_MERGE,"VAR_MERGE")
+#    if HAVE_SIRIUS
     ASSIGN_FNS(sirius,ADIOS_METHOD_SIRIUS,"SIRIUS")
+#    endif
 #      ifndef NO_RESEARCH_TRANSPORTS
     //ASSIGN_FNS(mpi_stripe,ADIOS_METHOD_MPI_STRIPE)
     //ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
