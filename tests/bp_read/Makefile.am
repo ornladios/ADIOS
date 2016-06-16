@@ -18,7 +18,7 @@ genbp_SOURCES = genbp.c
 genbp_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
 genbp_CFLAGS = $(ADIOSLIB_CFLAGS)
 genbp_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
-genbp_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
+genbp_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
 if BUILD_FORTRAN
 bp_read_f_SOURCES = bp_read_f.F90

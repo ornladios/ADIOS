@@ -71,6 +71,35 @@ dnl generates HAVE_STRINGIZE
 AC_FUNC_STRTOLD
 dnl generates HAVE_STRTOLD
 
+
+dnl ========== Some checks inherited from MXML's configure =============
+
+dnl Inline functions...
+AC_C_INLINE
+
+dnl Checks for string functions.
+AC_CHECK_FUNCS(strdup)
+AC_CHECK_FUNCS(snprintf vsnprintf)
+
+dnl Check for "long long" support...
+AC_CACHE_CHECK([for long long int], ac_cv_c_long_long,
+    [if test "$GCC" = yes; then
+        ac_cv_c_long_long=yes
+    else
+        AC_TRY_COMPILE(,[long long int i;],
+            ac_cv_c_long_long=yes,
+            ac_cv_c_long_long=no)
+    fi])
+
+if test $ac_cv_c_long_long = yes; then
+    AC_DEFINE(HAVE_LONG_LONG,1,[Have long long int, a type may be used by MXML])
+fi
+
+dnl ========== End of checks inherited from MXML's configure =============
+
+
+
+
 dnl check if -lm is needed to be added
 AC_SEARCH_LIBS([ceil], [m])
 
@@ -79,17 +108,22 @@ AC_ARG_ENABLE(write,
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 
 AC_MXML
-dnl MXML is required for Write API, turn off Write if MXML is not present
+dnl MXML is required for Write API, build from source in mxml/mxml-2.9 if not provided by user
 if test -z "${HAVE_MXML_FALSE}" -a -z "${BUILD_WRITE_TRUE}"; then
     AC_MSG_NOTICE([External MXML library not provided. Build the included MXML source])
     AM_CONDITIONAL(HAVE_MXML,true)
     AM_CONDITIONAL(BUILD_MXML,true)
-    MXML_CPPFLAGS="-I\$(top_srcdir)/mxml/mxml-2.9"
-    MXML_LDFLAGS="-L\$(top_builddir)/mxml"
+    MXML_CPPFLAGS="${CPPFLAGS} -I\$(top_srcdir)/mxml/mxml-2.9"
+    MXML_BUILD_LDFLAGS="${LDFLAGS} -L\$(top_builddir)/mxml"
+    MXML_LDFLAGS=
     MXML_LIBS="-lmxml" 
-    AC_SUBST(MXML_LIBS)
-    AC_SUBST(MXML_LDFLAGS)
     AC_SUBST(MXML_CPPFLAGS)
+    AC_SUBST(MXML_LIBS)
+    AC_SUBST(MXML_BUILD_LDFLAGS)
+    AC_SUBST(MXML_LDFLAGS)
+    AC_DEFINE_UNQUOTED(MXML_VERSION, [Mini-XML v2.9], [MXML version string])
+    AC_DEFINE(HAVE_PTHREAD_H, 0, [We build Mini-XML without pthread support because ADIOS does not need it])
+    dnl AC_CONFIG_SUBDIRS([mxml/mxml-2.9])
     dnl AC_MSG_ERROR([The ADIOS libraries for writing cannot be built without the MXML library. Either specify where the MXML library is found, or use --disable-write to build ADIOS for reading only.])
     dnl AM_CONDITIONAL([BUILD_WRITE], false)
 else
@@ -258,12 +292,13 @@ dnl ADIOSREADLIB_* for codes using libadiosread.a, libadiosreadf.a
 dnl ADIOSREADLIB_SEQ_* for codes using libadiosread_nompi.a
 dnl adios_config will contain flags for users' code linking based on these flags
 dnl EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
-ADIOSLIB_EXTRA_CPPFLAGS="${MACRODEFFLAG}_FILE_OFFSET_BITS=64 ${MACRODEFFLAG}_LARGEFILE_SOURCE ${MACRODEFFLAG}_LARGEFILE64_SOURCE ${MACRODEFFLAG}_GNU_SOURCE"
-ADIOSLIB_CPPFLAGS="${MXML_CPPFLAGS}"
+ADIOSLIB_EXTRA_CPPFLAGS="${MACRODEFFLAG}_FILE_OFFSET_BITS=64 ${MACRODEFFLAG}_LARGEFILE_SOURCE ${MACRODEFFLAG}_LARGEFILE64_SOURCE ${MACRODEFFLAG}_GNU_SOURCE ${MXML_CPPFLAGS}"
+ADIOSLIB_EXTRA_LDFLAGS="${MXML_BUILD_LDFLAGS}"
+ADIOSLIB_CPPFLAGS=
 ADIOSLIB_CFLAGS=
 ADIOSLIB_LDFLAGS="${MXML_LDFLAGS}"
 ADIOSLIB_LDADD="${MXML_LIBS}"
-ADIOSLIB_SEQ_CPPFLAGS="${MACRODEFFLAG}_NOMPI ${MXML_CPPFLAGS}"
+ADIOSLIB_SEQ_CPPFLAGS="${MACRODEFFLAG}_NOMPI"
 ADIOSLIB_SEQ_CFLAGS=
 ADIOSLIB_SEQ_LDFLAGS="${MXML_LDFLAGS}"
 ADIOSLIB_SEQ_LDADD="${MXML_LIBS}"
@@ -272,7 +307,7 @@ ADIOSLIB_INT_CFLAGS=
 ADIOSLIB_INT_LDFLAGS=
 ADIOSLIB_INT_LDADD=
 if test "x$enable_write" != "xno"; then
-    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} ${MXML_CPPFLAGS}"
+    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS}"
     ADIOSLIB_INT_LDFLAGS="${MXML_LDFLAGS}"
     ADIOSLIB_INT_LDADD="${MXML_LIBS}"
 fi
@@ -343,12 +378,12 @@ if test -z "${HAVE_NSSI_TRUE}"; then
     ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${NSSI_CFLAGS}"
     ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${NSSI_LDFLAGS}"
     ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${NSSI_LIBS}"
-    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${MXML_CPPFLAGS} ${NSSI_CPPFLAGS}"
-    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${MXML_CPPFLAGS} ${NSSI_CFLAGS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${NSSI_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${NSSI_CFLAGS}"
     ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${MXML_LDFLAGS} ${NSSI_LDFLAGS}"
-    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${MXML_LIBS} ${NSSI_LIBS}"
-    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${MXML_CPPFLAGS} ${NSSI_CPPFLAGS}"
-    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${MXML_CPPFLAGS} ${NSSI_CFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${NSSI_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${NSSI_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${NSSI_CFLAGS}"
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${MXML_LDFLAGS} ${NSSI_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${MXML_LIBS} ${NSSI_LIBS}"
 fi
@@ -742,6 +777,7 @@ AC_SUBST(ADIOSREADLIB_SEQ_CFLAGS)
 AC_SUBST(ADIOSREADLIB_SEQ_LDFLAGS)
 AC_SUBST(ADIOSREADLIB_SEQ_LDADD)
 AC_SUBST(ADIOSLIB_EXTRA_CPPFLAGS)
+AC_SUBST(ADIOSLIB_EXTRA_LDFLAGS)
 
 if test -z "${USE_PARALLEL_HDF5_FOR_UTILS_TRUE}"; then
         AC_DEFINE(USE_PARALLEL_HDF5_FOR_UTILS, 1, [Need to use MPI compiler for sequential HDF5 utils])
@@ -778,8 +814,6 @@ AC_SUBST(VERSION_MICRO)
 #    SVNVERSION="unknown"
 #fi
 #AC_DEFINE_UNQUOTED(VERSION_SVNREV, "${SVNVERSION}", [svn revision number])
-
-
 
 
 if test -z "${BUILD_MXML_TRUE}" -a -z "${BUILD_WRITE_TRUE}"; then
@@ -833,7 +867,7 @@ AC_CONFIG_FILES([Makefile
                  utils/adios_list_methods/Makefile
                  utils/bpmeta/Makefile
                  utils/bprecover/Makefile
-		 utils/fastbit/Makefile
+		         utils/fastbit/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
@@ -919,7 +953,6 @@ fi
 
 if test -z "${HAVE_MXML_TRUE}"; then
     echo "  - MXML";
-    echo "      - MXML_CFLAGS = $MXML_CFLAGS";
     echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
     echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
     echo "      - MXML_LIBS = $MXML_LIBS";
@@ -1219,3 +1252,4 @@ fi
 
 #echo "  - SVN version = ${SVNVERSION}"
 echo "  - Install path = ${prefix}"
+

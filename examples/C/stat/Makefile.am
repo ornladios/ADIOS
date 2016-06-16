@@ -11,7 +11,7 @@ noinst_PROGRAMS = stat_write stat_read
 
 stat_write_SOURCES = stat_write.c
 stat_write_LDADD = $(top_builddir)/src/libadios.a 
-stat_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+stat_write_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 stat_write_LDADD += $(ADIOSLIB_LDADD)
 stat_read_SOURCES = stat_read.c
 stat_read_LDADD = $(top_builddir)/src/libadiosread.a 

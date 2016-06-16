@@ -8,8 +8,8 @@ METASOURCES=AUTO
 CLEANFILES= 
 
 
-lib_LTLIBRARIES = libmxml.la
-libmxml_la_SOURCES = ${MXML_SRCDIR}/mxml-attr.c     \
+lib_LIBRARIES = libmxml.a
+libmxml_a_SOURCES = ${MXML_SRCDIR}/mxml-attr.c     \
                      ${MXML_SRCDIR}/mxml-get.c      \
                      ${MXML_SRCDIR}/mxml-private.c  \
                      ${MXML_SRCDIR}/mxml-string.c   \
@@ -20,12 +20,13 @@ libmxml_la_SOURCES = ${MXML_SRCDIR}/mxml-attr.c     \
                      ${MXML_SRCDIR}/mxml-node.c     \
                      ${MXML_SRCDIR}/mxml-set.c 
 
-libmxml_la_CPPFLAGS=$(AM_CPPFLAGS)
-libmxml_la_CFLAGS= 
+libmxml_a_CPPFLAGS=$(AM_CPPFLAGS)
+libmxml_a_CFLAGS= 
 
 
 
-EXTRA_DIST = ${MXML_SRCDIR}/ANNOUNCEMENT    ${MXML_SRCDIR}/CHANGES      \
+EXTRA_DIST = config.h CMakeLists.txt                                    \
+             ${MXML_SRCDIR}/ANNOUNCEMENT    ${MXML_SRCDIR}/CHANGES      \
              ${MXML_SRCDIR}/COPYING         ${MXML_SRCDIR}/Makefile.in  \
              ${MXML_SRCDIR}/README          ${MXML_SRCDIR}/config.h.in  \
              ${MXML_SRCDIR}/configure       ${MXML_SRCDIR}/configure.in \
