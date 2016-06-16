@@ -19,7 +19,7 @@ class AdiosTestCase(ut.TestCase):
 
         NX = 10
         size = 2
-        t = np.array(range(NX*size), dtype=np.float64)
+        t = np.array(list(range(NX*size)), dtype=np.float64)
         tt = t.reshape((size, NX))
 
         fw = ad.writer(self.temp.path)
@@ -64,7 +64,7 @@ class AdiosTestCase(ut.TestCase):
 
         NX = 10
         size = 2
-        t = np.array(range(NX*size), dtype=np.float64)
+        t = np.array(list(range(NX*size)), dtype=np.float64)
         tt = t.reshape((size, NX))
 
         fw = ad.writer(self.temp.path)

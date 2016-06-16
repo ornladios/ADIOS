@@ -30,7 +30,7 @@ ad.define_attribute(g, "temperature/unit/desc", "", ad.DATATYPE.string, "desc", 
 ad.define_attribute(g, "temperature/type", "", ad.DATATYPE.string, "None", "")
 
 ad.select_method(g, method, init, "")
-print ">>> Method:", method
+print(">>> Method:", method)
 
 ## Writing
 for i in range(5):
@@ -39,7 +39,7 @@ for i in range(5):
     NX = 10
     size = 2
     groupsize =  4 + 4 + 8 * size * NX
-    t = np.array(range(NX*size), dtype=np.float64) + 100*i
+    t = np.array(list(range(NX*size)), dtype=np.float64) + 100*i
     tt = t.reshape((size, NX))
     ad.set_group_size(fd, groupsize)
     ad.write_int(fd, "NX", NX)
@@ -48,15 +48,15 @@ for i in range(5):
     ad.close(fd)
 
 ad.finalize()
-print ">>> Done."
+print(">>> Done.")
 
 f = ad.file('temp.bp')
 v = f['temperature']
-print(v.attrs['unit'].value)
-print(f['temperature/unit'].value)
+print((v.attrs['unit'].value))
+print((f['temperature/unit'].value))
 
-print(v.attrs['unit/desc'].value)
-print(f['temperature/unit/desc'].value)
+print((v.attrs['unit/desc'].value))
+print((f['temperature/unit/desc'].value))
 
-print(v.attrs['type'].value)
-print(f['temperature/type'].value)
+print((v.attrs['type'].value))
+print((f['temperature/type'].value))

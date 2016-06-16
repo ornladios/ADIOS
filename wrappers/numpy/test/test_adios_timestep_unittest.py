@@ -30,7 +30,7 @@ class AdiosTestCase(ut.TestCase):
             self.NX = 10
             self.size = 2
             groupsize =  4 + 4 + 8 * self.size * self.NX
-            t = np.array(range(self.NX * self.size), dtype=np.float64) + 100*i
+            t = np.array(list(range(self.NX * self.size)), dtype=np.float64) + 100*i
             self.tt = t.reshape((self.size, self.NX))
             ad.set_group_size(fd, groupsize)
             ad.write_int(fd, "NX", self.NX)
@@ -70,7 +70,7 @@ class AdiosTestCase(ut.TestCase):
         v = self.f['temperature']
 
         self.assertEqual(v.ndim, 2)
-        self.assertEqual(v.dims, (2L, 10L))
+        self.assertEqual(v.dims, (2, 10))
         self.assertEqual(v.nsteps, 5)
 
         val = v.read()
@@ -114,7 +114,6 @@ class AdiosTestCase(ut.TestCase):
         self.assertTrue((v[-1,...] == v.read(from_steps=4, nsteps=1)).all())
         self.assertTrue((v[-2,...] == v.read(from_steps=3, nsteps=1)).all())
 
-        #import ipdb; ipdb.set_trace()
         self.assertTrue((v[:,...,-1] == v.read(offset=(0,9), count=(2,1), scalar=(False,True))).all())
         self.assertTrue((v[:,...,-3:-1] == v.read(offset=(0,7), count=(2,2))).all())
 
