@@ -15,14 +15,14 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 ## Prepare
-print "\n>>> Prepare ... (rank = %d)\n" % rank
+print("\n>>> Prepare ... (rank = %d)\n" % rank)
 fname = 'adios_test_mpi_writer.bp'
 NX = 10
-t = np.array(range(NX*size), dtype=np.float64) + rank*NX
+t = np.array(list(range(NX*size)), dtype=np.float64) + rank*NX
 gdim = (size, NX)
 offset = (rank, 0)
 
-print "\n>>> Writing ... (rank = %d)\n" % rank
+print("\n>>> Writing ... (rank = %d)\n" % rank)
 ad.init_noxml()
 ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
 
@@ -38,13 +38,13 @@ fw.close()
 
 ## Reading
 if rank == 0:
-    print "\n>>> Reading ...\n"
+    print("\n>>> Reading ...\n")
 
     f = ad.file(fname, comm=MPI.COMM_SELF)
-    for key, val in f.vars.iteritems():
-        print key, '=', val.read()
+    for key, val in f.vars.items():
+        print(key, '=', val.read())
 
-    for key, val in f.attrs.iteritems():
-        print key, '=', val.value
+    for key, val in f.attrs.items():
+        print(key, '=', val.value)
 
-    print "\n>>> Done.\n"
+    print("\n>>> Done.\n")

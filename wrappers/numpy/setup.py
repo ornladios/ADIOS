@@ -13,6 +13,7 @@ from distutils.core import Command
 
 import subprocess
 import sys
+from subprocess import check_output
 
 m1 = Extension('adios.adios',
                sources=['adios.cpp'],
@@ -31,13 +32,13 @@ if cmd == None:
         "Please install Adios or check PATH.\n")
     sys.exit(-1)
 
-p = subprocess.Popen(["adios_config", "-c", "-s"], stdout=subprocess.PIPE)
-for path in p.communicate()[0].strip().split(" "):
+out = check_output(["adios_config", "-c", "-s"]).decode("utf-8")
+for path in out.strip().split(" "):
     if path.startswith('-I'):
         m1.include_dirs.append(path.replace('-I', '', 1))
 
-p = subprocess.Popen(["adios_config", "-l", "-s"], stdout=subprocess.PIPE)
-for path in p.communicate()[0].strip().split(" "):
+out = check_output(["adios_config", "-l", "-s"]).decode("utf-8")
+for path in out.strip().split(" "):
     if path.startswith('-L'):
         m1.library_dirs.append(path.replace('-L', '', 1))
     if path.startswith('-l'):

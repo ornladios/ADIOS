@@ -4,6 +4,8 @@
 .. moduleauthor:: Jong Choi <choij@ornl.gov>
 """
 
+from __future__ import print_function
+
 cdef extern from "mpi-compat.h": pass
 cdef extern from "string.h" nogil:
     char   *strdup  (const char *s)
@@ -19,14 +21,45 @@ cimport cython
 
 from libc.stdlib cimport malloc, free
 from cpython.string cimport PyString_AsString
+from cpython.bytes cimport PyBytes_AsString, PyBytes_AS_STRING
+from cpython.unicode cimport PyUnicode_AsUTF8String, PyUnicode_Check
+from cpython.ref cimport PyObject
 
 import os
 from ._hl import selections as sel
 
+## To convert a string to bytes: "str".encode()
+## To convert bytes to a String: b"".decode() or str(b"")
+cpdef void test_str(str x):
+    cdef char * y = strdup(x.encode())
+    print(x, str(y))
+
+from cpython.version cimport PY_MAJOR_VERSION
+
+## Fixed-length ASCII (NumPy S type)
+## Variable-length ASCII (Python 2 str, Python 3 bytes)
+## Variable-length UTF-8 (Python 2 unicode, Python 3 str)
+
+## bytes-to-str problem for supporting both python2 and python3
+## python2: str(b"") return str
+## python3: str(b"") return 'b""'. Correct way: b"".decode()
+cpdef str b2s(bytes x):
+    if PY_MAJOR_VERSION < 3:
+        return str(x)
+    else:
+        return x.decode()
+
+cpdef bytes s2b(str x):
+    if PY_MAJOR_VERSION < 3:
+        return <bytes>x
+    else:
+        return x.encode()
+
 cdef char ** to_cstring_array(list_str):
     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
     for i in xrange(len(list_str)):
-        ret[i] = PyString_AsString(list_str[i])
+        bstr = s2b(list_str[i])
+        ret[i] = PyBytes_AsString(bstr)
     return ret
 
 ## ====================
@@ -333,18 +366,18 @@ cpdef __parse_index(index, ndim):
 cdef MPI.Comm init_comm
 cdef MPI.Comm read_init_comm
 
-cpdef init(char * config, MPI.Comm comm = MPI.COMM_WORLD):
+cpdef init(str config, MPI.Comm comm = MPI.COMM_WORLD):
     global init_comm
     init_comm = comm.Clone()
-    return adios_init(config, init_comm.ob_mpi)
+    return adios_init(s2b(config), init_comm.ob_mpi)
 
-cpdef int64_t open(char * group_name,
-                   char * name,
-                   char * mode,
+cpdef int64_t open(str group_name,
+                   str name,
+                   str mode,
                    MPI.Comm comm = MPI.COMM_WORLD):
     cdef int64_t fd
     cdef int result
-    result = adios_open(&fd, group_name, name, mode, comm.ob_mpi)
+    result = adios_open(&fd, s2b(group_name), s2b(name), s2b(mode), comm.ob_mpi)
     return fd
 
 cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
@@ -353,7 +386,7 @@ cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
     result = adios_group_size(fd_p, data_size, &total_size)
     return total_size
 
-cpdef int write (int64_t fd_p, char * name, val, dtype=None):
+cpdef int write (int64_t fd_p, str name, val, dtype=None):
     cdef np.ndarray val_
     if isinstance(val, (np.ndarray)):
         if val.flags.contiguous:
@@ -364,30 +397,31 @@ cpdef int write (int64_t fd_p, char * name, val, dtype=None):
         val_ = np.array(val, dtype=dtype)
 
     cdef void * ptr
-    if (val_.dtype.char == 'S'):
-        ptr = <void *> PyString_AsString(str(val_))
+    if (val_.dtype.char in ('S', 'U')):
+        bstr = val_.tostring()
+        ptr = <void *> PyBytes_AS_STRING(bstr)
     else:
         ptr = <void *> val_.data
 
-    return adios_write (fd_p, name, ptr)
+    return adios_write (fd_p, s2b(name), ptr)
 
-cpdef int write_int (int64_t fd_p, char * name, int val):
-    return adios_write (fd_p, name, &val)
+cpdef int write_int (int64_t fd_p, str name, int val):
+    return adios_write (fd_p, s2b(name), &val)
 
-cpdef int write_long (int64_t fd_p, char * name, long val):
-    return adios_write (fd_p, name, &val)
+cpdef int write_long (int64_t fd_p, str name, long val):
+    return adios_write (fd_p, s2b(name), &val)
 
-cpdef int write_float (int64_t fd_p, char * name, float val):
-    return adios_write (fd_p, name, &val)
+cpdef int write_float (int64_t fd_p, str name, float val):
+    return adios_write (fd_p, s2b(name), &val)
 
-cpdef int write_double (int64_t fd_p, char * name, double val):
-    return adios_write (fd_p, name, &val)
+cpdef int write_double (int64_t fd_p, str name, double val):
+    return adios_write (fd_p, s2b(name), &val)
 
 
-cpdef int read(int64_t fd_p, char * name, np.ndarray val):
+cpdef int read(int64_t fd_p, str name, np.ndarray val):
     assert val.flags.contiguous, 'Only contiguous arrays are supported.'
-    print "Reading ... ", val.itemsize * val.size, "(bytes)"
-    return adios_read(fd_p, name, <void *> val.data, val.itemsize * val.size)
+    print ("Reading ... ", val.itemsize * val.size, "(bytes)")
+    return adios_read(fd_p, s2b(name), <void *> val.data, val.itemsize * val.size)
 
 cpdef int close(int64_t fd_p):
     return adios_close(fd_p)
@@ -409,46 +443,47 @@ cpdef int allocate_buffer(int when,
     return adios_allocate_buffer(<ADIOS_BUFFER_ALLOC_WHEN> when,
                                  buffer_size)
 
-cpdef int64_t declare_group(char * name,
-                            char * time_index = "",
+cpdef int64_t declare_group(str name,
+                            str time_index = "",
                             int stats = 1):
     cdef int64_t id = 0
     adios_declare_group (&id,
-                         name,
-                         time_index,
+                         s2b(name),
+                         s2b(time_index),
                          <ADIOS_FLAG> stats)
     return id
 
 cpdef int define_var(int64_t group_id,
-                     char * name,
-                     char * path,
+                     str name,
+                     str path,
                      int atype,
-                     char * dimensions = "",
-                     char * global_dimensions = "",
-                     char * local_offsets = ""):
+                     str dimensions = "",
+                     str global_dimensions = "",
+                     str local_offsets = ""):
     return adios_define_var(group_id,
-                            name, path,
+                            s2b(name),
+                            s2b(path),
                             <ADIOS_DATATYPES> atype,
-                            dimensions,
-                            global_dimensions,
-                            local_offsets)
+                            s2b(dimensions),
+                            s2b(global_dimensions),
+                            s2b(local_offsets))
 
 cpdef int define_attribute (int64_t group,
-                            char * name,
-                            char * path,
+                            str name,
+                            str path,
                             int atype,
-                            char * value,
-                            char * var):
+                            str value,
+                            str var):
     return adios_define_attribute (group,
-                                   name,
-                                   path,
+                                   s2b(name),
+                                   s2b(path),
                                    <ADIOS_DATATYPES> atype,
-                                   value,
-                                   var)
+                                   s2b(value),
+                                   s2b(var))
 
 cpdef int define_attribute_byvalue (int64_t group,
-                                    char * name,
-                                    char * path,
+                                    str name,
+                                    str path,
                                     val):
     cdef np.ndarray val_
     if isinstance(val, (np.ndarray)):
@@ -463,40 +498,41 @@ cpdef int define_attribute_byvalue (int64_t group,
 
     cdef char * pt1
     cdef char ** pt2
-    if (val_.dtype.char == 'S'):
+    if (val_.dtype.char in ('S', 'U')):
         if (val_.size == 1):
-            pt1 = PyString_AsString(str(val))
+            bstr = s2b(str(val))
+            pt1 = PyBytes_AsString(bstr)
             adios_define_attribute_byvalue (group,
-                                            name,
-                                            path,
+                                            s2b(name),
+                                            s2b(path),
                                             DATATYPE.string,
                                             1,
                                             <void *> pt1)
         else:
             pt2 = to_cstring_array(val)
             adios_define_attribute_byvalue (group,
-                                            name,
-                                            path,
+                                            s2b(name),
+                                            s2b(path),
                                             DATATYPE.string_array,
                                             len(val),
                                             <void *> pt2)
             free(pt2)
     else:
         adios_define_attribute_byvalue (group,
-                                        name,
-                                        path,
+                                        s2b(name),
+                                        s2b(path),
                                         <ADIOS_DATATYPES> atype,
                                         val_.size,
                                         <void *> val_.data)
 
 cpdef int select_method (int64_t group,
-                         char * method,
-                         char * parameters = "",
-                         char * base_path = ""):
+                         str method,
+                         str parameters = "",
+                         str base_path = ""):
     return adios_select_method (group,
-                                method,
-                                parameters,
-                                base_path)
+                                s2b(method),
+                                s2b(parameters),
+                                s2b(base_path))
 
 
 ## ====================
@@ -533,33 +569,34 @@ cpdef np.dtype adios2npdtype(ADIOS_DATATYPES t, int strlen = 1):
     elif t == adios_double_complex:
         ntype = np.dtype(np.complex128)
     elif t == adios_string:
-        ntype = np.dtype((np.str_, strlen))
+        ## Use string_ instead of str_ for py3
+        ntype = np.dtype((np.string_, strlen))
     else:
         ntype = None
 
     return ntype
 
 cdef printfile(ADIOS_FILE * f):
-    print '%15s : %lu' % ('fh', f.fh)
-    print '%15s : %d' % ('nvars', f.nvars)
-    print '%15s : %s' % ('var_namelist', [f.var_namelist[i] for i in range(f.nvars)])
-    print '%15s : %d' % ('nattrs', f.nattrs)
-    print '%15s : %s' % ('attr_namelist', [f.attr_namelist[i] for i in range(f.nattrs)])
-    print '%15s : %d' % ('current_step', f.current_step)
-    print '%15s : %d' % ('last_step', f.last_step)
-    print '%15s : %s' % ('path', f.path)
-    print '%15s : %d' % ('endianness', f.endianness)
-    print '%15s : %d' % ('version', f.version)
-    print '%15s : %lu' % ('file_size', f.file_size)
+    print ('%15s : %lu' % ('fh', f.fh))
+    print ('%15s : %d' % ('nvars', f.nvars))
+    print ('%15s : %s' % ('var_namelist', [f.var_namelist[i] for i in range(f.nvars)]))
+    print ('%15s : %d' % ('nattrs', f.nattrs))
+    print ('%15s : %s' % ('attr_namelist', [f.attr_namelist[i] for i in range(f.nattrs)]))
+    print ('%15s : %d' % ('current_step', f.current_step))
+    print ('%15s : %d' % ('last_step', f.last_step))
+    print ('%15s : %s' % ('path', f.path))
+    print ('%15s : %d' % ('endianness', f.endianness))
+    print ('%15s : %d' % ('version', f.version))
+    print ('%15s : %lu' % ('file_size', f.file_size))
 
 cdef printvar(ADIOS_VARINFO * v):
-    print '%15s : %d' % ('varid', v.varid)
-    print '%15s : %s' % ('type', adios2npdtype(v.type))
-    print '%15s : %d' % ('ndim', v.ndim)
-    print '%15s : %s' % ('dims', [v.dims[i] for i in range(v.ndim)])
-    print '%15s : %d' % ('nsteps', v.nsteps)
+    print ('%15s : %d' % ('varid', v.varid))
+    print ('%15s : %s' % ('type', adios2npdtype(v.type)))
+    print ('%15s : %d' % ('ndim', v.ndim))
+    print ('%15s : %s' % ('dims', [v.dims[i] for i in range(v.ndim)]))
+    print ('%15s : %d' % ('nsteps', v.nsteps))
 
-cdef ADIOS_READ_METHOD str2adiosreadmethod(bytes name):
+cdef ADIOS_READ_METHOD str2adiosreadmethod(name):
     if (name == "BP"):
         method = READ_METHOD.BP
     elif (name == "BP_AGGREGATE"):
@@ -573,7 +610,7 @@ cdef ADIOS_READ_METHOD str2adiosreadmethod(bytes name):
     elif (name == "ICEE"):
         method = READ_METHOD.ICEE
     else:
-        print '[WARN] Invalid read method name:', name, '. Use default BP method'
+        print ('[WARN] Invalid read method name:', name, '. Use default BP method')
         method = READ_METHOD.BP
 
     return method
@@ -616,7 +653,7 @@ cpdef np2adiostype(np.dtype nptype):
         atype = DATATYPE.complex
     elif (nptype == np.complex128):
         atype = DATATYPE.double_complex
-    elif (nptype.char == 'S'):
+    elif (nptype.char in ('S', 'U')):
         atype = DATATYPE.string
     else:
         atype = DATATYPE.unknown
@@ -631,19 +668,19 @@ cpdef str adiostype2string (ADIOS_DATATYPES type):
 ## ====================
 
 """ Call adios_read_init_method """
-cpdef int read_init(char * method_name = "BP",
+cpdef int read_init(str method_name = "BP",
                     MPI.Comm comm = MPI.COMM_WORLD,
-                    char * parameters = ""):
+                    str parameters = ""):
     global read_init_comm
     read_init_comm = comm.Clone()
     cdef method = str2adiosreadmethod(method_name)
-    return adios_read_init_method (method, read_init_comm.ob_mpi, parameters)
+    return adios_read_init_method (method, read_init_comm.ob_mpi, s2b(parameters))
 
 
 """ Call adios_read_finalize_method """
-cpdef int read_finalize(char * method_name = "BP"):
+cpdef int read_finalize(str method_name = "BP"):
     cdef method = str2adiosreadmethod(method_name)
-    return adios_read_finalize_method (method)
+    return adios_read_finalize_method (s2b(method))
 
 ## Python class for ADIOS_FILE structure
 cdef class file(object):
@@ -666,7 +703,7 @@ cdef class file(object):
     """
 
     cpdef ADIOS_FILE * fp
-    cpdef bytes name
+    cpdef str name
     cpdef int nvars
     cpdef int nattrs
     cpdef int current_step
@@ -727,8 +764,8 @@ cdef class file(object):
         def __get__(self):
             return self.is_stream
 
-    def __init__(self, char * fname,
-                 char * method_name = 'BP',
+    def __init__(self, str fname,
+                 str method_name = "BP",
                  MPI.Comm comm = MPI.COMM_WORLD,
                  is_stream = False,
                  ADIOS_LOCKMODE lock_mode = ADIOS_LOCKMODE_ALL,
@@ -740,10 +777,10 @@ cdef class file(object):
         cdef method = str2adiosreadmethod(method_name)
 
         if (is_stream):
-            self.fp = adios_read_open(fname, method, comm.ob_mpi,
+            self.fp = adios_read_open(s2b(fname), method, comm.ob_mpi,
                                       lock_mode, timeout_sec)
         else:
-            self.fp = adios_read_open_file(fname, method, comm.ob_mpi)
+            self.fp = adios_read_open_file(s2b(fname), method, comm.ob_mpi)
 
         assert self.fp != NULL, 'Not an open file'
 
@@ -757,10 +794,10 @@ cdef class file(object):
         self.file_size = self.fp.file_size
 
         for name in [self.fp.attr_namelist[i] for i in range(self.nattrs)]:
-            self.attrs[name] = attr(self, name)
+            self.attrs[b2s(name)] = attr(self, b2s(name))
 
         for name in [self.fp.var_namelist[i] for i in range(self.nvars)]:
-            self.vars[name] = var(self, name)
+            self.vars[b2s(name)] = var(self, b2s(name))
 
         self.var = self.vars
         self.attr = self.attrs
@@ -778,8 +815,8 @@ cdef class file(object):
     cpdef printself(self):
         """ Print native ADIOS_FILE structure. """
         assert self.fp != NULL, 'Not an open file'
-        print '=== AdiosFile ==='
-        print '%15s : %lu' % ('fp', <unsigned long> self.fp)
+        print ('=== AdiosFile ===')
+        print ('%15s : %lu' % ('fp', <unsigned long> self.fp))
         printfile(self.fp)
 
     cpdef release_step(self):
@@ -879,7 +916,7 @@ cdef class var(object):
     cdef file file
     cdef ADIOS_VARINFO * vp
 
-    cpdef bytes name
+    cpdef str name
     cpdef int varid
     cpdef np.dtype dtype
     cpdef int ndim
@@ -931,12 +968,12 @@ cdef class var(object):
         def __get__(self):
             return self.attrs
 
-    def __init__(self, file file, char * name):
+    def __init__(self, file file, str name):
         self.file = file
         self.vp = NULL
 
         assert self.file.fp != NULL, 'Not an open file'
-        self.vp = adios_inq_var(self.file.fp, name)
+        self.vp = adios_inq_var(self.file.fp, s2b(name))
         assert self.vp != NULL, 'Not a valid var'
         adios_inq_var_blockinfo(self.file.fp, self.vp)
 
@@ -1173,9 +1210,9 @@ cdef class var(object):
     cpdef printself(self):
         """ Print native ADIOS_VARINFO structure. """
         assert self.vp != NULL, 'Not an open variable'
-        print '=== AdiosVariable ==='
-        print '%15s : %lu' % ('vp', <unsigned long> self.vp)
-        print '%15s : %lu' % ('fp', <unsigned long> self.file.fp)
+        print ('=== AdiosVariable ===')
+        print ('%15s : %lu' % ('vp', <unsigned long> self.vp))
+        print ('%15s : %lu' % ('fp', <unsigned long> self.file.fp))
         printvar(self.vp)
 
     def __repr__(self):
@@ -1252,7 +1289,7 @@ cdef class attr(object):
         Users do not need to create this class manually.
     """
     cdef file file
-    cpdef bytes name
+    cpdef str name
     cpdef np.dtype dtype
     cdef np.ndarray value
 
@@ -1274,7 +1311,7 @@ cdef class attr(object):
             else:
                 return self.value
 
-    def __init__(self, file file, char * name):
+    def __init__(self, file file, str name):
         self.file = file
         self.name = name
 
@@ -1284,7 +1321,7 @@ cdef class attr(object):
         cdef list strlist
         cdef int len
 
-        err = adios_get_attr(self.file.fp, self.name, &atype, &bytes, <void **> &p)
+        err = adios_get_attr(self.file.fp, s2b(self.name), &atype, &bytes, <void **> &p)
 
         if err == 0:
             if atype == DATATYPE.string:
@@ -1292,17 +1329,17 @@ cdef class attr(object):
             self.dtype = adios2npdtype(atype, bytes)
             if atype == DATATYPE.string_array:
                 strlist = list()
-                len = bytes/sizeof(p)
+                len = <int>(bytes/sizeof(p))
                 for i in range(len):
                     strlist.append((<char **>p)[i])
                 self.value = np.array(strlist)
                 self.dtype = self.value.dtype
 
             elif self.dtype is None:
-                print 'Warning: No support yet: %s (type=%d, bytes=%d)' % \
-                      (self.name, atype, bytes)
+                print ('Warning: No support yet: %s (type=%d, bytes=%d)' % \
+                      (self.name, atype, bytes))
             else:
-                len = bytes/self.dtype.itemsize
+                len = <int>(bytes/self.dtype.itemsize)
                 if len == 1:
                     self.value = np.array(len, dtype=self.dtype)
                 else:
@@ -1330,13 +1367,13 @@ cdef class group(object):
         Users do not need to create this class manually.
     """
     cdef file file
-    cpdef bytes name
+    cpdef str name
 
     ## Public Memeber
     cpdef public dict vars
     cpdef public dict attrs
 
-    def __init__(self, file file, char * name):
+    def __init__(self, file file, str name):
         self.file = file
         self.name = name.rstrip('/')
 
@@ -1418,12 +1455,12 @@ cdef class writer(object):
     """
 
     cdef int64_t gid
-    cpdef bytes fname
-    cpdef bytes gname
-    cpdef bytes method
-    cpdef bytes method_params
+    cpdef str fname
+    cpdef str gname
+    cpdef str method
+    cpdef str method_params
     cpdef bint is_noxml
-    cpdef bytes mode
+    cpdef str mode
     cpdef MPI.Comm comm
 
     cpdef dict vars
@@ -1459,13 +1496,13 @@ cdef class writer(object):
         def __get__(self):
             return self.attrs
 
-    def __init__(self,char * fname,
+    def __init__(self, str fname,
                  bint is_noxml = True,
-                 char * mode = "w",
+                 str mode = "w",
                  MPI.Comm comm = MPI.COMM_WORLD):
         self.fname = fname
-        self.method = <bytes>""
-        self.method_params = <bytes>""
+        self.method = ""
+        self.method_params = ""
         self.is_noxml = is_noxml
         self.mode = mode
         self.comm = comm
@@ -1479,9 +1516,9 @@ cdef class writer(object):
     ##def __attr_factory__(self, name, value):
     ##    print "attr_factory:", name, value
 
-    def declare_group(self, char * gname,
-                      char * method = "POSIX1",
-                      char * method_params = ""):
+    def declare_group(self, str gname,
+                      str method = "POSIX1",
+                      str method_params = ""):
         """
         Define a group associated with the file.
 
@@ -1501,7 +1538,7 @@ cdef class writer(object):
         self.method_params = method_params
         select_method(self.gid, self.method, self.method_params, "")
 
-    def define_var(self, char * varname,
+    def define_var(self, str varname,
                    ldim = tuple(),
                    gdim = tuple(),
                    offset = tuple()):
@@ -1523,7 +1560,7 @@ cdef class writer(object):
         """
         self.vars[varname] = varinfo(varname, ldim, gdim, offset)
 
-    def define_attr(self, char * attrname):
+    def define_attr(self, str attrname):
         """
         Define attribute in the file.
 
@@ -1533,8 +1570,8 @@ cdef class writer(object):
 
         self.attrs[attrname] = attrinfo(attrname, is_static=True)
 
-    def define_dynamic_attr(self, char * attrname,
-                            char * varname,
+    def define_dynamic_attr(self, str attrname,
+                            str varname,
                             dtype):
         self.attrs[attrname] = attrinfo(attrname, varname, dtype, is_static=False)
     def __setitem__(self, name, val):
@@ -1609,7 +1646,7 @@ cdef class writer(object):
                  self.mode)
 
 cdef class attrinfo(object):
-    cdef bytes name
+    cdef str name
     cdef bint is_static # Use define_byvalue, if True
     cdef dtype
     cdef value # Either varname or nparray
@@ -1633,7 +1670,7 @@ cdef class attrinfo(object):
         def __set__(self, value):
             self.value = value
 
-    def __init__(self, char * name,
+    def __init__(self, str name,
                  value = None,
                  dtype = None,
                  bint is_static = True):
@@ -1662,13 +1699,13 @@ cdef class attrinfo(object):
                  self.dtype)
 
 cdef class varinfo(object):
-    cdef bytes name
+    cdef str name
     cdef public ldim
     cdef public gdim
     cdef public offset
     cdef public value
 
-    def __init__(self, char * name,
+    def __init__(self, str name,
                  ldim = tuple(),
                  gdim = tuple(),
                  offset = tuple(),

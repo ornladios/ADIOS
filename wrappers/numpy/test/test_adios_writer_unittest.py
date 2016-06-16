@@ -19,8 +19,8 @@ class AdiosTestCase(ut.TestCase):
         self.temp = TempFile()
 
         NX = 10
-        val1 = np.array(range(NX), dtype=np.int32)
-        val2 = np.array(range(5), dtype='f8')
+        val1 = np.array(list(range(NX)), dtype=np.int32)
+        val2 = np.array(list(range(5)), dtype='f8')
 
         fw = ad.writer(self.temp.path)
         fw.declare_group("group", method="POSIX1")
@@ -43,15 +43,17 @@ class AdiosTestCase(ut.TestCase):
         self.temp = TempFile()
 
         NX = 10
-        val1 = np.array(range(NX), dtype=np.int32)
-        val2 = np.array(range(5), dtype='f8')
+        val1 = np.array(list(range(NX)), dtype=np.int32)
+        val2 = np.array(list(range(5)), dtype='f8')
 
         single_string = "ABCD"
         three_string = ("AA","BBB","CCCC")
         single_int = 10
-        five_int = np.array(range(5), dtype=np.int32)
+        five_int = np.array(list(range(5)), dtype=np.int32)
         single_double = 1.1
-        five_double = np.array(range(5), dtype='double')*1.1
+        five_double = np.array(list(range(5)), dtype='double')*1.1
+        unicode_string = u"unicode"
+        bytes_string = u"bytes"
 
         fw = ad.writer(self.temp.path)
         fw.declare_group("group", method="POSIX1")
@@ -62,6 +64,8 @@ class AdiosTestCase(ut.TestCase):
         fw.define_attr("five_int")
         fw.define_attr("single_double")
         fw.define_attr("five_double")
+        fw.define_attr("unicode_string")
+        fw.define_attr("bytes_string")
 
         fw['single_string'] = single_string
         fw['three_string'] = three_string
@@ -69,22 +73,29 @@ class AdiosTestCase(ut.TestCase):
         fw['five_int'] = five_int
         fw['single_double'] = single_double
         fw['five_double'] = five_double
+        fw['unicode_string'] = unicode_string
+        fw['bytes_string'] = bytes_string
         fw.close()
 
         f = ad.file(self.temp.path)
-        self.assertEqual(f['single_string'].value, single_string)
-        self.assertTrue((f['three_string'].value == three_string).all())
+        self.assertEqual(f['single_string'].value, single_string.encode())
+        ##self.assertTrue((f['three_string'].value == three_string).all())
+        self.assertTrue(f['three_string'].value[0], three_string[0].encode())
+        self.assertTrue(f['three_string'].value[1], three_string[1].encode())
+        self.assertTrue(f['three_string'].value[2], three_string[2].encode())
         self.assertEqual(f['single_int'].value, single_int)
         self.assertTrue((f['five_int'].value == five_int).all())
         self.assertEqual(f['single_double'].value, single_double)
         self.assertTrue((f['five_double'].value == five_double).all())
+        self.assertTrue(f['unicode_string'].value, unicode_string.encode())
+        self.assertTrue(f['bytes_string'].value, bytes_string)
 
     def test_writer_undefined_var(self):
         self.temp = TempFile()
 
         NX = 10
-        val1 = np.array(range(NX), dtype=np.int32)
-        val2 = np.array(range(5), dtype='f8')
+        val1 = np.array(list(range(NX)), dtype=np.int32)
+        val2 = np.array(list(range(5)), dtype='f8')
 
         fw = ad.writer(self.temp.path)
         fw.declare_group("group", method="POSIX1")
@@ -103,8 +114,8 @@ class AdiosTestCase(ut.TestCase):
         self.temp = TempFile()
 
         NX = 10
-        val1 = np.array(range(NX), dtype=np.int32)
-        val2 = np.array(range(5), dtype='f8')
+        val1 = np.array(list(range(NX)), dtype=np.int32)
+        val2 = np.array(list(range(5)), dtype='f8')
 
         fw = ad.writer(self.temp.path)
         fw.declare_group("group", method="POSIX1")
