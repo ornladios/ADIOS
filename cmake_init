@@ -547,7 +547,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export adios_timers=ON
-    export MXML_DIR=/opt/mxml
+#export MXML_DIR=/opt/mxml
     export INSTALL_PREFIX="/opt/adios"
     export PAR_HDF5_DIR=/usr/local
     export PAR_HDF5_LIBS="-L/usr/local/lib -lhdf5_hl -lhdf5 -lm"

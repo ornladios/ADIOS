@@ -6,7 +6,7 @@ noinst_PROGRAMS = write_vars query_vars write_table query_table
 
 write_vars_SOURCES = write_vars.c
 write_vars_LDADD = $(top_builddir)/src/libadios_nompi.a 
-write_vars_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
+write_vars_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 write_vars_LDADD += $(ADIOSLIB_SEQ_LDADD)
 
 query_vars_SOURCES = query_vars.c
@@ -16,7 +16,7 @@ query_vars_LDADD += $(ADIOSREADLIB_SEQ_LDADD)
 
 write_table_SOURCES = write_table.c
 write_table_LDADD = $(top_builddir)/src/libadios_nompi.a 
-write_table_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
+write_table_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 write_table_LDADD += $(ADIOSLIB_SEQ_LDADD)
 
 query_table_SOURCES = query_table.c

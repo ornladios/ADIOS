@@ -10,7 +10,7 @@ noinst_PROGRAMS = attributes_write attributes_read
 
 attributes_write_SOURCES = attributes_write.c
 attributes_write_LDADD = $(top_builddir)/src/libadios.a 
-attributes_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+attributes_write_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 attributes_write_LDADD += $(ADIOSLIB_LDADD)
 attributes_read_SOURCES = attributes_read.c
 attributes_read_LDADD = $(top_builddir)/src/libadiosread.a

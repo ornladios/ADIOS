@@ -11,10 +11,10 @@ noinst_PROGRAMS = writer_global reader_global
 
 writer_global_SOURCES = writer.c ../common/utils.c
 writer_global_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-writer_global_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+writer_global_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 reader_global_SOURCES = reader.c ../common/utils.c
 reader_global_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-reader_global_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+reader_global_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)

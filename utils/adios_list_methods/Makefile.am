@@ -9,12 +9,12 @@ if BUILD_WRITE
 bin_PROGRAMS += adios_list_methods adios_list_methods_nompi 
 adios_list_methods_SOURCES = adios_list_methods.c
 adios_list_methods_CPPFLAGS = $(AM_CPPFLAGS) ${MACRODEFFLAG}WRITE $(ADIOSLIB_CPPFLAGS) $(ADIOSLIB_CFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) 
-adios_list_methods_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
+adios_list_methods_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 adios_list_methods_LDADD =  $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 
 adios_list_methods_nompi_SOURCES = adios_list_methods.c
 adios_list_methods_nompi_CPPFLAGS = $(AM_CPPFLAGS) ${MACRODEFFLAG}WRITE $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) 
-adios_list_methods_nompi_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) 
+adios_list_methods_nompi_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 adios_list_methods_nompi_LDADD =  $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
 endif
 

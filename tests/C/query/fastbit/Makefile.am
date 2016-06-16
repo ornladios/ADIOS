@@ -15,8 +15,8 @@ if HAVE_FASTBIT
 noinst_PROGRAMS += fastbit_tests
 
 fastbit_tests_SOURCES = fastbit_tests.c
-fastbit_tests_CPPFLAGS = ${MACRODEFFLAG}_NOMPI $(AM_CPPFLAGS)
+fastbit_tests_CPPFLAGS = ${MACRODEFFLAG}_NOMPI $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS)
 fastbit_tests_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_SEQ_LDADD) ${MXML_LIBS}
-fastbit_tests_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS) ${MXML_LDFLAGS}
+fastbit_tests_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS) ${MXML_LDFLAGS} 
 
 endif # HAVE_FASTBIT
