@@ -68,23 +68,23 @@ all-local:
 # posix_method
 posix_method_SOURCES=posix_method.F90
 posix_method_LDADD = $(top_builddir)/src/libadiosf.a $(ADIOSLIB_LDADD)
-posix_method_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+posix_method_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 posix_method.o: gwrite_posix_method.fh 
 gwrite_posix_method.fh: posix_method.xml
 	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/posix_method.xml
 
 local_array_time_SOURCES=local_array_time.c
 local_array_time_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-local_array_time_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+local_array_time_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
 adios_amr_write_SOURCES=adios_amr_write.c
 adios_amr_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-adios_amr_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_amr_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 adios_amr_write.o: adios_amr_write.c
 
 adios_amr_write_2vars_SOURCES=adios_amr_write_2vars.c
 adios_amr_write_2vars_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-adios_amr_write_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_amr_write_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 adios_amr_write_2vars.o: adios_amr_write_2vars.c
 
 adios_staged_read_SOURCES=adios_staged_read.c
@@ -104,67 +104,67 @@ adios_staged_read_2vars.o: adios_staged_read_2vars.c
 
 adios_transforms_read_write_SOURCES=adios_transforms_read_write.c
 adios_transforms_read_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-adios_transforms_read_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_transforms_read_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 adios_transforms_read_write.o: adios_transforms_read_write.c 
 
 write_read_SOURCES=write_read.c
 write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 write_read.o: write_read.c
 
 write_alternate_SOURCES=write_alternate.c
 write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 write_alternate.o: write_alternate.c
 
 set_path_SOURCES=set_path.c
 set_path_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-set_path_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 set_path.o: set_path.c
 
 set_path_var_SOURCES=set_path_var.c
 set_path_var_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-set_path_var_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path_var_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 set_path_var.o: set_path_var.c
 
 two_groups_SOURCES=two_groups.c
 two_groups_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-two_groups_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+two_groups_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 two_groups.o: two_groups.c
 
 many_vars_SOURCES=many_vars.c
 many_vars_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-many_vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+many_vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 many_vars.o: many_vars.c
 
 selections_SOURCES=selections.c
 selections_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 selections.o: selections.c
 
 path_test_SOURCES=path_test.c
 path_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-path_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+path_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 path_test.o: path_test.c
 
 reuse_dim_SOURCES=reuse_dim.c
 reuse_dim_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 reuse_dim.o: reuse_dim.c
 
 connect_to_space_subset_SOURCES=connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 connect_to_space_subset.o: connect_to_space_subset.c
 
 big_file_SOURCES=big_file.c
 big_file_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-big_file_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+big_file_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 big_file.o: big_file.c
 
 steps_write_SOURCES=steps_write.c
 steps_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-steps_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+steps_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 steps_write.o: steps_write.c
 
 steps_read_file_SOURCES=steps_read_file.c
@@ -179,12 +179,12 @@ steps_read_stream.o: steps_read_stream.c
 
 blocks_SOURCES=blocks.c
 blocks_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-blocks_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+blocks_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 blocks.o: blocks.c
 
 build_standard_dataset_SOURCES = build_standard_dataset.c 
 build_standard_dataset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
-build_standard_dataset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+build_standard_dataset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
 transforms_writeblock_read_SOURCES = transforms_writeblock_read.c 
 transforms_writeblock_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD) 
@@ -193,7 +193,7 @@ transforms_writeblock_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
 #transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-#transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+#transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 #transforms.o: transforms.c
 
 

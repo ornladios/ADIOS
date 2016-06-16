@@ -10,7 +10,7 @@ check_PROGRAMS = attributes_write_C attributes_read_C
 
 attributes_write_C_SOURCES = attributes_write_C.c
 attributes_write_C_LDADD = $(top_builddir)/src/libadios.a 
-attributes_write_C_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+attributes_write_C_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 attributes_write_C_LDADD += $(ADIOSLIB_LDADD)
 attributes_write_C.o: gwrite_temperature.ch 
 gwrite_temperature.ch: attributes_C.xml

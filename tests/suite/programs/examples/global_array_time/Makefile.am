@@ -10,7 +10,7 @@ check_PROGRAMS = global_array_time_write_C global_array_time_read_as_file_C glob
 
 global_array_time_write_C_SOURCES = global_array_time_write_C.c
 global_array_time_write_C_LDADD = $(top_builddir)/src/libadios.a
-global_array_time_write_C_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+global_array_time_write_C_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 global_array_time_write_C_LDADD += $(ADIOSLIB_LDADD)
 global_array_time_write_C.o: gwrite_restart.ch
 gwrite_restart.ch: global_array_time_C.xml
@@ -35,7 +35,7 @@ check_PROGRAMS += global_array_time_write_F
 
 global_array_time_write_F_SOURCES = global_array_time_write_F.F90
 global_array_time_write_F_LDADD = $(top_builddir)/src/libadiosf.a
-global_array_time_write_F_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+global_array_time_write_F_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 global_array_time_write_F_LDADD += $(ADIOSLIB_LDADD)
 global_array_time_write_F.o: gwrite_restart.fh
 gwrite_restart.fh: global_array_time_F.xml
