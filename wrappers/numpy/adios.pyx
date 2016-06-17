@@ -1624,11 +1624,14 @@ cdef class writer(object):
         for key, val in extra_attrs.iteritems():
             if self.is_noxml: val.define(self.gid)
 
+        """
+        ## No groupsize anymore (Jun 17, 2016)
         groupsize = 0
         for var in self.vars.values():
             groupsize = groupsize + var.bytes()
 
         set_group_size(fd, groupsize)
+        """
 
         for var in self.vars.values():
             var.write(fd)

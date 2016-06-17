@@ -10,7 +10,6 @@ class AdiosTestCase(ut.TestCase):
 
     def setUp(self):
         ad.init_noxml()
-        ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10)
 
     def tearDown(self):
         ad.finalize()

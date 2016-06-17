@@ -13,7 +13,6 @@ class AdiosTestCase(ut.TestCase):
 
         ad.init_noxml()
 
-        ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
         g = ad.declare_group("temperature", "", ad.FLAG.YES)
         ad.define_var(g, "NX", "", ad.DATATYPE.integer, "", "", "")
         ad.define_var(g, "size", "", ad.DATATYPE.integer, "", "", "")
@@ -28,10 +27,10 @@ class AdiosTestCase(ut.TestCase):
         fd = ad.open("temperature", self.temp.path, "w")
         self.NX = 10
         self.size = 2
-        groupsize =  4 + 4 + 8 * self.size * self.NX
+        ##groupsize =  4 + 4 + 8 * self.size * self.NX
         t = np.array(list(range(self.NX * self.size)), dtype=np.float64)
         self.tt = t.reshape((self.size, self.NX))
-        ad.set_group_size(fd, groupsize)
+        ##ad.set_group_size(fd, groupsize)
         ad.write_int(fd, "NX", self.NX)
         ad.write_int(fd, "size", self.size)
         ad.write(fd, "temperature", self.tt)

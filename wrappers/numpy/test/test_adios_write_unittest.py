@@ -18,7 +18,6 @@ class AdiosTestCase(ut.TestCase):
 
     def write_scalar(self, adtype, val, varname='val'):
         ad.init_noxml()
-        ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
         g = ad.declare_group("group", "", ad.FLAG.YES)
         ad.define_var(g, varname, "", adtype, "", "", "")
         ad.select_method(g, "POSIX1", "", "")
@@ -31,7 +30,7 @@ class AdiosTestCase(ut.TestCase):
             npval = np.array(val, dtype=dtype)
 
         fd = ad.open("group", self.temp.path, "w")
-        ad.set_group_size(fd, npval.nbytes)
+        ##ad.set_group_size(fd, npval.nbytes)
         ad.write(fd, varname, val, dtype)
         ad.close(fd)
         ad.finalize()
