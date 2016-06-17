@@ -122,7 +122,7 @@ if test -z "${HAVE_MXML_FALSE}" -a -z "${BUILD_WRITE_TRUE}"; then
     AC_SUBST(MXML_BUILD_LDFLAGS)
     AC_SUBST(MXML_LDFLAGS)
     AC_DEFINE_UNQUOTED(MXML_VERSION, [Mini-XML v2.9], [MXML version string])
-    AC_DEFINE(HAVE_PTHREAD_H, 0, [We build Mini-XML without pthread support because ADIOS does not need it])
+    dnl AC_DEFINE(HAVE_PTHREAD_H, 0, [We build Mini-XML without pthread support because ADIOS does not need it])
     dnl AC_CONFIG_SUBDIRS([mxml/mxml-2.9])
     dnl AC_MSG_ERROR([The ADIOS libraries for writing cannot be built without the MXML library. Either specify where the MXML library is found, or use --disable-write to build ADIOS for reading only.])
     dnl AM_CONDITIONAL([BUILD_WRITE], false)
