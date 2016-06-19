@@ -8,7 +8,7 @@ link_directories(${MXML_LIB_DIR})
 include_directories(${MXML_INCLUDE_DIR})
 
 add_executable(fastbit_tests fastbit_tests.c)
-target_link_libraries(fastbit_tests adiosread_nompi adios_nompi ${ADIOSREADLIB_LDADD} ${MXML_LIBS})
+target_link_libraries(fastbit_tests adiosread_nompi adios_nompi ${ADIOSREADLIB_LDADD} ${MXML_LIBS_FORBUILD})
 set_target_properties(fastbit_tests PROPERTIES COMPILE_FLAGS "${MACRODEFFLAG}_NOMPI")
 
 file(COPY query.xml

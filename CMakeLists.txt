@@ -57,8 +57,12 @@ message(STATUS "MACRODEFFLAG = ${MACRODEFFLAG}")
 set(LIBS "")
 set(CPPFLAGS "$ENV{CPPFLAGS}")
 set(CFLAGS "$ENV{CFLAGS}")
-set(EXTRA_CFLAGS "$ENV{EXTRA_CFLAGS}")
-set(EXTRA_LIBS "$ENV{EXTRA_LIBS}")
+if(DEFINED ENV{EXTRA_CFLAGS})
+    set(EXTRA_CFLAGS "$ENV{EXTRA_CFLAGS}")
+endif()
+if(DEFINED ENV{EXTRA_LIBS})
+    set(EXTRA_LIBS "$ENV{EXTRA_LIBS}")
+endif()
 ######## file moved from initial_cache.cmake to indicate external library is used(ON) or not (OFF)######
 if(DEFINED ENV{BUILD_WRITE})
   if("$ENV{BUILD_WRITE}" STREQUAL "") 
@@ -961,6 +965,7 @@ if (MXML_DIR)
   if(MXML_LIBS AND HAVE_MXML_H)
     set(HAVE_MXML 1)
     set(MXML_LIB_DIR ${MXML_DIR}/lib)
+    set(MXML_LIBS_FORBUILD "${MXML_LIBS}")
     #set(LIBS "${LIBS} ${MXML_LIBS})
     # set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
   endif()
@@ -972,10 +977,13 @@ if (NOT HAVE_MXML)
   set(HAVE_MXML 1)
   set(BUILD_MXML 1)
   add_subdirectory(mxml)
-  set(MXML_CPPFLAGS "-I${PROJECT_SOURCE_DIR}/mxml/mxml-2.9")
-  set(MXML_LIBS "${PROJECT_BINARY_DIR}/mxml/libmxml.a") 
+  #set(MXML_CPPFLAGS "-I${PROJECT_SOURCE_DIR}/mxml/mxml-2.9")
+  set(MXML_LIBS "\${ADIOS_DIR}/lib/libmxml.a") 
   set(MXML_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/mxml/mxml-2.9)
   set(MXML_LIB_DIR ${PROJECT_BINARY_DIR}/mxml)
+  set(MXML_LIBS_FORBUILD "${PROJECT_BINARY_DIR}/mxml/libmxml.a")
+  set(CPPFLAGS "${CPPFLAGS} -I${PROJECT_SOURCE_DIR}/mxml/mxml-2.9")
+  try_compile(HAVE_LONG_LONG ${PROJECT_BINARY_DIR}/mxml SOURCES ${PROJECT_SOURCE_DIR}/mxml/cmake_try_longlong.c)
 endif (NOT HAVE_MXML)
 
 
@@ -1182,6 +1190,15 @@ CHECK_INCLUDE_FILES(string.h HAVE_STRING_H)
 # Define to 1 if you have the `strncpy' function.
 CHECK_FUNCTION_EXISTS(strncpy HAVE_STRNCPY)
 
+# Define to 1 if you have the `strdup' function.
+CHECK_FUNCTION_EXISTS(strdup HAVE_STRDUP)
+
+# Define to 1 if you have the `snprintf' function.
+CHECK_FUNCTION_EXISTS(snprintf HAVE_SNPRINTF)
+
+# Define to 1 if you have the `vsnprintf' function.
+CHECK_FUNCTION_EXISTS(vsnprintf HAVE_VSNPRINTF)
+
 # Define to 1 if you have the <sys/stat.h> header file.
 CHECK_INCLUDE_FILES(sys/stat.h HAVE_SYS_STAT_H)
 
@@ -1344,7 +1361,7 @@ set(PACKAGE adios)
 set(VERSION_MAJOR 1)
 
 # Minor version number
-set(VERSION_MINOR 8)
+set(VERSION_MINOR 10)
 
 # Micro version number
 set(VERSION_MICRO 0)
@@ -1353,7 +1370,7 @@ set(VERSION_MICRO 0)
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO})
 
 # svn revision number
-set(VERSION_SVNREV 2007)
+#set(VERSION_SVNREV 2007)
 
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
@@ -1384,18 +1401,18 @@ find_library(M_LIBS m)
 # ADIOSREADLIB_SEQ_* for codes using libadiosread_nompi.a
 # adios_config will contain flags for users' code linking based on these flags
 # EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
-set(ADIOSLIB_EXTRA_CPPFLAGS "${MACRODEFFLAG}_FILE_OFFSET_BITS=64 ${MACRODEFFLAG}_LARGEFILE_SOURCE ${MACRODEFFLAG}_LARGEFILE64_SOURCE ${MACRODEFFLAG}_GNU_SOURCE")
+set(ADIOSLIB_EXTRA_CPPFLAGS "${MACRODEFFLAG}_FILE_OFFSET_BITS=64 ${MACRODEFFLAG}_LARGEFILE_SOURCE ${MACRODEFFLAG}_LARGEFILE64_SOURCE ${MACRODEFFLAG}_GNU_SOURCE ${CPPFLAGS}")
 #message("${ADIOSLIB_EXTRA_CPPFLAGS}")
-set(ADIOSLIB_LDADD ${MXML_LIBS})
+set(ADIOSLIB_LDADD "")
 set(ADIOSLIB_CFLAGS "")
 set(ADIOSLIB_CPPFLAGS "${MXML_CPPFLAGS}")
 #message("ADIOSLIB_CPPFLAGS is ${ADIOSLIB_CPPFLAGS}")
 set(ADIOSLIB_SEQ_CPPFLAGS "${MACRODEFFLAG}_NOMPI ${MXML_CPPFLAGS}")
 set(ADIOSLIB_SEQ_CFLAGS "")
-set(ADIOSLIB_SEQ_LDADD ${MXML_LIBS})
+set(ADIOSLIB_SEQ_LDADD "")
 set(ADIOSLIB_INT_CPPFLAGS "${MACRODEFFLAG}_NOMPI ${MXML_CPPFLAGS}")
 set(ADIOSLIB_INT_CFLAGS "")
-set(ADIOSLIB_INT_LDADD ${MXML_LIBS})
+set(ADIOSLIB_INT_LDADD "")
 set(ADIOSREADLIB_CPPFLAGS "")
 set(ADIOSREADLIB_CFLAGS "")
 set(ADIOSREADLIB_LDADD "")
@@ -1467,12 +1484,12 @@ if(HAVE_NSSI)
   set(ADIOSLIB_SEQ_CPPFLAGS "${ADIOSLIB_SEQ_CPPFLAGS} ${NSSI_CPPFLAGS}")
   set(ADIOSLIB_SEQ_CFLAGS "${ADIOSLIB_SEQ_CFLAGS} ${NSSI_CFLAGS}")
   set(ADIOSLIB_SEQ_LDADD ${ADIOSLIB_SEQ_LDADD} ${NSSI_LIBS})
-  set(ADIOSREADLIB_CPPFLAGS "${ADIOSREADLIB_CPPFLAGS} ${MXML_CPPFLAGS} ${NSSI_CPPFLAGS}")
-  set(ADIOSREADLIB_CFLAGS "${ADIOSREADLIB_CFLAGS} ${MXML_CPPFLAGS} ${NSSI_CFLAGS}")
-  set(ADIOSREADLIB_LDADD ${ADIOSREADLIB_LDADD} ${MXML_LIBS} ${NSSI_LIBS})
-  set(ADIOSREADLIB_SEQ_CPPFLAGS "${ADIOSREADLIB_SEQ_CPPFLAGS} ${MXML_CPPFLAGS} ${NSSI_CPPFLAGS}")
-  set(ADIOSREADLIB_SEQ_CFLAGS "${ADIOSREADLIB_SEQ_CFLAGS} ${MXML_CPPFLAGS} ${NSSI_CFLAGS}")
-  set(ADIOSREADLIB_SEQ_LDADD ${ADIOSREADLIB_SEQ_LDADD} ${MXML_LIBS} ${NSSI_LIBS})
+  set(ADIOSREADLIB_CPPFLAGS "${ADIOSREADLIB_CPPFLAGS} ${NSSI_CPPFLAGS}")
+  set(ADIOSREADLIB_CFLAGS "${ADIOSREADLIB_CFLAGS} ${NSSI_CFLAGS}")
+  set(ADIOSREADLIB_LDADD ${ADIOSREADLIB_LDADD} ${NSSI_LIBS})
+  set(ADIOSREADLIB_SEQ_CPPFLAGS "${ADIOSREADLIB_SEQ_CPPFLAGS} ${NSSI_CPPFLAGS}")
+  set(ADIOSREADLIB_SEQ_CFLAGS "${ADIOSREADLIB_SEQ_CFLAGS} ${NSSI_CFLAGS}")
+  set(ADIOSREADLIB_SEQ_LDADD ${ADIOSREADLIB_SEQ_LDADD} ${NSSI_LIBS})
 endif()
 
 if(HAVE_NC4PAR)
@@ -1750,8 +1767,6 @@ set(ADIOSREADLIB_SEQ_LDADD ${ADIOSREADLIB_SEQ_LDADD} ${M_LIBS})
 
 #add_definitions(-DO_LARGEFILE=0)
 
-add_subdirectory(src)
-
 get_property(_LANGUAGES_ GLOBAL PROPERTY ENABLED_LANGUAGES)
 message(STATUS "${_LANGUAGES_}")
 
@@ -1774,6 +1789,22 @@ install(PROGRAMS ${CMAKE_BINARY_DIR}/adios_config DESTINATION ${bindir})
 install(FILES ${PROJECT_SOURCE_DIR}/scripts/FindADIOS.cmake DESTINATION ${sysconfdir}) 
 #install(FILES ${PROJECT_SOURCE_DIR}/adios_git_status DESTINATION ${sysconfdir})
 
+
+################ Add EXTRA_LIBS to LIBS now, e.g. internal mxml library not needed for linking ###########
+
+if (BUILD_MXML)
+  # Add local mxml library to all ADIOS library dependencies at this point
+  # it does not go into adios_config.flags but we need it to build adios
+  set(ADIOSLIB_LDADD ${ADIOSLIB_LDADD} ${MXML_LIBS_FORBUILD})
+  set(ADIOSLIB_SEQ_LDADD ${ADIOSLIB_SEQ_LDADD} ${MXML_LIBS_FORBUILD})
+  set(ADIOSLIB_INT_LDADD ${ADIOSLIB_INT_LDADD} ${MXML_LIBS_FORBUILD})
+else ()
+  set(ADIOSLIB_LDADD {ADIOSLIB_LDADD} ${MXML_LIBS})
+  set(ADIOSLIB_SEQ_LDADD ${ADIOSLIB_SEQ_LDADD} ${MXML_LIBS})
+  set(ADIOSLIB_INT_LDADD ${ADIOSLIB_INT_LDADD} ${MXML_LIBS})
+endif()
+
+add_subdirectory(src)
 add_subdirectory(utils)
 add_subdirectory(tests)
 add_subdirectory(examples)

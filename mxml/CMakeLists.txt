@@ -1,6 +1,7 @@
 set(MXML_SRCDIR "mxml-2.9")
-include_directories(${PROJECT_BINARY_DIR}/mxml)
+include_directories(${PROJECT_SOURCE_DIR}/mxml)
 include_directories(${PROJECT_SOURCE_DIR}/src/mxml/${MXML_SRCDIR})
+include_directories(${PROJECT_BINARY_DIR}/mxml)
 link_directories(${PROJECT_BINARY_DIR}/mxml)
 
 
@@ -10,7 +11,7 @@ set(nodist_include_HEADERS "")
 set(lib_LIBRARIES "")
 
 if(BUILD_MXML)
-    set(libmxml_la_SOURCES 
+    set(libmxml_a_SOURCES 
             ${MXML_SRCDIR}/mxml-attr.c
             ${MXML_SRCDIR}/mxml-get.c 
             ${MXML_SRCDIR}/mxml-private.c
@@ -22,15 +23,15 @@ if(BUILD_MXML)
             ${MXML_SRCDIR}/mxml-node.c
             ${MXML_SRCDIR}/mxml-set.c
        )
-    set(libmxml_la_CPPFLAGS "${AM_CPPFLAGS}")
-    set(libmxml_la_CFLAGS "")
+    set(libmxml_a_CPPFLAGS "${AM_CPPFLAGS}")
+    set(libmxml_a_CFLAGS "")
 
-    add_library(mxml STATIC ${libmxml_la_SOURCES})
+    add_library(mxml STATIC ${libmxml_a_SOURCES})
     set_target_properties(mxml PROPERTIES COMPILE_FLAGS "${MXML_CPPFLAGS}")
 
 #add_subdirectory(mxml-2.9)
 
-install(FILES ${PROJECT_BINARY_DIR}/mxml/libmxml.la
+install(FILES ${PROJECT_BINARY_DIR}/mxml/libmxml.a
         DESTINATION ${libdir})
 
 endif(BUILD_MXML)
