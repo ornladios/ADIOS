@@ -984,13 +984,13 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --enable-dependency-tracking \
         --enable-timers \
         --disable-timer-events \
-        --with-mxml=/opt/mxml \
         --with-zlib \
         --with-bzip2 \
         --with-szip=/opt/szip \
         --with-isobar=/opt/isobar \
         --with-flexpath=/opt/chaos \
         --with-fastbit=/opt/fastbit \
+        --with-alacrity=/opt/alacrity \
         --with-hdf5=/opt/hdf5-1.8.17 \
         --with-phdf5=/opt/hdf5-1.8.17-parallel \
         --with-netcdf=/opt/netcdf-4.4.0 \
