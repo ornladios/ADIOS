@@ -898,6 +898,41 @@ cdef class file(object):
                  self.last_step,
                  self.file_size)
 
+cdef class blockinfo(object):
+    cpdef tuple start
+    cpdef tuple count
+    cpdef int process_id
+    cpdef int time_index
+
+    property start:
+        def __get__(self):
+            return self.start
+
+    property count:
+        def __get__(self):
+            return self.count
+
+    property process_id:
+        def __get__(self):
+            return self.process_id
+
+    property time_index:
+        def __get__(self):
+            return self.time_index
+
+    def __init__(self, tuple start, tuple count, int process_id, int time_index):
+        self.start = start
+        self.count = count
+        self.process_id = process_id
+        self.time_index = time_index
+
+    def __repr__(self):
+        return "AdiosBlockinfo (process_id=%r, time_index=%r, start=%r, count=%r)" % \
+               (self.process_id,
+                self.time_index,
+                self.start,
+                self.count)
+
 cdef class var(object):
     """
     Adios variable class.
@@ -924,6 +959,7 @@ cdef class var(object):
     cpdef tuple dims
     cpdef int nsteps
     cpdef dict attrs
+    cpdef list blockinfo
 
     property name:
         """ The variable name. """
@@ -966,8 +1002,29 @@ cdef class var(object):
             return self.nsteps
 
     property attrs:
+        """ Attributes associated with the variable. """
         def __get__(self):
             return self.attrs
+
+    property blockinfo:
+        """ Block information. """
+        def __get__(self):
+            if self.blockinfo is None:
+                ll = list()
+                k = 0
+                for t in range(self.vp.nsteps):
+                    l = list()
+                    for i in range(self.vp.nblocks[t]):
+                        start = tuple([self.vp.blockinfo[k].start[d] for d in range(self.vp.ndim)])
+                        count = tuple([self.vp.blockinfo[k].count[d] for d in range(self.vp.ndim)])
+                        process_id = self.vp.blockinfo[k].process_id
+                        time_index = self.vp.blockinfo[k].time_index
+                        binfo = blockinfo(start, count, process_id, time_index)
+                        l.append(binfo)
+                        k += 1
+                    ll.append(l)
+                self.blockinfo = ll
+            return (self.blockinfo)
 
     def __init__(self, file file, str name):
         self.file = file
@@ -976,6 +1033,8 @@ cdef class var(object):
         assert self.file.fp != NULL, 'Not an open file'
         self.vp = adios_inq_var(self.file.fp, s2b(name))
         assert self.vp != NULL, 'Not a valid var'
+
+        ## Further populate vp.blockinfo
         adios_inq_var_blockinfo(self.file.fp, self.vp)
 
         self.name = name
@@ -1068,6 +1127,21 @@ cdef class var(object):
         return var
 
     cpdef read_writeblock(self, int rank, from_steps = None, nsteps = None):
+        """ Perform block read.
+
+        Read data from an ADIOS BP file based on the rank id.
+
+        Args:
+            rank (int): rank id
+            from_steps (int, optional): starting step index (default: None)
+            nsteps (int, optional): number of time dimensions (default: None)
+
+        Returns:
+            NumPy 1-D ndarray
+
+        Raises:
+            IndexError: If dimension is mismatched or out of the boundary.
+        """
         if from_steps is None:
             from_steps = 0 ##self.file.current_step
 
@@ -1419,6 +1493,10 @@ cdef class group(object):
                 return self.attrs.get(key_)
 
         raise KeyError(key_)
+
+    def keys(self):
+        """ Return keys """
+        return vars.keys();
 
     def __repr__(self):
         """ Return string representation. """
