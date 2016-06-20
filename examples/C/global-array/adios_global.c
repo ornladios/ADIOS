@@ -33,8 +33,10 @@ int main (int argc, char ** argv)
 	MPI_Comm_size (comm, &size);
 
 	for (i = 0; i < NX; i++)
-		t[i] = rank*NX + i;
+	    t[i] = 0;
+//		t[i] = rank*NX + i;
 
+        t[1] = 10;
 	strcpy (filename, "adios_global.bp");
 
 	adios_init ("adios_global.xml", comm);

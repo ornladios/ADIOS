@@ -156,7 +156,8 @@ libadios_a_SOURCES = core/adios.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
                      write/adios_posix.c \
-                     write/adios_var_merge.c 
+                     write/adios_var_merge.c \
+                     write/adios_sirius_adaptive.c 
 if HAVE_BGQ
 libadios_a_SOURCES += write/adios_mpi_bgq.c 
 endif
@@ -235,7 +236,8 @@ FortranLibSources = core/adiosf.c \
 FortranLibMPISources =  write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
-                     write/adios_var_merge.c
+                     write/adios_var_merge.c \
+                     write/adios_sirius_adaptive.c
 if HAVE_BGQ
 FortranLibMPISources += write/adios_mpi_bgq.c  
 endif

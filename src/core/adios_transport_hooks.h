@@ -135,7 +135,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_MPI_BGQ     = 23
               ,ADIOS_METHOD_ICEE        = 24
               ,ADIOS_METHOD_SIRIUS      = 25
-              ,ADIOS_METHOD_COUNT       = 26
+              ,ADIOS_METHOD_SIRIUS_ADAPTIVE      = 26
+              ,ADIOS_METHOD_COUNT       = 27
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -147,6 +148,7 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
      //FORWARD_DECLARE(mpi_stagger)
      //FORWARD_DECLARE(mpi_aggregate)
      FORWARD_DECLARE(mpi_amr)
+     FORWARD_DECLARE(sirius_adaptive)
 #if HAVE_BGQ
      FORWARD_DECLARE(mpi_bgq)
 #endif
