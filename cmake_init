@@ -641,12 +641,12 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export INSTALL_PREFIX="/opt/adios/1.10"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    export SEQ_HDF5_DIR=/opt/hdf5-1.8.12
-    export SEQ_HDF5_LIBS="-L/opt/hdf5-1.8.12/lib -lhdf5_hl -lhdf5 -lm"
-    export PAR_HDF5_DIR=/opt/hdf5-1.8.12-parallel
-    export PAR_HDF5_LIBS="-L/opt/hdf5-1.8.12-parallel/lib -lhdf5_hl -lhdf5 -lm"
-    export SEQ_NC_DIR=/opt/netcdf-3.6.3
-    export SEQ_NC_LIBS="-L/opt/netcdf-3.6.3/lib -lnetcdf"
+    export SEQ_HDF5_DIR=/opt/hdf5-1.8.17
+    export SEQ_HDF5_LIBS="-L/opt/hdf5-1.8.17/lib -lhdf5_hl -lhdf5 -lm"
+    export PAR_HDF5_DIR=/opt/hdf5-1.8.17-parallel
+    export PAR_HDF5_LIBS="-L/opt/hdf5-1.8.17-parallel/lib -lhdf5_hl -lhdf5 -lm"
+    export SEQ_NC_DIR=/opt/netcdf-4.4.0
+    export SEQ_NC_LIBS="-L/opt/netcdf-4.4.0/lib -lnetcdf"
 else
     echo "Could not determine what machine is this."
     echo "This script is for configuring adios on the authors' machines."
