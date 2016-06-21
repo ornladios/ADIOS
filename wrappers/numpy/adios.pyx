@@ -55,6 +55,15 @@ cpdef bytes s2b(str x):
     else:
         return x.encode()
 
+def normalize_key(keys):
+    l = list()
+    for key in keys:
+        if key.startswith('/'):
+            key = key[1:]
+        if '/' not in key:
+            l.append(key)
+    return (l)
+
 cdef char ** to_cstring_array(list_str):
     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
     for i in xrange(len(list_str)):
@@ -872,6 +881,12 @@ cdef class file(dict):
             if key_ in self.attrs.keys():
                 return self.attrs.get(key_)
 
+            if '/'+key_ in self.vars.keys():
+                return self.vars.get('/'+key_)
+
+            if '/'+key_ in self.attrs.keys():
+                return self.attrs.get('/'+key_)
+
             for name in self.vars.keys():
                 #if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
                 if name.startswith(key_) or name.startswith('/'+key_):
@@ -903,7 +918,12 @@ cdef class file(dict):
         return self.__getitem__(varname)
 
     def __dir__(self):
-        return dir(type(self)) + self.vars.keys() + self.attrs.keys()
+        k0 = dir(type(self))
+        ## Normalize to support var starting with '/'
+        ## E.g., f['/var1'] == f.var1
+        k1 = normalize_key(self.vars.keys())
+        k2 = normalize_key(self.attrs.keys())
+        return k0 + k1 + k2
 
     ## Require for dictionary key completion
     def keys(self):
@@ -970,7 +990,7 @@ cdef class var(object):
     cpdef tuple dims
     cpdef int nsteps
     cpdef dict attrs
-    cpdef list blockinfo
+    cpdef list _blockinfo
 
     property name:
         """ The variable name. """
@@ -1016,26 +1036,6 @@ cdef class var(object):
         """ Attributes associated with the variable. """
         def __get__(self):
             return self.attrs
-
-    property blockinfo:
-        """ Block information. """
-        def __get__(self):
-            if self.blockinfo is None:
-                ll = list()
-                k = 0
-                for t in range(self.vp.nsteps):
-                    l = list()
-                    for i in range(self.vp.nblocks[t]):
-                        start = tuple([self.vp.blockinfo[k].start[d] for d in range(self.vp.ndim)])
-                        count = tuple([self.vp.blockinfo[k].count[d] for d in range(self.vp.ndim)])
-                        process_id = self.vp.blockinfo[k].process_id
-                        time_index = self.vp.blockinfo[k].time_index
-                        binfo = blockinfo(start, count, process_id, time_index)
-                        l.append(binfo)
-                        k += 1
-                    ll.append(l)
-                self.blockinfo = ll
-            return (self.blockinfo)
 
     def __init__(self, file file, str name):
         self.file = file
@@ -1358,6 +1358,27 @@ cdef class var(object):
 
         else:
             raise NotImplementedError("Not implemented yet")
+
+    def blockinfo(self):
+        """ Block information. """
+        if self._blockinfo is None:
+            ll = list()
+            k = 0
+            for t in range(self.vp.nsteps):
+                l = list()
+                if self.vp.nblocks[t] == 0:
+                    l.append(None)
+                for i in range(self.vp.nblocks[t]):
+                    start = tuple([self.vp.blockinfo[k].start[d] for d in range(self.vp.ndim)])
+                    count = tuple([self.vp.blockinfo[k].count[d] for d in range(self.vp.ndim)])
+                    process_id = self.vp.blockinfo[k].process_id
+                    time_index = self.vp.blockinfo[k].time_index
+                    binfo = blockinfo(start, count, process_id, time_index)
+                    l.append(binfo)
+                    k += 1
+                ll.append(l)
+            self._blockinfo = ll
+        return (self._blockinfo)
 
 cdef class attr(object):
     """
