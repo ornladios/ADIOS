@@ -1,8 +1,8 @@
 set(MXML_SRCDIR "mxml-2.9")
-include_directories(${PROJECT_SOURCE_DIR}/mxml)
+include_directories(${PROJECT_SOURCE_DIR}/src/mxml)
 include_directories(${PROJECT_SOURCE_DIR}/src/mxml/${MXML_SRCDIR})
-include_directories(${PROJECT_BINARY_DIR}/mxml)
-link_directories(${PROJECT_BINARY_DIR}/mxml)
+include_directories(${PROJECT_BINARY_DIR}/src/mxml)
+link_directories(${PROJECT_BINARY_DIR}/src/mxml)
 
 
 set(CLEANFILES "")
@@ -24,14 +24,13 @@ if(BUILD_MXML)
             ${MXML_SRCDIR}/mxml-set.c
        )
     set(libmxml_a_CPPFLAGS "${AM_CPPFLAGS}")
-    set(libmxml_a_CFLAGS "")
+    set(libmxml_a_CFLAGS "${AM_CFLAGS}")
 
-    add_library(mxml STATIC ${libmxml_a_SOURCES})
-    set_target_properties(mxml PROPERTIES COMPILE_FLAGS "${MXML_CPPFLAGS}")
+    add_library(mxml OBJECT ${libmxml_a_SOURCES})
+    #set_target_properties(mxml PROPERTIES COMPILE_FLAGS "")
 
-#add_subdirectory(mxml-2.9)
-
-install(FILES ${PROJECT_BINARY_DIR}/mxml/libmxml.a
-        DESTINATION ${libdir})
+## Do not install libmxml.a, adios does not need it
+#install(FILES ${PROJECT_BINARY_DIR}/mxml/libmxml.a
+#        DESTINATION ${libdir})
 
 endif(BUILD_MXML)
