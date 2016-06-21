@@ -9,8 +9,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 
-/* This should be the ADIOS config.h, ../.config.h or ../../config.h should work */
-#include "../config.h" 
+/* This should be the ADIOS config.h; ../../config.h should work */
+#include "../../config.h" 
 
 /* We build Mini-XML without pthread support because ADIOS does not need it */
 #undef HAVE_PTHREAD_H

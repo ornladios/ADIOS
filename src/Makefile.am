@@ -1,5 +1,21 @@
 AM_CPPFLAGS=-I$(top_builddir)/src/public -I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
 
+if BUILD_MXML
+SUBDIRS = mxml 
+MXML_BUILDDIR=mxml/mxml-2.9
+MXML_LIB=libmxml_a
+MXML_OBJECTS = ${MXML_BUILDDIR}/${MXML_LIB}-mxml-attr.${OBJEXT}     \
+                     ${MXML_BUILDDIR}/${MXML_LIB}-mxml-get.${OBJEXT}      \
+                     ${MXML_BUILDDIR}/${MXML_LIB}-mxml-private.${OBJEXT}  \
+                     ${MXML_BUILDDIR}/${MXML_LIB}-mxml-string.${OBJEXT}   \
+                     ${MXML_BUILDDIR}/${MXML_LIB}-mxml-entity.${OBJEXT}   \
+                     ${MXML_BUILDDIR}/${MXML_LIB}-mxml-index.${OBJEXT}    \
+                     ${MXML_BUILDDIR}/${MXML_LIB}-mxml-search.${OBJEXT}   \
+                     ${MXML_BUILDDIR}/${MXML_LIB}-mxml-file.${OBJEXT}     \
+                     ${MXML_BUILDDIR}/${MXML_LIB}-mxml-node.${OBJEXT}     \
+                     ${MXML_BUILDDIR}/${MXML_LIB}-mxml-set.${OBJEXT} 
+endif
+
 AUTOMAKE_OPTIONS = no-dependencies subdir-objects
 METASOURCES=AUTO
 
@@ -200,6 +216,10 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      write/adios_posix.c 
 
 
+if BUILD_MXML
+libadios_a_LIBADD = ${MXML_OBJECTS}
+libadios_nompi_a_LIBADD = ${MXML_OBJECTS}
+endif
 
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosf.a libadiosf_v1.a libadiosf_nompi.a libadiosf_nompi_v1.a
@@ -402,6 +422,13 @@ libadiosf_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
 
 libadiosf_nompi_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
                                 core/adiosf_write_mod.f90 
+
+if BUILD_MXML
+libadiosf_a_LIBADD = ${MXML_OBJECTS}
+libadiosf_v1_a_LIBADD = ${MXML_OBJECTS}
+libadiosf_nompi_a_LIBADD = ${MXML_OBJECTS}
+libadiosf_nompi_v1_a_LIBADD = ${MXML_OBJECTS}
+endif
 
 #nodist_libadiosreadf_a_SOURCES += adios_write.mod
 nodist_include_HEADERS += adios_write_mod.mod 
@@ -690,6 +717,9 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_transport_hooks.c 
 if BUILD_WRITE
 libadios_internal_nompi_a_SOURCES += core/adios_internals_mxml.c 
+if BUILD_MXML
+libadios_internal_nompi_a_LIBADD = ${MXML_OBJECTS}
+endif
 endif
 
 
