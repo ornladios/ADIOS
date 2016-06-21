@@ -683,7 +683,7 @@ cpdef int read_finalize(str method_name = "BP"):
     return adios_read_finalize_method (s2b(method))
 
 ## Python class for ADIOS_FILE structure
-cdef class file(object):
+cdef class file(dict):
     """
     file class for Adios file read and write.
 
@@ -896,6 +896,17 @@ cdef class file(object):
                  self.current_step,
                  self.last_step,
                  self.file_size)
+
+    ## To support ipython tab completion
+    def __getattr__(self, varname):
+        return self.__getitem__(varname)
+
+    def __dir__(self):
+        return dir(type(self)) + self.vars.keys() + self.attrs.keys()
+
+    ## Require for dictionary key completion
+    def keys(self):
+        return self.vars.keys() + self.attrs.keys()
 
 cdef class blockinfo(object):
     cpdef tuple start
@@ -1433,7 +1444,7 @@ cdef class attr(object):
         return "AdiosAttr (name=%r, dtype=%r, value=%r)" % \
                (self.name, self.dtype, self.value)
 
-cdef class group(object):
+cdef class group(dict):
     """
     Adios group class.
 
@@ -1493,15 +1504,22 @@ cdef class group(object):
 
         raise KeyError(key_)
 
-    def keys(self):
-        """ Return keys """
-        return vars.keys();
-
     def __repr__(self):
         """ Return string representation. """
         return ("AdiosGroup (vars=%r, attrs=%r)") % \
                 (self.vars.keys(),
                  self.attrs.keys())
+
+    ## To support ipython tab completion
+    def __getattr__(self, varname):
+        return self.__getitem__(varname)
+
+    def __dir__(self):
+        return dir(type(self)) + self.vars.keys() + self.attrs.keys()
+
+    ## Require for dictionary key completion
+    def keys(self):
+        return self.vars.keys() + self.attrs.keys()
 
 ## Helper dict
 cdef class smartdict(dict):

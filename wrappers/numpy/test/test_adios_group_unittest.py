@@ -58,6 +58,11 @@ class AdiosTestCase(ut.TestCase):
         # now match: f["/someSubGroup/anOtherGroup/anOtherVariable"]
         self.assertEqual(g["anOtherVariable"], f["/someSubGroup/anOtherGroup/anOtherVariable"])
 
+        ## Testing name acess
+        self.assertEqual(g["anOtherVariable"][...], g.anOtherVariable[...])
+        self.assertEqual(g["anOtherAttribute"].value, g.anOtherAttribute.value)
+
+
     def test_simple2(self):
         self.temp = TempFile()
 
