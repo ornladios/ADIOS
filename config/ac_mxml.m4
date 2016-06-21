@@ -23,9 +23,9 @@ ac_with_mxml=no
 dnl By default assume mxml is installed in system location
 AC_ARG_WITH(mxml,
         [  --with-mxml=DIR      Location of Mini-XML library],
-        [:])
+        [:],[with_mxml=no])
 
-dnl If --without-mxml was given give an error
+dnl If --without-mxml or nothing given, then return
 if test "x$with_mxml" == "xno"; then
 
     AM_CONDITIONAL(HAVE_MXML,false)
