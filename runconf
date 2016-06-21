@@ -21,7 +21,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     echo "Configure on SITH for $TARGET env. for user ${USER}"
     module unload hdf5
     module unload netcdf
-    module unload mxml
     module unload python
     #module unload PE-gnu
     #module unload PE-pgi
@@ -29,9 +28,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     #module unload PE-pathscale
     #module unload pgi gcc intel pathscale
     #module load PE-$TARGET
-    module load mxml/2.9
-    MXMLDIR=$MXML_DIR
-    module unload mxml
     module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
@@ -104,7 +100,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre \
-        --with-mxml=$MXMLDIR \
         --with-hdf5=${SEQ_HDF5_DIR} \
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         --with-zlib \
@@ -147,7 +142,6 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
         exit 1
     fi
     echo "Configure on Rhea for $TARGET env. for user ${USER}"
-    module unload mxml
     module unload hdf5
     module unload netcdf
     module unload PE-gnu
@@ -157,9 +151,6 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
     module unload pgi gcc intel pathscale
     module unload python
     module load PE-$TARGET
-    module load mxml
-    MXMLDIR=$MXML_DIR
-    module unload mxml
     module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
@@ -213,7 +204,6 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre \
-        --with-mxml=$MXMLDIR 
         #--with-hdf5=${SEQ_HDF5_DIR} \
         #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         #--with-phdf5=${PAR_HDF5_DIR} \
@@ -249,7 +239,6 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
     module unload pgi gcc intel pathscale
     #module unload python
     module load PE-$TARGET
-    module load mxml
     #module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
@@ -337,7 +326,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module unload netcdf
         module unload netcdf-hdf5parallel
         module unload hdf5-parallel
-        module unload mxml
         module unload PrgEnv-gnu
         module unload PrgEnv-pgi
         module unload PrgEnv-intel
@@ -349,7 +337,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module swap craype-interlagos craype-istanbul
         #module load szip
         #module load xt-papi
-        module load mxml
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
@@ -366,7 +353,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
 #            --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
 #            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu7.2.3 \
 #            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
-#            --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
             
     else 
     
@@ -383,7 +369,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module unload netcdf
         module unload hdf5-parallel
         module unload netcdf-hdf5parallel
-        module unload mxml
         module unload fastbit
         module unload PrgEnv-gnu
         module unload PrgEnv-pgi
@@ -398,13 +383,13 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         unset EXTRA_CFLAGS
         unset EXTRA_LIBS
         unset LDFLAGS
+        unset WITHFLEX
+        unset WITHFASTBIT
         if [ "$TARGET" == "pgi" ]; then
-            #module swap pgi pgi/11.8.0
             # FASTBIT needs libstdc++ and -pgcpplibs flag
             export LDFLAGS="-pgcpplibs" 
-            export EXTRA_LIBS="/opt/gcc/4.8.2/snos/lib64/libstdc++.a"
+            #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
             #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
-            WITHFLEX=""
         elif [ "$TARGET" == "gnu" ]; then
             export CC=gcc
             export FC=gfortran
@@ -414,11 +399,11 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
             export MPICXX=CC
             # NSSI/FLEXPATH/FASTBIT needs libstdc++
             export LDFLAGS="" 
-            export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
+            module load fastbit
             WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
             # FASTBIT needs libstdc++
-            #export EXTRA_LIBS="/opt/gcc/4.8.2/snos/lib64/libstdc++.a"
-            #module swap gcc gcc/4.4.4
+            #WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
+            #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
             #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
         elif [ "$TARGET" == "cray" ]; then
             export EXTRA_CFLAGS="-h gnu"
@@ -429,8 +414,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #module load netcdf-hdf5parallel
         module load szip
         #module load papi
-        module load mxml/2.9
-        module load fastbit
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
@@ -446,7 +429,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         --with-dimes=$DATASPACES_DIR \
         --without-infiniband \
         $WITHFLEX \
-        --with-fastbit=$FASTBIT_DIR \
+        $WITHFASTBIT \
         --with-lustre \
         --disable-timers --disable-timer-events \
         --with-zlib --with-bzip2 
@@ -502,7 +485,6 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
           unset EXTRA_LIBS 
           unset EXTRA_CFLAGS 
       fi
-      module load mxml
       module load pmi
       CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eos.$TARGET \
           --enable-dependency-tracking \
@@ -566,7 +548,6 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           unset EXTRA_LIBS 
           unset EXTRA_CFLAGS 
       fi
-      module load mxml/2.9
       CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" LDFLAGS="$LDFLAGS $CRAY_RCA_POST_LINK_OPTS" \
       ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
           --enable-dependency-tracking \
@@ -587,7 +568,6 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
 #            --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
 #            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu7.2.3 \
 #            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
-#            --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
 #          --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
             
 
@@ -610,7 +590,6 @@ elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
 
     ${SRCDIR}/configure --prefix=/home/qliu/4se/ADIOS \
             --enable-dependency-tracking \
-            --with-mxml=/home/qliu/mxml \
             --without-datatap --without-infiniband --with-bgq
 
 elif [ `hostname -f | cut -c 1-5` == "vesta" ]; then
@@ -626,7 +605,6 @@ elif [ `hostname -f | cut -c 1-5` == "vesta" ]; then
 
     ${SRCDIR}/configure --prefix=/home/qliu/ADIOS \
             --enable-dependency-tracking \
-            --with-mxml=/home/qliu/mxml \
             --without-datatap --without-infiniband --with-bgq
 
 elif [ `hostname | cut -c 1-6` == "edison" ]; then
@@ -690,7 +668,6 @@ elif [ `hostname | cut -c 1-6` == "edison" ]; then
     export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
     ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/master/edison/$TARGET \
         --enable-dependency-tracking \
-        --with-mxml=$HOME/mxml/mxml.edison \
         --with-lustre=/usr \
         $WITHDART \
         --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
@@ -754,7 +731,6 @@ elif [ `hostname | cut -c 1-6` == "hopper" ]; then
     export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
     ${SRCDIR}/configure --prefix=/project/projectdirs/m499/adios/devel-hopper-$TARGET \
         --enable-dependency-tracking \
-        --with-mxml=$HOME/mxml/mxml.hopper \
         --with-lustre=/usr \
         $WITHDART \
         --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
@@ -802,7 +778,6 @@ elif [ `hostname | cut -c 1-6` == "kraken" ]; then
     fi
 
     module load szip
-    module load mxml
     module load subversion
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-fPIC -g -O0" 
@@ -869,7 +844,6 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
         ${WITHALACRITY} \
         ${WITHFASTBIT} \
         --with-phdf5=/usr/local 
-    #    --with-mxml=/opt/mxml \
     #    --disable-fortran \
     #        --with-netcdf=/opt/netcdf \
     #        --with-hdf5=/opt/hdf5.seq
@@ -884,7 +858,6 @@ elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
     export CC=mpicc
     ${SRCDIR}/configure --prefix=/usr/local/adios \
         --enable-dependency-tracking \
-        --with-mxml=/usr/local/adios 
         #--with-hdf5=/usr/local/hdf5-serial\
         #--with-phdf5=/usr/local \
         #--with-netcdf=/usr 
@@ -900,7 +873,6 @@ elif [ `hostname | cut -c 1-7` == "nostril" ]; then
     export CFLAGS="-fPIC"
     ${SRCDIR}/configure --prefix=/apps/adios/trunk \
         --enable-dependency-tracking \
-        --with-mxml=/usr \
         --without-netcdf --without-nc4par --without-hdf5 --without-phdf5
         #--with-hdf5=/usr/local/hdf5-serial\
         #--with-phdf5=/usr/local \
@@ -915,7 +887,6 @@ elif [ `hostname | cut -c 1-6` == "tomato" ]; then
     export CC=mpicc
     ${SRCDIR}/configure --prefix=/home/thkorde/local \
         --enable-dependency-tracking \
-        --with-mxml=/home/thkorde/local \
         --with-phdf5=/home/thkorde/local \
         --with-hdf5=/home/thkorde/local \
         --with-netcdf=/home/thkorde/local
@@ -931,8 +902,7 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
     export CFLAGS="-g -O0 -fPIC"
     ${SRCDIR}/configure --prefix=/home/qliu/ADIOS \
         --enable-dependency-tracking \
-        --with-mxml=/home/qliu/mxml \
-    --with-phdf5=/home/thkorde/local \
+        --with-phdf5=/home/thkorde/local \
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
@@ -951,7 +921,6 @@ elif [ `hostname | cut -c 1-2` == "ln" ]; then
 
     ${SRCDIR}/configure --prefix=/vol6/home/Jeremy/adios-install \
         --enable-dependency-tracking \
-        --with-mxml=/vol6/home/Jeremy/mxml-install \
         --enable-skel-timing \
         --disable-maintainer-mode 
 
