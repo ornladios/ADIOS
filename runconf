@@ -958,6 +958,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-szip=/opt/szip \
         --with-isobar=/opt/isobar \
         --with-flexpath=/opt/chaos \
+        --with-dataspaces=/opt/dataspaces --without-infiniband \
         --with-fastbit=/opt/fastbit \
         --with-alacrity=/opt/alacrity \
         --with-hdf5=/opt/hdf5-1.8.17 \
