@@ -113,10 +113,10 @@ if test -z "${HAVE_MXML_FALSE}" -a -z "${BUILD_WRITE_TRUE}"; then
     AC_MSG_NOTICE([External MXML library not provided. Build the included MXML source])
     AM_CONDITIONAL(HAVE_MXML,true)
     AM_CONDITIONAL(BUILD_MXML,true)
-    MXML_CPPFLAGS="${CPPFLAGS} -I\$(top_srcdir)/mxml/mxml-2.9"
-    MXML_BUILD_LDFLAGS="${LDFLAGS} -L\$(top_builddir)/mxml"
+    MXML_CPPFLAGS="${CPPFLAGS} -I\$(top_srcdir)/src/mxml/mxml-2.9"
+    MXML_BUILD_LDFLAGS=
     MXML_LDFLAGS=
-    MXML_LIBS="-lmxml" 
+    MXML_LIBS=
     AC_SUBST(MXML_CPPFLAGS)
     AC_SUBST(MXML_LIBS)
     AC_SUBST(MXML_BUILD_LDFLAGS)
@@ -304,12 +304,12 @@ ADIOSLIB_SEQ_LDFLAGS="${MXML_LDFLAGS}"
 ADIOSLIB_SEQ_LDADD="${MXML_LIBS}"
 ADIOSLIB_INT_CPPFLAGS="${MACRODEFFLAG}_NOMPI"
 ADIOSLIB_INT_CFLAGS=
-ADIOSLIB_INT_LDFLAGS=
-ADIOSLIB_INT_LDADD=
 if test "x$enable_write" != "xno"; then
-    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS}"
     ADIOSLIB_INT_LDFLAGS="${MXML_LDFLAGS}"
     ADIOSLIB_INT_LDADD="${MXML_LIBS}"
+else
+    ADIOSLIB_INT_LDFLAGS=
+    ADIOSLIB_INT_LDADD=
 fi
 ADIOSREADLIB_CPPFLAGS=
 ADIOSREADLIB_CFLAGS=
@@ -817,7 +817,7 @@ AC_SUBST(VERSION_MICRO)
 
 
 if test -z "${BUILD_MXML_TRUE}" -a -z "${BUILD_WRITE_TRUE}"; then
-    AC_CONFIG_FILES([mxml/Makefile])
+    AC_CONFIG_FILES([src/mxml/Makefile])
 fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile
@@ -951,14 +951,21 @@ else
 fi
 
 
-if test -z "${HAVE_MXML_TRUE}"; then
-    echo "  - MXML";
+if test -z "${BUILD_MXML_TRUE}" -a -z "${BUILD_WRITE_TRUE}"; then
+    echo "  - MXML is built with ADIOS";
     echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
     echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
     echo "      - MXML_LIBS = $MXML_LIBS";
-    echo
 else
-    echo "  - No MXML"
+    if test -z "${HAVE_MXML_TRUE}"; then
+        echo "  - MXML";
+        echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
+        echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
+        echo "      - MXML_LIBS = $MXML_LIBS";
+        echo
+    else
+        echo "  - No MXML"
+    fi
 fi
 
 if test -z "${HAVE_LUSTRE_TRUE}"; then
