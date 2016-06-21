@@ -953,9 +953,6 @@ fi
 
 if test -z "${BUILD_MXML_TRUE}" -a -z "${BUILD_WRITE_TRUE}"; then
     echo "  - MXML is built with ADIOS";
-    echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
-    echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
-    echo "      - MXML_LIBS = $MXML_LIBS";
 else
     if test -z "${HAVE_MXML_TRUE}"; then
         echo "  - MXML";
