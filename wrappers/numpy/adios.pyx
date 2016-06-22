@@ -990,7 +990,7 @@ cdef class var(object):
     cpdef tuple dims
     cpdef int nsteps
     cpdef dict attrs
-    cpdef list _blockinfo
+    cpdef list blockinfo
 
     property name:
         """ The variable name. """
@@ -1036,6 +1036,28 @@ cdef class var(object):
         """ Attributes associated with the variable. """
         def __get__(self):
             return self.attrs
+
+    property blockinfo:
+        """ Block information. """
+        def __get__(self):
+            if self.blockinfo is None:
+                ll = list()
+                k = 0
+                for t in range(self.vp.nsteps):
+                    l = list()
+                    if self.vp.nblocks[t] == 0:
+                        l.append(None)
+                    for i in range(self.vp.nblocks[t]):
+                        start = tuple([self.vp.blockinfo[k].start[d] for d in range(self.vp.ndim)])
+                        count = tuple([self.vp.blockinfo[k].count[d] for d in range(self.vp.ndim)])
+                        process_id = self.vp.blockinfo[k].process_id
+                        time_index = self.vp.blockinfo[k].time_index
+                        binfo = blockinfo(start, count, process_id, time_index)
+                        l.append(binfo)
+                        k += 1
+                    ll.append(l)
+                self.blockinfo = ll
+            return (self.blockinfo)
 
     def __init__(self, file file, str name):
         self.file = file
@@ -1358,27 +1380,6 @@ cdef class var(object):
 
         else:
             raise NotImplementedError("Not implemented yet")
-
-    def blockinfo(self):
-        """ Block information. """
-        if self._blockinfo is None:
-            ll = list()
-            k = 0
-            for t in range(self.vp.nsteps):
-                l = list()
-                if self.vp.nblocks[t] == 0:
-                    l.append(None)
-                for i in range(self.vp.nblocks[t]):
-                    start = tuple([self.vp.blockinfo[k].start[d] for d in range(self.vp.ndim)])
-                    count = tuple([self.vp.blockinfo[k].count[d] for d in range(self.vp.ndim)])
-                    process_id = self.vp.blockinfo[k].process_id
-                    time_index = self.vp.blockinfo[k].time_index
-                    binfo = blockinfo(start, count, process_id, time_index)
-                    l.append(binfo)
-                    k += 1
-                ll.append(l)
-            self._blockinfo = ll
-        return (self._blockinfo)
 
 cdef class attr(object):
     """

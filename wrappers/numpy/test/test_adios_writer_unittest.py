@@ -137,5 +137,21 @@ class AdiosTestCase(ut.TestCase):
         f = ad.file(self.temp.path)
         f.close()
 
+    def test_writer_varname(self):
+        self.temp = TempFile()
+
+        fw = ad.writer(self.temp.path)
+        fw.declare_group("group", method="POSIX1")
+
+        NVARS = 99
+        fw.vars['nvars'] = NVARS
+        fw.vars['/nvars'] = NVARS
+        fw.vars['_nvars'] = NVARS
+        fw.close()
+
+        f = ad.file(self.temp.path)
+        self.assertEqual(f.nvars, 3)
+        self.assertEqual(f._nvars[...], NVARS)
+
 if __name__ == '__main__':
     ut.main()

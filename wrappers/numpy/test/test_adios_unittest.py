@@ -149,12 +149,10 @@ class AdiosTestCase(ut.TestCase):
     def test_adios_var_name_access(self):
         v1 = self.f['temperature']
         v2 = self.f.temperature
-
         self.assertTrue((v1[...] == v2[...]).all())
 
         v1 = self.f['NX']
         v2 = self.f.NX
-
         self.assertEqual(v1[...], v2[...])
 
 if __name__ == '__main__':
