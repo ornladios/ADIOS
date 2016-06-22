@@ -56,6 +56,8 @@ cpdef bytes s2b(str x):
         return x.encode()
 
 def normalize_key(keys):
+    if not isinstance(keys, list):
+        keys = [keys,]
     l = list()
     for key in keys:
         if key.startswith('/'):
@@ -912,10 +914,11 @@ cdef class file(dict):
                  self.last_step,
                  self.file_size)
 
-    ## To support ipython tab completion
+    ## For access var/attr/group as an attribute
     def __getattr__(self, varname):
         return self.__getitem__(varname)
 
+    ## To support ipython tab completion
     def __dir__(self):
         k0 = dir(type(self))
         ## Normalize to support var starting with '/'
@@ -963,7 +966,7 @@ cdef class blockinfo(object):
                 self.start,
                 self.count)
 
-cdef class var(object):
+cdef class var(dict):
     """
     Adios variable class.
 
@@ -1331,7 +1334,29 @@ cdef class var(object):
                 self.dims,
                 self.nsteps)
 
-    def __getitem__(self, args):
+    def _readattr(self, varname):
+        if not isinstance(varname, tuple):
+            varname = (varname,)
+
+        if len(varname) > 1:
+            raise KeyError(varname)
+
+        for key_ in varname:
+            if not isinstance(key_, str):
+                raise TypeError("Unhashable type")
+
+            if key_ in self.attrs.keys():
+                return self.attrs.get(key_)
+
+            if '/'+key_ in self.attrs.keys():
+                return self.attrs.get('/'+key_)
+
+            for name in self.attrs.keys():
+                #if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
+                if name.startswith(key_) or name.startswith('/'+key_):
+                    return group(self.file, self.name + '/' + key_)
+
+    def _readvar(self, args):
         shape = list(self.dims)
         if self.nsteps > 1:
             shape.insert(0, self.nsteps)
@@ -1379,6 +1404,28 @@ cdef class var(object):
 
         else:
             raise NotImplementedError("Not implemented yet")
+
+    def __getitem__(self, args):
+        if isinstance(args, str):
+            return self._readattr(args)
+        else:
+            return self._readvar(args)
+
+    ## For access var/attr/group as an attribute
+    def __getattr__(self, varname):
+        return self.__getitem__(varname)
+
+    ## To support ipython tab completion
+    def __dir__(self):
+        k0 = dir(type(self))
+        ## Normalize to support var starting with '/'
+        ## E.g., f['/attr1'] == f.attr1
+        k2 = normalize_key(self.attrs.keys())
+        return k0 + k2
+
+    ## Require for dictionary key completion
+    def keys(self):
+        return self.attrs.keys()
 
 cdef class attr(object):
     """
