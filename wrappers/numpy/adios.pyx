@@ -856,13 +856,13 @@ cdef class file(dict):
 
     def __getitem__(self, varname):
         """
-        Return Adios variable.
+        Return Adios variable, attribute, or group.
 
         Args:
-            varname (str): variable name.
+            varname (str): variable or attribute name.
 
         Raises:
-            KeyError: If no varname exists.
+            KeyError: If no name exists.
 
         """
         if not isinstance(varname, tuple):
@@ -1501,7 +1501,7 @@ cdef class group(dict):
 
     def __getitem__(self, varname):
         """
-        Return Adios variable or attribute.
+        Return Adios variable, attribute, or group.
 
         Args:
             varname (str): variable or attribute name.
@@ -1522,8 +1522,25 @@ cdef class group(dict):
 
             if key_ in self.vars.keys():
                 return self.vars.get(key_)
-            elif key_ in self.attrs.keys():
+
+            if key_ in self.attrs.keys():
                 return self.attrs.get(key_)
+
+            if '/'+key_ in self.vars.keys():
+                return self.vars.get('/'+key_)
+
+            if '/'+key_ in self.attrs.keys():
+                return self.attrs.get('/'+key_)
+
+            for name in self.vars.keys():
+                #if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
+                if name.startswith(key_) or name.startswith('/'+key_):
+                    return group(self.file, self.name + '/' + key_)
+
+            for name in self.attrs.keys():
+                #if (key_ == os.path.dirname(name)) or ('/' + key_ == os.path.dirname(name)):
+                if name.startswith(key_) or name.startswith('/'+key_):
+                    return group(self.file, self.name + '/' + key_)
 
         raise KeyError(key_)
 
@@ -1538,7 +1555,10 @@ cdef class group(dict):
         return self.__getitem__(varname)
 
     def __dir__(self):
-        return dir(type(self)) + self.vars.keys() + self.attrs.keys()
+        k0 = dir(type(self))
+        k1 = normalize_key(self.vars.keys())
+        k2 = normalize_key(self.attrs.keys())
+        return k0 + k1 + k2
 
     ## Require for dictionary key completion
     def keys(self):

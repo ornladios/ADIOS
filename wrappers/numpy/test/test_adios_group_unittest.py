@@ -104,5 +104,11 @@ class AdiosTestCase(ut.TestCase):
         g = f["data/0/"]
         g = f["/data/0"]
 
+        g2 = g["fields"]
+        self.assertTrue((g2['FieldE/x'][...] == tt).all())
+        self.assertTrue((g2['FieldE/y'][...] == tt*2).all())
+        self.assertEqual(g2['FieldE/x/sim_unit'][...], 77)
+        self.assertEqual(g2['FieldE/y/sim_unit'][...], 99)
+
 if __name__ == '__main__':
     ut.main()
