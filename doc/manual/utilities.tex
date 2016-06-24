@@ -110,7 +110,8 @@ Group genarray:
   integer /var/int_xy {4, 4} = 0 / 15
   string /var/int_xy/description attr = "2D array with 2D decomposition"
   integer /var/int_xyt {3, 4, 4} = 0 / 15
-  string /var/int_xyt/description attr = "3D array with 2D decomposition with time in 3rd dimension"
+  string /var/int_xyt/description attr = 
+             "3D array with 2D decomposition with time in 3rd dimension"
 \end{lstlisting}
 
 The content of /var/int\_xy can be dumped with
@@ -161,6 +162,17 @@ generates a metadata file <filename>.
 \end{lstlisting}
 
 If the number of files is not given as argument, \verb+bpmeta+ will use system calls to determine the number of files in the directory. The utility runs on a single node but it can use threads to speed up the metadata creation. 
+
+\section{bprecover}
+
+If you append multiple output steps into one dataset it may happen that the application aborts during writing and the whole dataset becomes corrupt. In such a case, the data up to the last output step is unharmed in the BP file but the index data is missing or corrupt along with the last output step. The \verb+bprecover+ tool is for recreating the index from parsing the file from the beginning and overwriting the corrupt last step and the index area (at the end of the file). It modifies (the end of) the file without copying the data. One must use the \verb+-f+ option to make this happen otherwise the tool just prints out what has found. 
+
+This recovery tool only works on single BP files. If subfiles are created by an output method, one needs to recover each subfile individually, then use \verb+bpmeta+ to create the global metadata file. 
+
+\begin{lstlisting}[language=bash,caption={},label={}] 
+Usage: bprecover [-f | --force] <filename>
+  -f:  do write the recovered index to the end of file
+\end{lstlisting}
 
 
 \section{bpdump}

@@ -338,7 +338,7 @@ methods, described in Chapter \ref{chapter-methods}:
 \label{section-xml-buffers-pecification}
 The buffer element defines the the allowed maximum buffer size in MBs for ADIOS (Listing~\ref{list-example-xml}). 
 During an adios\_open()...adios\_close() operation, all data in adios\_write() calls are buffered before writing to the
-file system. One can limit the allowable maximum if necessary forthis buffering. Note, that if there are two ADIOS outputs
+file system. One can limit the allowable maximum if necessary for this buffering. Note, that if there are two ADIOS outputs
 going on at the same time, ADIOS will allocate two separate buffers each with the specified maximum limit.
 
 \subsection{Declaration}

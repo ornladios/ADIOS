@@ -4,6 +4,9 @@
       - recover a BP file which has a damaged index data
     - adios_group_size() optional now
     - fix: bpmeta does not skip any subfiles when used with threads
+    - fix: Better xml processing to allow for multiple text lines as parameters for a method
+    - fix: Builds on OS X, both clang and gcc supported
+    - fix: support adios_inq_var_stat() in streaming mode
 
 1.9.0 Release Jul 2015
     - Array attributes are supported

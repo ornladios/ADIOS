@@ -83,6 +83,27 @@ Linux clusters and Mac OSX.
 %
 %
 
+\section {What's new in version 1.10}
+The new feature of this release is the new Query API and three query methods, Minmax, FastBit and Alacrity. This release makes the oft-criticized \verb+adios_group_size()+ call optional. Another convenience is that the MXML dependency is now built with ADIOS so it does not need to be built separately. In the xml configuration file for an application, the buffer allocation command should be removed. 
+
+\begin{itemize}
+\item Updated Query API
+\item Minmax, FastBit and Alacrity query methods
+\item \verb+adios_group_size()+ is optional
+\item ADIOS builds without first installing Mini-XML separately
+\item \verb+bprecover+ utility to recover datasets with many output steps where a step becomes corrupted
+\item Point selections can provide a container selection to improve read performance
+
+\item Bug fixes
+    \begin{itemize}
+    \item Build on OS X, both clang and gcc supported
+    \item Better xml processing to allow for multiple text lines as parameters for a method
+    \item Support \verb+adios_inq_var_stat()+ when reading a file in streaming mode
+    \item \verb+bpmeta+ does not skip any subfiles anymore when used with threads
+    \end{itemize}
+\end{itemize}
+
+
 \section {What's new in version 1.9}
 The novelty in this release is the support for small {\bf arrays of attributes}, requested by various applications to simplify storing attributes. The other new thing is the {\bf update mode}, which is similar to append mode but the timestep does not increase. That is, one can add new variables to the latest output step in a file. Other than that, this release contains mostly bug fixes. 
 
