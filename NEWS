@@ -3,6 +3,11 @@
     - bprecover utility
       - recover a BP file which has a damaged index data
     - adios_group_size() optional now
+    - Python/Numpy wrapper improvements:
+      - Support both python 2 and python 3
+      - Read options with point and block selection 
+      - Group management on reading
+      - Support auto completion with ipython
     - fix: bpmeta does not skip any subfiles when used with threads
     - fix: Better xml processing to allow for multiple text lines as parameters for a method
     - fix: Builds on OS X, both clang and gcc supported

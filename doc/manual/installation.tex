@@ -753,7 +753,7 @@ If you need a verbose output, type the following
 ctest -V
 \end{lstlisting}
 
-\subsection{Support for Numpy}
+\subsection{Support for Python/Numpy}
 \label{section-install-numpy}
 
 ADIOS also provides two Python/Numpy language bindings developed by Cython; One is a binding for serial ADIOS (default), which requires no MPI, and the other is a MPI-enabled binding (optional). Like Matlab, ADIOS Python/Numpy wrapper requires ADIOS built by the GNU C compiler with relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS. In addition, Python Numpy is required before building Adios Python/Numpy binding and MPI4Py is optional, if users want to build parallel python module.

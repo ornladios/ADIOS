@@ -258,7 +258,7 @@ cpdef int64_t open(char * group_name,
                    char * mode,
                    MPI.Comm comm = MPI.COMM_WORLD)
 
-""" Call adios_group_size """
+""" Call adios_group_size (optional) """
 cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size)
 
 """ Call adios_write """
@@ -316,7 +316,7 @@ cpdef int select_method (int64_t group,
 After ADIOS version 1.9.0, ADIOS python/numpy wrapper provides Numpy style array notation. For an example, the following commands are equivalent:
 \begin{lstlisting}[language=Python,caption={Numpy style reading},label={},]
 >>> f['temperature'].read(); 
->>> f['temperature'][:]
+>>> f['temperature'][...]
 \end{lstlisting}
 
 Numpy style slicing is supported in a same way:
@@ -369,6 +369,9 @@ cdef class file:
     cpdef printself(self):
         """ Print native ADIOS_FILE structure. """
 
+    cpdef release_step(self):
+        """ Release the current step lock and let the writer code to progress """
+        
     cpdef advance(self, int last = 0, float timeout_sec = 0.0):
         """
         Advance a timestep for stream reader.
@@ -428,8 +431,20 @@ cdef class var:
     property dims:
         """ The shape of the variable. """
 
+    property shape:
+        """ The shape of the variable. """
+
+    property size:
+        """ The number of elements in the array. """
+
     property nsteps:
         """ The number of time steps of the variable. """
+
+    property attrs:
+        """ Attributes associated with the variable. """
+
+    property blockinfo:
+        """ Block information. """
 
     cpdef close(self):
         """ Close and free variable information """
@@ -458,6 +473,41 @@ cdef class var:
         Raises:
             IndexError: If dimension is mismatched or out of the boundary.
 
+        """
+
+    cpdef read_points(self, tuple points = (), from_steps = None, nsteps = None):
+        """ Perform points read.
+
+        Read data from an ADIOS BP file based on the given list of point index.
+
+        Args:
+            points (tuple of int, optional): points index defined by 
+                                             ((o1,o2,...,oN),...) (default: ())
+            from_steps (int, optional): starting step index (default: None)
+            nsteps (int, optional): number of time dimensions (default: None)
+
+        Returns:
+            NumPy 1-D ndarray
+
+        Raises:
+            IndexError: If dimension is mismatched or out of the boundary.
+        """
+
+    cpdef read_writeblock(self, int rank, from_steps = None, nsteps = None):
+        """ Perform block read.
+
+        Read data from an ADIOS BP file based on the rank id.
+
+        Args:
+            rank (int): rank id
+            from_steps (int, optional): starting step index (default: None)
+            nsteps (int, optional): number of time dimensions (default: None)
+
+        Returns:
+            NumPy 1-D ndarray
+
+        Raises:
+            IndexError: If dimension is mismatched or out of the boundary.
         """
 
     cpdef printself(self):
