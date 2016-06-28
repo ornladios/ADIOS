@@ -584,8 +584,17 @@ int bp_close (BP_FILE * fh)
         ar = attrs_root;
         attrs_root = attrs_root->next;
         for (j = 0; j < ar->characteristics_count; j++) {
-            if (ar->characteristics[j].value)
-                free (ar->characteristics[j].value);
+            if (ar->characteristics[j].value) {
+                if (ar->type == adios_string_array)
+                    a2s_free_string_array (ar->characteristics [j].value, ar->nelems);
+                else
+                    free (ar->characteristics[j].value);
+                ar->characteristics[j].value = NULL;
+            }
+            if (ar->characteristics[j].dims.dims) {
+                free (ar->characteristics[j].dims.dims);
+                ar->characteristics[j].dims.dims = NULL;
+            }
         }
         if (ar->characteristics)
             free (ar->characteristics);
