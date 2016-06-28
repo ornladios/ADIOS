@@ -877,6 +877,9 @@ cdef class file(dict):
             if not isinstance(key_, str):
                 raise TypeError("Unhashable type")
 
+            if key_.startswith('/'):
+                key_ = key_[1:]
+
             if key_ in self.vars.keys():
                 return self.vars.get(key_)
 
@@ -1327,13 +1330,14 @@ cdef class var(dict):
         printvar(self.vp)
 
     def __repr__(self):
-        return "AdiosVar (varid=%r, name=%r, dtype=%r, ndim=%r, dims=%r, nsteps=%r)" % \
+        return "AdiosVar (varid=%r, name=%r, dtype=%r, ndim=%r, dims=%r, nsteps=%r, attrs=%r)" % \
                (self.varid,
                 self.name,
                 self.dtype,
                 self.ndim,
                 self.dims,
-                self.nsteps)
+                self.nsteps,
+                self.attrs.keys())
 
     def _readattr(self, varname):
         if not isinstance(varname, tuple):
@@ -1345,6 +1349,9 @@ cdef class var(dict):
         for key_ in varname:
             if not isinstance(key_, str):
                 raise TypeError("Unhashable type")
+
+            if key_.startswith('/'):
+                key_ = key_[1:]
 
             if key_ in self.attrs.keys():
                 return self.attrs.get(key_)
@@ -1566,6 +1573,9 @@ cdef class group(dict):
         for key_ in varname:
             if not isinstance(key_, str):
                 raise TypeError("Unhashable type")
+
+            if key_.startswith('/'):
+                key_ = key_[1:]
 
             if key_ in self.vars.keys():
                 return self.vars.get(key_)
@@ -1973,10 +1983,7 @@ def readvar(fname, varname):
         NumPy ndarray: variable value
     """
     f = file(fname, comm=MPI_COMM_SELF)
-    if not f.vars.has_key(varname):
-        raise KeyError(varname)
-
-    v = f.vars[varname]
+    v = f[varname]
     return v.read(from_steps=0, nsteps=v.nsteps)
 
 def bpls(fname):
