@@ -736,9 +736,9 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     BUFREAD64(b, b->pg_index_offset)
     mh->pgs_index_offset = b->pg_index_offset;
     // validity check  
-    if (b->pg_index_offset > b->file_size) {
+    if (b->pg_index_offset+MINIFOOTER_SIZE >= b->file_size) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. PG index offset (%" PRIu64 ") > file size (%" PRIu64 ")\n",
+                "Invalid BP file detected. PG index offset (%" PRIu64 ") is too big. File size is (%" PRIu64 ")\n",
                 b->pg_index_offset, b->file_size);
         return 1;
     }
@@ -746,15 +746,15 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     BUFREAD64(b, b->vars_index_offset)
     mh->vars_index_offset = b->vars_index_offset;
     // validity check  
-    if (b->vars_index_offset > b->file_size) {
+    if (b->vars_index_offset+MINIFOOTER_SIZE >= b->file_size) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Variable index offset (%" PRIu64 ") > file size (%" PRIu64 ")\n",
+                "Invalid BP file detected. Variable index offset (%" PRIu64 ") is too big. File size is (%" PRIu64 ")\n",
                 b->vars_index_offset, b->file_size);
         return 1;
     }
-    if (b->vars_index_offset < b->pg_index_offset) {
+    if (b->vars_index_offset <= b->pg_index_offset) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Variable index offset (%" PRIu64 ") < PG index offset (%" PRIu64 ")\n",
+                "Invalid BP file detected. Variable index offset (%" PRIu64 ") <= PG index offset (%" PRIu64 ")\n",
                 b->vars_index_offset, b->pg_index_offset);
         return 1;
     }
@@ -763,15 +763,15 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     BUFREAD64(b, b->attrs_index_offset)
     mh->attrs_index_offset = b->attrs_index_offset;
     // validity check  
-    if (b->attrs_index_offset > b->file_size) {
+    if (b->attrs_index_offset+MINIFOOTER_SIZE >= b->file_size) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") > file size (%" PRIu64 ")\n",
+                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") is too big. File size is (%" PRIu64 ")\n",
                 b->attrs_index_offset, b->file_size);
         return 1;
     }
-    if (b->attrs_index_offset < b->vars_index_offset) {
+    if (b->attrs_index_offset <= b->vars_index_offset) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") < Variable index offset (%" PRIu64 ")\n",
+                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") <= Variable index offset (%" PRIu64 ")\n",
                 b->attrs_index_offset, b->vars_index_offset);
         return 1;
     }
