@@ -8,7 +8,7 @@ METASOURCES=AUTO
 CLEANFILES= 
 
 
-lib_LIBRARIES = libmxml.a
+noinst_LIBRARIES = libmxml.a
 libmxml_a_SOURCES = ${MXML_SRCDIR}/mxml-attr.c     \
                      ${MXML_SRCDIR}/mxml-get.c      \
                      ${MXML_SRCDIR}/mxml-private.c  \
