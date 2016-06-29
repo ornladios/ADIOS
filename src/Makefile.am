@@ -138,26 +138,29 @@ query_C_SOURCES    = $(query_SOURCES) query/adios_query.c
 query_F_SOURCES    = $(query_SOURCES) query/adiosf_query.c
 
 
-noinst_LIBRARIES = libcoreonceread.a 
-libcoreonceread_a_SOURCES = core/a2sel.c \
+noinst_LIBRARIES = libcoreonce.a 
+libcoreonce_a_SOURCES = core/a2sel.c \
                             core/adios_bp_v1.c \
                             core/adios_clock.c \
                             core/adios_endianness.c \
                             core/adios_error.c \
                             core/adios_infocache.c \
                             core/adios_logger.c \
+                            core/adios_socket.c \
+                            core/buffer.c \
                             core/futils.c \
                             core/globals.c \
                             core/qhashtbl.c \
                             core/strutil.c \
-                            core/util.c 
+                            core/util.c \
+                            $(transforms_common_SOURCES) \
+                            $(transforms_write_SOURCES) \
+                            $(transforms_read_SOURCES) 
 
-
+libcoreonce_a_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
+libcoreonce_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
 
 if BUILD_WRITE
-noinst_LIBRARIES += libcoreoncewrite.a
-libcoreoncewrite_a_SOURCES = core/adios_socket.c \
-                             core/buffer.c 
 
 lib_LIBRARIES += libadios.a libadios_nompi.a
 libadios_a_SOURCES = core/adios.c \
@@ -173,9 +176,6 @@ libadios_a_SOURCES = core/adios.c \
                      core/adios_read_hooks.c \
                      core/adios_transport_hooks.c \
                      core/util_mpi.c \
-                     $(transforms_common_SOURCES) \
-                     $(transforms_read_SOURCES) \
-                     $(transforms_write_SOURCES) \
                      $(query_C_SOURCES) \
                      read/read_bp.c \
                      read/read_bp_staged.c \
@@ -192,9 +192,6 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/common_adios.c \
                      core/adios_internals.c \
                      core/adios_internals_mxml.c \
-                     $(transforms_common_SOURCES) \
-                     $(transforms_read_SOURCES) \
-                     $(transforms_write_SOURCES) \
                      $(query_C_SOURCES) \
                      core/bp_utils.c \
                      core/adios_read.c \
@@ -212,14 +209,15 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      write/adios_posix.c 
 
 
-libadios_a_LIBADD = $(libcoreoncewrite_a_OBJECTS) $(libcoreonceread_a_OBJECTS)
-libadios_nompi_a_LIBADD = $(libcoreoncewrite_a_OBJECTS) $(libcoreonceread_a_OBJECTS)
+libadios_a_LIBADD = $(libcoreonce_a_OBJECTS) 
+libadios_nompi_a_LIBADD = $(libcoreonce_a_OBJECTS)
 if BUILD_MXML
 libadios_a_LIBADD += ${MXML_OBJECTS} 
 libadios_nompi_a_LIBADD += ${MXML_OBJECTS} 
 endif
 # force building the noinst_LIBRARIES first, before libadios.a
-EXTRA_libadios_a_DEPENDENCIES = libcoreoncewrite.a libcoreonceread.a
+EXTRA_libadios_a_DEPENDENCIES = libcoreonce.a 
+EXTRA_libadios_nompi_a_DEPENDENCIES = libcoreonce.a 
 
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosf.a libadiosf_v1.a libadiosf_nompi.a libadiosf_nompi_v1.a
@@ -227,9 +225,6 @@ FortranLibSources = core/adiosf.c \
                      core/common_adios.c \
                      core/adios_internals.c \
                      core/adios_internals_mxml.c \
-                     $(transforms_common_SOURCES) \
-                     $(transforms_read_SOURCES) \
-                     $(transforms_write_SOURCES) \
                      $(query_F_SOURCES) \
                      core/bp_utils.c \
                      core/common_read.c \
@@ -411,16 +406,20 @@ libadiosf_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
 libadiosf_nompi_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
                                 core/adiosf_write_mod.f90 
 
-libadiosf_a_LIBADD = $(libcoreoncewrite_a_OBJECTS) $(libcoreonceread_a_OBJECTS)
-libadiosf_v1_a_LIBADD = $(libcoreoncewrite_a_OBJECTS) $(libcoreonceread_a_OBJECTS)
-libadiosf_nompi_a_LIBADD = $(libcoreoncewrite_a_OBJECTS) $(libcoreonceread_a_OBJECTS)
-libadiosf_nompi_v1_a_LIBADD = $(libcoreoncewrite_a_OBJECTS) $(libcoreonceread_a_OBJECTS)
+libadiosf_a_LIBADD = $(libcoreonce_a_OBJECTS)
+libadiosf_v1_a_LIBADD =  $(libcoreonce_a_OBJECTS)
+libadiosf_nompi_a_LIBADD =  $(libcoreonce_a_OBJECTS)
+libadiosf_nompi_v1_a_LIBADD = $(libcoreonce_a_OBJECTS)
 if BUILD_MXML
 libadiosf_a_LIBADD += ${MXML_OBJECTS}
 libadiosf_v1_a_LIBADD += ${MXML_OBJECTS}
 libadiosf_nompi_a_LIBADD += ${MXML_OBJECTS}
 libadiosf_nompi_v1_a_LIBADD += ${MXML_OBJECTS} 
 endif
+EXTRA_libadiosf_a_DEPENDENCIES = libcoreonce.a 
+EXTRA_libadiosf_v1_a_DEPENDENCIES = libcoreonce.a 
+EXTRA_libadiosf_nompi_a_DEPENDENCIES = libcoreonce.a 
+EXTRA_libadiosf_nompi_v1_a_DEPENDENCIES = libcoreonce.a 
 
 #nodist_libadiosreadf_a_SOURCES += adios_write.mod
 nodist_include_HEADERS += adios_write_mod.mod 
@@ -457,8 +456,6 @@ libadiosread_a_SOURCES = core/bp_utils.c \
                       core/adios_read_v1.c \
                       core/common_read.c \
                       core/adios_read_ext.c \
-                      $(transforms_common_SOURCES) \
-                      $(transforms_read_SOURCES) \
                       $(query_C_SOURCES) \
                       core/adios_read_hooks.c \
                       core/util_mpi.c \
@@ -490,15 +487,14 @@ libadiosread_a_CFLAGS   += $(ADIOSLIB_CFLAGS)
 endif
 
 libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
-libadiosread_a_LIBADD = $(libcoreonceread_a_OBJECTS)
+libadiosread_a_LIBADD = $(libcoreonce_a_OBJECTS)
+EXTRA_libadiosread_a_DEPENDENCIES = libcoreonce.a 
 
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosreadf.a libadiosreadf_v1.a
 FortranReadLibSource = core/bp_utils.c \
                       core/common_read.c \
                       core/adios_read_ext.c \
-                      $(transforms_common_SOURCES) \
-                      $(transforms_read_SOURCES) \
                       $(query_F_SOURCES) \
                       core/adios_read_hooks.c \
                       core/util_mpi.c \
@@ -539,8 +535,10 @@ libadiosreadf_a_SOURCES += core/adiosf_defs_mod.f90 \
                            core/adiosf_read_mod.f90 \
                            query/adios_query_mod.f90
 
-libadiosreadf_a_LIBADD = $(libcoreonceread_a_OBJECTS)
-libadiosreadf_v1_a_LIBADD = $(libcoreonceread_a_OBJECTS)
+libadiosreadf_a_LIBADD = $(libcoreonce_a_OBJECTS)
+libadiosreadf_v1_a_LIBADD = $(libcoreonce_a_OBJECTS)
+EXTRA_libadiosreadf_a_DEPENDENCIES = libcoreonce.a 
+EXTRA_libadiosreadf_v1_a_DEPENDENCIES = libcoreonce.a 
 
 #nodist_libadiosreadf_a_SOURCES += adios_read_mod.mod
 nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
@@ -563,8 +561,6 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read_v1.c \
                       core/common_read.c \
                       core/adios_read_ext.c \
-                      $(transforms_common_SOURCES) \
-                      $(transforms_read_SOURCES) \
                       $(query_C_SOURCES) \
                       core/adios_read_hooks.c \
                       core/util_mpi.c \
@@ -594,7 +590,8 @@ libadiosread_nompi_a_CPPFLAGS += $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $
 libadiosread_nompi_a_CFLAGS   += $(ADIOSLIB_CFLAGS) 
 endif
 libadiosread_nompi_a_CPPFLAGS  += $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
-libadiosread_nompi_a_LIBADD = $(libcoreonceread_a_OBJECTS)
+libadiosread_nompi_a_LIBADD = $(libcoreonce_a_OBJECTS)
+EXTRA_libadiosread_nompi_a_DEPENDENCIES = libcoreonce.a 
 
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
@@ -606,8 +603,6 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/bp_utils.c \
                           core/common_read.c \
                           core/adios_read_ext.c \
-                          $(transforms_common_SOURCES) \
-                          $(transforms_read_SOURCES) \
                           $(query_F_SOURCES) \
                           core/adios_read_hooks.c \
                           core/util_mpi.c \
@@ -645,8 +640,10 @@ libadiosreadf_nompi_v1_a_CFLAGS = $(libadiosreadf_nompi_a_CFLAGS)
 libadiosreadf_nompi_a_SOURCES += core/adiosf_defs_mod.f90 \
                    	         core/adiosf_read_mod.f90 \
                         	 query/adios_query_mod.f90
-libadiosreadf_nompi_a_LIBADD = $(libcoreonceread_a_OBJECTS)
-libadiosreadf_nompi_v1_a_LIBADD = $(libcoreonceread_a_OBJECTS)
+libadiosreadf_nompi_a_LIBADD = $(libcoreonce_a_OBJECTS)
+libadiosreadf_nompi_v1_a_LIBADD = $(libcoreonce_a_OBJECTS)
+EXTRA_libadiosreadf_nompi_a_DEPENDENCIES = libcoreonce.a 
+EXTRA_libadiosreadf_nompi_v1_a_DEPENDENCIES = libcoreonce.a 
 endif  #BUILD_FORTRAN
 
 noinst_LIBRARIES += libadios_internal_nompi.a
@@ -654,19 +651,17 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/bp_utils.c \
                                     core/adios_internals.c \
                                     core/util_mpi.c \
-                                    $(transforms_common_SOURCES) \
-                                    $(transforms_write_SOURCES) \
                                     $(query_C_SOURCES) \
                                     core/adios_timing.c \
                                     core/adios_transport_hooks.c 
-libadios_internal_nompi_a_LIBADD = $(libcoreonceread_a_OBJECTS)
+libadios_internal_nompi_a_LIBADD = $(libcoreonce_a_OBJECTS)
 if BUILD_WRITE
 libadios_internal_nompi_a_SOURCES += core/adios_internals_mxml.c 
-libadios_internal_nompi_a_LIBADD += $(libcoreoncewrite_a_OBJECTS)
 if BUILD_MXML
 libadios_internal_nompi_a_LIBADD += ${MXML_OBJECTS}
 endif
 endif
+EXTRA_libadios_internal_nompi_a_DEPENDENCIES = libcoreonce.a 
 
 
 libadios_internal_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) $(MACRODEFFLAG)_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)

@@ -41,7 +41,7 @@ AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_builddir)/src -I$(top_srcdi
 # C Tests 
 #
 hashtest_SOURCES=hashtest.c
-hashtest_LDADD = $(top_builddir)/src/core/libadios_a-qhashtbl.o
+hashtest_LDADD = $(top_builddir)/src/core/libcoreonce_a-qhashtbl.o
 hashtest_LDFLAGS = $(AM_LDFLAGS) 
 hashtest_CPPFLAGS = -I$(top_srcdir)/src
 hashtest.o: hashtest.c
@@ -53,13 +53,13 @@ copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSREADLIB_SEQ_CPPFLAGS) -I$(t
 copy_subvolume.o: copy_subvolume.c
 
 text_to_pairstruct_SOURCES=text_to_pairstruct.c
-text_to_pairstruct_LDADD = $(top_builddir)/src/core/libadios_a-strutil.o
+text_to_pairstruct_LDADD = $(top_builddir)/src/core/libcoreonce_a-strutil.o
 text_to_pairstruct_LDFLAGS = $(AM_LDFLAGS) 
 text_to_pairstruct_CPPFLAGS = -I$(top_srcdir)/src
 text_to_pairstruct.o: text_to_pairstruct.c
 
 test_strutil_SOURCES=test_strutil.c
-test_strutil_LDADD = $(top_builddir)/src/core/libadios_a-strutil.o
+test_strutil_LDADD = $(top_builddir)/src/core/libcoreonce_a-strutil.o
 test_strutil_LDFLAGS = $(AM_LDFLAGS) 
 test_strutil_CPPFLAGS = -I$(top_srcdir)/src
 test_strutil.o: test_strutil.c
@@ -112,6 +112,7 @@ read_points_3d.o: read_points_3d.c
 #
 # FORTRAN Tests
 #
+FC=$(MPIFC)
 selection_api_SOURCES=selection_api.F90
 selection_api_LDADD = $(top_builddir)/src/libadiosreadf_nompi.a $(ADIOSREADLIB_SEQ_LDADD)
 selection_api_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_SEQ_LDFLAGS)
