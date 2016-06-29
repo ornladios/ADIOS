@@ -85,6 +85,7 @@ transforms_write_HDRS = core/transforms/adios_transforms_write.h \
                         core/transforms/adios_transforms_hooks_write.h \
                         core/transforms/adios_transforms_specparse.h
 
+
 transforms_common_SOURCES = $(transforms_common_HDRS) \
                             core/transforms/adios_transforms_common.c \
                             core/transforms/adios_transforms_hooks.c \
@@ -148,7 +149,8 @@ libcoreonceread_a_SOURCES = core/a2sel.c \
                             core/futils.c \
                             core/globals.c \
                             core/qhashtbl.c \
-                            core/strutil.c 
+                            core/strutil.c \
+                            core/util.c 
 
 
 
@@ -170,7 +172,7 @@ libadios_a_SOURCES = core/adios.c \
                      core/adios_timing.c \
                      core/adios_read_hooks.c \
                      core/adios_transport_hooks.c \
-                     core/util.c \
+                     core/util_mpi.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
                      $(transforms_write_SOURCES) \
@@ -203,7 +205,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_timing.c \
                      core/adios_read_hooks.c \
                      core/adios_transport_hooks.c \
-                     core/util.c \
+                     core/util_mpi.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -236,7 +238,7 @@ FortranLibSources = core/adiosf.c \
                      core/adios_timing.c \
                      core/adios_read_hooks.c \
                      core/adios_transport_hooks.c \
-                     core/util.c \
+                     core/util_mpi.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -459,7 +461,7 @@ libadiosread_a_SOURCES = core/bp_utils.c \
                       $(transforms_read_SOURCES) \
                       $(query_C_SOURCES) \
                       core/adios_read_hooks.c \
-                      core/util.c \
+                      core/util_mpi.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -499,7 +501,7 @@ FortranReadLibSource = core/bp_utils.c \
                       $(transforms_read_SOURCES) \
                       $(query_F_SOURCES) \
                       core/adios_read_hooks.c \
-                      core/util.c \
+                      core/util_mpi.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -565,7 +567,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       $(transforms_read_SOURCES) \
                       $(query_C_SOURCES) \
                       core/adios_read_hooks.c \
-                      core/util.c \
+                      core/util_mpi.c \
                       read/read_bp.c 
 
                                           
@@ -608,7 +610,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           $(transforms_read_SOURCES) \
                           $(query_F_SOURCES) \
                           core/adios_read_hooks.c \
-                          core/util.c \
+                          core/util_mpi.c \
                           read/read_bp.c 
 #if HAVE_DATASPACES
 #FortranReadSeqLibSource += read/read_dataspaces.c
@@ -651,7 +653,7 @@ noinst_LIBRARIES += libadios_internal_nompi.a
 libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/bp_utils.c \
                                     core/adios_internals.c \
-                                    core/util.c \
+                                    core/util_mpi.c \
                                     $(transforms_common_SOURCES) \
                                     $(transforms_write_SOURCES) \
                                     $(query_C_SOURCES) \
