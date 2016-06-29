@@ -934,6 +934,27 @@ elif [ `hostname | cut -c 1-2` == "ln" ]; then
         #--with-isobar=/opt/isobar \
         #--with-flexpath=/opt/chaos
 
+elif [ `hostname | cut -c 1-9` == "PC0098504" ]; then
+
+    #######################
+    #      Linux PC       # 
+    #######################
+    echo "Configure on Linux PC."
+    export MPICC=mpicc
+    export MPICXX=mpicxx
+    export MPIFC=mpif90
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export LDFLAGS="-lpthread"
+    export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
+    ${SRCDIR}/configure --prefix=/opt/adios/1.10 \
+        --disable-maintainer-mode \
+        --enable-dependency-tracking \
+        --enable-timers \
+        --disable-timer-events 
+
 elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
 
     #######################
