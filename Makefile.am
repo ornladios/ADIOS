@@ -4,12 +4,14 @@ SUBDIRS = src utils tests examples
 
 EXTRA_DIST = runconf \
              KNOWN_BUGS \
-             adios_config.in \
+             adios_config.makesrc.in \
+             adios_config.flags.makesrc.in \
              adios_config.flags.cmake \
              scripts/create.nssi.config.sh \
              scripts/kill.nssi.staging.sh \
              scripts/start.nssi.staging.sh \
-	     scripts/FindADIOS.cmake
+	     scripts/FindADIOS.cmake \
+             src/mxml/cmake_try_longlong.c
 
 #             wrappers/matlab/Makefile \
 #             wrappers/matlab/adios.m \

@@ -47,4 +47,4 @@ endif
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-#EXTRA_DIST = test_config_flex.xml 
+EXTRA_DIST = DS1 DS2 DS3 xml/

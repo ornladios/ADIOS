@@ -867,7 +867,7 @@ AC_CONFIG_FILES([Makefile
                  utils/adios_list_methods/Makefile
                  utils/bpmeta/Makefile
                  utils/bprecover/Makefile
-		         utils/fastbit/Makefile
+                 utils/fastbit/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
@@ -897,7 +897,10 @@ AC_CONFIG_FILES([Makefile
                  src/public/adios_version.h
                 ])
 
+
 AC_OUTPUT
+
+chmod +x utils/gpp/gpp.py
 
 echo
 echo "*********************************"
@@ -1061,16 +1064,16 @@ dnl else
 dnl         echo "  - No Gengetopt"
 dnl fi
 
-if test "x${datatap}" != "xdisable"; then
-    echo "  - DataTap with interconnect: $datatap";
-    echo "      - DT_CFLAGS     = $DT_CFLAGS";
-    echo "      - DT_CPPFLAGS   = $DT_CPPFLAGS";
-    echo "      - DT_LDFLAGS    = $DT_LDFLAGS";
-    echo "      - DT_LIBS       = $DT_LIBS";
-    echo
-else
-    echo "  - No DataTap transport to build DATATAP transport method";
-fi
+#if test "x${datatap}" != "xdisable"; then
+#    echo "  - DataTap with interconnect: $datatap";
+#    echo "      - DT_CFLAGS     = $DT_CFLAGS";
+#    echo "      - DT_CPPFLAGS   = $DT_CPPFLAGS";
+#    echo "      - DT_LDFLAGS    = $DT_LDFLAGS";
+#    echo "      - DT_LIBS       = $DT_LIBS";
+#    echo
+#else
+#    echo "  - No DataTap transport to build DATATAP transport method";
+#fi
 
 if test -z "${HAVE_DATASPACES_TRUE}"; then
     echo "  - DATASPACES transport method";
