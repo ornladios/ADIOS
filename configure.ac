@@ -5,12 +5,13 @@ AC_CONFIG_MACRO_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
-dnl Require Automake 1.11.3 or better.
+dnl Require Automake 1.12.0 or better.
 dnl We need automake correctly generate object file path for .F90 modules when
 dnl enabling subdir-objects
 dnl Automake 1.10 wants to use ./adiosf_read_mod.o for libadiosf.a, although
 dnl it correctly places that object file into core/adiosf_read_mod.o
-AM_INIT_AUTOMAKE([1.11.1])    
+dnl Also use EXTRA_libraryname_DEPENDENCIES which is not available in 1.11
+AM_INIT_AUTOMAKE([1.12.0])    
 
 AM_MAINTAINER_MODE([enable])
 
