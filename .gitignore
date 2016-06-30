@@ -1,3 +1,16 @@
+# Added by Eric Suchyta, building in Docker container
+adios_config.flags.makesrc
+adios_config.makesrc
+tests/test_src/.deps/
+utils/adios_list_methods/adios_list_methods
+utils/adios_list_methods/adios_list_methods_nompi
+utils/adios_list_methods/adios_list_methods_readonly
+utils/adios_list_methods/adios_list_methods_readonly_nompi
+utils/gpp/gpp.py
+wrappers/numpy/build/
+*.dirstamp
+
+
 # Object files
 *.o
 
