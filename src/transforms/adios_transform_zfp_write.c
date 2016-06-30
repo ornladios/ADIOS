@@ -1,3 +1,12 @@
+/*
+ * adios_transform_zfp_write.c
+ *
+ *  Created on: June 30, 2016
+ *      Author: Eric Suchyta
+ */
+
+#ifdef BZIP2
+
 #include <stdint.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -11,10 +20,10 @@
 #include "core/transforms/adios_transforms_hooks_write.h"
 #include "core/transforms/adios_transforms_util.h"
 
-#ifdef BZIP2
+#include "zfp.h"
 
-#include "bzlib.h"
 
+/*
 int compress_bzip2_pre_allocated(const void* input_data,
                                     const uint64_t input_len,
                                     void* output_data,
@@ -42,25 +51,43 @@ int compress_bzip2_pre_allocated(const void* input_data,
     *output_len = output_len_32;
     return 0;
 }
+*/
 
-uint16_t adios_transform_bzip2_get_metadata_size(struct adios_transform_spec *transform_spec)
+
+uint16_t adios_transform_zfp_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
     return (sizeof(uint64_t) + sizeof(char));    // metadata: original data size (uint64_t) + compression succ flag (char)
 }
 
-void adios_transform_bzip2_transformed_size_growth(
+void adios_transform_zfp_transformed_size_growth(
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
 	// Do nothing (defaults to "no transform effect on data size")
 }
 
-int adios_transform_bzip2_apply(struct adios_file_struct *fd,
+int adios_transform_zfp_apply(struct adios_file_struct *fd,
                                 struct adios_var_struct *var,
                                 uint64_t *transformed_len,
                                 int use_shared_buffer,
                                 int *wrote_to_shared_buffer)
 {
+
+	void* outbuffer;	// What to send to ADIOS
+	zfp_type type;		// Map adios_type into zfp_type
+
+	// Somehow get tol, ndims, dims, etc. from var specification that I get from this functions's arguments
+	uint choice = var->something;
+
+	if (var->pre_transform_type == adios_double) type = zfp_type_double;
+	else if (var->pre_transform_type == adios_float) type = zfp_type_float;
+	else zpf_error("A datatype ZFP does not understand was given for compression. Understood types are adios_double, adios_float.");
+
+	int status = _zfp_comp(void* tol, void* array, int ndims, int* dims, type, uint choice, 0, field, zfp, stream, outbuffer);
+        var->adata = outbuffer;
+
+
+
     // Get the input data and data length
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff = var->data;
@@ -153,7 +180,7 @@ int adios_transform_bzip2_apply(struct adios_file_struct *fd,
 
 #else
 
-DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(bzip2)
+DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(zfp)
 
 #endif
 

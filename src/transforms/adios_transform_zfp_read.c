@@ -1,3 +1,9 @@
+/*
+ * adios_transform_zfp_read.c
+ *
+ *  Created on: June 30, 2016
+ *      Author: Eric Suchyta
+ */
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
