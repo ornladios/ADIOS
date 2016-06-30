@@ -19,39 +19,10 @@
 #include "core/transforms/adios_transforms_write.h"
 #include "core/transforms/adios_transforms_hooks_write.h"
 #include "core/transforms/adios_transforms_util.h"
+#include "core/adios_internals.h"
 
 #include "zfp.h"
 
-
-/*
-int compress_bzip2_pre_allocated(const void* input_data,
-                                    const uint64_t input_len,
-                                    void* output_data,
-                                    uint64_t* output_len,
-                                    int blockSize100k)
-{
-    // bzip2 only support input size of 32 bit integer
-
-    assert(input_data != NULL && input_len > 0 && output_data != NULL && output_len != NULL && *output_len > 0);
-
-    unsigned int input_len_32 = (unsigned int)input_len;
-    unsigned int output_len_32 = (unsigned int)(*output_len);
-
-    int bz_rtn = BZ2_bzBuffToBuffCompress((char*)output_data,
-                                            &output_len_32,
-                                            (char*)input_data,
-                                            input_len_32,
-                                            blockSize100k,
-                                            0,
-                                            30);
-
-    if(bz_rtn != BZ_OK)
-        return -1;
-
-    *output_len = output_len_32;
-    return 0;
-}
-*/
 
 
 uint16_t adios_transform_zfp_get_metadata_size(struct adios_transform_spec *transform_spec)
@@ -75,15 +46,31 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd,
 
 	void* outbuffer;	// What to send to ADIOS
 	zfp_type type;		// Map adios_type into zfp_type
+	uint choice; 
 
-	// Somehow get tol, ndims, dims, etc. from var specification that I get from this functions's arguments
-	uint choice = var->something;
 
+	/* adios to zfp datatype */
 	if (var->pre_transform_type == adios_double) type = zfp_type_double;
 	else if (var->pre_transform_type == adios_float) type = zfp_type_float;
 	else zpf_error("A datatype ZFP does not understand was given for compression. Understood types are adios_double, adios_float.");
 
-	int status = _zfp_comp(void* tol, void* array, int ndims, int* dims, type, uint choice, 0, field, zfp, stream, outbuffer);
+	/* dimensionality */
+	uint ndims = (uint) count_dimensions(var->pre_transform_dimensions);
+	int dims = get_dimension(var->pre_transform_dimensions, ndims);
+	for (i=0; i<ndims; i++) dims[i] = var->pre_transform_dimensions[i]->rank;
+
+	/* Which zfp mode to use */
+	for (i=0; i<var->transform_spec->param_count; i++) 
+	{
+		const struct adios_transform_spec_kv_pair* const param = &var->transform_spec->params[i];
+		if (strcmp(param->key, "accuracy") == 0) choice = 0;
+		else if (strcmp(param->key, "precision") == 0) choice = 1;
+		else if (strcmp(param->key, "rate") == 0) choice = 2;
+		else zfp_error("An unknown compression mode was specified for zfp: %s. Availble choices are: accuracy, precision, rate.", param->key)
+	}
+
+	/* do compression */
+	int status = _zfp_comp(param->value, var->data, ndims, dims, type, choice, 0, field, zfp, stream, outbuffer);
         var->adata = outbuffer;
 
 
