@@ -16,22 +16,23 @@
 #include "zfp.h"
 
 
-void get_dimensions(const struct adios_dimension_struct* dimensions, uint ndims)
+uint* get_dimensions(const struct adios_dimension_struct* dimensions, uint ndims)
 {
 	int i;
-	int* dims = malloc(ndims*sizeof(int));
+	uint* dims = malloc(ndims*sizeof(uint));
 	for (i=0; i<ndims; i++)
 	{
 		dims[i] = dimensions->dimension->rank;
 		dimensions = dimensions->next;
 	}
-	return 
+	return dims;
 }
 
 void zfp_error(int &status, char* msg) 
 {
 	adios_error(err_unspecified, msg);
 	status = 1;
+	return;
 }
 
 
