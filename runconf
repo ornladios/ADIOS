@@ -486,11 +486,14 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
           unset EXTRA_CFLAGS 
       fi
       module load pmi
+      module load craype-hugepages2M
       CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eos.$TARGET \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
           --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+          --with-dataspaces=/ccs/proj/e2e/dataspaces/eos/1.6.1/$TARGET \
+          --with-dimes=/ccs/proj/e2e/dataspaces/eos/1.6.1/$TARGET \
             
 
 elif [ `hostname | cut -c 1-7` == "chester" ]; then
