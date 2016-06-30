@@ -97,6 +97,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/sith.$TARGET \
         --config-cache \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre \
@@ -201,6 +202,7 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
     export CFLAGS="-g -fPIC" 
     $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/rhea.$TARGET \
         --config-cache \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre \
@@ -289,6 +291,8 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
         
     export CFLAGS="-g -fPIC" 
     ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/yona.$TARGET \
+        --config-cache \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-research-transports  \
         --with-hdf5=${SEQ_HDF5_DIR} \
@@ -341,6 +345,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export CC=mpicc
         #export FC=mpif90
         CFLAGS="-g -fPIC -O0" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
+            --disable-maintainer-mode \
             --enable-dependency-tracking \
             --with-lustre
             #--with-fgr=/ccs/proj/e2e/qliu/tap \
@@ -488,6 +493,7 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
       module load pmi
       module load craype-hugepages2M
       CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eos.$TARGET \
+          --disable-maintainer-mode \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
@@ -553,6 +559,7 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       fi
       CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" LDFLAGS="$LDFLAGS $CRAY_RCA_POST_LINK_OPTS" \
       ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
+          --disable-maintainer-mode \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
@@ -670,6 +677,7 @@ elif [ `hostname | cut -c 1-6` == "edison" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
     ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/master/edison/$TARGET \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --with-lustre=/usr \
         $WITHDART \
@@ -733,6 +741,7 @@ elif [ `hostname | cut -c 1-6` == "hopper" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
     ${SRCDIR}/configure --prefix=/project/projectdirs/m499/adios/devel-hopper-$TARGET \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --with-lustre=/usr \
         $WITHDART \
@@ -785,6 +794,7 @@ elif [ `hostname | cut -c 1-6` == "kraken" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-fPIC -g -O0" 
     ${SRCDIR}/configure --prefix=/${HOME}/adios/$TARGET \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --with-portals=yes \
         --without-netcdf --without-nc4par --without-hdf5 --without-phdf5 \
@@ -953,7 +963,6 @@ elif [ `hostname | cut -c 1-9` == "PC0098504" ]; then
     export LDFLAGS="-lpthread"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
     ${SRCDIR}/configure --prefix=/opt/adios/1.10 \
-        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-timers \
         --disable-timer-events 
