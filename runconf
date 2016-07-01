@@ -886,10 +886,9 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
     echo "Configure on UBUNTU"
     export CC=mpicc
     export CFLAGS="-g -O0 -fPIC"
-    ${SRCDIR}/configure --prefix=/home/qliu/ADIOS \
+    ${SRCDIR}/configure --prefix=/home/qliu/ADIOS.install \
         --enable-dependency-tracking \
-        --with-mxml=/home/qliu/mxml \
-    --with-phdf5=/home/thkorde/local \
+        --with-mxml=/home/qliu/mxml
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 

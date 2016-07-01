@@ -2,10 +2,13 @@
 <adios-config host-language="C">
   <adios-group name="temperature" stats="On">
     <var name="NX" type="integer"/>
-    <var name="size" type="integer"/>
-    <var name="rank" type="integer"/>
-    <global-bounds dimensions="size,NX" offsets="rank,0">
-       <var name="temperature" gwrite="t" type="double" dimensions="1,NX" 
+    <var name="NY" type="integer"/>
+    <var name="GX" type="integer"/>
+    <var name="GY" type="integer"/>
+    <var name="OX" type="integer"/>
+    <var name="OY" type="integer"/>
+    <global-bounds dimensions="GY,GX" offsets="OY,OX">
+       <var name="temperature" gwrite="t" type="double" dimensions="NY,NX" 
             transform="none"/>
     </global-bounds>
     <attribute name="temperature/description" 
@@ -13,7 +16,8 @@
                type="string"/>
   </adios-group>
 
-  <method group="temperature" method="MPI"/>
+    <!--method group="temperature" method="SIRIUS_ADAPTIVE">method=MPI;path=data1;parameters;method=MPI;path=data2;parameters</method-->
+    <method group="temperature" method="SIRIUS_ADAPTIVE">method=MPI;path=data1;parameters;method=MPI;path=data2;parameters</method>
   <!--method group="temperature" method="MPI_AGGREGATE">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0;num_ost=2</method-->
   <!--method group="temperature" method="PHDF5"/-->
  
