@@ -5,29 +5,27 @@
  *      Author: Eric Suchyta
  */
 
-#ifdef BZIP2
+#ifdef ZFP
 
-#include <stdint.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <assert.h>
-#include <limits.h>
-#include <sys/time.h>
+#include <stdint.h>	// uint64_t
+#include <stdio.h> 	// NULL, sprintf
+#include <stdlib.h>	// NULL, malloc, free
+#include <string.h>	// memcpy, strcmp, strlen
 
-#include "core/adios_logger.h"
 #include "core/transforms/adios_transforms_common.h"
 #include "core/transforms/adios_transforms_write.h"
 #include "core/transforms/adios_transforms_hooks_write.h"
 #include "core/transforms/adios_transforms_util.h"
-#include "core/adios_internals.h"
+#include "core/adios_internals.h" 	// count_dimensions
 
 #include "zfp.h"
+#include "adios_tranform_zfp_common.h"
 
 
 
 uint16_t adios_transform_zfp_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
-    return (sizeof(uint64_t) + sizeof(char));    // metadata: original data size (uint64_t) + compression succ flag (char)
+    return (2*sizeof(uint64_t));    // metadata: original data size (uint64_t) + compressed size (uint64_t)
 }
 
 void adios_transform_zfp_transformed_size_growth(
@@ -41,37 +39,83 @@ void adios_transform_zfp_transformed_size_growth(
 int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_struct *var, uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer)
 {
 
-	void* outbuffer;	// What to send to ADIOS
-	int outsize;		// size of output buffer
-	zfp_type type;		// Map adios_type into zfp_type
-	uint choice; 		// zfp mode
-	int success; 		// Did compression succeed?
+	void* outbuffer;							// What to send to ADIOS
+	uint64_t outsize;							// size of output buffer
+	uint64_t insize = adios_transform_get_pre_transform_var_size(var); 	// size of input buffer
+
+
+	int success; 			// Did compression succeed?
+	struct zfp_buffer* zbuff;	// Handle zfp streaming
+	zbuff->name = var->name
 
 
 	/* adios to zfp datatype */
-	if (var->pre_transform_type == adios_double) type = zfp_type_double;
-	else if (var->pre_transform_type == adios_float) type = zfp_type_float;
-	else zpf_error("A datatype ZFP does not understand was given for compression. Understood types are adios_double, adios_float.");
+	if (var->pre_transform_type == adios_double) 
+	{
+		zbuff->type = zfp_type_double;
+	}
+	else if (var->pre_transform_type == adios_float) 
+	{
+		zbuff->type = zfp_type_float;
+	}
+	else 
+	{
+		sprintf(zbuff->msg, "A datatype ZFP does not understand was given for compression. Understood types are adios_double, adios_float.")
+		zfp_error(zbuff);
+		return 0;
+	}
 
 	/* dimensionality */
-	uint ndims = (uint) count_dimensions(var->pre_transform_dimensions);
-	int dims = get_dimension(var->pre_transform_dimensions, ndims);
-	for (i=0; i<ndims; i++) dims[i] = var->pre_transform_dimensions[i]->rank;
+	zbuff->ndims = (uint) count_dimensions(var->pre_transform_dimensions);
+	get_dimension(var->pre_transform_dimensions, zbuff);
 
-	/* Which zfp mode to use */
-	for (i=0; i<var->transform_spec->param_count; i++) 
+
+	/* make sure the user only gives the sensible number of key:values -- 1. */
+	if (var->transform_spec->param_count == 0)
 	{
-		const struct adios_transform_spec_kv_pair* const param = &var->transform_spec->params[i];
-		if (strcmp(param->key, "accuracy") == 0) choice = 0;
-		else if (strcmp(param->key, "precision") == 0) choice = 1;
-		else if (strcmp(param->key, "rate") == 0) choice = 2;
-		else zfp_error("An unknown compression mode was specified for zfp: %s. Availble choices are: accuracy, precision, rate.", param->key)
+		sprintf(zbuff->errmsg, "No compression mode specified. Choose from: accuracy, precision, rate");
+		zfp_error(zbuff);
+		return 0;
+	}
+	else if (var->transform_spec->param_count > 1)
+	{
+		sprintf(zbuff->errmsg, "Too many parameters specified. You can only give one key:value, the compression mode and it's tolerance.");
+		zfp_error(zbuff);
+		return 0;
+	}
+	else if (var->transform_spec->param_count < 0)
+	{
+		sprintf(zbuff->errmsg, "Negative number of parameters interpretted. This shouldn't happen.");
+		zfp_error(zbuff);
+		return 0;
 	}
 
 
+	/* Which zfp mode to use */
+	const struct adios_transform_spec_kv_pair* const param = &var->transform_spec->params[0];
+	if (strcmp(param->key, "accuracy") == 0) 
+	{
+		zbuff->mode = 0;
+	}
+	else if (strcmp(param->key, "precision") == 0)
+	{
+		zbuff->mode = 1;
+	}
+	else if (strcmp(param->key, "rate") == 0)
+	{
+		zbuff->mode = 2;
+	}
+	else 
+	{
+		sprintf(zbuff->errmsg, "An unknown compression mode was specified for zfp: %s. Availble choices are: accuracy, precision, rate.", param->key)
+		zfp_error(zbuff);
+		return 0;
+	}
+	zbuff->ctol = param->value;
+
+
 	/* do compression */
-	int status = _zfp_compress(param->value, var->data, ndims, dims, type, choice, 0, field, zfp, stream, outbuffer);
-	success = zfp_compression(param->value, var->array, ndims, dims, type, choice, var->name, outbuffer, outsize, fd, use_shared_buffer, fd);
+	success = zfp_compression(zbuff, var->array, outbuffer, outsize, use_shared_buffer, fd);
 
 
 	/* What do do if compresssion fails. For now, just give up */
@@ -97,15 +141,16 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	}
 
 
-
-    // copy the metadata, simply the original size before compression
-    if(var->transform_metadata && var->transform_metadata_len > 0)
-    {
-        memcpy((char*)var->transform_metadata, &input_size, sizeof(uint64_t));
-        memcpy((char*)var->transform_metadata + sizeof(uint64_t), &compress_ok, sizeof(char));
-    }
-
-    *transformed_len = actual_output_size; // Return the size of the data buffer
+	/* Copy the transform metadata: 
+	 * original size before compression
+	 * compressed size 
+	 */
+	if(var->transform_metadata && var->transform_metadata_len > 0)
+	{
+		memcpy((char*)var->transform_metadata, &insize, sizeof(uint64_t));
+		memcpy((char*)var->transform_metadata + sizeof(uint64_t), &outsize, sizeof(uint64_t));
+	}
+	*transformed_len = outsize; // Return the size of the data buffer
 
     return 1;
 }
