@@ -14,11 +14,12 @@
 #include "core/transforms/adios_transforms_reqgroup.h"
 #include "core/adios_internals.h" // adios_get_type_size()
 
-#ifdef BZIP2
+#ifdef ZFP
 
-#include "bzlib.h"
+#include "zfp.h"
+#include "adios_tranform_zfp_common.h"
 
-int adios_transform_bzip2_is_implemented (void) {return 1;}
+int adios_transform_zfp_is_implemented (void) {return 1;}
 
 int decompress_bzip2_pre_allocated(const void* input_data, const uint64_t input_len,
                                     void* output_data, uint64_t* output_len)
@@ -47,8 +48,9 @@ int decompress_bzip2_pre_allocated(const void* input_data, const uint64_t input_
     return 0;
 }
 
-int adios_transform_bzip2_generate_read_subrequests(adios_transform_read_request *reqgroup,
-                                                       adios_transform_pg_read_request *pg_reqgroup)
+
+// Do the default
+int adios_transform_zfp_generate_read_subrequests(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup)
 {
     void *buf = malloc(pg_reqgroup->raw_var_length);
     assert(buf);
@@ -57,40 +59,42 @@ int adios_transform_bzip2_generate_read_subrequests(adios_transform_read_request
     return 0;
 }
 
+
 // Do nothing for individual subrequest
-adios_datablock * adios_transform_bzip2_subrequest_completed(adios_transform_read_request *reqgroup,
-                                                                adios_transform_pg_read_request *pg_reqgroup,
-                                                                adios_transform_raw_read_request *completed_subreq)
+adios_datablock * adios_transform_bzip2_subrequest_completed(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup, adios_transform_raw_read_request *completed_subreq)
 {
     return NULL;
 }
 
-adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
-                                                                adios_transform_pg_read_request *completed_pg_reqgroup)
-{
-    uint64_t compressed_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
-    void* compressed_data = completed_pg_reqgroup->subreqs->data;
-    
-    uint64_t uncompressed_size_meta = *((uint64_t*)completed_pg_reqgroup->transform_metadata);
-    char compress_ok = *((char*)(completed_pg_reqgroup->transform_metadata + sizeof(uint64_t)));
 
-    uint64_t uncompressed_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
-    int d = 0;
-    for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
-    {
-        uncompressed_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
-    }
-    
-    if(uncompressed_size_meta != uncompressed_size)
-    {
-        printf("WARNING: possible wrong data size or corrupted metadata\n");
-    }
-    
-    void* uncompressed_data = malloc(uncompressed_size);
-    if(!uncompressed_data)
-    {
-        return NULL;
-    }
+adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *completed_pg_reqgroup)
+{
+
+	void* compressed_data = completed_pg_reqgroup->subreqs->data;
+	int d = 0;
+
+	uint64_t uncompressed_size_meta = *((uint64_t*)completed_pg_reqgroup->transform_metadata);
+	uint64_t compressed_size_meta = *((uint64_t*)(completed_pg_reqgroup->transform_metadata + sizeof(uint64_t)));
+
+
+	uint64_t compressed_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
+	uint64_t uncompressed_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
+	for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
+	{
+		uncompressed_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
+	}
+
+	
+	if(uncompressed_size_meta != uncompressed_size)
+	{
+		printf("WARNING: possible wrong data size or corrupted metadata\n");
+	}
+	
+	void* uncompressed_data = malloc(uncompressed_size);
+	if(!uncompressed_data)
+	{
+		return NULL;
+	}
 
     if(compress_ok == 1)    // compression is successful
     {

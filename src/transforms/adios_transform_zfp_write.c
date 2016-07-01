@@ -25,11 +25,10 @@
 
 uint16_t adios_transform_zfp_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
-    return (2*sizeof(uint64_t));    // metadata: original data size (uint64_t) + compressed size (uint64_t)
+	return (2*sizeof(uint64_t));    // metadata: original data size (uint64_t) + compressed size (uint64_t)
 }
 
-void adios_transform_zfp_transformed_size_growth(
-		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
+void adios_transform_zfp_transformed_size_growth(const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
 	// Do nothing (defaults to "no transform effect on data size")
