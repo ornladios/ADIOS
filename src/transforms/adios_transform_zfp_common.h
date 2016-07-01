@@ -170,7 +170,7 @@ int zfp_decompression(char* ctol, void* array, uint ndims, uint* dims, zfp_type 
 }
 
 
-int zfp_compression(char* ctol, void* array, uint ndims, uint* dims, zfp_type type, uint choice, char* name, void* abuff, int sharedbuffer, struct adios_file_struct* fd) 
+int zfp_compression(char* ctol, void* array, uint ndims, uint* dims, zfp_type type, uint choice, char* name, void* abuff, int &asize, int sharedbuffer, struct adios_file_struct* fd) 
 {
 	char msg[256]; // error message if needed
 
@@ -202,7 +202,8 @@ int zfp_compression(char* ctol, void* array, uint ndims, uint* dims, zfp_type ty
 
 	zfp_streaming(zbuff, abuff, 0)
 	if (zbuff->error) return 0;
-
+	
+	asize = zbuff->buffsize
 	return 1;
 }
 
