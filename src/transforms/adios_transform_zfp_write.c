@@ -42,6 +42,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 {
 
 	void* outbuffer;	// What to send to ADIOS
+	int outsize;		// size of output buffer
 	zfp_type type;		// Map adios_type into zfp_type
 	uint choice; 		// zfp mode
 	int success; 		// Did compression succeed?
@@ -70,38 +71,32 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 	/* do compression */
 	int status = _zfp_compress(param->value, var->data, ndims, dims, type, choice, 0, field, zfp, stream, outbuffer);
-	success = zfp_compression(param->value, var->array, ndims, dims, type, choice, var->name, outbuffer, fd, use_shared_buffer, fd);
+	success = zfp_compression(param->value, var->array, ndims, dims, type, choice, var->name, outbuffer, outsize, fd, use_shared_buffer, fd);
+
+
+	/* What do do if compresssion fails. For now, just give up */
+	if(!success)
+	{
+		return 0;
+		// memcpy(output_buff, input_buff, input_size);
+		// actual_output_size = input_size;
+		// compress_ok = 0; 
+	}
+
 
 	*wrote_to_shared_buffer = use_shared_buffer;
-        var->adata = outbuffer;
+	if (*wrote_to_shared_buffer) 
+	{
+		shared_buffer_mark_written(fd, outsize);
+	} 
+	else 
+	{
+		var->adata = outbuffer;
+		var->data_size = outsize;
+		var->free_data = adios_flag_yes;
+	}
 
 
-
-    uint64_t actual_output_size = output_size;
-    char compress_ok = 1;
-
-    int rtn = compress_bzip2_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
-
-    if(0 != rtn                     // compression failed for some reason, then just copy the buffer
-        || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
-    {
-        // printf("compression failed, fall back to memory copy\n");
-        memcpy(output_buff, input_buff, input_size);
-        actual_output_size = input_size;
-        compress_ok = 0;    // succ sign set to 0
-    }
-
-    // Wrap up, depending on buffer mode
-    if (use_shared_buffer)
-    {
-        shared_buffer_mark_written(fd, actual_output_size);
-    }
-    else
-    {
-        var->adata = output_buff;
-        var->data_size = actual_output_size;
-        var->free_data = adios_flag_yes;
-    }
 
     // copy the metadata, simply the original size before compression
     if(var->transform_metadata && var->transform_metadata_len > 0)
