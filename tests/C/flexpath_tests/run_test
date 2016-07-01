@@ -1,7 +1,13 @@
 #!/bin/bash
 
-reader_prog="reader"
-writer_prog="writer"
+cur_dir=${PWD##*/}
+postfix="_$cur_dir"
+if [ -r ".exec_postfix" ]; then
+    postfix=`cat .exec_postfix`
+fi
+
+reader_prog="reader""$postfix"
+writer_prog="writer""$postfix"
 qflag=no;
 transport="flx"
 timeout="60"
@@ -68,11 +74,14 @@ echo "NR is $nr NW is $nw"
 # remove any lingering flexpath startup files
 rm -f *writer_info.txt *writer_ready.txt *reader_info.txt *reader_ready.txt
 
-# Spawn the reader
-(mpirun -q -n $nr $reader_prog -t $transport 2>&1 1>/dev/null) & reader_pid=$!
-
 # Spawn the writer
 (mpirun -q -n $nw $writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+
+sleep 2
+
+# Spawn the reader
+#(mpirun -q -n $nr xterm -e lldb ./$reader_prog  2>&1 1>/dev/null) & reader_pid=$!
+(mpirun -q -n $nr ./$reader_prog -t $transport 2>&1 1>/dev/null) & reader_pid=$!
 
 # in the background, sleep for timeout secs then kill that processes
 (sleep $timeout && kill -9 $reader_pid && kill -9 $writer_pid 2>/dev/null) & waiter=$!
