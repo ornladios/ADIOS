@@ -8,19 +8,32 @@
 #ifndef ADIOS_TRANSFORM_ZFP_COMMON_H_
 #define ADIOS_TRANSFORM_ZFP_COMMON_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdint.h> 	// uint64_t
+#include <stdio.h>	// NULL, sprintf, sscanf
+#include <stdlib.h>	// NULL, malloc, free
+#include <string.h>	// memcpy, strcmp, strlen
 
-#include "public/adios_error.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_hooks_write.h"
 #include "core/transforms/adios_transforms_util.h"
+#include "public/adios_error.h"
+
 #include "zfp.h"
 
 
 struct zfp_buffer
 {
-	bool error=false;				// True if there was an error
-	char* name; 					// Name of variable
+	bool error;					// true if error
+	char errmsg[512];				// error message, if needed
+	
+	char name[512]; 					// Name of variable
+	zfp_type type;					// data type
+	uint mode;					// 0 = accuracy, 1 = precsion, 2 = rate
+	char ctol[512];					// string for "tolerance"
+	uint ndims; 					// number of dimensions
+	uint* dims;					// array of dimension sizes
+
 	zfp_field* field;				// Point to the array that zfp will compress
 	zfp_stream* zstream = zfp_stream_open(NULL);	// Connect field to this as input and to bitstream as output
 	bitstream* bstream;				// Stores the "sorted" bits. Send this into the output ADIOS buffer
@@ -28,93 +41,83 @@ struct zfp_buffer
 };
 
 
-uint* get_dimensions(const struct adios_dimension_struct* dimensions, uint ndims)
+void get_dimensions(const struct adios_dimension_struct* dimensions, struct zfp_buffer* zbuff)
 {
 	int i;
-	uint* dims = malloc(ndims*sizeof(uint));
-	for (i=0; i<ndims; i++)
+	zbuff->dims = malloc(zbuff->ndims*sizeof(uint));
+	for (i=0; i<zbuff->ndims; i++)
 	{
-		dims[i] = dimensions->dimension->rank;
+		zbuff->dims[i] = dimensions->dimension->rank;
 		dimensions = dimensions->next;
 	}
-	return dims;
 }
 
 
-void zfp_error(struct zfp_buffer* zbuff, char* msg) 
+void zfp_error(struct zfp_buffer* zbuff) 
 {
-	char err[512];
-	zbuf->error = true;
-	spritinf(err, "ZFP error encountered processing variable: %s. %s", zbuff->name, msg);
-	adios_error(err_unspecified, err);
+	zbuff->error = True
+	sprintf(zbuff->errmsg + strlen(zbuff->errmsg), "ZFP error encountered processing variable: %s. %s", zbuff->name, zbuff->errmsg);
+	adios_error(err_unspecified, zbuff->errmsg);
 	return;
 }
 
-int zfp_error_return(struct zfp_buffer* zbuff, char* msg)
+
+void zfp_initialize(void* array, zfp_buffer* zbuff)
 {
-	zfp_error(zbuff, msg);
-	return 0;
-}
-
-
-void zfp_initialize(char* ctol, void* array, uint ndims, uint* dims, zfp_type type, uint choice, char* name, zfp_buffer* zbuff)
-{
-	char msg[256]; // error message if needed
-
 
 	/* set up the field dimensionality */
-	if (ndims == 1)
+	if (zbuff->ndims == 1)
 	{
-		zbuff->field = zfp_field_1d(array, type, dims[0]);
+		zbuff->field = zfp_field_1d(array, zbuff->type, zbuff->dims[0]);
 	}
-	else if (ndims == 2)
+	else if (zbuff->ndims == 2)
 	{
-		zbuff->field = zfp_field_2d(array, type, dims[0], dims[1]);
+		zbuff->field = zfp_field_2d(array, zbuff->type, zbuff->dims[0], zbuff->dims[1]);
 	}
-	else if (ndims == 3)
+	else if (zbuff->ndims == 3)
 	{
-		zbuff->field = zfp_field_3d(array, type, dims[0], dims[1], dims[2]);
+		zbuff->field = zfp_field_3d(array, zbuff->type, zbuff->dims[0], zbuff->dims[1], zbuff->dims[2]);
 	}
 	else 
 	{
-		sprintf(msg, "Dimensions error: ndims=%i is not implemented. 1, 2, and 3 are available.\n", ndims)
-		return zfp_error(zbuff, msg);
+		sprintf(zbuff->errmsg, "Dimensions error: ndims=%i is not implemented. 1, 2, and 3 are available.\n", zbuff->ndims)
+		return zfp_error(zbuff);
 	}
 
 	
 	/* Which mode to use. Alrady checked that the mode is okay upstream. */
-	if (choice == 0) 	// accuracy
+	if (zbuff->mode == 0) 	// accuracy
 	{
 		double tol;
-		int success = sscanf(ctol, "%d", &tol);
+		int success = sscanf(zbuff->ctol, "%d", &tol);
 		if (success != 1) 
 		{
-			sprintf(msg, "Error in accuracy specification: %s. Provide a double.\n", ctol);
-			return zfp_error(zbuff, msg);
+			sprintf(zbuff->errmsg, "Error in accuracy specification: %s. Provide a double.\n", zbuff->ctol);
+			return zfp_error(zbuff);
 		}
-	       	zfp_stream_set_accuracy(zbuff->zstream, tol, type);
+	       	zfp_stream_set_accuracy(zbuff->zstream, tol, zbuff->type);
 	}
-	else if (choice == 1) 	// precision
+	else if (zbuff->mode == 1) 	// precision
 	{
 		uint tol;
-		int success = sscanf(ctol, "%u", &tol);
+		int success = sscanf(zbuff->ctol, "%u", &tol);
 		if (success != 1)
 		{
-			sprintf(msg, "Error in precision specification: %s. Provide an integer.\n", ctol);
-			return zfp_error(zbuff, msg);
+			sprintf(zbuff->errmsg, "Error in precision specification: %s. Provide an integer.\n", zbuff->ctol);
+			return zfp_error(zbuff);
 		}
-		zfp_stream_set_precision(zbuff->zstream, tol, type);
+		zfp_stream_set_precision(zbuff->zstream, tol, zbuff->type);
 	}
-	else if (choice == 2) 	// rate
+	else if (zbuf->mode == 2) 	// rate
 	{
 		double tol;
-		int success = sscanf(ctol, "%d", &tol);
+		int success = sscanf(zbuff->ctol, "%d", &tol);
 		if (success != 1)
 		{
-			sprintf(msg, "Error in rate specification: %s. Provide a double.\n", ctol);
-			return zfp_error(zbuff, msg);
+			sprintf(zbuff->errmsg, "Error in rate specification: %s. Provide a double.\n", zbuff->ctol);
+			return zfp_error(zbuff);
 		}
-		zfp_stream_set_rate(zbuff->zstream, tol, type, ndims, 0);  // I don't know what the 0 is.
+		zfp_stream_set_rate(zbuff->zstream, tol, zbuff->type, zbuff->ndims, 0);  // I don't know what the 0 is.
 	}
 
 	zbuff->buffsize = zfp_stream_maximum_size(zbuff->zstream, field);
@@ -135,16 +138,20 @@ void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress)
 	/* (de)compress array */
 	if (decompress)
 	{
-		if (!zfp_decompress(zbuff->zstream, field))
+		/*
+		if (!zfp_decompress(zbuff->zstream, zbuff->field))
 		{
-			return zfp_error(zbuff, "Decompression failed\n");
+			sprintf(zbuff->errmsg, "Decompression failed\n");
+			return zfp_error(zbuff);
 		}
+		*/
 	}
 	else 
 	{
 		if (!zfp_compress(zfp, field))
 		{
-			return zfp_error(zbuff, "Compression failed.\n");
+			sprintf(zbuff->errmsg, "Compression failed.\n")
+			return zfp_error(zbuff);
 		}
 	}
 
@@ -157,6 +164,7 @@ void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress)
 	return zbuff
 }
 
+/*
 int zfp_decompression(char* ctol, void* array, uint ndims, uint* dims, zfp_type type, uint choice, char* name, void* abuff)
 {
 	struct zfp_buffer* zbuff;
@@ -168,15 +176,12 @@ int zfp_decompression(char* ctol, void* array, uint ndims, uint* dims, zfp_type 
 
 	return 1;
 }
+*/
 
 
-int zfp_compression(char* ctol, void* array, uint ndims, uint* dims, zfp_type type, uint choice, char* name, void* abuff, int &asize, int sharedbuffer, struct adios_file_struct* fd) 
+int zfp_compression(zfp_buffer* zbuff, void* array, void* abuff, int &asize, int sharedbuffer, struct adios_file_struct* fd) 
 {
-	char msg[256]; // error message if needed
-
-
-	struct zfp_buffer* zbuff;
-	zfp_initialize(ctol, array, ndims, dims, type, choice, name, zbuff);
+	zfp_initialize(array, zbuff);
 	if (zbuff->error) return 0;
 
 	if (sharedbuffer) 
@@ -203,7 +208,7 @@ int zfp_compression(char* ctol, void* array, uint ndims, uint* dims, zfp_type ty
 	zfp_streaming(zbuff, abuff, 0)
 	if (zbuff->error) return 0;
 	
-	asize = zbuff->buffsize
+	asize = (uint64_t) zbuff->buffsize
 	return 1;
 }
 
