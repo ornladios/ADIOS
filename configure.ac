@@ -5,12 +5,13 @@ AC_CONFIG_MACRO_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
-dnl Require Automake 1.11.3 or better.
+dnl Require Automake 1.12.0 or better.
 dnl We need automake correctly generate object file path for .F90 modules when
 dnl enabling subdir-objects
 dnl Automake 1.10 wants to use ./adiosf_read_mod.o for libadiosf.a, although
 dnl it correctly places that object file into core/adiosf_read_mod.o
-AM_INIT_AUTOMAKE([1.11.1])    
+dnl Also use EXTRA_libraryname_DEPENDENCIES which is not available in 1.11
+AM_INIT_AUTOMAKE([1.12.0])    
 
 AM_MAINTAINER_MODE([enable])
 
@@ -867,7 +868,7 @@ AC_CONFIG_FILES([Makefile
                  utils/adios_list_methods/Makefile
                  utils/bpmeta/Makefile
                  utils/bprecover/Makefile
-		         utils/fastbit/Makefile
+                 utils/fastbit/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
@@ -897,7 +898,10 @@ AC_CONFIG_FILES([Makefile
                  src/public/adios_version.h
                 ])
 
+
 AC_OUTPUT
+
+chmod +x utils/gpp/gpp.py
 
 echo
 echo "*********************************"
@@ -1061,16 +1065,16 @@ dnl else
 dnl         echo "  - No Gengetopt"
 dnl fi
 
-if test "x${datatap}" != "xdisable"; then
-    echo "  - DataTap with interconnect: $datatap";
-    echo "      - DT_CFLAGS     = $DT_CFLAGS";
-    echo "      - DT_CPPFLAGS   = $DT_CPPFLAGS";
-    echo "      - DT_LDFLAGS    = $DT_LDFLAGS";
-    echo "      - DT_LIBS       = $DT_LIBS";
-    echo
-else
-    echo "  - No DataTap transport to build DATATAP transport method";
-fi
+#if test "x${datatap}" != "xdisable"; then
+#    echo "  - DataTap with interconnect: $datatap";
+#    echo "      - DT_CFLAGS     = $DT_CFLAGS";
+#    echo "      - DT_CPPFLAGS   = $DT_CPPFLAGS";
+#    echo "      - DT_LDFLAGS    = $DT_LDFLAGS";
+#    echo "      - DT_LIBS       = $DT_LIBS";
+#    echo
+#else
+#    echo "  - No DataTap transport to build DATATAP transport method";
+#fi
 
 if test -z "${HAVE_DATASPACES_TRUE}"; then
     echo "  - DATASPACES transport method";

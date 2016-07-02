@@ -19,4 +19,6 @@ fastbit_tests_CPPFLAGS = $(AM_CPPFLAGS) ${ADIOSLIB_SEQ_CPPFLAGS} $(ADIOSLIB_EXTR
 fastbit_tests_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD) 
 fastbit_tests_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
+EXTRA_DIST = query.xml
+
 endif # HAVE_FASTBIT
