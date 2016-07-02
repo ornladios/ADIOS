@@ -23,29 +23,31 @@
 
 
 
+
 uint16_t adios_transform_zfp_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
-	return (2*sizeof(uint64_t));    // metadata: original data size (uint64_t) + compressed size (uint64_t)
+	return (2*sizeof(uint64_t) + sizeof(uint) + 2*ZFP_STRSIZE*sizeof(char))
 }
+
 
 void adios_transform_zfp_transformed_size_growth(const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
 	// Do nothing (defaults to "no transform effect on data size")
+	return;
 }
 
 
 int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_struct *var, uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer)
 {
 
-	void* outbuffer;							// What to send to ADIOS
-	uint64_t outsize;							// size of output buffer
-	uint64_t insize = adios_transform_get_pre_transform_var_size(var); 	// size of input buffer
-
-
 	int success; 			// Did compression succeed?
+	void* outbuffer;		// What to send to ADIOS
+	uint64_t* outsize;		// size of output buffer
 	struct zfp_buffer* zbuff;	// Handle zfp streaming
-	zbuff->name = var->name
+
+	uint64_t insize = adios_transform_get_pre_transform_var_size(var); 	// size of input buffer
+	zbuff->name = var->name;						// which variable we're working on
 
 
 	/* adios to zfp datatype */
@@ -114,7 +116,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 
 	/* do compression */
-	success = zfp_compression(zbuff, var->array, outbuffer, outsize, use_shared_buffer, fd);
+	success = zfp_compression(zbuff, var->array, outbuffer, *outsize, use_shared_buffer, fd);
 
 
 	/* What do do if compresssion fails. For now, just give up */
@@ -130,28 +132,31 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	*wrote_to_shared_buffer = use_shared_buffer;
 	if (*wrote_to_shared_buffer) 
 	{
-		shared_buffer_mark_written(fd, outsize);
+		shared_buffer_mark_written(fd, *outsize);
 	} 
 	else 
 	{
 		var->adata = outbuffer;
-		var->data_size = outsize;
+		var->data_size = *outsize;
 		var->free_data = adios_flag_yes;
 	}
 
 
-	/* Copy the transform metadata: 
-	 * original size before compression
-	 * compressed size 
-	 */
+	/* Copy the transform metadata */
+	char* pos = (char*)var->transform_metadata;
+	size_t offset = 0;
 	if(var->transform_metadata && var->transform_metadata_len > 0)
 	{
-		memcpy((char*)var->transform_metadata, &insize, sizeof(uint64_t));
-		memcpy((char*)var->transform_metadata + sizeof(uint64_t), &outsize, sizeof(uint64_t));
+		zfp_write_metadata_var(pos, &insize, sizeof(uint64_t), offset);
+		zfp_write_metadata_var(pos, &outsize, sizeof(uint64_t), offset);
+		zfp_write_metadata_var(pos, &zbuff->mode, sizeof(uint), offset);
+		zfp_write_metadata_var(pos, zbuff->ctol, ZFP_STRSIZE*sizeof(char), offset);
+		zfp_write_metadata_var(pos, zbuff->name, ZFP_STRSIZE*sizeof(char), offset);
 	}
-	*transformed_len = outsize; // Return the size of the data buffer
 
-    return 1;
+
+	*transformed_len = outsize; // Return the size of the data buffer
+	return 1;
 }
 
 #else
