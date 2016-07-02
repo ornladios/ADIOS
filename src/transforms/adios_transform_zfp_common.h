@@ -20,17 +20,56 @@
 #include "public/adios_error.h"
 
 #include "zfp.h"
+#define ZFP_STRSIZE 256
+
+
+struct zfp_metadata 
+{
+	uint64_t usize;			// uncompressed size;
+	uint64_t csize;			// compressed size	
+	uint cmode;			// compression mode
+	char ctol[ZFP_STRSIZE];		// string of "tolerance"
+	char name[ZFP_STRSIZE];		// variable name
+};
+
+
+void* zfp_read_metadata_var(void* pos, size_t size, size_t &offset)
+{
+	offset += size
+	return pos + offset - size;
+}
+
+void zfp_write_metadata_var(char* pos, void* towrite, size_t size, size_t &offset)
+{
+	memcpy(pos + offset, towrite, size);
+	offset += size;
+	return;
+}
+
+struct zfp_metadata* zfp_read_metadata(adios_transform_pg_read_request *completed_pg_reqgroup)
+{
+	struct zfp_metadata* metadata;
+	void* pos = completed_pg_reqgroup->transform_metadata
+	
+	metadata->usize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), offset));
+	metadata->csize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), offset));
+	metadata->cmode = *((uint*)zfp_read_metadata_var(pos, sizeof(uint), offset));
+	metadata->ctol = *((char*)zfp_read_metadata_var(pos, ZFP_STRSIZE*sizeof(char), offset));
+	metadata->name = *((char*)zfp_read_metadata_var(pos, ZFP_STRSIZE*sizeof(char), offset));
+	return metadata
+}
+
 
 
 struct zfp_buffer
 {
 	bool error;					// true if error
-	char errmsg[512];				// error message, if needed
+	char errmsg[ZFP_STRSIZE];			// error message, if needed
 	
-	char name[512]; 					// Name of variable
+	char name[ZFP_STRSIZE]; 			// Name of variable
 	zfp_type type;					// data type
 	uint mode;					// 0 = accuracy, 1 = precsion, 2 = rate
-	char ctol[512];					// string for "tolerance"
+	char ctol[ZFP_STRSIZE];				// string for "tolerance"
 	uint ndims; 					// number of dimensions
 	uint* dims;					// array of dimension sizes
 

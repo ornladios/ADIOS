@@ -9,45 +9,20 @@
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
+
 #include "util.h"
 #include "core/transforms/adios_transforms_hooks_read.h"
 #include "core/transforms/adios_transforms_reqgroup.h"
 #include "core/adios_internals.h" // adios_get_type_size()
+#include "adios_logger.h"
 
 #ifdef ZFP
 
 #include "zfp.h"
 #include "adios_tranform_zfp_common.h"
 
+
 int adios_transform_zfp_is_implemented (void) {return 1;}
-
-// I won't need this
-int decompress_bzip2_pre_allocated(const void* input_data, const uint64_t input_len,
-                                    void* output_data, uint64_t* output_len)
-{
-    // bzip2 only support input size of 32 bit integer
-
-    assert(input_data != NULL
-            && input_len > 0 && input_len <= UINT_MAX
-            && output_data != NULL
-            && output_len != NULL && *output_len > 0 && *output_len < UINT_MAX);
-
-    unsigned int input_len_32 = (unsigned int)input_len;
-    unsigned int output_len_32 = (unsigned int)(*output_len);
-
-    int bz_rtn = BZ2_bzBuffToBuffDecompress((char*)output_data, &output_len_32,
-                                                (char*)input_data, input_len_32,
-                                                0, 0 );
-
-    if(bz_rtn != BZ_OK)
-    {
-        printf("BZ2_bzBuffToBuffDecompress error %d\n", bz_rtn);
-        return -1;
-    }
-
-    *output_len = output_len_32;
-    return 0;
-}
 
 
 // Do the default
@@ -70,49 +45,52 @@ adios_datablock * adios_transform_bzip2_subrequest_completed(adios_transform_rea
 
 adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *completed_pg_reqgroup)
 {
+	
+	/* Get the transform metadata */
+	struct zfp_metadata metadata metadata = read_metadata(completed_pg_reqgroup);
 
-	void* compressed_data = completed_pg_reqgroup->subreqs->data;
+
+	/* Get the data native to ADIOS (as opposed to the metadata which only the tranform plugin knows about) */
+	uint64_t csize = (uint64_t)completed_pg_reqgroup->raw_var_length;
+	uint64_t usize = adios_get_type_size(reqgroup->transinfo->orig_type, "");
 	int d = 0;
-
-	uint64_t uncompressed_size_meta = *((uint64_t*)completed_pg_reqgroup->transform_metadata);
-	uint64_t compressed_size_meta = *((uint64_t*)(completed_pg_reqgroup->transform_metadata + sizeof(uint64_t)));
-
-
-	uint64_t compressed_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
-	uint64_t uncompressed_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
 	for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
 	{
-		uncompressed_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
+		usize *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
 	}
 
 	
-	if(uncompressed_size_meta != uncompressed_size)
+	/* Do the metadata and ADIOS agree? */
+	if(metadata.csize != csize)
 	{
-		printf("WARNING: possible wrong data size or corrupted metadata\n");
+		log_warn("variable %s: Metadata thinks compressed size is %" PRIu64 \
+				"bytes. ADIOS thinks compressed size is %" PRIu64 \
+				"bytes. Likely corruption.\n", metadata.name, metadata.csize, csize);
 	}
-	
-	void* uncompressed_data = malloc(uncompressed_size);
-	if(!uncompressed_data)
+
+	if(metadata.usize != usize)
+	{
+		log_warn("variable %s: Metadata thinks uncompressed size is %" PRIu64 \
+				"bytes. ADIOS thinks uncompressed size is %" PRIu64 \
+				"bytes. Likely corruption.\n", metadata.name, metadata.usize, usize);
+	}
+
+
+	void* cdata = completed_pg_reqgroup->subreqs->data;
+	void* udata = malloc(usize);
+	if(!udata)
 	{
 		return NULL;
 	}
 
-    if(compress_ok == 1)    // compression is successful
-    {
-        
-        int rtn = decompress_bzip2_pre_allocated(compressed_data, compressed_size, uncompressed_data, &uncompressed_size);
+       	/* possibly add check for successful compression eventually */ 
+	int success = zfp_decompression(zbuff, var->array, outbuffer, *outsize, use_shared_buffer, fd);
         if(rtn != 0)
         {
             return NULL;
         }
-    }
-    else    // just copy the buffer since data is not compressed
-    {
-        // printf("compression failed before, fall back to memory copy\n");
-        memcpy(uncompressed_data, compressed_data, compressed_size);
-    }
-
-    return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, uncompressed_data);
+	
+	return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, udata);
 }
 
 adios_datablock * adios_transform_bzip2_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
