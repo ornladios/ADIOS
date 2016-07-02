@@ -21,6 +21,7 @@
 
 int adios_transform_zfp_is_implemented (void) {return 1;}
 
+// I won't need this
 int decompress_bzip2_pre_allocated(const void* input_data, const uint64_t input_len,
                                     void* output_data, uint64_t* output_len)
 {
