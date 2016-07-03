@@ -1,47 +1,58 @@
 /*
  * adios_transform_zfp_write.c
  *
- *  Created on: June 30, 2016
- *      Author: Eric Suchyta
+ * 	Author: Eric Suchyta
+ * 	Contact: eric.d.suchyta@gmail.com
  */
 
 #ifdef ZFP
 
+
+/* general C stuff */
 #include <stdint.h>	// uint64_t
 #include <stdio.h> 	// NULL, sprintf
 #include <stdlib.h>	// NULL, malloc, free
 #include <string.h>	// memcpy, strcmp, strlen
 
+
+/* Were in the template included from ADIOS. Not necessarily sure if they're all strictly needed. */
 #include "core/transforms/adios_transforms_common.h"
 #include "core/transforms/adios_transforms_write.h"
 #include "core/transforms/adios_transforms_hooks_write.h"
 #include "core/transforms/adios_transforms_util.h"
+
+
+/* Extra ADIOS headers that weren't added in the template */
 #include "core/adios_internals.h" 	// count_dimensions
 
+
+/* ZFP specific */
 #include "zfp.h"
 #include "adios_tranform_zfp_common.h"
 
 
-
-
+/* see zfp_metadata in adios_transform_zfp_common.h */
 uint16_t adios_transform_zfp_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
-	return (2*sizeof(uint64_t) + sizeof(uint) + 2*ZFP_STRSIZE*sizeof(char))
+	return (2*sizeof(uint64_t) + sizeof(uint) + 2*ZFP_STRSIZE)
 }
 
 
+/* Template says: 'Doing nothing defaults to "no transform effect on data size"'. 
+ * I think this means a blank function equates to I don't need to grow the array to do transform */
 void adios_transform_zfp_transformed_size_growth(const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
-	// Do nothing (defaults to "no transform effect on data size")
 	return;
 }
 
 
-int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_struct *var, uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer)
+/* Does the main compression work */
+int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_struct *var, 
+		uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer)
 {
 
-	int success; 			// Did compression succeed?
+	int success; 			// Did (some part of) compression succeed?
 	void* outbuffer;		// What to send to ADIOS
 	uint64_t* outsize;		// size of output buffer
 	struct zfp_buffer* zbuff;	// Handle zfp streaming
@@ -51,20 +62,12 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 
 	/* adios to zfp datatype */
-	if (var->pre_transform_type == adios_double) 
+	success = zfp_get_datatype(zbuff, var->pre_transform_type);
+	if (!success)
 	{
-		zbuff->type = zfp_type_double;
-	}
-	else if (var->pre_transform_type == adios_float) 
-	{
-		zbuff->type = zfp_type_float;
-	}
-	else 
-	{
-		sprintf(zbuff->msg, "A datatype ZFP does not understand was given for compression. Understood types are adios_double, adios_float.")
-		zfp_error(zbuff);
 		return 0;
 	}
+
 
 	/* dimensionality */
 	zbuff->ndims = (uint) count_dimensions(var->pre_transform_dimensions);
@@ -74,19 +77,19 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	/* make sure the user only gives the sensible number of key:values -- 1. */
 	if (var->transform_spec->param_count == 0)
 	{
-		sprintf(zbuff->errmsg, "No compression mode specified. Choose from: accuracy, precision, rate");
+		sprintf(zbuff->msg, "No compression mode specified. Choose from: accuracy, precision, rate");
 		zfp_error(zbuff);
 		return 0;
 	}
 	else if (var->transform_spec->param_count > 1)
 	{
-		sprintf(zbuff->errmsg, "Too many parameters specified. You can only give one key:value, the compression mode and it's tolerance.");
+		sprintf(zbuff->msg, "Too many parameters specified. You can only give one key:value, the compression mode and it's tolerance.");
 		zfp_error(zbuff);
 		return 0;
 	}
 	else if (var->transform_spec->param_count < 0)
 	{
-		sprintf(zbuff->errmsg, "Negative number of parameters interpretted. This shouldn't happen.");
+		sprintf(zbuff->msg, "Negative number of parameters interpretted. This shouldn't happen.");
 		zfp_error(zbuff);
 		return 0;
 	}
@@ -108,7 +111,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	}
 	else 
 	{
-		sprintf(zbuff->errmsg, "An unknown compression mode was specified for zfp: %s. Availble choices are: accuracy, precision, rate.", param->key)
+		sprintf(zbuff->msg, "An unknown compression mode was specified for zfp: %s. Availble choices are: accuracy, precision, rate.", param->key);
 		zfp_error(zbuff);
 		return 0;
 	}
@@ -119,16 +122,14 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	success = zfp_compression(zbuff, var->array, outbuffer, *outsize, use_shared_buffer, fd);
 
 
-	/* What do do if compresssion fails. For now, just give up */
+	/* What do do if compresssion fails. For now, just give up. Maybe eventually use raw data. */
 	if(!success)
 	{
 		return 0;
-		// memcpy(output_buff, input_buff, input_size);
-		// actual_output_size = input_size;
-		// compress_ok = 0; 
 	}
 
-
+	
+	/* Write the data */
 	*wrote_to_shared_buffer = use_shared_buffer;
 	if (*wrote_to_shared_buffer) 
 	{
@@ -142,7 +143,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	}
 
 
-	/* Copy the transform metadata */
+	/* Write the transform metadata */
 	char* pos = (char*)var->transform_metadata;
 	size_t offset = 0;
 	if(var->transform_metadata && var->transform_metadata_len > 0)
@@ -150,14 +151,14 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 		zfp_write_metadata_var(pos, &insize, sizeof(uint64_t), offset);
 		zfp_write_metadata_var(pos, &outsize, sizeof(uint64_t), offset);
 		zfp_write_metadata_var(pos, &zbuff->mode, sizeof(uint), offset);
-		zfp_write_metadata_var(pos, zbuff->ctol, ZFP_STRSIZE*sizeof(char), offset);
-		zfp_write_metadata_var(pos, zbuff->name, ZFP_STRSIZE*sizeof(char), offset);
+		zfp_write_metadata_var(pos, zbuff->ctol, ZFP_STRSIZE, offset);
+		zfp_write_metadata_var(pos, zbuff->name, ZFP_STRSIZE, offset);
 	}
-
 
 	*transformed_len = outsize; // Return the size of the data buffer
 	return 1;
 }
+
 
 #else
 

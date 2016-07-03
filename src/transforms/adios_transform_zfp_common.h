@@ -1,28 +1,40 @@
 /*
  * adios_transform_zfp_common.h
  *
- *  Created on: June 30, 2016
- *      Author: Eric Suchyta
+ * 	Author: Eric Suchyta
+ * 	contact: eric.d.suchyta@gmail.com
  */
 
 #ifndef ADIOS_TRANSFORM_ZFP_COMMON_H_
 #define ADIOS_TRANSFORM_ZFP_COMMON_H_
 
+
+/* general C stuff */
 #include <stdint.h> 	// uint64_t
 #include <stdio.h>	// NULL, sprintf, sscanf
 #include <stdlib.h>	// NULL, malloc, free
 #include <string.h>	// memcpy, strcmp, strlen
 
+
+/* Were in the template included from ADIOS. Not necessarily sure if they're all strictly needed. */
 #include "core/transforms/adios_transforms_common.h"
 #include "core/transforms/adios_transforms_write.h"
 #include "core/transforms/adios_transforms_hooks_write.h"
 #include "core/transforms/adios_transforms_util.h"
-#include "public/adios_error.h"
 
+
+/* Extra ADIOS headers that weren't added in the template */
+#include "adios_logger.h" 		// log_warn()
+#include "public/adios_error.h"		// adios_error
+#include "public/adios_types.h"		// adios datatypes
+
+
+/* ZFP specific */
 #include "zfp.h"
-#define ZFP_STRSIZE 256
+#define ZFP_STRSIZE 256		// size for string variables
 
 
+/* Transform metadata */
 struct zfp_metadata 
 {
 	uint64_t usize;			// uncompressed size;
@@ -33,12 +45,15 @@ struct zfp_metadata
 };
 
 
+/* Basically giving an address and a size */
 void* zfp_read_metadata_var(void* pos, size_t size, size_t &offset)
 {
-	offset += size
+	offset += size;
 	return pos + offset - size;
 }
 
+
+/* Basically giving an address and a size */
 void zfp_write_metadata_var(char* pos, void* towrite, size_t size, size_t &offset)
 {
 	memcpy(pos + offset, towrite, size);
@@ -46,25 +61,27 @@ void zfp_write_metadata_var(char* pos, void* towrite, size_t size, size_t &offse
 	return;
 }
 
+
+/* Read each memory location and cast to the correct type */
 struct zfp_metadata* zfp_read_metadata(adios_transform_pg_read_request *completed_pg_reqgroup)
 {
 	struct zfp_metadata* metadata;
-	void* pos = completed_pg_reqgroup->transform_metadata
+	void* pos = completed_pg_reqgroup->transform_metadata;
 	
 	metadata->usize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), offset));
 	metadata->csize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), offset));
 	metadata->cmode = *((uint*)zfp_read_metadata_var(pos, sizeof(uint), offset));
-	metadata->ctol = *((char*)zfp_read_metadata_var(pos, ZFP_STRSIZE*sizeof(char), offset));
-	metadata->name = *((char*)zfp_read_metadata_var(pos, ZFP_STRSIZE*sizeof(char), offset));
-	return metadata
+	metadata->ctol = *((char*)zfp_read_metadata_var(pos, ZFP_STRSIZE, offset));
+	metadata->name = *((char*)zfp_read_metadata_var(pos, ZFP_STRSIZE, offset));
+	return metadata;
 }
 
 
-
+/* Attributes related to ZFP's operation */
 struct zfp_buffer
 {
 	bool error;					// true if error
-	char errmsg[ZFP_STRSIZE];			// error message, if needed
+	char msg[ZFP_STRSIZE];				// error/warning message, if needed
 	
 	char name[ZFP_STRSIZE]; 			// Name of variable
 	zfp_type type;					// data type
@@ -80,6 +97,7 @@ struct zfp_buffer
 };
 
 
+/* Get the dimensionality of the input data */
 void get_dimensions(const struct adios_dimension_struct* dimensions, struct zfp_buffer* zbuff)
 {
 	int i;
@@ -92,15 +110,47 @@ void get_dimensions(const struct adios_dimension_struct* dimensions, struct zfp_
 }
 
 
+/* Function for common way to log errors */
 void zfp_error(struct zfp_buffer* zbuff) 
 {
-	zbuff->error = True
-	sprintf(zbuff->errmsg + strlen(zbuff->errmsg), "ZFP error encountered processing variable: %s. %s", zbuff->name, zbuff->errmsg);
-	adios_error(err_unspecified, zbuff->errmsg);
+	zbuff->error = True;
+	sprintf(zbuff->msg + strlen(zbuff->msg), "ERROR in zfp processing variable: %s. %s", zbuff->name, zbuff->msg);
+	adios_error(err_unspecified, zbuff->msg);
 	return;
 }
 
 
+/* Function for common way to log warning */
+void zfp_warn(struct zfp_buffer* zbuff) 
+{
+	sprintf(zbuff->msg + strlen(zbuff->msg), "WARNING in zfp processing variable: %s. %s", zbuff->name, zbuff->msg);
+	log_warn(err_unspecified, zbuff->msg);
+	return;
+}
+
+
+/* adios to zfp datatype */
+void zfp_get_datatype(struct zfp_buffer* zbuff, enum ADIOS_DATATYPES type)
+{
+	if (type == adios_double) 
+	{
+		zbuff->type = zfp_type_double;
+	}
+	else if (type == adios_float) 
+	{
+		zbuff->type = zfp_type_float;
+	}
+	else 
+	{
+		sprintf(zbuff->msg, "A datatype ZFP does not understand was given for compression. Understood types are adios_double, adios_float.");
+		zfp_error(zbuff);
+		return 0;
+	}
+	return 1;
+}
+
+
+/* Configure ZFP according to the user's specified mode and tolerance */
 void zfp_initialize(void* array, zfp_buffer* zbuff)
 {
 
@@ -119,7 +169,7 @@ void zfp_initialize(void* array, zfp_buffer* zbuff)
 	}
 	else 
 	{
-		sprintf(zbuff->errmsg, "Dimensions error: ndims=%i is not implemented. 1, 2, and 3 are available.\n", zbuff->ndims)
+		sprintf(zbuff->msg, "Dimensions error: ndims=%i is not implemented. 1, 2, and 3 are available.\n", zbuff->ndims);
 		return zfp_error(zbuff);
 	}
 
@@ -131,7 +181,7 @@ void zfp_initialize(void* array, zfp_buffer* zbuff)
 		int success = sscanf(zbuff->ctol, "%d", &tol);
 		if (success != 1) 
 		{
-			sprintf(zbuff->errmsg, "Error in accuracy specification: %s. Provide a double.\n", zbuff->ctol);
+			sprintf(zbuff->msg, "Error in accuracy specification: %s. Provide a double.\n", zbuff->ctol);
 			return zfp_error(zbuff);
 		}
 	       	zfp_stream_set_accuracy(zbuff->zstream, tol, zbuff->type);
@@ -142,7 +192,7 @@ void zfp_initialize(void* array, zfp_buffer* zbuff)
 		int success = sscanf(zbuff->ctol, "%u", &tol);
 		if (success != 1)
 		{
-			sprintf(zbuff->errmsg, "Error in precision specification: %s. Provide an integer.\n", zbuff->ctol);
+			sprintf(zbuff->msg, "Error in precision specification: %s. Provide an integer.\n", zbuff->ctol);
 			return zfp_error(zbuff);
 		}
 		zfp_stream_set_precision(zbuff->zstream, tol, zbuff->type);
@@ -153,7 +203,7 @@ void zfp_initialize(void* array, zfp_buffer* zbuff)
 		int success = sscanf(zbuff->ctol, "%d", &tol);
 		if (success != 1)
 		{
-			sprintf(zbuff->errmsg, "Error in rate specification: %s. Provide a double.\n", zbuff->ctol);
+			sprintf(zbuff->msg, "Error in rate specification: %s. Provide a double.\n", zbuff->ctol);
 			return zfp_error(zbuff);
 		}
 		zfp_stream_set_rate(zbuff->zstream, tol, zbuff->type, zbuff->ndims, 0);  // I don't know what the 0 is.
@@ -164,6 +214,7 @@ void zfp_initialize(void* array, zfp_buffer* zbuff)
 }
 
 
+/* Do the bit streaming */
 void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress)
 {
 
@@ -180,16 +231,16 @@ void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress)
 		/*
 		if (!zfp_decompress(zbuff->zstream, zbuff->field))
 		{
-			sprintf(zbuff->errmsg, "Decompression failed\n");
+			sprintf(zbuff->msg, "Decompression failed\n");
 			return zfp_error(zbuff);
 		}
 		*/
 	}
 	else 
 	{
-		if (!zfp_compress(zfp, field))
+		if (!zfp_compress(zbuff->zstream, zbuff->field))
 		{
-			sprintf(zbuff->errmsg, "Compression failed.\n")
+			sprintf(zbuff->msg, "Compression failed.\n")
 			return zfp_error(zbuff);
 		}
 	}
@@ -203,25 +254,19 @@ void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress)
 	return zbuff
 }
 
-/*
-int zfp_decompression(char* ctol, void* array, uint ndims, uint* dims, zfp_type type, uint choice, char* name, void* abuff)
-{
-	struct zfp_buffer* zbuff;
-	zfp_initialize(ctol, array, ndims, dims, type, choice, name, zbuff);
-	if (zbuff->error) return 0;
-
-	zfp_streaming(zbuff, abuff, 0)
-	if (zbuff->error) return 0;
-
-	return 1;
-}
-*/
 
 
+/* This is called in the main transform-level function. 
+ * In a nutshell: compress array, using the settings in the other args to configure the compression. Connect to the ADIOS output buffer.
+ */
 int zfp_compression(zfp_buffer* zbuff, void* array, void* abuff, int &asize, int sharedbuffer, struct adios_file_struct* fd) 
 {
 	zfp_initialize(array, zbuff);
-	if (zbuff->error) return 0;
+	if (zbuff->error) 
+	{
+		return 0;
+	}
+
 
 	if (sharedbuffer) 
 	{
@@ -244,10 +289,44 @@ int zfp_compression(zfp_buffer* zbuff, void* array, void* abuff, int &asize, int
 		}
 	}
 
-	zfp_streaming(zbuff, abuff, 0)
-	if (zbuff->error) return 0;
+
+	zfp_streaming(zbuff, abuff, 0);
+	if (zbuff->error)
+	{
+		return 0;
+	}
+
 	
-	asize = (uint64_t) zbuff->buffsize
+	asize = (uint64_t) zbuff->buffsize;
+	return 1;
+}
+
+
+/* This is called in the main transform-level function. 
+ * In a nutshell: decompress array, using (undoing) the settings in the other args. Connect to the ADIOS buffer.
+ */
+int zfp_decompression(zfp_buffer* zbuff, void* uarray, void* carray, uint64_t buffsize)
+{
+	zfp_initialize(uarray, zbuff);
+	if (zbuff->error)
+	{
+		return 0;
+	}
+	if (zbuff->buffsize != buffsize)
+	{
+		sprintf(zbuff->msg, "ZFP thinks compressed size should be %u" \
+				"bytes. ADIOS thinks compressed size should be %" PRIu64 \
+				"bytes. Likely corruption.\n", zbuff->buffsize, buffsize);
+		zfp_warn(zbuff);
+	}
+
+
+	zfp_streaming(zbuff, carray, 1)
+	if (zbuff->error)
+	{
+		return 0;
+	}
+
 	return 1;
 }
 

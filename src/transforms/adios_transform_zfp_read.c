@@ -1,31 +1,41 @@
 /*
  * adios_transform_zfp_read.c
  *
- *  Created on: June 30, 2016
- *      Author: Eric Suchyta
+ * 	Author: Eric Suchyta
+ * 	Contact: eric.d.suchyta@gmail.com
  */
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <assert.h>
-#include <limits.h>
-
-#include "util.h"
-#include "core/transforms/adios_transforms_hooks_read.h"
-#include "core/transforms/adios_transforms_reqgroup.h"
-#include "core/adios_internals.h" // adios_get_type_size()
-#include "adios_logger.h"
 
 #ifdef ZFP
 
+
+/* general C stuff */
+#include <stdint.h>	// uint64_t
+#include <stdio.h> 	// NULL, sprintf
+#include <stdlib.h>	// NULL, malloc, free
+#include <string.h>	// memcpy, strcmp, strlen  
+#include <assert.h>
+
+
+/* Were in the template included from ADIOS. Not necessarily sure if they're all strictly needed. */
+#include "util.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
+
+
+/* Extra ADIOS headers that weren't added in the template */
+#include "core/adios_internals.h" 	// adios_get_type_size()
+
+
+/* ZFP specific */
 #include "zfp.h"
 #include "adios_tranform_zfp_common.h"
 
 
+/* ZFP is installed */
 int adios_transform_zfp_is_implemented (void) {return 1;}
 
 
-// Do the default
+/* Kept the default. I think this is piecing together how to read a "block" from smaller subrequests*/
 int adios_transform_zfp_generate_read_subrequests(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup)
 {
     void *buf = malloc(pg_reqgroup->raw_var_length);
@@ -36,18 +46,30 @@ int adios_transform_zfp_generate_read_subrequests(adios_transform_read_request *
 }
 
 
-// Do nothing for individual subrequest
-adios_datablock * adios_transform_bzip2_subrequest_completed(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup, adios_transform_raw_read_request *completed_subreq)
+/* Kept the default. Template says "Do nothing for individual subrequest" */
+adios_datablock * adios_transform_bzip2_subrequest_completed(adios_transform_read_request *reqgroup, 
+		adios_transform_pg_read_request *pg_reqgroup, adios_transform_raw_read_request *completed_subreq)
 {
     return NULL;
 }
 
 
-adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *completed_pg_reqgroup)
+/* The main work is being done here. I think this happens when a "block" of data gets returned. */
+adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_read_request *reqgroup, 
+		adios_transform_pg_read_request *completed_pg_reqgroup)
 {
+
+	/* Set up ZFP */
+	int i;
+	int success;						// was (a piece of) the decompression okay
+	struct zfp_buffer* zbuff;				// handle zfp streaming
+	void* cdata = completed_pg_reqgroup->subreqs->data;	// get the compressed data
+	void* udata;						// decompress into this
+
 	
 	/* Get the transform metadata */
-	struct zfp_metadata metadata metadata = read_metadata(completed_pg_reqgroup);
+	struct zfp_metadata* metadata = read_metadata(completed_pg_reqgroup);
+	zbuff->name = metadata->name
 
 
 	/* Get the data native to ADIOS (as opposed to the metadata which only the tranform plugin knows about) */
@@ -59,33 +81,60 @@ adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_re
 		usize *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
 	}
 
+
+	/* Allocate the array we'll store the uncompressed data in */
+	void* udata = malloc(usize);		// allocate space for uncompressed data
+	if(!udata)
+	{
+		sprintf(zbuff->msg, "Ran out of memory allocating uncompressed buffer\n")
+		zfp_error(zbuff);
+		return NULL;
+	}
+
 	
 	/* Do the metadata and ADIOS agree? */
 	if(metadata.csize != csize)
 	{
-		log_warn("variable %s: Metadata thinks compressed size is %" PRIu64 \
+		sprintf(zbuff->msg, "Metadata thinks compressed size is %" PRIu64 \
 				"bytes. ADIOS thinks compressed size is %" PRIu64 \
-				"bytes. Likely corruption.\n", metadata.name, metadata.csize, csize);
+				"bytes. Likely corruption.\n", metadata->csize, csize);
+		zfp_warn(zbuff);
 	}
 
 	if(metadata.usize != usize)
 	{
-		log_warn("variable %s: Metadata thinks uncompressed size is %" PRIu64 \
+		sprintf(zbuff->msg, "Metadata thinks uncompressed size is %" PRIu64 \
 				"bytes. ADIOS thinks uncompressed size is %" PRIu64 \
-				"bytes. Likely corruption.\n", metadata.name, metadata.usize, usize);
+				"bytes. Likely corruption.\n", metadata->usize, usize);
+		zfp_warn(zbuff);
 	}
 
 
-	void* cdata = completed_pg_reqgroup->subreqs->data;
-	void* udata = malloc(usize);
-	if(!udata)
+	/* zfp datatype */
+	success = zfp_get_datatype(zbuff, reqgroup->transinfo->orig_type)
+	if (!success)
 	{
 		return NULL;
 	}
 
-       	/* possibly add check for successful compression eventually */ 
-	int success = zfp_decompression(zbuff, var->array, outbuffer, *outsize, use_shared_buffer, fd);
-        if(rtn != 0)
+
+	/* dimensionality */
+	zbuff->ndims = (uint) reqgroup->transinfo->orig_ndim;
+	zbuff->dims = (uint) malloc(zbuff->ndims*sizeof(uint));
+	for (i=0; i<zbuff->ndims; i++)
+	{
+		zbuff[i] = (uint) reqgroup->transinfo->orig_dims[i];
+	}
+
+	
+	/* mode */
+	zbuff->mode = metadata->mode;
+	zbuff->ctol = metadata->ctol;
+
+
+       	/* possibly add check for successful decompression eventually */ 
+	success = zfp_decompression(zbuff, udata, cdata, csize);
+        if(!success)
         {
             return NULL;
         }
@@ -93,6 +142,8 @@ adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_re
 	return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, udata);
 }
 
+
+/* Kept the default. Template says "Do nothing for the full read request complete (typical)" */
 adios_datablock * adios_transform_bzip2_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
 {
     return NULL;
