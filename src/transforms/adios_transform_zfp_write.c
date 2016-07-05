@@ -58,7 +58,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	struct zfp_buffer* zbuff;	// Handle zfp streaming
 
 	uint64_t insize = adios_transform_get_pre_transform_var_size(var); 	// size of input buffer
-	stcpy(zbuff->name, var->name);						// which variable we're working on
+	strcpy(zbuff->name, var->name);						// which variable we're working on
 
 
 	/* adios to zfp datatype */
