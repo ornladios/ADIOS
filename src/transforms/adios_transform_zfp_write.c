@@ -34,7 +34,7 @@
 /* see zfp_metadata in adios_transform_zfp_common.h */
 uint16_t adios_transform_zfp_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
-	return (2*sizeof(uint64_t) + sizeof(uint) + 2*ZFP_STRSIZE)
+	return (2*sizeof(uint64_t) + sizeof(uint) + 2*ZFP_STRSIZE);
 }
 
 
@@ -58,7 +58,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	struct zfp_buffer* zbuff;	// Handle zfp streaming
 
 	uint64_t insize = adios_transform_get_pre_transform_var_size(var); 	// size of input buffer
-	zbuff->name = var->name;						// which variable we're working on
+	stcpy(zbuff->name, var->name);						// which variable we're working on
 
 
 	/* adios to zfp datatype */
@@ -115,11 +115,11 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 		zfp_error(zbuff);
 		return 0;
 	}
-	zbuff->ctol = param->value;
+	strcpy(zbuff->ctol, param->value);
 
 
 	/* do compression */
-	success = zfp_compression(zbuff, var->array, outbuffer, outsize, use_shared_buffer, fd);
+	success = zfp_compression(zbuff, var->data, outbuffer, outsize, use_shared_buffer, fd);
 
 
 	/* What do do if compresssion fails. For now, just give up. Maybe eventually use raw data. */
