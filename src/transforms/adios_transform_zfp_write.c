@@ -28,7 +28,7 @@
 
 /* ZFP specific */
 #include "zfp.h"
-#include "adios_tranform_zfp_common.h"
+#include "adios_transform_zfp_common.h"
 
 
 /* see zfp_metadata in adios_transform_zfp_common.h */
