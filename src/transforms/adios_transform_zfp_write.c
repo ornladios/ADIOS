@@ -119,7 +119,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 
 	/* do compression */
-	success = zfp_compression(zbuff, var->array, outbuffer, *outsize, use_shared_buffer, fd);
+	success = zfp_compression(zbuff, var->array, outbuffer, outsize, use_shared_buffer, fd);
 
 
 	/* What do do if compresssion fails. For now, just give up. Maybe eventually use raw data. */
@@ -145,17 +145,18 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 	/* Write the transform metadata */
 	char* pos = (char*)var->transform_metadata;
-	size_t offset = 0;
+	size_t* offset;
 	if(var->transform_metadata && var->transform_metadata_len > 0)
 	{
+		*offset = 0;
 		zfp_write_metadata_var(pos, &insize, sizeof(uint64_t), offset);
-		zfp_write_metadata_var(pos, &outsize, sizeof(uint64_t), offset);
+		zfp_write_metadata_var(pos, outsize, sizeof(uint64_t), offset);
 		zfp_write_metadata_var(pos, &zbuff->mode, sizeof(uint), offset);
 		zfp_write_metadata_var(pos, zbuff->ctol, ZFP_STRSIZE, offset);
 		zfp_write_metadata_var(pos, zbuff->name, ZFP_STRSIZE, offset);
 	}
 
-	*transformed_len = outsize; // Return the size of the data buffer
+	*transformed_len = *outsize; // Return the size of the data buffer
 	return 1;
 }
 

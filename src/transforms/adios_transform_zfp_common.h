@@ -46,18 +46,18 @@ struct zfp_metadata
 
 
 /* Basically giving an address and a size */
-void* zfp_read_metadata_var(void* pos, size_t size, size_t &offset)
+void* zfp_read_metadata_var(void* pos, size_t size, size_t* offset)
 {
-	offset += size;
-	return pos + offset - size;
+	*offset += size;
+	return pos + *offset - size;
 }
 
 
 /* Basically giving an address and a size */
-void zfp_write_metadata_var(char* pos, void* towrite, size_t size, size_t &offset)
+void zfp_write_metadata_var(char* pos, void* towrite, size_t size, size_t* offset)
 {
-	memcpy(pos + offset, towrite, size);
-	offset += size;
+	memcpy(pos + *offset, towrite, size);
+	*offset += size;
 	return;
 }
 
@@ -67,7 +67,9 @@ struct zfp_metadata* zfp_read_metadata(adios_transform_pg_read_request *complete
 {
 	struct zfp_metadata* metadata;
 	void* pos = completed_pg_reqgroup->transform_metadata;
-	
+	size_t* offset = 0;
+
+	*offset = 0;
 	metadata->usize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), offset));
 	metadata->csize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), offset));
 	metadata->cmode = *((uint*)zfp_read_metadata_var(pos, sizeof(uint), offset));
@@ -257,7 +259,7 @@ void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress)
 /* This is called in the main transform-level function. 
  * In a nutshell: compress array, using the settings in the other args to configure the compression. Connect to the ADIOS output buffer.
  */
-int zfp_compression(zfp_buffer* zbuff, void* array, void* abuff, int &asize, int sharedbuffer, struct adios_file_struct* fd) 
+int zfp_compression(zfp_buffer* zbuff, void* array, void* abuff, int* asize, int sharedbuffer, struct adios_file_struct* fd) 
 {
 	zfp_initialize(array, zbuff);
 	if (zbuff->error) 
@@ -295,7 +297,7 @@ int zfp_compression(zfp_buffer* zbuff, void* array, void* abuff, int &asize, int
 	}
 
 	
-	asize = (uint64_t) zbuff->buffsize;
+	*asize = (uint64_t) zbuff->buffsize;
 	return 1;
 }
 
