@@ -47,7 +47,7 @@ int adios_transform_zfp_generate_read_subrequests(adios_transform_read_request *
 
 
 /* Kept the default. Template says "Do nothing for individual subrequest" */
-adios_datablock * adios_transform_bzip2_subrequest_completed(adios_transform_read_request *reqgroup, 
+adios_datablock * adios_transform_zfp_subrequest_completed(adios_transform_read_request *reqgroup, 
 		adios_transform_pg_read_request *pg_reqgroup, adios_transform_raw_read_request *completed_subreq)
 {
     return NULL;
@@ -55,7 +55,7 @@ adios_datablock * adios_transform_bzip2_subrequest_completed(adios_transform_rea
 
 
 /* The main work is being done here. I think this happens when a "block" of data gets returned. */
-adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_read_request *reqgroup, 
+adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read_request *reqgroup, 
 		adios_transform_pg_read_request *completed_pg_reqgroup)
 {
 
@@ -68,8 +68,8 @@ adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_re
 
 	
 	/* Get the transform metadata */
-	struct zfp_metadata* metadata = read_metadata(completed_pg_reqgroup);
-	zbuff->name = metadata->name
+	struct zfp_metadata* metadata = zfp_read_metadata(completed_pg_reqgroup);
+	strcpy(zbuff->name, metadata->name);
 
 
 	/* Get the data native to ADIOS (as opposed to the metadata which only the tranform plugin knows about) */
@@ -83,17 +83,17 @@ adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_re
 
 
 	/* Allocate the array we'll store the uncompressed data in */
-	void* udata = malloc(usize);		// allocate space for uncompressed data
+	udata = malloc(usize);			// allocate space for uncompressed data
 	if(!udata)
 	{
-		sprintf(zbuff->msg, "Ran out of memory allocating uncompressed buffer\n")
+		sprintf(zbuff->msg, "Ran out of memory allocating uncompressed buffer\n");
 		zfp_error(zbuff);
 		return NULL;
 	}
 
 	
 	/* Do the metadata and ADIOS agree? */
-	if(metadata.csize != csize)
+	if (metadata->csize != csize)
 	{
 		sprintf(zbuff->msg, "Metadata thinks compressed size is %" PRIu64 \
 				"bytes. ADIOS thinks compressed size is %" PRIu64 \
@@ -101,7 +101,7 @@ adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_re
 		zfp_warn(zbuff);
 	}
 
-	if(metadata.usize != usize)
+	if (metadata->usize != usize)
 	{
 		sprintf(zbuff->msg, "Metadata thinks uncompressed size is %" PRIu64 \
 				"bytes. ADIOS thinks uncompressed size is %" PRIu64 \
@@ -111,7 +111,7 @@ adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_re
 
 
 	/* zfp datatype */
-	success = zfp_get_datatype(zbuff, reqgroup->transinfo->orig_type)
+	success = zfp_get_datatype(zbuff, reqgroup->transinfo->orig_type);
 	if (!success)
 	{
 		return NULL;
@@ -120,16 +120,16 @@ adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_re
 
 	/* dimensionality */
 	zbuff->ndims = (uint) reqgroup->transinfo->orig_ndim;
-	zbuff->dims = (uint) malloc(zbuff->ndims*sizeof(uint));
+	zbuff->dims = (uint*) malloc(zbuff->ndims*sizeof(uint));
 	for (i=0; i<zbuff->ndims; i++)
 	{
-		zbuff[i] = (uint) reqgroup->transinfo->orig_dims[i];
+		zbuff->dims[i] = (uint) reqgroup->transinfo->orig_dims[i];
 	}
 
 	
 	/* mode */
-	zbuff->mode = metadata->mode;
-	zbuff->ctol = metadata->ctol;
+	zbuff->mode = metadata->cmode;
+	strcpy(zbuff->ctol, metadata->ctol);
 
 
        	/* possibly add check for successful decompression eventually */ 
@@ -144,7 +144,7 @@ adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_re
 
 
 /* Kept the default. Template says "Do nothing for the full read request complete (typical)" */
-adios_datablock * adios_transform_bzip2_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
+adios_datablock * adios_transform_zfp_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
 {
     return NULL;
 }
@@ -152,7 +152,7 @@ adios_datablock * adios_transform_bzip2_reqgroup_completed(adios_transform_read_
 
 #else
 
-DECLARE_TRANSFORM_READ_METHOD_UNIMPL(bzip2);
+DECLARE_TRANSFORM_READ_METHOD_UNIMPL(zfp);
 
 #endif
 
