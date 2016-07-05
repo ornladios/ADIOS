@@ -71,7 +71,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 	/* dimensionality */
 	zbuff->ndims = (uint) count_dimensions(var->pre_transform_dimensions);
-	get_dimension(var->pre_transform_dimensions, zbuff);
+	get_dimensions(var->pre_transform_dimensions, zbuff);
 
 
 	/* make sure the user only gives the sensible number of key:values -- 1. */
