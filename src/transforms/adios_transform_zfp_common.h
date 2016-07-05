@@ -228,13 +228,11 @@ void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress)
 	/* (de)compress array */
 	if (decompress)
 	{
-		/*
 		if (!zfp_decompress(zbuff->zstream, zbuff->field))
 		{
 			sprintf(zbuff->msg, "Decompression failed\n");
 			return zfp_error(zbuff);
 		}
-		*/
 	}
 	else 
 	{
