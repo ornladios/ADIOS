@@ -25,7 +25,7 @@ AC_ARG_WITH(zfp,
         [  --with-zfp=DIR      Location of ZFP library],
         [ZFP_LDFLAGS="-L$withval/lib";
          ZFP_LIBS="-lzfp";
-         ZFP_CPPFLAGS="-I$withval/include";],
+         ZFP_CPPFLAGS="-I$withval/inc";],
         [with_zfp=no])
 
 if test "x$with_zfp" == "xno"; then
