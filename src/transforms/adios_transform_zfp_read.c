@@ -27,8 +27,8 @@
 
 
 /* ZFP specific */
-#include "zfp.h"
 #include "adios_transform_zfp_common.h"
+#include "zfp.h"
 
 
 /* ZFP is installed */
