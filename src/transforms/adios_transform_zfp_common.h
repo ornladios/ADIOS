@@ -31,6 +31,12 @@
 #include "public/adios_types.h"		// adios datatypes
 
 
+/* Sort of a hack to deal with ADIOS and ZFP both using TYPES_H */
+#ifdef TYPES_H
+#undef TYPES_H
+#endif 
+
+
 /* ZFP specific */
 #include "zfp.h"
 #define ZFP_STRSIZE 256		// size for string variables
