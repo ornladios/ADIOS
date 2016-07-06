@@ -23,7 +23,7 @@
 
 
 /* Extra ADIOS headers that weren't added in the template */
-#include "core/adios_internals.h" 	// count_dimensions
+//#include "core/adios_internals.h" 	// count_dimensions
 
 
 /* ZFP specific */
@@ -47,6 +47,19 @@ void adios_transform_zfp_transformed_size_growth(const struct adios_var_struct *
 }
 
 
+static void get_dims(const struct adios_dimension_struct* d, struct zfp_buffer* zbuff, struct adios_var_struct* var)
+{
+	int i;	
+	zbuff->dims = (uint*) malloc(zbuff->ndims*sizeof(uint));
+	while (d)
+	{
+		zbuff->dims[i] = (uint) adios_get_dimension_space_size(var, d);
+		d = d->next;
+	}
+	return;
+}
+
+
 /* Does the main compression work */
 int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_struct *var, 
 		uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer)
@@ -55,13 +68,12 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	int success; 			// Did (some part of) compression succeed?
 	void* outbuffer;		// What to send to ADIOS
 	uint64_t* outsize;		// size of output buffer
-	struct zfp_buffer* zbuff;	// Handle zfp streaming
 
+	struct zfp_buffer* zbuff = malloc(sizeof(struct zfp_buffer));		// Handle zfp streaming
 	uint64_t insize = adios_transform_get_pre_transform_var_size(var); 	// size of input buffer
-	strcpy(zbuff->name, var->name);						// which variable we're working on
-
 
 	/* adios to zfp datatype */
+	strcpy(zbuff->name, var->name);
 	success = zfp_get_datatype(zbuff, var->pre_transform_type);
 	if (!success)
 	{
@@ -71,7 +83,11 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 	/* dimensionality */
 	zbuff->ndims = (uint) count_dimensions(var->pre_transform_dimensions);
-	get_dimensions(var->pre_transform_dimensions, zbuff);
+	//get_dimensions(var->pre_transform_dimensions, zbuff, var);
+
+	//struct adios_dimension_struct* d = adios_get_dimension_space_size(var, var->pre_transform_dimensions);
+	struct adios_dimension_struct* d = var->pre_transform_dimensions;
+	get_dims(d, zbuff, var);
 
 
 	/* make sure the user only gives the sensible number of key:values -- 1. */
@@ -155,8 +171,16 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 		zfp_write_metadata_var(pos, zbuff->ctol, ZFP_STRSIZE, offset);
 		zfp_write_metadata_var(pos, zbuff->name, ZFP_STRSIZE, offset);
 	}
+	
+
+	printf("9\n");
+	/* clean up */
+	//free(zbuff->dims);
+	
+	free(zbuff);
 
 	*transformed_len = *outsize; // Return the size of the data buffer
+	printf("10\n");
 	return 1;
 }
 

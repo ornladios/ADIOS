@@ -134,9 +134,10 @@ static struct zfp_metadata* zfp_read_metadata(adios_transform_pg_read_request *c
 
 
 /* Get the dimensionality of the input data */
-static void get_dimensions(const struct adios_dimension_struct* dimensions, struct zfp_buffer* zbuff)
+static void get_dimensions(const struct adios_dimension_struct* dimensions, struct zfp_buffer* zbuff, struct adios_var_struct* var)
 {
 	int i;
+	uint64_t test;
 	zbuff->dims = malloc(zbuff->ndims*sizeof(uint));
 	for (i=0; i<zbuff->ndims; i++)
 	{
@@ -215,7 +216,7 @@ static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 	if (zbuff->mode == 0) 	// accuracy
 	{
 		double tol;
-		int success = sscanf(zbuff->ctol, "%d", &tol);
+		int success = sscanf(zbuff->ctol, "%lf", &tol);
 		if (success != 1) 
 		{
 			sprintf(zbuff->msg, "Error in accuracy specification: %s. Provide a double.\n", zbuff->ctol);
@@ -237,7 +238,7 @@ static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 	else if (zbuff->mode == 2) 	// rate
 	{
 		double tol;
-		int success = sscanf(zbuff->ctol, "%d", &tol);
+		int success = sscanf(zbuff->ctol, "%lf", &tol);
 		if (success != 1)
 		{
 			sprintf(zbuff->msg, "Error in rate specification: %s. Provide a double.\n", zbuff->ctol);
