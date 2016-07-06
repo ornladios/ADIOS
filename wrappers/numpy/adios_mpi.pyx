@@ -934,6 +934,19 @@ cdef class file(dict):
     def keys(self):
         return self.vars.keys() + self.attrs.keys()
 
+    def is_open(self):
+        """ Check whether file is open or closed """
+        return True if self.fp != NULL else False
+
+    ## for py2
+    def __nonzero__(self):
+        return self.is_open()
+
+    ## for py3
+    def __bool__(self):
+        """ Check whether file is open or closed """
+        return self.is_open()
+
 cdef class blockinfo(object):
     cpdef tuple start
     cpdef tuple count
