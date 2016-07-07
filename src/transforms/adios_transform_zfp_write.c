@@ -74,6 +74,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 	/* adios to zfp datatype */
 	strcpy(zbuff->name, var->name);
+	memset(zbuff->msg, '\0', ZFP_STRSIZE);
 	success = zfp_get_datatype(zbuff, var->pre_transform_type);
 	if (!success)
 	{

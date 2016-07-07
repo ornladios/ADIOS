@@ -151,8 +151,10 @@ static void get_dimensions(const struct adios_dimension_struct* dimensions, stru
 static void zfp_error(struct zfp_buffer* zbuff) 
 {
 	zbuff->error = true;
-	sprintf(zbuff->msg + strlen(zbuff->msg), "ERROR in zfp processing variable: %s. %s", zbuff->name, zbuff->msg);
-	adios_error(err_unspecified, zbuff->msg);
+	char* tmp[ZFP_STRSIZE + 100];
+	sprintf(tmp, "ERROR in zfp processing variable: %s. %s\n", zbuff->name, zbuff->msg);
+	adios_error(err_unspecified, tmp);
+	memset(zbuff->msg, '\0', ZFP_STRSIZE);
 	return;
 }
 
@@ -160,8 +162,10 @@ static void zfp_error(struct zfp_buffer* zbuff)
 /* Function for common way to log warning */
 static void zfp_warn(struct zfp_buffer* zbuff) 
 {
-	sprintf(zbuff->msg + strlen(zbuff->msg), "WARNING in zfp processing variable: %s. %s", zbuff->name, zbuff->msg);
-	log_warn(zbuff->msg);
+	char* tmp[ZFP_STRSIZE + 100];
+	sprintf(tmp, "WARNING in zfp processing variable: %s. %s\n", zbuff->name, zbuff->msg);
+	log_warn(tmp);
+	memset(zbuff->msg, '\0', ZFP_STRSIZE);
 	return;
 }
 
