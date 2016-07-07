@@ -53,7 +53,7 @@ static void get_dims(const struct adios_dimension_struct* d, struct zfp_buffer* 
 	zbuff->dims = (uint*) malloc(zbuff->ndims*sizeof(uint));
 	while (d)
 	{
-		zbuff->dims[i] = (uint) adios_get_dimension_space_size(var, d);
+		zbuff->dims[i] = (uint) adios_get_dimension_space_size(var, (struct adios_dimension_struct*) d);
 		d = d->next;
 	}
 	return;
@@ -183,7 +183,6 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	printf("10\n");
 	return 1;
 }
-
 
 #else
 
