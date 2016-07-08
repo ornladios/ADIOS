@@ -69,8 +69,8 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	void* outbuffer = NULL;		// What to send to ADIOS
 	uint64_t outsize;		// size of output buffer
 
-	struct zfp_buffer* zbuff = malloc(sizeof(struct zfp_buffer));		// Handle zfp streaming
-	uint64_t insize = adios_transform_get_pre_transform_var_size(var); 	// size of input buffer
+	struct zfp_buffer* zbuff = (struct zfp_buffer*) malloc(sizeof(struct zfp_buffer));	// Handle zfp streaming
+	uint64_t insize = adios_transform_get_pre_transform_var_size(var); 			// size of input buffer
 
 	/* adios to zfp datatype */
 	strcpy(zbuff->name, var->name);
@@ -136,7 +136,15 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 
 	/* do compression */
-	*wrote_to_shared_buffer = use_shared_buffer;
+	if (use_shared_buffer)
+	{
+		*wrote_to_shared_buffer = 1;
+	}
+	else
+	{
+		*wrote_to_shared_buffer = 0;
+	}
+	//*wrote_to_shared_buffer = use_shared_buffer;
 	success = zfp_compression(zbuff, var->data, &outbuffer, &outsize, use_shared_buffer, fd);
 
 
@@ -163,16 +171,15 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 	/* Write the transform metadata */
 	char* pos = (char*)var->transform_metadata;
-	size_t* offset;
+	size_t offset = 0;
 	
 	if(var->transform_metadata && var->transform_metadata_len > 0)
 	{
-		*offset = 0;
-		zfp_write_metadata_var(pos, &insize, sizeof(uint64_t), offset);
-		zfp_write_metadata_var(pos, &outsize, sizeof(uint64_t), offset);
-		zfp_write_metadata_var(pos, &zbuff->mode, sizeof(uint), offset);
-		zfp_write_metadata_var(pos, zbuff->ctol, ZFP_STRSIZE, offset);
-		zfp_write_metadata_var(pos, zbuff->name, ZFP_STRSIZE, offset);
+		zfp_write_metadata_var(pos, &insize, sizeof(uint64_t), &offset);
+		zfp_write_metadata_var(pos, &outsize, sizeof(uint64_t), &offset);
+		zfp_write_metadata_var(pos, &zbuff->mode, sizeof(uint), &offset);
+		zfp_write_metadata_var(pos, zbuff->ctol, ZFP_STRSIZE, &offset);
+		zfp_write_metadata_var(pos, zbuff->name, ZFP_STRSIZE, &offset);
 	}
 
 	printf("buffsize: %u\n", zbuff->buffsize);
