@@ -151,7 +151,7 @@ static void get_dimensions(const struct adios_dimension_struct* dimensions, stru
 static void zfp_error(struct zfp_buffer* zbuff) 
 {
 	zbuff->error = true;
-	char* tmp[ZFP_STRSIZE + 100];
+	char tmp[ZFP_STRSIZE + 100];
 	sprintf(tmp, "ERROR in zfp processing variable: %s. %s\n", zbuff->name, zbuff->msg);
 	adios_error(err_unspecified, tmp);
 	memset(zbuff->msg, '\0', ZFP_STRSIZE);
@@ -162,7 +162,7 @@ static void zfp_error(struct zfp_buffer* zbuff)
 /* Function for common way to log warning */
 static void zfp_warn(struct zfp_buffer* zbuff) 
 {
-	char* tmp[ZFP_STRSIZE + 100];
+	char tmp[ZFP_STRSIZE + 100];
 	sprintf(tmp, "WARNING in zfp processing variable: %s. %s\n", zbuff->name, zbuff->msg);
 	log_warn(tmp);
 	memset(zbuff->msg, '\0', ZFP_STRSIZE);
@@ -192,22 +192,22 @@ static int zfp_get_datatype(struct zfp_buffer* zbuff, enum ADIOS_DATATYPES type)
 
 
 /* Configure ZFP according to the user's specified mode and tolerance */
-static void zfp_initialize(const void* array, struct zfp_buffer* zbuff)
+static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 {
 	zbuff->zstream = zfp_stream_open(NULL);
 
 	/* set up the field dimensionality */
 	if (zbuff->ndims == 1)
 	{
-		zbuff->field = zfp_field_1d((void*) array, zbuff->type, zbuff->dims[0]);
+		zbuff->field = zfp_field_1d(array, zbuff->type, zbuff->dims[0]);
 	}
 	else if (zbuff->ndims == 2)
 	{
-		zbuff->field = zfp_field_2d((void*) array, zbuff->type, zbuff->dims[0], zbuff->dims[1]);
+		zbuff->field = zfp_field_2d(array, zbuff->type, zbuff->dims[0], zbuff->dims[1]);
 	}
 	else if (zbuff->ndims == 3)
 	{
-		zbuff->field = zfp_field_3d((void*) array, zbuff->type, zbuff->dims[0], zbuff->dims[1], zbuff->dims[2]);
+		zbuff->field = zfp_field_3d(array, zbuff->type, zbuff->dims[0], zbuff->dims[1], zbuff->dims[2]);
 	}
 	else 
 	{
@@ -299,7 +299,7 @@ static void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress
  */
 static int zfp_compression(struct zfp_buffer* zbuff, const void* array, void* abuff, uint64_t* asize, int sharedbuffer, struct adios_file_struct* fd) 
 {
-	zfp_initialize(array, zbuff);
+	zfp_initialize((void*) array, zbuff);
 	if (zbuff->error) 
 	{
 		return 0;
@@ -343,7 +343,7 @@ static int zfp_compression(struct zfp_buffer* zbuff, const void* array, void* ab
 /* This is called in the main transform-level function. 
  * In a nutshell: decompress array, using (undoing) the settings in the other args. Connect to the ADIOS buffer.
  */
-static int zfp_decompression(struct zfp_buffer* zbuff, const void* uarray, void* carray, uint64_t buffsize)
+static int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carray, uint64_t buffsize)
 {
 	zfp_initialize(uarray, zbuff);
 	if (zbuff->error)
