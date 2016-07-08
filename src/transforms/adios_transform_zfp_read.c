@@ -61,14 +61,18 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 
 	/* Set up ZFP */
 	int i;
-	int success;						// was (a piece of) the decompression okay
-	struct zfp_buffer* zbuff;				// handle zfp streaming
-	void* cdata = completed_pg_reqgroup->subreqs->data;	// get the compressed data
-	void* udata;						// decompress into this
+	int success;		// was (a piece of) the decompression okay
+
+
+	struct zfp_buffer* zbuff = (struct zfp_buffer*) malloc(sizeof(struct zfp_buffer));		// Handle zfp streaming
+	struct zfp_metadata* metadata = (struct zfp_metadata*) malloc(sizeof(struct zfp_metadata));	// allocate metadata
+	metadata = zfp_read_metadata(metadata, completed_pg_reqgroup);
+
+	void* cdata = completed_pg_reqgroup->subreqs->data;			// get the compressed data
+	void* udata;								// decompress into this
 
 	
 	/* Get the transform metadata */
-	struct zfp_metadata* metadata = zfp_read_metadata(completed_pg_reqgroup);
 	strcpy(zbuff->name, metadata->name);
 
 
@@ -133,11 +137,14 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 
 
        	/* possibly add check for successful decompression eventually */ 
-	success = zfp_decompression(zbuff, udata, cdata, csize);
+	success = zfp_decompression(zbuff, udata, cdata);
         if(!success)
         {
             return NULL;
         }
+
+	free(zbuff);
+	free(metadata);
 	
 	return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, udata);
 }

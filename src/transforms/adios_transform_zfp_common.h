@@ -116,18 +116,16 @@ static void read_metastring(char s[ZFP_STRSIZE], const void* pos, size_t* offset
 }
 
 /* Read each memory location and cast to the correct type */
-static struct zfp_metadata* zfp_read_metadata(adios_transform_pg_read_request *completed_pg_reqgroup)
+static struct zfp_metadata* zfp_read_metadata(struct zfp_metadata* metadata, adios_transform_pg_read_request *completed_pg_reqgroup)
 {
-	struct zfp_metadata* metadata;
 	const void* pos = completed_pg_reqgroup->transform_metadata;
-	size_t* offset;
+	size_t offset = 0;
 
-	*offset = 0;
-	metadata->usize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), offset));
-	metadata->csize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), offset));
-	metadata->cmode = *((uint*)zfp_read_metadata_var(pos, sizeof(uint), offset));
-	read_metastring(metadata->ctol, pos, offset);
-	read_metastring(metadata->name, pos, offset);
+	metadata->usize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), &offset));
+	metadata->csize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), &offset));
+	metadata->cmode = *((uint*)zfp_read_metadata_var(pos, sizeof(uint), &offset));
+	read_metastring(metadata->ctol, pos, &offset);
+	read_metastring(metadata->name, pos, &offset);
 
 	return metadata;
 }
@@ -343,13 +341,15 @@ static int zfp_compression(struct zfp_buffer* zbuff, const void* array, void** a
 /* This is called in the main transform-level function. 
  * In a nutshell: decompress array, using (undoing) the settings in the other args. Connect to the ADIOS buffer.
  */
-static int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carray, uint64_t csize)
+static int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carray)
 {
 	zfp_initialize(uarray, zbuff);
 	if (zbuff->error)
 	{
 		return 0;
 	}
+	
+	/* The buffersize and compressed size aren't the same, this check doesn't make a lot of sense.
 	if (zbuff->buffsize != csize)
 	{
 		sprintf(zbuff->msg, "ZFP thinks compressed size should be %u" \
@@ -357,6 +357,7 @@ static int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carra
 				"bytes. Likely corruption.\n", zbuff->buffsize, csize);
 		zfp_warn(zbuff);
 	}
+	*/
 
 
 	zfp_streaming(zbuff, carray, 1, NULL);
