@@ -256,7 +256,7 @@ static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 
 
 /* Do the bit streaming */
-static void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress)
+static void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress, uint64_t* finalsize)
 {
 
 	/* associate bit stream with allocated buffer */
@@ -265,11 +265,11 @@ static void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress
 	zfp_stream_set_bit_stream(zbuff->zstream, zbuff->bstream);
 	zfp_stream_rewind(zbuff->zstream);
 
-
 	/* (de)compress array */
 	if (decompress)
 	{
-		if (!zfp_decompress(zbuff->zstream, zbuff->field))
+		int success = zfp_decompress(zbuff->zstream, zbuff->field);
+		if (!success)
 		{
 			sprintf(zbuff->msg, "Decompression failed\n");
 			return zfp_error(zbuff);
@@ -277,14 +277,15 @@ static void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress
 	}
 	else 
 	{
-		if (!zfp_compress(zbuff->zstream, zbuff->field))
+		*finalsize = (uint64_t) zfp_compress(zbuff->zstream, zbuff->field);
+		if (! *finalsize)
 		{
 			sprintf(zbuff->msg, "Compression failed.\n");
 			return zfp_error(zbuff);
 		}
 	}
 
-
+	
 	/* clean up */
 	zfp_field_free(zbuff->field);
 	zfp_stream_close(zbuff->zstream);
@@ -297,7 +298,7 @@ static void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress
 /* This is called in the main transform-level function. 
  * In a nutshell: compress array, using the settings in the other args to configure the compression. Connect to the ADIOS output buffer.
  */
-static int zfp_compression(struct zfp_buffer* zbuff, const void* array, void* abuff, uint64_t* asize, int sharedbuffer, struct adios_file_struct* fd) 
+static int zfp_compression(struct zfp_buffer* zbuff, const void* array, void** abuff, uint64_t* asize, int sharedbuffer, struct adios_file_struct* fd) 
 {
 	zfp_initialize((void*) array, zbuff);
 	if (zbuff->error) 
@@ -314,12 +315,12 @@ static int zfp_compression(struct zfp_buffer* zbuff, const void* array, void* ab
 			zfp_error(zbuff);
 			return 0;
 		}
-		abuff =  fd->offset + fd->buffer;
+		*abuff =  fd->offset + fd->buffer;
 	} 
 	else 
 	{ 
-		abuff = malloc(zbuff->buffsize);
-		if (!abuff)
+		*abuff = malloc(zbuff->buffsize);
+		if (! *abuff)
 		{
 			sprintf(zbuff->msg, "Out of memory allocating %u bytes for for transform\n", zbuff->buffsize);
 			zfp_error(zbuff);
@@ -328,14 +329,13 @@ static int zfp_compression(struct zfp_buffer* zbuff, const void* array, void* ab
 	}
 
 
-	zfp_streaming(zbuff, abuff, 0);
+	zfp_streaming(zbuff, *abuff, 0, asize);
 	if (zbuff->error)
 	{
 		return 0;
 	}
 
 	
-	*asize = (uint64_t) zbuff->buffsize;
 	return 1;
 }
 
@@ -343,27 +343,36 @@ static int zfp_compression(struct zfp_buffer* zbuff, const void* array, void* ab
 /* This is called in the main transform-level function. 
  * In a nutshell: decompress array, using (undoing) the settings in the other args. Connect to the ADIOS buffer.
  */
-static int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carray, uint64_t buffsize)
+static int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carray, uint64_t csize)
 {
 	zfp_initialize(uarray, zbuff);
 	if (zbuff->error)
 	{
 		return 0;
 	}
-	if (zbuff->buffsize != buffsize)
+	if (zbuff->buffsize != csize)
 	{
 		sprintf(zbuff->msg, "ZFP thinks compressed size should be %u" \
 				"bytes. ADIOS thinks compressed size should be %" PRIu64 \
-				"bytes. Likely corruption.\n", zbuff->buffsize, buffsize);
+				"bytes. Likely corruption.\n", zbuff->buffsize, csize);
 		zfp_warn(zbuff);
 	}
 
 
-	zfp_streaming(zbuff, carray, 1);
+	zfp_streaming(zbuff, carray, 1, NULL);
 	if (zbuff->error)
 	{
 		return 0;
 	}
+	/* Possibly add a check for output size later, if it matches what ADIOS though it should be.
+	if (zusize != usize)
+	{
+		sprintf(zbuff->msg, "ZFP thinks uncompressed size is %u" \
+				"bytes. ADIOS thinks uncompressed size is %" PRIu64 \
+				"bytes. Likely corruption.\n", zusize, usize);
+		zfp_warn(zbuff);
+	}
+	*/
 
 	return 1;
 }
