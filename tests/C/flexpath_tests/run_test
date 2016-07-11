@@ -13,6 +13,10 @@ transport="flx"
 timeout="60"
 nr="2"
 nw="2"
+debugger="gdb"
+
+gdb -v >/dev/null 2>&1 || { debugger="lldb"; }
+lldb -v >/dev/null 2>&1 || { debugger="not found"; }
 
 usage() 
 { 
@@ -40,7 +44,7 @@ EO
 
 PROGNAME=${0##*/} 
 SHORTOPTS="r:w:n:t:o:qh" 
-LONGOPTS="nw:,nr:,help" 
+LONGOPTS="nw:,nr:,help,timeout:,debug_reader,debug_writer,valgrind_reader,valgrind_writer" 
 
 ARGS=$(getopt -a -s bash --options $SHORTOPTS  \
   --longoptions $LONGOPTS --name $PROGNAME -- "$@" ) 
@@ -62,6 +66,10 @@ do
     (--nr) nr="$2"; shift;;
     (-t) transport="$2"; shift;;
     (--timeout) timeout="$2"; shift;;
+    (--debug_reader)  reader_mode="debug"; shift;;
+    (--debug_writer)  writer_mode="debug"; shift;;
+    (--valgrind_reader)  reader_mode="valgrind"; shift;;
+    (--valgrind_writer)  writer_mode="valgrind"; shift;;
     (--) shift; break;;
     (-*) echo "$0: error - unrecognized option $1" 1>&2; exit 1;;
     (*)  break;;
@@ -75,13 +83,37 @@ echo "NR is $nr NW is $nw"
 rm -f *writer_info.txt *writer_ready.txt *reader_info.txt *reader_ready.txt
 
 # Spawn the writer
-(mpirun -q -n $nw $writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+if [ "$writer_mode" = "debug" ]; then
+    if [ "$debugger" = "lldb" ]; then
+	(mpirun -q -n $nr xterm -e lldb ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+    elif [ "$debugger" = "gdb" ]; then
+	(mpirun -q -n $nr xterm -e gdb -args ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+    else 
+	echo "Unknown debugger \"$debugger\"";
+    fi
+elif [ "$writer_mode" = "valgrind" ]; then 
+    (mpirun -q -n $nr xterm -hold -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!
+else
+    (mpirun -q -n $nw $writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+fi
+
 
 sleep 2
 
 # Spawn the reader
-#(mpirun -q -n $nr xterm -e lldb ./$reader_prog  2>&1 1>/dev/null) & reader_pid=$!
-(mpirun -q -n $nr ./$reader_prog -t $transport 2>&1 1>/dev/null) & reader_pid=$!
+if [ "$reader_mode" = "debug" ]; then
+    if [ "$debugger" = "lldb" ]; then
+	(mpirun -q -n $nr xterm -e lldb ./$reader_prog -- -t $transport 2>&1 1>/dev/null) & reader_pid=$!
+    elif [ "$debugger" = "gdb" ]; then
+	(mpirun -q -n $nr xterm -e gdb -args ./$reader_prog -- -t $transport 2>&1 1>/dev/null) & reader_pid=$!
+    else 
+	echo "Unknown debugger \"$debugger\"";
+    fi
+elif [ "$reader_mode" = "valgrind" ]; then 
+    (mpirun -q -n $nr xterm -hold -e valgrind --tool=memcheck ./$reader_prog -t $transport ) & reader_pid=$!
+else
+    (mpirun -q -n $nr ./$reader_prog -t $transport 2>&1 1>/dev/null) & reader_pid=$!
+fi
 
 # in the background, sleep for timeout secs then kill that processes
 (sleep $timeout && kill -9 $reader_pid && kill -9 $writer_pid 2>/dev/null) & waiter=$!
