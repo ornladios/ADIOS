@@ -73,6 +73,7 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 
 	
 	/* Get the transform metadata */
+	zbuff->error = false;
 	strcpy(zbuff->name, metadata->name);
 
 
