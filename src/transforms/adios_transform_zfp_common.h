@@ -73,19 +73,14 @@ struct zfp_buffer
 };
 
 
-/* Declare all functions to be "safe" */
-//void zfp_write_metadata_var(char* pos, void* towrite, size_t size, size_t* offset);
-//void* zfp_read_metadata_var(const void* pos, size_t size, size_t* offset);
-//void read_metastring(char s[ZFP_STRSIZE], const void* pos, size_t* offset);
-//struct zfp_metadata* zfp_read_metadata(adios_transform_pg_read_request *completed_pg_reqgroup);
-//void get_dimensions(const struct adios_dimension_struct* dimensions, struct zfp_buffer* zbuff);
-//void zfp_error(struct zfp_buffer* zbuff);
-//void zfp_warn(struct zfp_buffer* zbuff);
-//int zfp_get_datatype(struct zfp_buffer* zbuff, enum ADIOS_DATATYPES type);
-//void zfp_initialize(void* array, struct zfp_buffer* zbuff);
-//void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress);
-//int zfp_compression(struct zfp_buffer* zbuff, void* array, void* abuff, int* asize, int sharedbuffer, struct adios_file_struct* fd);
-//int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carray, uint64_t buffsize);
+/* Set a few defaults */
+static void init_zfp_buffer(struct zfp_buffer* zbuff, char* name)
+{
+	strcpy(zbuff->name, name);
+	zbuff->error = false;
+	memset(zbuff->msg, '\0', ZFP_STRSIZE);
+	return;
+}
 
 
 /* Basically giving an address and a size */
@@ -105,6 +100,7 @@ static void* zfp_read_metadata_var(const void* pos, size_t size, size_t* offset)
 }
 
 
+/* Read string by iterating over byes */
 static void read_metastring(char s[ZFP_STRSIZE], const void* pos, size_t* offset)
 {
 	int i;
@@ -131,7 +127,7 @@ static struct zfp_metadata* zfp_read_metadata(struct zfp_metadata* metadata, adi
 }
 
 
-/* Get the dimensionality of the input data */
+/* Get the dimensionality of the input data 
 static void get_dimensions(const struct adios_dimension_struct* dimensions, struct zfp_buffer* zbuff, struct adios_var_struct* var)
 {
 	int i;
@@ -143,6 +139,7 @@ static void get_dimensions(const struct adios_dimension_struct* dimensions, stru
 		dimensions = dimensions->next;
 	}
 }
+*/
 
 
 /* Function for common way to log errors */

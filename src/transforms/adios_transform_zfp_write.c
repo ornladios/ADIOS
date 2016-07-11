@@ -69,25 +69,23 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	void* outbuffer = NULL;		// What to send to ADIOS
 	uint64_t outsize;		// size of output buffer
 
-	struct zfp_buffer* zbuff = (struct zfp_buffer*) malloc(sizeof(struct zfp_buffer));	// Handle zfp streaming
 	uint64_t insize = adios_transform_get_pre_transform_var_size(var); 			// size of input buffer
+	struct zfp_buffer* zbuff = (struct zfp_buffer*) malloc(sizeof(struct zfp_buffer));	// Handle zfp streaming
+	init_zfp_buffer(zbuff, var->name);
+
 
 	/* adios to zfp datatype */
-	strcpy(zbuff->name, var->name);
-	zbuff->error = false;
-	memset(zbuff->msg, '\0', ZFP_STRSIZE);
 	success = zfp_get_datatype(zbuff, var->pre_transform_type);
 	if (!success)
 	{
 		return 0;
 	}
 
-	/* dimensionality */
-	zbuff->ndims = (uint) count_dimensions(var->pre_transform_dimensions);
-	//get_dimensions(var->pre_transform_dimensions, zbuff, var);
 
-	//struct adios_dimension_struct* d = adios_get_dimension_space_size(var, var->pre_transform_dimensions);
+	/* dimensionality */
 	struct adios_dimension_struct* d = var->pre_transform_dimensions;
+	zbuff->ndims = (uint) count_dimensions(d);
+	//get_dimensions(var->pre_transform_dimensions, zbuff, var);
 	get_dims(d, zbuff, var);
 
 
@@ -136,15 +134,6 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 
 	/* do compression */
-	if (use_shared_buffer)
-	{
-		*wrote_to_shared_buffer = 1;
-	}
-	else
-	{
-		*wrote_to_shared_buffer = 0;
-	}
-	//*wrote_to_shared_buffer = use_shared_buffer;
 	success = zfp_compression(zbuff, var->data, &outbuffer, &outsize, use_shared_buffer, fd);
 
   
@@ -156,10 +145,10 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 	
 	/* Write the data */
+	*wrote_to_shared_buffer = use_shared_buffer;
 	if (*wrote_to_shared_buffer) 
 	{
 		shared_buffer_mark_written(fd, outsize);
-		//shared_buffer_mark_written(fd, zbuff->buffsize);
 	} 
 	else 
 	{
@@ -182,12 +171,11 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 		zfp_write_metadata_var(pos, zbuff->name, ZFP_STRSIZE, &offset);
 	}
 
-	*transformed_len = outsize; // Return the size of the data buffer
-	//*transformed_len = zbuff->buffsize; // Return the size of the data buffer
 
 	/* clean up */
 	free(zbuff);
 
+	*transformed_len = outsize; // Return the size of the data buffer
 	return 1;
 }
 
