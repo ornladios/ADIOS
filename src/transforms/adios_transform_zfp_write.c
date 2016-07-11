@@ -74,13 +74,13 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 	/* adios to zfp datatype */
 	strcpy(zbuff->name, var->name);
+	zbuff->error = false;
 	memset(zbuff->msg, '\0', ZFP_STRSIZE);
 	success = zfp_get_datatype(zbuff, var->pre_transform_type);
 	if (!success)
 	{
 		return 0;
 	}
-
 
 	/* dimensionality */
 	zbuff->ndims = (uint) count_dimensions(var->pre_transform_dimensions);
@@ -147,7 +147,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	//*wrote_to_shared_buffer = use_shared_buffer;
 	success = zfp_compression(zbuff, var->data, &outbuffer, &outsize, use_shared_buffer, fd);
 
-
+  
 	/* What do do if compresssion fails. For now, just give up. Maybe eventually use raw data. */
 	if(!success)
 	{
@@ -181,9 +181,6 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 		zfp_write_metadata_var(pos, zbuff->ctol, ZFP_STRSIZE, &offset);
 		zfp_write_metadata_var(pos, zbuff->name, ZFP_STRSIZE, &offset);
 	}
-
-	printf("buffsize: %u\n", zbuff->buffsize);
-	printf("outsize: %u\n", outsize);
 
 	*transformed_len = outsize; // Return the size of the data buffer
 	//*transformed_len = zbuff->buffsize; // Return the size of the data buffer
