@@ -3,6 +3,7 @@
  *
  * 	Author: Eric Suchyta
  * 	contact: eric.d.suchyta@gmail.com
+ *
  */
 
 #ifndef ADIOS_TRANSFORM_ZFP_COMMON_H_
