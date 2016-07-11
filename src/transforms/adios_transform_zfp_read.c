@@ -116,6 +116,7 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 	for (i=0; i<zbuff->ndims; i++)
 	{
 		zbuff->dims[i] = (uint) reqgroup->transinfo->orig_dims[i];
+		printf("dim %i: len=%i\n", i, zbuff->dims[i]); fflush(stdout);
 	}
 
 	
