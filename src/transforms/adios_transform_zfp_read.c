@@ -59,24 +59,21 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 		adios_transform_pg_read_request *completed_pg_reqgroup)
 {
 
-	/* Set up ZFP */
 	int i;
-	int success;		// was (a piece of) the decompression okay
+	int success;	// was (a piece of) the decompression okay
 
 
-	struct zfp_buffer* zbuff = (struct zfp_buffer*) malloc(sizeof(struct zfp_buffer));		// Handle zfp streaming
+	/* Get the transform metadata */
 	struct zfp_metadata* metadata = (struct zfp_metadata*) malloc(sizeof(struct zfp_metadata));	// allocate metadata
 	metadata = zfp_read_metadata(metadata, completed_pg_reqgroup);
 
-	void* cdata = completed_pg_reqgroup->subreqs->data;			// get the compressed data
-	void* udata;								// decompress into this
+
+	/* Set up ZFP */
+	void* cdata = completed_pg_reqgroup->subreqs->data;						// get the compressed data
+	struct zfp_buffer* zbuff = (struct zfp_buffer*) malloc(sizeof(struct zfp_buffer));		// Handle zfp streaming
+	init_zfp_buffer(zbuff, metadata->name);
 
 	
-	/* Get the transform metadata */
-	zbuff->error = false;
-	strcpy(zbuff->name, metadata->name);
-
-
 	/* Get the data native to ADIOS (as opposed to the metadata which only the tranform plugin knows about) */
 	uint64_t csize = (uint64_t)completed_pg_reqgroup->raw_var_length;
 	uint64_t usize = adios_get_type_size(reqgroup->transinfo->orig_type, "");
@@ -87,16 +84,6 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 	}
 
 
-	/* Allocate the array we'll store the uncompressed data in */
-	udata = malloc(usize);			// allocate space for uncompressed data
-	if(!udata)
-	{
-		sprintf(zbuff->msg, "Ran out of memory allocating uncompressed buffer\n");
-		zfp_error(zbuff);
-		return NULL;
-	}
-
-	
 	/* Do the metadata and ADIOS agree? */
 	if (metadata->csize != csize)
 	{
@@ -135,6 +122,17 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 	/* mode */
 	zbuff->mode = metadata->cmode;
 	strcpy(zbuff->ctol, metadata->ctol);
+
+
+	/* Allocate the array we'll store the uncompressed data in */
+	void* udata;
+	udata = malloc(usize);
+	if(!udata)
+	{
+		sprintf(zbuff->msg, "Ran out of memory allocating uncompressed buffer\n");
+		zfp_error(zbuff);
+		return NULL;
+	}
 
 
        	/* possibly add check for successful decompression eventually */ 
