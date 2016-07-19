@@ -110,5 +110,33 @@ class AdiosTestCase(ut.TestCase):
         self.assertEqual(g2['FieldE/x/sim_unit'][...], 77)
         self.assertEqual(g2['FieldE/y/sim_unit'][...], 99)
 
+    def test_softdict1(self):
+        self.temp = TempFile()
+
+        fw = ad.writer(self.temp.path)
+        fw.attrs['a1'] = 12
+        fw.attrs['/a2'] = 42
+        fw.close()
+
+        f = ad.file(self.temp.path)
+        self.assertEqual(f.attrs['/a1'][...], f['/a1'][...])
+        self.assertEqual(f.attrs['a1'][...], f['a1'][...])
+        self.assertEqual(f.attrs['/a2'][...], f['/a2'][...])
+        self.assertEqual(f.attrs['a2'][...], f['a2'][...])
+
+    def test_softdict2(self):
+        self.temp = TempFile()
+
+        fw = ad.writer(self.temp.path)
+        fw.vars['a1'] = 12
+        fw.vars['/a2'] = 42
+        fw.close()
+
+        f = ad.file(self.temp.path)
+        self.assertEqual(f.vars['/a1'][...], f['/a1'][...])
+        self.assertEqual(f.vars['a1'][...], f['a1'][...])
+        self.assertEqual(f.vars['/a2'][...], f['/a2'][...])
+        self.assertEqual(f.vars['a2'][...], f['a2'][...])
+
 if __name__ == '__main__':
     ut.main()

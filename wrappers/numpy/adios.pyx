@@ -694,6 +694,30 @@ cpdef int read_finalize(str method_name = "BP"):
     cdef method = str2adiosreadmethod(method_name)
     return adios_read_finalize_method (s2b(method))
 
+## dict for handling '/' prefix
+cdef class softdict(dict):
+    def __getitem__(self, varname):
+        if not isinstance(varname, tuple):
+            varname = (varname,)
+
+        if len(varname) > 1:
+            raise KeyError(varname)
+
+        for key_ in varname:
+            if not isinstance(key_, str):
+                raise TypeError("Unhashable type")
+
+            if key_.startswith('/'):
+                key_ = key_[1:]
+
+            if key_ in dict.keys(self):
+                return dict.get(self, key_)
+
+            if '/'+key_ in dict.keys(self):
+                return dict.get(self, '/'+key_)
+
+        raise KeyError(key_)
+
 ## Python class for ADIOS_FILE structure
 cdef class file(dict):
     """
@@ -726,8 +750,8 @@ cdef class file(dict):
     cpdef bint is_stream
 
     ## Public Memeber
-    cpdef public dict vars
-    cpdef public dict attrs
+    cpdef public softdict vars
+    cpdef public softdict attrs
     cpdef public var
     cpdef public attr
 
@@ -783,8 +807,8 @@ cdef class file(dict):
                  ADIOS_LOCKMODE lock_mode = ADIOS_LOCKMODE_ALL,
                  float timeout_sec = 0.0):
         self.fp = NULL
-        self.vars = {}
-        self.attrs = {}
+        self.vars = softdict()
+        self.attrs = softdict()
         self.is_stream = is_stream
         cdef method = str2adiosreadmethod(method_name)
 
@@ -1008,7 +1032,7 @@ cdef class var(dict):
     cpdef int ndim
     cpdef tuple dims
     cpdef int nsteps
-    cpdef dict attrs
+    cpdef softdict attrs
     cpdef list blockinfo
 
     property name:
@@ -1100,7 +1124,7 @@ cdef class var(dict):
         else:
             self.dtype = adios2npdtype(self.vp.type)
 
-        self.attrs = {}
+        self.attrs = softdict()
         for name in self.file.attrs.keys():
             if name.startswith(self.name + '/'):
                 self.attrs[name.replace(self.name + '/', '')] = self.file.attrs[name]
@@ -1545,21 +1569,21 @@ cdef class group(dict):
     cpdef str name
 
     ## Public Memeber
-    cpdef public dict vars
-    cpdef public dict attrs
+    cpdef public softdict vars
+    cpdef public softdict attrs
 
     def __init__(self, file file, str name):
         self.file = file
         self.name = name.rstrip('/')
 
-        self.vars = {}
+        self.vars = softdict()
         for name in self.file.vars.keys():
             if name.startswith(self.name + '/'):
                 self.vars[name.replace(self.name + '/', '', 1)] = self.file.vars[name]
             if name.startswith('/' + self.name + '/'):
                 self.vars[name.replace('/' + self.name + '/', '', 1)] = self.file.vars[name]
 
-        self.attrs = {}
+        self.attrs = softdict()
         for name in self.file.attrs.keys():
             if name.startswith(self.name + '/'):
                 self.attrs[name.replace(self.name + '/', '', 1)] = self.file.attrs[name]
