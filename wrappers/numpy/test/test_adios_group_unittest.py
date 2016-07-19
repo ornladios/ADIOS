@@ -82,6 +82,7 @@ class AdiosTestCase(ut.TestCase):
 
         fw.attrs['/data/0/fields/FieldE/x/sim_unit'] = 77
         fw.attrs['/data/0/fields/FieldE/y/sim_unit'] = 99
+        fw.attrs['/data/0/fields/e_chargeDensity/sim_unit'] = 88
 
         fw.attrs['/data/0/iteration'] = 33
         fw.attrs['/data/0/sim_slides'] = 55
@@ -109,6 +110,11 @@ class AdiosTestCase(ut.TestCase):
         self.assertTrue((g2['FieldE/y'][...] == tt*2).all())
         self.assertEqual(g2['FieldE/x/sim_unit'][...], 77)
         self.assertEqual(g2['FieldE/y/sim_unit'][...], 99)
+
+        ## Check dirs()
+        self.assertEqual(g.dirs(), ['particles', 'fields'])
+        self.assertEqual(g['fields'].dirs(), ['e_chargeDensity', 'FieldE'])
+        self.assertEqual(f.dirs(), ['data'])
 
     def test_softdict1(self):
         self.temp = TempFile()

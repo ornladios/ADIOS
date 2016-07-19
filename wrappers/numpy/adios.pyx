@@ -972,6 +972,17 @@ cdef class file(dict):
         """ Check whether file is open or closed """
         return self.is_open()
 
+    def dirs(self):
+        """ Return child dir names """
+        s = set()
+        for k in self.vars.keys():
+            if k.startswith('/'): k = k[1:]
+            s.add(os.path.dirname(k).split('/')[0])
+        for k in self.attrs.keys():
+            if k.startswith('/'): k = k[1:]
+            s.add(os.path.dirname(k).split('/')[0])
+        return list(s-set(['']))
+
 cdef class blockinfo(object):
     cpdef tuple start
     cpdef tuple count
@@ -1657,6 +1668,17 @@ cdef class group(dict):
     ## Require for dictionary key completion
     def keys(self):
         return self.vars.keys() + self.attrs.keys()
+
+    def dirs(self):
+        """ Return child dir names """
+        s = set()
+        for k in self.vars.keys():
+            if k.startswith('/'): k = k[1:]
+            s.add(os.path.dirname(k).split('/')[0])
+        for k in self.attrs.keys():
+            if k.startswith('/'): k = k[1:]
+            s.add(os.path.dirname(k).split('/')[0])
+        return list(s-set(['']))
 
 ## Helper dict
 cdef class smartdict(dict):
