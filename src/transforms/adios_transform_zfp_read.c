@@ -129,7 +129,7 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 	udata = malloc(usize);
 	if(!udata)
 	{
-		sprintf(zbuff->msg, "Ran out of memory allocating uncompressed buffer\n");
+		sprintf(zbuff->msg, "Ran out of memory allocating uncompressed buffer.");
 		zfp_error(zbuff);
 		return NULL;
 	}
