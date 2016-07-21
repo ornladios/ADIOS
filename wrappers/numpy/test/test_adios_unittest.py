@@ -155,5 +155,13 @@ class AdiosTestCase(ut.TestCase):
         v2 = self.f.NX
         self.assertEqual(v1[...], v2[...])
 
+    def test_adios_open_and_close(self):
+        self.assertTrue(self.f.is_open())
+        self.assertTrue(self.f)
+
+        self.f.close()
+        self.assertFalse(self.f.is_open())
+        self.assertFalse(self.f)
+
 if __name__ == '__main__':
     ut.main()
