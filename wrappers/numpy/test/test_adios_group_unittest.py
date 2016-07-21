@@ -82,6 +82,7 @@ class AdiosTestCase(ut.TestCase):
 
         fw.attrs['/data/0/fields/FieldE/x/sim_unit'] = 77
         fw.attrs['/data/0/fields/FieldE/y/sim_unit'] = 99
+        fw.attrs['/data/0/fields/e_chargeDensity/sim_unit'] = 88
 
         fw.attrs['/data/0/iteration'] = 33
         fw.attrs['/data/0/sim_slides'] = 55
@@ -109,6 +110,39 @@ class AdiosTestCase(ut.TestCase):
         self.assertTrue((g2['FieldE/y'][...] == tt*2).all())
         self.assertEqual(g2['FieldE/x/sim_unit'][...], 77)
         self.assertEqual(g2['FieldE/y/sim_unit'][...], 99)
+
+        ## Check dirs()
+        self.assertEqual(g.dirs(), ['particles', 'fields'])
+        self.assertEqual(g['fields'].dirs(), ['e_chargeDensity', 'FieldE'])
+        self.assertEqual(f.dirs(), ['data'])
+
+    def test_softdict1(self):
+        self.temp = TempFile()
+
+        fw = ad.writer(self.temp.path)
+        fw.attrs['a1'] = 12
+        fw.attrs['/a2'] = 42
+        fw.close()
+
+        f = ad.file(self.temp.path)
+        self.assertEqual(f.attrs['/a1'][...], f['/a1'][...])
+        self.assertEqual(f.attrs['a1'][...], f['a1'][...])
+        self.assertEqual(f.attrs['/a2'][...], f['/a2'][...])
+        self.assertEqual(f.attrs['a2'][...], f['a2'][...])
+
+    def test_softdict2(self):
+        self.temp = TempFile()
+
+        fw = ad.writer(self.temp.path)
+        fw.vars['a1'] = 12
+        fw.vars['/a2'] = 42
+        fw.close()
+
+        f = ad.file(self.temp.path)
+        self.assertEqual(f.vars['/a1'][...], f['/a1'][...])
+        self.assertEqual(f.vars['a1'][...], f['a1'][...])
+        self.assertEqual(f.vars['/a2'][...], f['/a2'][...])
+        self.assertEqual(f.vars['a2'][...], f['a2'][...])
 
 if __name__ == '__main__':
     ut.main()
