@@ -136,6 +136,13 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 		zfp_error(zbuff);
 		return 0;
 	}
+
+	if (param->value == NULL)
+	{
+		sprintf(zbuff->msg, "Compression type %s must be given a value to set the output storage parameter", param->key);
+		zfp_error(zbuff);
+		return 0;
+	}
 	strcpy(zbuff->ctol, param->value);
 
 
