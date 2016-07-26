@@ -379,6 +379,10 @@ EXTRA_libadiosf_nompi_v1_a_DEPENDENCIES = libcoreonce.a
 if !RESEARCH_TRANSPORTS
 libadiosf_nompi_a_CPPFLAGS += $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
 endif !RESEARCH_TRANSPORTS
+
+core/adiosf_write_mod.$(OBJEXT): core/adiosf_defs_mod.$(OBJEXT)
+adios_write_mod.mod: core/adiosf_write_mod.$(OBJEXT)
+
 endif BUILD_FORTRAN
 
 
@@ -439,9 +443,6 @@ EXTRA_libadiosf_v1_a_DEPENDENCIES = libcoreonce.a
 #nodist_libadiosreadf_a_SOURCES += adios_write.mod
 nodist_include_HEADERS += adios_write_mod.mod 
 CLEANFILES += adios_write_mod.mod
-
-core/adiosf_write_mod.$(OBJEXT): core/adiosf_defs_mod.$(OBJEXT)
-adios_write_mod.mod: core/adiosf_write_mod.$(OBJEXT)
 
 endif BUILD_FORTRAN
 
@@ -572,6 +573,15 @@ libadiosreadf_nompi_a_LIBADD = $(libcoreonce_a_OBJECTS)
 libadiosreadf_nompi_v1_a_LIBADD = $(libcoreonce_a_OBJECTS)
 EXTRA_libadiosreadf_nompi_a_DEPENDENCIES = libcoreonce.a 
 EXTRA_libadiosreadf_nompi_v1_a_DEPENDENCIES = libcoreonce.a 
+
+core/adiosf_read_mod.$(OBJEXT): core/adiosf_defs_mod.$(OBJEXT)
+adios_read_mod.mod: core/adiosf_read_mod.$(OBJEXT)
+
+query/adios_query_mod.$(OBJEXT): core/adiosf_read_mod.$(OBJEXT) adios_read_mod.mod
+adios_query_mod.mod: query/adios_query_mod.$(OBJEXT)
+
+adios_defs_mod.mod: core/adiosf_defs_mod.$(OBJEXT)
+
 endif  BUILD_FORTRAN
 
 
@@ -684,14 +694,6 @@ EXTRA_libadiosreadf_v1_a_DEPENDENCIES = libcoreonce.a
 #nodist_libadiosreadf_a_SOURCES += adios_read_mod.mod
 nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
 CLEANFILES += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
-
-core/adiosf_read_mod.$(OBJEXT): core/adiosf_defs_mod.$(OBJEXT)
-adios_read_mod.mod: core/adiosf_read_mod.$(OBJEXT)
-
-query/adios_query_mod.$(OBJEXT): core/adiosf_read_mod.$(OBJEXT) adios_read_mod.mod
-adios_query_mod.mod: query/adios_query_mod.$(OBJEXT)
-
-adios_defs_mod.mod: core/adiosf_defs_mod.$(OBJEXT)
 
 endif BUILD_FORTRAN
 
