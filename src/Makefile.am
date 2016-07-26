@@ -390,7 +390,7 @@ endif BUILD_FORTRAN
 # Rules to build Parallel C+Fortran write libraries
 #
 
-if BUILD_MPI
+if HAVE_MPI
 
 #
 #    Parallel C Write library
@@ -471,7 +471,7 @@ endif BUILD_FORTRAN
 endif !RESEARCH_TRANSPORTS
 
 # End of building Parallel Write libs
-endif BUILD_MPI
+endif HAVE_MPI
 
 # End of building all Write libs
 endif BUILD_WRITE
@@ -589,7 +589,7 @@ endif  BUILD_FORTRAN
 # Rules to build Parallel C+Fortran write libraries
 #
 
-if BUILD_MPI
+if HAVE_MPI
 
 #
 #    Parallel C Read library
@@ -698,7 +698,7 @@ CLEANFILES += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
 endif BUILD_FORTRAN
 
 # End of building parallel read libraries
-endif BUILD_MPI
+endif HAVE_MPI
 
 
 ##########################################
@@ -731,7 +731,7 @@ libadios_internal_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) $(MACRODEFFLAG)_INTERNAL $(A
 #Note: $(MACRODEFFLAG)NOMPI chokes IBM's bgxlf compiler but it can pass $(MACRODEFFLAG)_NOMPI. 
 
 
-if BUILD_MPI
+if HAVE_MPI
 override CC=$(MPICC)
 override CXX=$(MPICXX)
 endif

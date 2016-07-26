@@ -3,12 +3,12 @@ SUBDIRS= gpp bpdump bp2ascii bpsplit bpls skeldump adios_list_methods bpmeta bpr
 
 if BUILD_WRITE
 SUBDIRS += adios_lint 
-if BUILD_MPI
+if HAVE_MPI
     SUBDIRS += bp2bp bpdiff
 if HAVE_FASTBIT
         SUBDIRS +=fastbit
 endif HAVE_FASTBIT
-endif BUILD_MPI
+endif HAVE_MPI
 endif BUILD_WRITE
 
 if HAVE_HDF5

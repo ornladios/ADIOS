@@ -23,7 +23,7 @@ endif BUILD_WRITE
 #
 # Executables for the parallel libraries
 #
-if BUILD_MPI
+if HAVE_MPI
 bin_PROGRAMS += adios_list_methods_readonly
 adios_list_methods_readonly_SOURCES = adios_list_methods.c
 adios_list_methods_readonly_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS) $(ADIOSREADLIB_CFLAGS)
@@ -39,6 +39,6 @@ adios_list_methods_LDADD =  $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 endif BUILD_WRITE
 override CC=$(MPICC)
 override CXX=$(MPICXX)
-endif BUILD_MPI
+endif HAVE_MPI
 
 

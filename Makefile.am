@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS=-I config
 
 SUBDIRS = src utils tests 
-if BUILD_MPI
+if HAVE_MPI
     SUBDIRS += examples
 endif
 

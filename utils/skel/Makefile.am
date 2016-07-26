@@ -1,6 +1,6 @@
 SUBDIRS = etc
 
-if BUILD_MPI
+if HAVE_MPI
     SUBDIRS += etc
 endif
 
