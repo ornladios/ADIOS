@@ -1,6 +1,9 @@
 ACLOCAL_AMFLAGS=-I config
 
-SUBDIRS = src utils tests examples
+SUBDIRS = src utils tests 
+if BUILD_MPI
+    SUBDIRS += examples
+endif
 
 EXTRA_DIST = runconf \
              KNOWN_BUGS \
@@ -10,7 +13,7 @@ EXTRA_DIST = runconf \
              scripts/create.nssi.config.sh \
              scripts/kill.nssi.staging.sh \
              scripts/start.nssi.staging.sh \
-	     scripts/FindADIOS.cmake \
+	         scripts/FindADIOS.cmake \
              src/mxml/cmake_try_longlong.c
 
 #             wrappers/matlab/Makefile \

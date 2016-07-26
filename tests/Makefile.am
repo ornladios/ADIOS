@@ -1,8 +1,11 @@
+SUBDIRS=test_src
 SUITEDIR=suite
 if BUILD_WRITE
-if BUILD_FORTRAN
-SUBDIRS=test_src C Fortran genarray bp_read ${SUITEDIR}
-else
-SUBDIRS=test_src C bp_read ${SUITEDIR}
-endif
-endif
+if  BUILD_MPI
+    SUBDIRS += C bp_read 
+if      BUILD_FORTRAN
+        SUBDIRS += Fortran genarray
+endif   BUILD_FORTRAN
+    SUBDIRS += ${SUITEDIR}
+endif BUILD_MPI
+endif BUILD_WRITE

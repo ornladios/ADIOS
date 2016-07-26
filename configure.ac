@@ -21,14 +21,23 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
 
-AC_LANG(C)
-ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C])])
+AC_ARG_ENABLE(mpi,
+    [AS_HELP_STRING([--disable-mpi],[disable building the parallel libraries.])])
+AM_CONDITIONAL([BUILD_MPI], [test "x$enable_mpi" != "xno"])
 
-AC_LANG(C++)
-ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C++])])
+if test "x$enable_mpi" != "xno"; then
+    AC_LANG(C)
+    ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C])])
+
+    AC_LANG(C++)
+    ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C++])])
+else
+    AM_CONDITIONAL(HAVE_MPI,false)
+    AC_DEFINE(HAVE_MPI,0,[Don not have MPI to build parallel libraries])
+fi
 
 AC_ARG_ENABLE(fortran,
-    [AS_HELP_STRING([--disable-fortran],[disable Fortran test programs in ADIOS.])])
+    [AS_HELP_STRING([--disable-fortran],[disable building Fortran libraries.])])
 AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
 
 AC_CANONICAL_HOST
@@ -40,8 +49,10 @@ if test "x$enable_fortran" != "xno"; then
     F77=$FC
     dnl AC_PROG_F77
     dnl AC_PROG_F77_C_O
-    AC_LANG(Fortran)
-    ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for Fortran])])
+    if test "x$enable_mpi" != "xno"; then
+        AC_LANG(Fortran)
+        ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for Fortran])])
+    fi
 fi
 
 AC_LANG(C)
@@ -918,6 +929,11 @@ if test -z "${BUILD_FORTRAN_TRUE}"; then
 else
     echo "  - Build only the C libraries (no Fortran)";
 fi
+if test -z "${BUILD_MPI_TRUE}"; then
+    echo "  - Build both the parallel and sequential libraries";
+else
+    echo "  - Build only the sequential libraries (no MPI)";
+fi
 echo
 echo "  - General Compile FLAGS";
 echo "      - CC  = $CC";
@@ -930,11 +946,13 @@ echo "      - FCFLAGS  = $FCFLAGS";
 echo "      - LDLAGS   = $LDFLAGS";
 echo "      - LIBS     = $LIBS";
 echo
-echo "      - MPICC   = $MPICC";
-echo "      - MPICXX  = $MPICXX";
-echo "      - MPIFC   = $MPIFC";
-echo "      - MPILIBS = $MPILIBS";
-echo
+if test -z "${BUILD_MPI_TRUE}"; then
+    echo "      - MPICC   = $MPICC";
+    echo "      - MPICXX  = $MPICXX";
+    echo "      - MPIFC   = $MPIFC";
+    echo "      - MPILIBS = $MPILIBS";
+    echo
+fi
 
 if test "x$enable_research_transports" == "xyes"; then
     echo "  - Research Transports Included";

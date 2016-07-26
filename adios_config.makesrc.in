@@ -102,9 +102,10 @@ if [ $NFLAGS_ASKED == 0 ]; then
     PRINT_METHODS=yes
 fi
 
-#if [ "$OPT_SEQ" == "yes" ]; then
-#    OPT_READ=yes
-#fi
+
+if [ -z "@HAVE_MPI_FALSE@" ]; then
+    OPT_SEQ=yes
+fi
 
 # Print requested values
 if [ "$PRINT_DIR" == "yes" ]; then
