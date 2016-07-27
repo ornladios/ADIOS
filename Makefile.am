@@ -54,8 +54,8 @@ install-data-hook:
 	    git status -uno >> $(abs_top_builddir)/adios_git_status; \
 	    echo "_EOF_" >> $(abs_top_builddir)/adios_git_status; \
 	else \
-	    echo "GITLOG=\"git log not available\"" >> $(builddir)/adios_git_status; \
-	    echo "GITSTAT=\"git status not available\"" >> $(builddir)/adios_git_status; \
+	    echo "GITLOG=\"git log not available\"" >> $(abs_top_builddir)/adios_git_status; \
+	    echo "GITSTAT=\"git status not available\"" >> $(abs_top_builddir)/adios_git_status; \
 	    echo "Note: git command not found or $(PWD) is not a git repository."; \
 	fi) 
 	$(INSTALL_DATA) adios_config.flags $(DESTDIR)$(sysconfdir)
