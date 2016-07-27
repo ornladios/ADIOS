@@ -87,3 +87,5 @@ adios_config adios_config.flags: Makefile
 adios_config: adios_config.makesrc adios_config.flags
 adios_config.flags: adios_config.flags.makesrc
 
+README: README.md
+	cat $< > $@.tmp
