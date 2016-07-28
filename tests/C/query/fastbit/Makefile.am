@@ -7,6 +7,8 @@ AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_srcdir)/src/ -I$(top_srcdir
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+EXTRA_DIST = query.xml
+
 noinst_PROGRAMS = 
 
 # Only compile these test programs if we have FastBit, since they rely on FastBit
@@ -19,6 +21,5 @@ fastbit_tests_CPPFLAGS = $(AM_CPPFLAGS) ${ADIOSLIB_SEQ_CPPFLAGS} $(ADIOSLIB_EXTR
 fastbit_tests_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD) 
 fastbit_tests_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
-EXTRA_DIST = query.xml
 
 endif # HAVE_FASTBIT
