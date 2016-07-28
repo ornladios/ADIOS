@@ -30,7 +30,7 @@ const char varname_xform [][256] = { "t_none",
                                      "t_isobar"
 };
 
-int find_var (ADIOS_FILE *f, char *name)
+int find_var (ADIOS_FILE *f, const char *name)
 {
     int i;
     for (i=0; i<f->nvars; i++)
