@@ -2,6 +2,7 @@
    
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 #include "core/common_read.h"
 #include "core/adios_logger.h"
@@ -1107,7 +1108,7 @@ void locateBlockFromPack(uint64_t currPosInPack, uint64_t* absBlockIdx, uint64_t
   if (currPosInPack > packIncrementByBlock[packSize-1]) {
       *absBlockIdx=-1;
       *posInBlock = -1;
-      printf(" ERROR: %llu th element will not be found  in pack starting at block:%llu", currPosInPack, *absBlockIdx);
+      printf(" ERROR: %" PRIu64 " th element will not be found  in pack starting at block:%" PRIu64, currPosInPack, *absBlockIdx);
   }
 
   uint64_t packStarts = *absBlockIdx;
@@ -1843,7 +1844,7 @@ int mEvaluateWithIdxOnBBoxWithBitArrayOnVar(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 	    return -1;
 	}
 	
-	sprintf(casestudyLoggerPrefix, "block:%llu", currBlockIdx);
+	sprintf(casestudyLoggerPrefix, "block:%" PRIu64, currBlockIdx);
 	casestudyLogger_setPrefix(casestudyLoggerPrefix);
 	
 	struct timespec evalStartT; casestudyLogger_getRealtime(&evalStartT);	
@@ -1991,7 +1992,7 @@ int evaluateWithIdxOnBBoxWithBitArrayOnVar0(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 	return -1;
       }
 
-      sprintf(casestudyLoggerPrefix, "block:%llu", currBlockIdx);
+      sprintf(casestudyLoggerPrefix, "block:%" PRIu64, currBlockIdx);
       casestudyLogger_setPrefix(casestudyLoggerPrefix);
 
       struct timespec evalStartT;
@@ -2363,7 +2364,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 	return -1;
       }
 
-      sprintf(casestudyLoggerPrefix, "block:%llu", currBlockIdx);
+      sprintf(casestudyLoggerPrefix, "block:%" PRIu64, currBlockIdx);
       casestudyLogger_setPrefix(casestudyLoggerPrefix);
 
       struct timespec evalStartT;
@@ -2406,7 +2407,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 	    currPos = getRelativeIdx(currPosInBlock, v, bb, absBlockIdx, timeStep);
 	}
 
-	log_debug("%lld th in block[%d],   =>  in actual box %lld  \n", currPosInBlock, absBlockIdx, currPos);
+	log_debug("%" PRIu64 "th in block[%d],   =>  in actual box %" PRId64 "\n", currPosInBlock, absBlockIdx, currPos);
 	if (currPos >= 0) {
             #ifdef BITARRAY
 	    bitarray_setbit(bitSlice, currPos);
@@ -2597,7 +2598,7 @@ void printQueryData(ADIOS_QUERY* q, FastBitDataType dataType, int timeStep) {
   uint64_t dataSize = q->rawDataSize;
   int j;
   int batchSize = 31;
-  log_debug ("::\t %s At timestep: %d datasize=%llu \n\t\t   raw data:  [", q->condition, timeStep, dataSize);
+  log_debug ("::\t %s At timestep: %d datasize=%" PRIu64 " \n\t\t   raw data:  [", q->condition, timeStep, dataSize);
   for (j = 0; j < dataSize; j++) {
     if ((j < batchSize) || ((dataSize -j) < batchSize)) {
       if ((j % 10) == 0) {
@@ -2610,7 +2611,7 @@ void printQueryData(ADIOS_QUERY* q, FastBitDataType dataType, int timeStep) {
       } else if (dataType == FastBitDataTypeUInt) {
 	log_debug("%d ", ((uint32_t  *)(q->dataSlice))[j]);
       } else if (dataType == FastBitDataTypeULong) {
-	log_debug("%lld ", ((uint64_t  *)(q->dataSlice))[j]);
+	log_debug("%" PRIu64 " ", ((uint64_t  *)(q->dataSlice))[j]);
       } else {
 	//log_debug("\t%g ", ((uint32_t *)(q->_dataSlice))[j]);
 	log_debug(" *  ");
@@ -2984,7 +2985,7 @@ int64_t call_fastbit_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult)
     numHits = bitarray_countHits(q->dataSlice, BITNSLOTS(q->rawDataSize));
   }
 
-  log_debug(":: ==> fastbit_evaluate() num of hits found for [%s] = %lld, at timestep %d \n", q->condition, numHits, timeStep);  
+  log_debug(":: ==> fastbit_evaluate() num of hits found for [%s] = %" PRId64 ", at timestep %d \n", q->condition, numHits, timeStep);  
 
   //casestudyLogger_ends("evaluatingFastbit");
 
@@ -3010,7 +3011,7 @@ void printOneSpatialCoordinate(int dim, uint64_t* spatialCoordinates)
       int k;
       log_debug(" spatial = [");
       for (k=0; k<dim; k++) {
-	log_debug("%lld ", spatialCoordinates[k]);
+	log_debug("%" PRIu64 " ", spatialCoordinates[k]);
       }
       log_debug("]\n");
 
@@ -3245,7 +3246,7 @@ uint64_t* minmaxtestSlice(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coord
     if (sid > bbid) {
       checkpoints[++checkpointCounter] = i-1;
       checkpoints[++checkpointCounter] = i;
-      printf("check point. i=%ld, value=%ld, sid=%ld bbid=%ld checkpointCounter=%ld\n", i, coordinates[i], sid, bbid, checkpointCounter);
+      printf("check point. i=%d, value=%" PRIu64 ", sid=%" PRIu64 " bbid=%" PRIu64 " checkpointCounter=%" PRIu64 "\n", i, coordinates[i], sid, bbid, checkpointCounter);
       bbid = sid;
     } else {
       //checkpoints[checkpointCounter+1] = i;
@@ -3254,7 +3255,7 @@ uint64_t* minmaxtestSlice(ADIOS_SELECTION* bbox, ADIOS_QUERY* q, uint64_t* coord
 
   checkpoints[++checkpointCounter] = i-1;
 
-  printf("check point. i=%ld, value=%ld, checkpointCounter=%ld\n", i-1, coordinates[i-1],  checkpointCounter);
+  printf("check point. i=%d, value=%" PRIu64 ", checkpointCounter=%" PRIu64 "\n", i-1, coordinates[i-1],  checkpointCounter);
   if (checkpointCounter == 1) {
     // should return by max ele
     return NULL;
@@ -3426,7 +3427,7 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   int timeStep = adios_get_actual_timestep(q, incomingTimestep);
 
   call_fastbit_evaluate(q, timeStep, 0);
-  log_debug("::\t max=%llu  lastRead=%llu batchsize=%llu\n", q->maxResultsDesired, q->resultsReadSoFar, batchSize);
+  log_debug("::\t max=%" PRIu64 "  lastRead=%" PRIu64 " batchsize=%" PRIu64 "\n", q->maxResultsDesired, q->resultsReadSoFar, batchSize);
 
   uint64_t retrivalSize = q->maxResultsDesired - q->resultsReadSoFar;
   if (retrivalSize == 0) {
