@@ -6,6 +6,7 @@ if HAVE_MPI
 endif
 
 EXTRA_DIST = runconf \
+	     README.md \
              KNOWN_BUGS \
              adios_config.makesrc.in \
              adios_config.flags.makesrc.in \
@@ -88,4 +89,9 @@ adios_config: adios_config.makesrc adios_config.flags
 adios_config.flags: adios_config.flags.makesrc
 
 README: README.md
-	cat $< > $@.tmp
+	cat $< > $@
+
+dist-hook:
+	rm -f README
+	rm -f $(distdir)/README
+

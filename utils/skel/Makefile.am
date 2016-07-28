@@ -1,7 +1,7 @@
 SUBDIRS = etc
 
 if HAVE_MPI
-    SUBDIRS += etc
+    SUBDIRS += src
 endif
 
 
