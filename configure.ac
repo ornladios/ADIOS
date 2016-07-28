@@ -139,12 +139,12 @@ fi
 
 # Make sure we find Python2
 m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
-                  [python2 python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python])
+                  [python python2 python3 python3.3 python3.2 python3.1 python3.0 python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0])
 AM_PATH_PYTHON([2.0])
-AS_VERSION_COMPARE([${PYTHON_VERSION}], [3.0], [HAVE_PYTHON2=yes], [HAVE_PYTHON2=no], [HAVE_PYTHON2=no])
-if test "x${HAVE_PYTHON2}" == "xno"; then 
-    AC_MSG_ERROR([ADIOS requires python 2.x installed.])
-fi
+dnl AS_VERSION_COMPARE([${PYTHON_VERSION}], [3.0], [HAVE_PYTHON2=yes], [HAVE_PYTHON2=no], [HAVE_PYTHON2=no])
+dnl if test "x${HAVE_PYTHON2}" == "xno"; then 
+dnl     AC_MSG_ERROR([ADIOS requires python 2.x installed.])
+dnl fi
 dnl Set PYTHON_EXECUTABLE to have the same variable as with CMake
 AC_SUBST(PYTHON_EXECUTABLE,${PYTHON})
 
