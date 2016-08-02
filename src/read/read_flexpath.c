@@ -42,6 +42,7 @@
 #include "core/a2sel.h"
 #include "public/adios_error.h"
 #include "core/flexpath.h"
+#include "core/futils.h"
 
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 

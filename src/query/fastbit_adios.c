@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "core/common_read.h"
 #include "core/adios_logger.h"
 #include "core/adios_clock.h"
@@ -512,7 +513,7 @@ uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int timestep, int rel
   for (j=0; j<v->ndim; j++) 
     {  
       blockSize *= v->blockinfo[k].count[j];
-      log_debug("%llu:%llu ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
+      log_debug("%" PRIu64 ":%" PRIu64 " ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
     }
   
   log_debug("]\n");
@@ -556,11 +557,11 @@ static const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int
       break;
       
     case adios_long:
-      sprintf (s, "%lld", ((int64_t *) data)[idx]);
+      sprintf (s, "%" PRId64, ((int64_t *) data)[idx]);
       break;
       
     case adios_unsigned_long:
-      sprintf (s, "%llu", ((uint64_t *) data)[idx]);
+      sprintf (s, "%" PRIu64, ((uint64_t *) data)[idx]);
       break;
       
     case adios_real:
@@ -668,7 +669,7 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   *nk = keyV->dims[0];
   *no = offsetV->dims[0];
 
-  log_debug(" /key/offset data: length=%lld/%lld\n", *nk, *no);
+  log_debug(" /key/offset data: length=%" PRIu64 "/%" PRIu64 "\n", *nk, *no);
   
   //printData(*bms, bmsV->type, *nb);
   a2sel_free(keySel);
@@ -735,7 +736,7 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   *no = offsetV->dims[0];
   *nb = bmsV->dims[0];
 
-  log_debug(" bms/key/offset data: length=%lld/%lld/%lld\n", *nb, *nk, *no);
+  log_debug(" bms/key/offset data: length=%" PRIu64 "/%" PRIu64 "/%" PRIu64 "\n", *nb, *nk, *no);
   
   //printData(*bms, bmsV->type, *nb);
   a2sel_free(bmsSel);
@@ -764,7 +765,7 @@ or is lined as
   if (max > size) {
     max = size;
   }
-  log_debug("  \tfirst %d data out of %lld:[", max, size);
+  log_debug("  \tfirst %d data out of %" PRIu64 ":[", max, size);
   for (i=0; i<max; i++) {
     log_debug("%s ", value_to_string(type, data, i));
   }

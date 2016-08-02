@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <math.h>
 #include <string.h>
 #include <errno.h>
@@ -857,7 +858,7 @@ set_format(struct adios_group_struct *t,
 		    snprintf(el, ELSIZE, "[%s]", a->name);
 		    v_offset = 0;
 		} else {
-		    snprintf(el, ELSIZE, "[%llu]", d->dimension.rank);
+		    snprintf(el, ELSIZE, "[%" PRIu64 "]", d->dimension.rank);
 		    v_offset *= d->dimension.rank;
 		}
 		strncat(dims, el, DIMSIZE);
@@ -1861,7 +1862,7 @@ adios_flexpath_get_write_buffer(struct adios_file_struct *fd,
         *buffer = malloc (*size);
         if (!*buffer) {        
             adios_method_buffer_free (mem_allowed);
-            log_error ("ERROR: Out of memory allocating %llu bytes for %s in %s:%s()\n"
+            log_error ("ERROR: Out of memory allocating %" PRIu64 " bytes for %s in %s:%s()\n"
                     ,*size, v->name, __FILE__, __func__
                     );
             v->got_buffer = adios_flag_no;
@@ -1880,7 +1881,7 @@ adios_flexpath_get_write_buffer(struct adios_file_struct *fd,
     }
     else {    
         adios_method_buffer_free (mem_allowed);
-        log_error ("OVERFLOW: Cannot allocate requested buffer of %llu "
+        log_error ("OVERFLOW: Cannot allocate requested buffer of %" PRIu64 
                          "bytes for %s in %s:%s()\n"
                 ,*size
                 ,v->name

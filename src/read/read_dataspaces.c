@@ -13,14 +13,16 @@
 #include "config.h"
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <errno.h>  /* errno */
 #include "public/adios_types.h"
 #include "public/adios_read.h"
 #include "public/adios_error.h"
 #include "core/globals.h"
 #include "core/util.h"
+#include "core/adios_clock.h"
 #include "core/adios_logger.h"
-//#include "core/bp_types.h"
+#include "core/common_read.h"
 #include "core/adios_read_hooks.h"
 #include "core/futils.h"
 #include "core/ds_metadata.h"
@@ -404,10 +406,10 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
     // extract each variable
     log_debug("    Extract variables\n");
     for (i=0;i<vars_count;i++) {
-        log_debug("      var %d, b = %d\n", i, b);
+        log_debug("      var %d, b = %lld\n", i, (long long int)b);
         namelen = *(int*)b; // lenght of name
         b += sizeof(int);
-        log_debug("        namelen = %d, b = %d\n", namelen, b);
+        log_debug("        namelen = %d, b = %lld\n", namelen, (long long int)b);
         fp->var_namelist[i] = (char *) malloc (namelen+1);
         if (!fp->var_namelist[i]) {
             adios_error (err_no_memory, "Could not allocate space for variable name when opening a group\n"); 
@@ -420,30 +422,30 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
         }
         b += namelen;
         vars[i].name = strdup(fp->var_namelist[i]);  
-        log_debug("        name = %s, b = %d\n", vars[i].name, b);
+        log_debug("        name = %s, b = %lld\n", vars[i].name, (long long int)b);
         // type
         vars[i].type = *(enum ADIOS_DATATYPES*)b; 
         b += sizeof(int);
-        log_debug("        type = %d, b = %d\n", (int)vars[i].type, b);
+        log_debug("        type = %d, b = %lld\n", (int)vars[i].type, (long long int)b);
         // hastime
         vars[i].hastime = *(int*)b; 
         b += sizeof(int);
-        log_debug("        hastime = %d, b = %d\n", vars[i].hastime, b);
+        log_debug("        hastime = %d, b = %lld\n", vars[i].hastime, (long long int)b);
         // dimensions
         vars[i].ndims = *(int*)b; 
         b += sizeof(int);
-        log_debug("        ndims w/o time = %d, b = %d\n", vars[i].ndims, b);
+        log_debug("        ndims w/o time = %d, b = %lld\n", vars[i].ndims, (long long int)b);
         for (j=0; j < MAX_DS_NDIM; j++) {
             dims[j] = *(uint64_t*)b; 
             b += 8;
-            log_debug("          unordered dim[%d] = %lld, b = %d\n", j, dims[j], b);
+            log_debug("          unordered dim[%d] = %" PRIu64 ", b = %lld\n", j, dims[j], (long long int)b);
         }
         // reorder DS dimensions to Fortran/C dimensions
         ds_dimension_ordering (vars[i].ndims, futils_is_called_from_fortran(), 
                                1 /*unpack*/, didx);
         for (j=0; j < vars[i].ndims; j++) {
             vars[i].dims[j] = dims[didx[j]];
-            log_debug("          dim[%d] = %lld, b = %d\n", j, vars[i].dims[j], b);
+            log_debug("          dim[%d] = %" PRIu64 ", b = %lld\n", j, vars[i].dims[j], (long long int)b);
         }
 
         if (vars[i].ndims == 0 && !vars[i].hastime) {
@@ -468,7 +470,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
             }
             
             b += datasize;
-            log_debug("        value read, b = %d\n", b);
+            log_debug("        value read, b = %lld\n", (long long int)b);
         } else {
             vars[i].value = NULL;
         }
@@ -508,7 +510,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
             memcpy (attrs[i].value, b, datasize);
             if (attrs[i].type == adios_string) 
                 ((char*)attrs[i].value)[datasize] = '\0';
-            log_debug("        value read, b = %d\n", b);
+            log_debug("        value read, b = %lld\n", (long long int)b);
         } else {
             log_error("Cannot allocate %d bytes to store the value of attribute %s\n",
                     datasize, attrs[i].name);
@@ -539,7 +541,7 @@ static int get_groupdata (ADIOS_FILE *fp)
     int err;
     char ds_name[MAX_DS_NAMELEN];
     snprintf (ds_name, MAX_DS_NAMELEN, "GROUP@%s/%s",fp->path, ds->group_name);
-    log_debug("-- %s, rank %d: Get variable %s with size %lld\n", __func__, 
+    log_debug("-- %s, rank %d: Get variable %s with size %" PRIu64 "\n", __func__, 
               ds->mpi_rank, ds_name, readsize[0]);
     err = get_meta (ds_name, adios_byte, ds->current_step, ds->mpi_rank, 
                      ndim, 0, offset, readsize, group_info_buf, ds->comm);
@@ -893,7 +895,7 @@ int adios_read_dataspaces_close (ADIOS_FILE *fp)
     struct dataspaces_data_struct * ds = 
                 (struct dataspaces_data_struct *) fp->fh;
 
-    log_debug("-- %s, rank %d: fp=%x\n", __func__, ds->mpi_rank, fp);
+    log_debug("-- %s, rank %d: fp=%p\n", __func__, ds->mpi_rank, fp);
 
     /* Release read lock locked in fopen */
     unlock_file (fp, ds);
@@ -1660,10 +1662,10 @@ void ds_int64s_to_str(int ndim, uint64_t *values, char *s)
         s[0] = '\0';
         return;
     }
-    sprintf(s,"%llu", values[0]);
+    sprintf(s,"%" PRIu64, values[0]);
     for (i=1; i<ndim; i++)
     {
-        sprintf (v,",%llu", values[i]);
+        sprintf (v,",%" PRIu64, values[i]);
         strcat (s,v);
     }
 }

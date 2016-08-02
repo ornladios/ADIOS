@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <math.h>
 #include <string.h>
 
@@ -21,6 +22,8 @@
 #include "core/util.h"
 #include "core/ds_metadata.h"
 #include "core/adios_logger.h"
+#include "core/globals.h"
+#include "core/buffer.h"
 
 #include "dataspaces.h"
 
@@ -140,7 +143,7 @@ static int connect_to_dspaces (struct adios_ds_data_struct * md, MPI_Comm comm)
         //Init the dart client
         ret = dspaces_init (num_peers, md->appid, &md->mpi_comm_init, NULL);
         if (ret) {
-            log_error ("adios_dataspaces: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", md->rank, ret);        
+            log_error ("adios_dataspaces: rank=%d Failed to connect to DATASPACES: err=%d\n", md->rank, ret); 
             return ret;
         }
 
@@ -444,7 +447,7 @@ void adios_dataspaces_get_write_buffer (struct adios_file_struct * fd
         if (!*buffer)
         {
             adios_method_buffer_free (mem_allowed);
-            log_error ("ERROR: Out of memory allocating %llu bytes for %s in %s:%s()\n"
+            log_error ("ERROR: Out of memory allocating %" PRIu64 " bytes for %s in %s:%s()\n"
                     ,*size, v->name, __FILE__, __func__
                     );
             v->got_buffer = adios_flag_no;
@@ -465,7 +468,7 @@ void adios_dataspaces_get_write_buffer (struct adios_file_struct * fd
     else
     {
         adios_method_buffer_free (mem_allowed);
-        log_error ("OVERFLOW: Cannot allocate requested buffer of %llu "
+        log_error ("OVERFLOW: Cannot allocate requested buffer of %" PRIu64 
                          "bytes for %s in %s:%s()\n"
                 ,*size
                 ,v->name
@@ -500,7 +503,7 @@ static void adios_dataspaces_gather_indices (struct adios_file_struct * fd
     // build local index first appending to any existing index
     adios_build_index_v1 (fd, index);
 
-    log_debug ("%s index after first build is pg=%x vars=%x attrs=%x\n", 
+    log_debug ("%s index after first build is pg=%p vars=%p attrs=%p\n", 
                 __func__, index->pg_root, index->vars_root, index->attrs_root);
 #if 0
 #if HAVE_MPI
@@ -583,7 +586,7 @@ static void adios_dataspaces_gather_indices (struct adios_file_struct * fd
 #endif
 #endif
 
-    log_debug ("%s index after gathering is pg=%x vars=%x attrs=%x\n", 
+    log_debug ("%s index after gathering is pg=%p vars=%p attrs=%p\n", 
                 __func__, index->pg_root, index->vars_root, index->attrs_root);
 }
 
@@ -718,7 +721,7 @@ void ds_pack_group_info (struct adios_file_struct *fd
         for (i = 0; i<v->characteristics->dims.count; i++) {
             ldims[j] = v->characteristics->dims.dims[j*3];  // ith dimension 
             gdims[j] = v->characteristics->dims.dims[j*3+1];  // ith dimension 
-            log_debug("           , ldim = %lld gdim = %lld)\n", ldims[j], gdims[j]);
+            log_debug("           , ldim = %" PRIu64 " gdim = %" PRIu64 ")\n", ldims[j], gdims[j]);
             if (gdims[j] == 0 && ldims[j] == 1) {
                 // time dimension's global=0, local=1, skip
                 // FIXME: This is true for a local array of length 1 (not defined as global)

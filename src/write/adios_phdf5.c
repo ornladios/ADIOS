@@ -1139,7 +1139,7 @@ void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADI
 hsize_t parse_dimension(struct adios_var_struct *pvar_root,
                         struct adios_attribute_struct *patt_root, 
                         struct adios_dimension_item_struct * dim) {
-    hsize_t dimsize;
+    hsize_t dimsize = 0;
     struct adios_var_struct *var_linked = NULL;
     struct adios_attribute_struct *attr_linked;
     if ( dim->var) {
