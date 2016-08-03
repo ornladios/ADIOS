@@ -86,18 +86,9 @@ done
 ALL_QUERY_ENGINES=$( \
   $MPIRUN_SERIAL $LIST_METHODS_EXE_PATH |
   awk '
-    /^Available/{
-      transforms = ($2 == "query")
-    }
-    {
-      if (transforms) {
-        if (skippedheader) {
-          gsub("ADIOS_QUERY_METHOD_","",$1)
-          print $1
-        } else {
-          skippedheader = 1
-        }
-      }
+    /ADIOS_QUERY_METHOD/{
+      gsub("ADIOS_QUERY_METHOD_","",$1)
+      print $1
     }
   ' |
   tr "A-Z\n" 'a-z '
