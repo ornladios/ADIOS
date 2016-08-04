@@ -366,48 +366,52 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ##########################
         #TARGET=pgi
         echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
-        export CC=cc
-        export FC=ftn
-        export CXX=CC
         module unload szip
         module unload hdf5
         module unload netcdf
         module unload hdf5-parallel
         module unload netcdf-hdf5parallel
         module unload fastbit
-        module unload PrgEnv-gnu
-        module unload PrgEnv-pgi
-        module unload PrgEnv-intel
-        module unload PrgEnv-cray
+        module unload craype-interlagos craype-interlagos-cu 
+        module unload craype-barcelona craype-abudhabi craype-abudhabi-cu 
+        module unload craype-ivybridge craype-sandybridge craype-haswell 
+        module unload craype-mc8 craype-mc12
         #module unload papi
         #module unload xtpe-quadcore
-        module load PrgEnv-$TARGET
-        module swap craype-interlagos craype-istanbul
-        module swap cray-libsci
-        module load dataspaces # /1.6.0
+        #module load PrgEnv-$TARGET
+        #module swap craype-interlagos craype-istanbul
+        #module swap cray-libsci
+        module load craype-istanbul
+        module load dataspaces # /1.6.1
         unset EXTRA_CFLAGS
         unset EXTRA_LIBS
         unset LDFLAGS
         unset WITHFLEX
         unset WITHFASTBIT
+        export CC=cc
+        export FC=ftn
+        export CXX=CC
+        #export CC="cc -target-cpu=istanbul"
+        #export FC="ftn -target-cpu=istanbul"
+        #export CXX="CC -target-cpu=istanbul"
         if [ "$TARGET" == "pgi" ]; then
             # FASTBIT needs libstdc++ and -pgcpplibs flag
             export LDFLAGS="-pgcpplibs" 
             #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
-            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$target-cpu"
         elif [ "$TARGET" == "gnu" ]; then
-            export CC=gcc
-            export FC=gfortran
-            export CXX=g++
-            export MPICC=cc
-            export MPIFC=ftn
-            export MPICXX=CC
+            #export CC=gcc
+            #export FC=gfortran
+            #export CXX=g++
+            #export MPICC="cc -target-cpu=istanbul"
+            #export MPIFC="ftn -target-cpu=istanbul"
+            #export MPICXX="CC -target-cpu=istanbul"
             # NSSI/FLEXPATH/FASTBIT needs libstdc++
             export LDFLAGS="" 
             module load fastbit
             WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
             # FASTBIT needs libstdc++
-            #WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
+            WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
             #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
             #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
         elif [ "$TARGET" == "cray" ]; then

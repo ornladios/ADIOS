@@ -841,6 +841,14 @@ cdef class file(dict):
         """ Close file on destruction. """
         self.close()
 
+    def __enter__(self):
+        """ Enter for with statemetn """
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """ Close file on exit. """
+        self.close()
+
     cpdef close(self):
         """ Close the open file. """
         assert self.fp != NULL, 'Not an open file'
@@ -1901,6 +1909,14 @@ cdef class writer(object):
                  self.vars.keys(),
                  self.attrs.keys(),
                  self.mode)
+
+    def __enter__(self):
+        """ Enter for with statemetn """
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        """ Close file on exit. """
+        self.close()
 
 cdef class attrinfo(object):
     cdef str name
