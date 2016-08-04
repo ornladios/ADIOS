@@ -164,12 +164,11 @@ the rank of each processor in the same communication group, which needs to be re
 by the certain MPI APIs, is commonly used in defining the output files. MPI-IO
 can also be considered the most generic I/O library on large-scale platforms.
 
-\subsection{Python 2.x (required)}
+\subsection{Python 2.x or 3.x (required)}
 
 The XML processing utility \verb+utils/gpp/gpp.py+ is a code written in python using xml.dom.minidom.
 It is used to generate C or Fortran code from the XML configuration files that
-can be included in the application source code.  Examples and tests will not build
-without Python.
+can be included in the application source code.  The configuration process will stop if a suitable python interpreter is not found. 
 
 \subsection{Fortran90 compiler (optional)}
 

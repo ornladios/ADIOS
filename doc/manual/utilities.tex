@@ -164,6 +164,7 @@ generates a metadata file <filename>.
 If the number of files is not given as argument, \verb+bpmeta+ will use system calls to determine the number of files in the directory. The utility runs on a single node but it can use threads to speed up the metadata creation. 
 
 \section{bprecover}
+\label{section-utils-bprecover}
 
 If you append multiple output steps into one dataset it may happen that the application aborts during writing and the whole dataset becomes corrupt. In such a case, the data up to the last output step is unharmed in the BP file but the index data is missing or corrupt along with the last output step. The \verb+bprecover+ tool is for recreating the index from parsing the file from the beginning and overwriting the corrupt last step and the index area (at the end of the file). It modifies (the end of) the file without copying the data. One must use the \verb+-f+ option to make this happen otherwise the tool just prints out what has found. 
 
