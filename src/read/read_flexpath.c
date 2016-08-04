@@ -41,6 +41,7 @@
 #include "core/adios_logger.h"
 #include "core/a2sel.h"
 #include "public/adios_error.h"
+#define  FLEXPATH_SIDE "READER"
 #include "core/flexpath.h"
 #include "core/futils.h"
 
@@ -130,6 +131,8 @@ typedef struct _flexpath_reader_file
     char *file_name;
     char *group_name; // assuming one group per file right now.
     int host_language;
+
+    int verbose;
 
     EVstone stone;
 
@@ -261,6 +264,7 @@ new_flexpath_reader_file(const char *fname)
 	log_error("Cannot create data for new file.\n");
 	exit(1);
     }
+    fp_verbose_init(fp);
     fp->file_name = strdup(fname);
     fp->writer_coordinator = -1;
     fp->last_writer_step = -1;
@@ -1178,7 +1182,6 @@ adios_read_flexpath_open(const char * fname,
 			 enum ADIOS_LOCKMODE lock_mode,
 			 float timeout_sec)
 {
-    fp_log("FUNC", "entering flexpath_open\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));
     if (!adiosfile) {
 	adios_error (err_no_memory,
@@ -1187,6 +1190,7 @@ adios_read_flexpath_open(const char * fname,
     }
 
     flexpath_reader_file *fp = new_flexpath_reader_file(fname);
+    fp_verbose(fp, "entering flexpath_open\n");
     fp->host_language = futils_is_called_from_fortran();
     adios_errno = 0;
     fp->stone = EValloc_stone(fp_read_data->cm);
@@ -1358,7 +1362,7 @@ adios_read_flexpath_open(const char * fname,
     adiosfile->version = -1;
     adiosfile->file_size = 0;
     adios_errno = err_no_error;
-    fp_log("FUNC", "leaving flexpath_open\n");
+    fp_verbose(fp, "leaving flexpath_open\n");
     return adiosfile;
 }
 
@@ -1529,8 +1533,8 @@ int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk
 
 int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 {
-    fp_log("FUNC", "entering perform_reads.\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    fp_verbose(fp, "entering perform_reads.\n");
     fp->data_read = 0;
     int i;
     int batchcount = 0;
@@ -1584,7 +1588,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 
 	tmpvars = tmpvars->next;
     }
-    fp_log("FUNC", "leaving perform_reads.\n");
+    fp_verbose(fp, "leaving perform_reads.\n");
     return 0;
 }
 
@@ -1609,10 +1613,10 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 				       int nsteps,
 				       void *data)
 {
-    fp_log("FUNC", "entering schedule_read_byid\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     flexpath_var *fpvar = fp->var_list;
 
+    fp_verbose(fp, "entering schedule_read_byid\n");
     while (fpvar) {
         if (fpvar->id == varid)
         	break;
@@ -1723,7 +1727,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	break;
     }
     }
-    fp_log("FUNC", "entering schedule_read_byid\n");
+    fp_verbose(fp, "entering schedule_read_byid\n");
     return 0;
 }
 
@@ -1772,10 +1776,10 @@ adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 ADIOS_VARINFO*
 adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
-    fp_log("FUNC", "entering flexpath_inq_var\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     ADIOS_VARINFO *v = NULL;
 
+    fp_verbose(fp, "entering flexpath_inq_var\n");
     flexpath_var *fpvar = find_fp_var(fp->var_list, varname);
     if (fpvar) {
         v = calloc(1, sizeof(ADIOS_VARINFO));
@@ -1787,7 +1791,7 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
         }
 
 	v = convert_var_info(fpvar, v, varname, adiosfile);
-	fp_log("FUNC", "leaving flexpath_inq_var\n");
+	fp_verbose(fp, "leaving flexpath_inq_var\n");
     }
     else {
         adios_error(err_invalid_varname, "Cannot find var %s\n", varname);
@@ -1798,11 +1802,11 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 ADIOS_VARINFO*
 adios_read_flexpath_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
 {
-    fp_log("FUNC", "entering flexpath_inq_var_byid\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    fp_verbose(fp, "entering flexpath_inq_var_byid\n");
     if (varid >= 0 && varid < adiosfile->nvars) {
 	ADIOS_VARINFO *v = adios_read_flexpath_inq_var(adiosfile, adiosfile->var_namelist[varid]);
-	fp_log("FUNC", "leaving flexpath_inq_var_byid\n");
+	fp_verbose(fp, "leaving flexpath_inq_var_byid\n");
 	return v;
     }
     else {

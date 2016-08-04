@@ -26,32 +26,14 @@
 
 #define perr(...) if(getenv("FP_DEBUG")) fprintf(stderr, __VA_ARGS__);
 
-#define fp_log(LOG, ...)                             \
-            if(getenv("FP_DEBUG")) {    \
-                if(strcmp(getenv("FP_DEBUG"),"ALL")==0) {          \
-                    fprintf(stderr, __VA_ARGS__);   \
-                } else if(strcmp(getenv("FP_DEBUG"),LOG)==0) {     \
-                    fprintf(stderr, __VA_ARGS__);   \
-                }                                   \
-            }
-
-#define fp_write_log(LOG, ...)                                      \
-            if(getenv("FP_DEBUG")) {                                \
-                if(strcmp(getenv("FP_DEBUG"),"ALL")==0) {           \
-                    fprintf(stderr, "%d %s:", flexpathWriteData.rank, LOG);   \
-                    fprintf(stderr, __VA_ARGS__);                   \
-                } else {                                            \
-                    char* env_tok;                                  \
-                    char* env = strdup(getenv("FP_DEBUG"));         \
-                    env_tok = strtok(env, ",");                     \
-                    while(env_tok) {                                \
-                        if(strcmp(env_tok, LOG)==0) {               \
-                    fprintf(stderr, "%d %s:", flexpathWriteData.rank, LOG);   \
-                    fprintf(stderr, __VA_ARGS__);                   \
-                        }                                           \
-                        env_tok = strtok(NULL, ",");                \
-                    }                                               \
-                }                                                   \
+#define fp_verbose_init(flxp_file)   \
+	    if (getenv("FLEXPATH_VERBOSE")) { \
+		flxp_file->verbose = 1;\
+	    }
+#define fp_verbose(flxp_file, ...)                             \
+            if(flxp_file->verbose) {    \
+		fprintf(stderr, "file %p: %s %d:", flxp_file, FLEXPATH_SIDE, flxp_file->rank); \
+		fprintf(stderr, __VA_ARGS__);			   \
             }
             
 

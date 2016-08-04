@@ -42,6 +42,7 @@
 // // evpath libraries
 #include <evpath.h>
 #include <cod.h>
+#define FLEXPATH_SIDE "WRITER"
 #include "core/flexpath.h"
 #include <sys/queue.h>
 
@@ -157,6 +158,9 @@ typedef struct _flexpath_write_file_data {
     // for maintaining open file list
     struct _flexpath_write_file_data* next;
     char* name;
+
+    // general
+    int verbose;
 } FlexpathWriteFileData;
 
 typedef struct _flexpath_write_data {
@@ -326,7 +330,7 @@ data_free(void* eventData, void* clientData)
 void 
 op_free(void* eventData, void* clientData) 
 {
-    fp_write_log("OP", "freeing an op message\n");
+//    fp_write_log("OP", "freeing an op message\n");
     op_msg* op = (op_msg*) eventData;
     if (op->file_name) {
         free(op->file_name);
@@ -1028,7 +1032,7 @@ set_format(struct adios_group_struct *t,
 	    }
 	}
 
-	fp_write_log("FORMAT","field: %s, %s, %d, %d\n", 
+	fp_verbose(fileData, "field: %s, %s, %d, %d\n", 
 		     field_list[fieldNo].field_name, 
 		     field_list[fieldNo].field_type,
 		     field_list[fieldNo].field_size,
@@ -1172,7 +1176,7 @@ process_open_msg(FlexpathWriteFileData *fileData, op_msg *open)
 	log_error("Flexpath method control_thread: Received Past Step Open\n");
     } 
     else {
-	fp_write_log("STEP", "recieved op with future step\n");
+	fp_verbose(fileData, "received op with future step\n");
     }
 }
 
@@ -1397,7 +1401,8 @@ adios_flexpath_open(struct adios_file_struct *fd,
     FlexpathWriteFileData *fileData = malloc(sizeof(FlexpathWriteFileData));
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
-    
+    fp_verbose_init(fileData);
+
     fileData->maxQueueSize = 1;
     fileData->use_ctrl_thread = 1;
     if (method->parameters) {
