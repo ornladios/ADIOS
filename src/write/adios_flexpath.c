@@ -48,7 +48,7 @@
 
 /************************* Structure and Type Definitions ***********************/
 // used for messages in the control queue
-typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, INIT, EVGROUP_FLUSH, DATA_BUFFER} FlexpathMessageType;
+typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, INIT, EVGROUP_FLUSH, DATA_BUFFER, FINALIZE} FlexpathMessageType;
 
 // maintains connection information
 typedef struct _flexpath_stone {
@@ -1131,6 +1131,7 @@ process_data_flush(FlexpathWriteFileData *fileData,
 void
 process_var_msg(FlexpathWriteFileData *fileData, Var_msg *varMsg)
 {
+    fp_verbose(fileData, "process Var msg for variable \"%s\"\n", varMsg->var_name);
     fileData->askedVars = add_var(fileData->askedVars, 
 				  strdup(varMsg->var_name), 
 				  NULL, 
@@ -1138,8 +1139,30 @@ process_var_msg(FlexpathWriteFileData *fileData, Var_msg *varMsg)
 }
 
 void
+drop_queued_data(FlexpathWriteFileData *fileData, int timestep)
+{
+    FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue,
+					       &fileData->dataMutex,
+					       &fileData->dataCondition, 1);
+    FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
+
+    drop_evgroup_msg *dropMsg = malloc(sizeof(drop_evgroup_msg));
+    dropMsg->step = fileData->readerStep;
+    int wait = CMCondition_get(flexpathWriteData.cm, NULL);
+    dropMsg->condition = wait;
+    fp_verbose(fileData, "******* Triggering drop MSG\n");
+    EVsubmit_general(fileData->dropSource, dropMsg, drop_evgroup_msg_free, fileData->attrs);
+    //EVsubmit_general(fileData->dropSource, dropMsg, NULL, fileData->attrs);
+    // Will have to change when not using ctrl thread.
+    CMCondition_wait(flexpathWriteData.cm,  wait);
+    
+    fileData->readerStep++;
+}
+
+void
 process_open_msg(FlexpathWriteFileData *fileData, op_msg *open)
 {
+    fp_verbose(fileData, " Process Open msg, bridge %d, timestep %d\n", open->process_id, open->step);
     fileData->bridges[open->process_id].step = open->step;
     fileData->bridges[open->process_id].condition = open->condition;
     if (!fileData->bridges[open->process_id].created) {
@@ -1157,6 +1180,10 @@ process_open_msg(FlexpathWriteFileData *fileData, op_msg *open)
 			    fileData->bridges[open->process_id].myNum);
     }	
 	
+    if (open->step == fileData->readerStep + 1) {
+	drop_queued_data(fileData, fileData->readerStep);
+    }
+
     if (open->step == fileData->readerStep) {
 	pthread_mutex_lock(&fileData->openMutex);
 	fileData->openCount++;  
@@ -1181,32 +1208,54 @@ process_open_msg(FlexpathWriteFileData *fileData, op_msg *open)
 }
 
 void
+process_finalize_msg(FlexpathWriteFileData *fileData, op_msg *finalize)
+{
+    fp_verbose(fileData, " Process Finalize msg, bridge %d, timestep %d\n", finalize->process_id, finalize->step);
+	
+    FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue,
+					       &fileData->dataMutex,
+					       &fileData->dataCondition, 1);
+    FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
+
+    drop_evgroup_msg *dropMsg = malloc(sizeof(drop_evgroup_msg));
+    dropMsg->step = fileData->readerStep;
+    int wait = CMCondition_get(flexpathWriteData.cm, NULL);
+    dropMsg->condition = wait;
+    fp_verbose(fileData, "******* Triggering drop MSG\n");
+    EVsubmit_general(fileData->dropSource, dropMsg, drop_evgroup_msg_free, fileData->attrs);
+    //EVsubmit_general(fileData->dropSource, dropMsg, NULL, fileData->attrs);
+    // Will have to change when not using ctrl thread.
+    CMCondition_wait(flexpathWriteData.cm,  wait);
+}
+
+void
 process_close_msg(FlexpathWriteFileData *fileData, op_msg *close)
 {
 
+    fp_verbose(fileData, " process close msg, bridge %d\n", close->process_id);
     pthread_mutex_lock(&fileData->openMutex);
     fileData->openCount--;
     fileData->bridges[close->process_id].opened=0;
     fileData->bridges[close->process_id].condition = close->condition;
     pthread_mutex_unlock(&fileData->openMutex);
 
-    if (fileData->openCount==0) {
-	FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
-						   &fileData->dataMutex, 
-						   &fileData->dataCondition, 1);
-	FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
+    /* if (fileData->openCount==0) { */
+    /* 	FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue,  */
+    /* 						   &fileData->dataMutex,  */
+    /* 						   &fileData->dataCondition, 1); */
+    /* 	FMfree_var_rec_elements(fileData->fm->ioFormat, node->data); */
 
-	drop_evgroup_msg *dropMsg = malloc(sizeof(drop_evgroup_msg));
-	dropMsg->step = fileData->readerStep;
-	int wait = CMCondition_get(flexpathWriteData.cm, NULL);
-	dropMsg->condition = wait;
-	EVsubmit_general(fileData->dropSource, dropMsg, drop_evgroup_msg_free, fileData->attrs);
-	//EVsubmit_general(fileData->dropSource, dropMsg, NULL, fileData->attrs);
-	// Will have to change when not using ctrl thread.
-	CMCondition_wait(flexpathWriteData.cm,  wait); 		    
+    /* 	drop_evgroup_msg *dropMsg = malloc(sizeof(drop_evgroup_msg)); */
+    /* 	dropMsg->step = fileData->readerStep; */
+    /* 	int wait = CMCondition_get(flexpathWriteData.cm, NULL); */
+    /* 	dropMsg->condition = wait; */
+    /* 	EVsubmit_general(fileData->dropSource, dropMsg, drop_evgroup_msg_free, fileData->attrs); */
+    /* 	//EVsubmit_general(fileData->dropSource, dropMsg, NULL, fileData->attrs); */
+    /* 	// Will have to change when not using ctrl thread. */
+    /* 	CMCondition_wait(flexpathWriteData.cm,  wait); 		     */
 		     
-	fileData->readerStep++;
-    }
+    /* 	fileData->readerStep++; */
+    /* } */
 		
     op_msg *ack = malloc(sizeof(op_msg));
     ack->file_name = strdup(fileData->name);
@@ -1228,6 +1277,7 @@ var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Var_msg* msg = (Var_msg*) vevent;
+    fp_verbose(fileData, " var_msg received and queued\n");
     EVtake_event_buffer(cm, vevent);
     threaded_enqueue(&fileData->controlQueue, msg, VAR, 
 		     &fileData->controlMutex, &fileData->controlCondition, -1);
@@ -1240,7 +1290,7 @@ flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Flush_msg* msg = (Flush_msg*) vevent;
     int err = EVtake_event_buffer(cm, vevent);
-    //fprintf(stderr, "writer:%d:got_flush for reader:%d:reader_step:%d:writer_step:%d\n", fileData->rank, msg->process_id, fileData->readerStep, fileData->writerStep);
+    fp_verbose(fileData, "flush_msg received and queued\n");
     threaded_enqueue(&fileData->controlQueue, msg, DATA_FLUSH, 
 		     &fileData->controlMutex, &fileData->controlCondition,
 		     -1);
@@ -1250,8 +1300,10 @@ flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
 
 static int
 drop_evgroup_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
+    FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     drop_evgroup_msg *msg = vevent;
     // will have to change when not using control thread.
+    fp_verbose(fileData, "got drop evgroup message, signalling\n");
     CMCondition_signal(cm, msg->condition);    
     return 0;
 }
@@ -1262,11 +1314,18 @@ op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     op_msg* msg = (op_msg*) vevent;
     EVtake_event_buffer(cm, vevent);
-    if (msg->type == OPEN_MSG) {
+    fp_verbose(fileData, " op_msg received, message type %d\n", msg->type);
+    if(msg->type == OPEN_MSG) {
+	fp_verbose(fileData, " enqueueing open msg, bridge %d, step %d\n", msg->process_id, msg->step);
         threaded_enqueue(&fileData->controlQueue, msg, OPEN, 
 			 &fileData->controlMutex, &fileData->controlCondition, -1);
-    } else if (msg->type == CLOSE_MSG) {
+    } else if(msg->type == CLOSE_MSG) {
+	fp_verbose(fileData, " enqueueing close msg, bridge %d, step %d\n", msg->process_id, msg->step);
         threaded_enqueue(&fileData->controlQueue, msg, CLOSE, 
+			 &fileData->controlMutex, &fileData->controlCondition, -1);  			
+    } else if(msg->type == FINALIZE_MSG) {
+	fp_verbose(fileData, " enqueueing finalize msg, bridge %d\n", msg->process_id);
+        threaded_enqueue(&fileData->controlQueue, msg, FINALIZE, 
 			 &fileData->controlMutex, &fileData->controlCondition, -1);  			
     }
     return 0;
@@ -1281,8 +1340,10 @@ control_thread(void *arg)
     FlexpathQueueNode *controlMsg;
     FlexpathQueueNode *dataNode;
     while (1) {
+//	fp_verbose(fileData, " Control thread waiting on msg\n");
 	if ((controlMsg = threaded_dequeue(&fileData->controlQueue, 
 	    &fileData->controlMutex, &fileData->controlCondition, 0))) {
+//	    fp_verbose(fileData, " Control thread got a msg\n");
 	    if (controlMsg->type==VAR) {
 		Var_msg *varMsg = (Var_msg*) controlMsg->data;
 		process_var_msg(fileData, varMsg);
@@ -1299,6 +1360,11 @@ control_thread(void *arg)
 	    else if (controlMsg->type==OPEN) {
                 op_msg *open = (op_msg*) controlMsg->data;
 		process_open_msg(fileData, open);                
+		EVreturn_event_buffer(flexpathWriteData.cm, open);
+            }
+	    else if (controlMsg->type==FINALIZE) {
+                op_msg *open = (op_msg*) controlMsg->data;
+		process_finalize_msg(fileData, open);                
 		EVreturn_event_buffer(flexpathWriteData.cm, open);
             }
 	    else if (controlMsg->type==CLOSE) {
@@ -1341,6 +1407,30 @@ find_open_file(char* name)
 }
 
 
+void
+stone_close_handler(CManager cm, CMConnection conn, int closed_stone, void *client_data)
+{
+    FlexpathWriteFileData* file = flexpathWriteData.openFiles;
+    while (file) {
+	int i;
+	for (i=0; i < file->numBridges; i++) {
+	    if (file->bridges[i].myNum == closed_stone) {
+		int j;
+		file->bridges[i].opened = 0;
+		for (j=0; j< file->numBridges; j++) {
+		    if (file->bridges[j].opened == 1) {
+			/* if any bridge still open, simply return at this point, we're done */
+			return;
+		    }
+		}
+		/* no bridges in this file still open, drop all data */
+		drop_queued_data(file, -1);
+	    }
+	}
+        file = file->next;
+    }
+}
+
 // Initializes flexpath write local data structures
 extern void 
 adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
@@ -1380,6 +1470,8 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     if (!forked) {
 	fprintf(stderr, "Wrtier error forking comm thread\n");
     }
+
+    EVregister_close_handler(flexpathWriteData.cm, stone_close_handler, &flexpathWriteData);
 }
 
 extern int 
@@ -1600,6 +1692,7 @@ adios_flexpath_write(
     FlexpathWriteFileData* fileData = find_open_file(method->group->name);
     FlexpathFMStructure* fm = fileData->fm;
 
+    fp_verbose(fileData, " adios_flexpath_write called\n");
     if (fm == NULL)
     {
 	log_error("adios_flexpath_write: something has gone wrong with format registration: %s\n", 
@@ -1683,6 +1776,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     void *buffer = malloc(fileData->fm->size);    
     memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
 
+    fp_verbose(fileData, " adios_flexpath_close called\n");
     threaded_enqueue(&fileData->dataQueue, buffer, 
 		     DATA_BUFFER,
 		     &fileData->dataMutex, 
@@ -1790,7 +1884,8 @@ extern void
 adios_flexpath_finalize(int mype, struct adios_method_struct *method) 
 {
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
-    while (fileData) {
+    fp_verbose(fileData, "adios_flexpath_finalize called\n");
+    while(fileData) {
 
 	update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
 	stepmsg->finalized = 1;
@@ -1800,6 +1895,7 @@ adios_flexpath_finalize(int mype, struct adios_method_struct *method)
 
         pthread_mutex_lock(&fileData->dataMutex);
         while (fileData->dataQueue != NULL) {
+	    fp_verbose(fileData, " Wait in flexpath finalize\n");
 	    pthread_cond_wait(&fileData->dataCondition, &fileData->dataMutex);
 	}
 	pthread_mutex_unlock(&fileData->dataMutex);

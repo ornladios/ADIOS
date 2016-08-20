@@ -20,6 +20,7 @@
 #define ACK_MSG 2
 #define INIT_MSG 3
 #define EOS_MSG 4
+#define FINALIZE_MSG 5
 
 #define FP_FORTRAN_MODE 1
 #define FP_C_MODE 0
