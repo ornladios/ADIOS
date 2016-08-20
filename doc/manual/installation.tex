@@ -153,9 +153,16 @@ At the minimum, MPI C/C++ compilers and Python 2.x are needed to build ADIOS.
 A Fortran90 compiler and mpif90 compilers are needed to build the Fortran libraries and examples. 
 Everything else below is optional.
 
-\subsection{MPI and MPI-IO (required)}
+\subsection{Python 2.x or 3.x (required)}
 
-MPI and MPI-IO is required for ADIOS.
+The XML processing utility \verb+utils/gpp/gpp.py+ is a code written in python using xml.dom.minidom.
+It is used to generate C or Fortran code from the XML configuration files that
+can be included in the application source code.  The configuration process will stop if a suitable python interpreter is not found. 
+
+\subsection{MPI and MPI-IO (recommended, optional)}
+
+MPI and MPI-IO is required for ADIOS to build the parallel library. 
+A sequential-only library can be built by configuring with the \verb+--without-mpi+ option.
 
 Currently, most large-scale scientific applications rely on the Message Passing
 Interface (MPI) library to implement communication among processes. For instance,
@@ -164,12 +171,6 @@ the rank of each processor in the same communication group, which needs to be re
 by the certain MPI APIs, is commonly used in defining the output files. MPI-IO
 can also be considered the most generic I/O library on large-scale platforms.
 
-\subsection{Python 2.x (required)}
-
-The XML processing utility \verb+utils/gpp/gpp.py+ is a code written in python using xml.dom.minidom.
-It is used to generate C or Fortran code from the XML configuration files that
-can be included in the application source code.  Examples and tests will not build
-without Python.
 
 \subsection{Fortran90 compiler (optional)}
 
