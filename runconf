@@ -342,7 +342,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
     export CXX=CC
     if [ "$TARGET" == "pgi" ]; then
         # FASTBIT needs libstdc++ and -pgcpplibs flag
-        export LDFLAGS="-pgcpplibs" 
+        export LDFLAGS="-pgc++libs" 
         #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
         #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$target-cpu"
     elif [ "$TARGET" == "gnu" ]; then
@@ -424,8 +424,8 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
       module unload papi
       module unload pmi
       if [ "$TARGET" == "pgi" ]; then
-          # NSSI needs -pgcpplibs flag 
-          export LDFLAGS="-pgcpplibs" 
+          # NSSI needs -pgc++libs flag 
+          export LDFLAGS="-pgc++libs" 
           unset EXTRA_LIBS 
       elif [ "$TARGET" == "gnu" ]; then
           # NSSI needs libstdc++
@@ -481,7 +481,7 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           export MPICXX=CC
           # FASTBIT, ALACRITY need -pgcpplibs flag 
           WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/xk6/pgi"
-          export LDFLAGS="-pgcpplibs" 
+          export LDFLAGS="-pgc++libs" 
           unset EXTRA_LIBS 
       elif [ "$TARGET" == "gnu" ]; then
           export CC=gcc
