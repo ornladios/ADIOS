@@ -48,11 +48,13 @@ static struct adios_query_hooks_struct * adios_query_hooks = 0;
 
 int main (int argc, char ** argv) {
     int  rank, size, i;
+#ifndef _NOMPI  // added only to enable compiling with Score-P and other libs substituting MPI 
     MPI_Comm comm = MPI_COMM_WORLD;
 
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
+#endif
 
 
 #ifdef WRITE
@@ -99,8 +101,10 @@ int main (int argc, char ** argv) {
         }
     }
 
+#ifndef _NOMPI  // added only to enable compiling with Score-P and other libs substituting MPI 
     MPI_Barrier(comm);
     MPI_Finalize();
+#endif
     return(0);
 }
 
