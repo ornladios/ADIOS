@@ -1756,7 +1756,11 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                             START_TIMER (ADIOS_TIMER_COMM);
                             MPI_Waitall (nMPIrequests, requests, statuses);
                             STOP_TIMER (ADIOS_TIMER_COMM);
-                            memcpy (aggr_buff, recv_buff, pg_sizes[i + 1]);
+                            // swap receive and aggregate buffers, so we can write out the just received PG while getting another one
+                            void *tmp = aggr_buff;
+                            aggr_buff = recv_buff;
+                            recv_buff = tmp;
+                            //memcpy (aggr_buff, recv_buff, pg_sizes[i + 1]);
                         }
                     }
                 }
