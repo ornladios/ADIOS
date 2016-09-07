@@ -344,6 +344,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         # FASTBIT needs libstdc++ and -pgcpplibs flag
         export LDFLAGS="-pgc++libs" 
         #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
+        export EXTRA_CFLAGS="-fast"
         #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$target-cpu"
     elif [ "$TARGET" == "gnu" ]; then
         #export CC=gcc
@@ -359,6 +360,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         # FASTBIT needs libstdc++
         WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
         #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
+        export EXTRA_CFLAGS="-Ofast"
         #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
     elif [ "$TARGET" == "cray" ]; then
         export EXTRA_CFLAGS="-h gnu"
@@ -373,7 +375,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
     #export CC=mpicc
     #export FC=mpif90
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
-    export CFLAGS="-fPIC -g -O2 ${EXTRA_CFLAGS}" 
+    export CFLAGS="-fPIC -g ${EXTRA_CFLAGS}" 
     LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
     --enable-dependency-tracking \
     --disable-maintainer-mode \
