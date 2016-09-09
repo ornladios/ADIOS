@@ -78,8 +78,8 @@ static int adios_mpi_amr_initialized = 0;
 
 struct adios_MPI_data_struct
 {
-    MPI_File fh;
-    MPI_File mfh;
+    int fh;
+    int mfh;
     char * subfile_name;
     MPI_Request req;
     MPI_Status status;
@@ -129,7 +129,7 @@ struct adios_MPI_thread_data_reopen
 
 struct adios_MPI_thread_data_write
 {
-    MPI_File * fh;
+    int fh;
     uint64_t * base_offset;
     void * aggr_buff;
     uint64_t * total_data_size;
@@ -296,7 +296,7 @@ printf ("something is wrong with FGR\n");
 #endif
 
 static void
-//adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
+
 adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *parameters)
 {
     char * filename = md->subfile_name;
@@ -727,33 +727,32 @@ static void adios_mpi_amr_buffer_write (char ** buffer, uint64_t * buffer_size
 */
 
 static uint64_t
-adios_mpi_amr_striping_unit_write(MPI_File   fh
-                                 ,MPI_Offset offset
+adios_mpi_amr_striping_unit_write(int   fh
+                                 ,uint64_t offset
                                  ,void       *buf
                                  ,uint64_t   len
                                  )
 {
     uint64_t err = -1;
-    MPI_Status status;
     uint64_t total_written = 0;
     uint64_t to_write = len;
     int write_len = 0;
-    int count;
+    ssize_t count;
     char * buf_ptr = buf;
 
     if (len == 0)
         return 0;
 
     if (offset == -1) // use current position
-        MPI_File_get_position(fh, &offset);
+        offset = lseek(fh, 0, SEEK_CUR);
     else
-        MPI_File_seek (fh, offset, MPI_SEEK_SET);
+        lseek (fh, offset, SEEK_SET);
+
 
     while (total_written < len)
     {
         write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-        MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
-        MPI_Get_count(&status, MPI_BYTE, &count);
+        count = write (fh, buf_ptr, write_len);
         if (count != write_len)
         {
             err = count;
@@ -922,7 +921,6 @@ void * adios_mpi_amr_do_mkdir (char * path)
 void * adios_mpi_amr_do_open_thread (void * param)
 {
     struct adios_MPI_thread_data_open * td = (struct adios_MPI_thread_data_open *) param;
-    int err;
 
     unlink (td->md->subfile_name);
     if (td->parameters)
@@ -931,21 +929,14 @@ void * adios_mpi_amr_do_open_thread (void * param)
 
     }
 
-    err = MPI_File_open (MPI_COMM_SELF, td->md->subfile_name
-                        ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                        ,MPI_INFO_NULL
-                        ,&td->md->fh
-                        );
+    td->md->fh = open (td->md->subfile_name, O_WRONLY| O_CREAT | O_LARGEFILE,
+                       S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 
-    if (err != MPI_SUCCESS)
+    if (td->md->fh == -1)
     {
-        char e [MPI_MAX_ERROR_STRING];
-        int len = 0;
-        memset (e, 0, MPI_MAX_ERROR_STRING);
-        MPI_Error_string (err, e, &len);
         adios_error (err_file_open_error,
                      "MPI_AMR method: MPI open failed for %s: '%s'\n",
-                     td->md->subfile_name, e);
+                     td->md->subfile_name, strerror(errno));
     }
 
     return NULL;
@@ -957,32 +948,26 @@ void * adios_mpi_amr_do_reopen_thread (void * param)
     struct adios_MPI_thread_data_reopen * td = (struct adios_MPI_thread_data_reopen *) param;
     struct adios_MPI_data_struct * md = td->md;
     struct adios_file_struct * fd = td->fd;
-    int err;
 
     // open for read/write because we keep it open for all writing later
-    err = MPI_File_open (MPI_COMM_SELF, td->md->subfile_name, 
-                         MPI_MODE_RDWR, MPI_INFO_NULL, &td->md->fh);
+    md->fh = open (md->subfile_name, O_RDWR | O_LARGEFILE);
 
-    if (err == MPI_SUCCESS) 
+    if (md->fh >= 0)
     {
         // read in the index
-        MPI_Offset file_size;
-        MPI_File_get_size (md->fh, &file_size);
-        md->b.file_size = file_size;
+        struct stat s;
+        if (fstat (md->fh, &s) == 0)
+            md->b.file_size = (uint64_t) s.st_size;
 
-        adios_init_buffer_read_version (&md->b);
-        MPI_File_seek (md->fh, md->b.file_size - md->b.length, MPI_SEEK_SET);
-        MPI_File_read (md->fh, md->b.buff, md->b.length, MPI_BYTE, &md->status);
+        md->b.f = md->fh; // set md->b.f so that we can use posix functions to read index
+        adios_posix_read_version (&md->b);
         adios_parse_version (&md->b, &md->b.version);
 
         adios_init_buffer_read_index_offsets (&md->b);
         // already in the buffer
         adios_parse_index_offsets_v1 (&md->b);
 
-        adios_init_buffer_read_process_group_index (&md->b);
-        MPI_File_seek (md->fh, md->b.pg_index_offset, MPI_SEEK_SET);
-        MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE, &md->status);
-
+        adios_posix_read_process_group_index (&md->b);
         adios_parse_process_group_index_v1 (&md->b, &md->index->pg_root, &md->index->pg_tail);
 
         // find the largest time index so we can append properly
@@ -995,18 +980,17 @@ void * adios_mpi_amr_do_reopen_thread (void * param)
                 max_time_index = p->time_index;
             p = p->next;
         }
-        fd->group->time_index = ++max_time_index;
+        if (fd->mode == adios_mode_append) {
+            ++max_time_index;
+        }
+        fd->group->time_index = max_time_index;
 
-        adios_init_buffer_read_vars_index (&md->b);
-        MPI_File_seek (md->fh, md->b.vars_index_offset, MPI_SEEK_SET);
-        MPI_File_read (md->fh, md->b.buff, md->b.vars_size, MPI_BYTE, &md->status);
+        adios_posix_read_vars_index (&md->b);
         adios_parse_vars_index_v1 (&md->b, &md->index->vars_root, 
-                                    md->index->hashtbl_vars,
+                                   md->index->hashtbl_vars,
                                    &md->index->vars_tail);
 
-        adios_init_buffer_read_attributes_index (&md->b);
-        MPI_File_seek (md->fh, md->b.attrs_index_offset, MPI_SEEK_SET);
-        MPI_File_read (md->fh, md->b.buff, md->b.attrs_size, MPI_BYTE, &md->status);
+        adios_posix_read_attributes_index (&md->b);
         adios_parse_attributes_index_v1 (&md->b, &md->index->attrs_root);
 
         // remember the end of the last PG in file. The new PG written now
@@ -1019,22 +1003,15 @@ void * adios_mpi_amr_do_reopen_thread (void * param)
     else 
     {
         // create as write-only now
-        err = MPI_File_open (MPI_COMM_SELF, td->md->subfile_name
-                ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                ,MPI_INFO_NULL
-                ,&td->md->fh
-                );
+        md->fh = open (md->subfile_name, O_WRONLY| O_CREAT | O_LARGEFILE,
+                           S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 
-        if (err != MPI_SUCCESS)
+        if (md->fh == -1)
         {
-            char e [MPI_MAX_ERROR_STRING];
-            int len = 0;
-            memset (e, 0, MPI_MAX_ERROR_STRING);
-            MPI_Error_string (err, e, &len);
             adios_error (err_file_open_error,
-                    "MPI_AMR method: MPI open failed for %s: '%s'\n",
-                    td->md->subfile_name, e);
-            td->md->fh = NULL;
+                    "MPI_AMR method: open failed for %s: '%s'\n",
+                    md->subfile_name, strerror(errno));
+            md->fh = 0;
         }
         /* FIXME: how does this error propagate back to the user and later adios calls? */
 
@@ -1049,7 +1026,7 @@ void * adios_mpi_amr_do_write_thread (void * param)
     struct adios_MPI_thread_data_write * td = (struct adios_MPI_thread_data_write *) param;
 
     uint64_t count = adios_mpi_amr_striping_unit_write(
-                               *(td->fh)
+                               td->fh
                               ,*(td->base_offset)
                               ,td->aggr_buff
                               ,*(td->total_data_size)
@@ -1223,7 +1200,6 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
             if (md->rank == 0)
             {
                 struct lov_user_md lum;
-                int f;
 
                 // open metadata file
                 unlink (name);
@@ -1231,8 +1207,8 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
                 adios_mpi_amr_set_have_mdf (method->parameters, md);
                 if (md->g_have_mdf)
                 {
-                    f = open(name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
-                    if (f == -1)
+                    md->mfh = open(name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
+                    if (md->mfh == -1)
                     {
 //                        adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", strerror(errno));
                         adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", name);
@@ -1245,12 +1221,12 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
                     lum.lmm_stripe_count = 1;
                     lum.lmm_stripe_offset = -1;
 
-                    ioctl (f, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
+                    ioctl (md->mfh, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
 #ifdef HAVE_LUSTRE
                     struct obd_uuid uuids[1024];
                     int rc;
                     md->g_num_ost = 1024;
-                    rc = llapi_lov_get_uuids(f, uuids, &md->g_num_ost);
+                    rc = llapi_lov_get_uuids(md->mfh, uuids, &md->g_num_ost);
                     if (rc != 0)
                     {
                         log_warn ("MPI_AMR method: Lustre get uuids failed after creating the file: %s\n" ,
@@ -1258,13 +1234,6 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
                     }
 
 #endif 
-                    close (f);
-
-                    MPI_File_open (MPI_COMM_SELF, name
-                                  ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                                  ,MPI_INFO_NULL
-                                  ,&md->mfh
-                                  );
                 }
 
 //                adios_mpi_amr_do_mkdir (name);
@@ -1331,15 +1300,14 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
             // so the index merging procedure will result in a complete metadata again
             if (md->rank == 0)
             {
-                int f;
                 md->g_num_ost = 1024; // default num_ost, maybe updated below
 
                 // open metadata file
                 adios_mpi_amr_set_have_mdf (method->parameters, md);
                 if (md->g_have_mdf)
                 {
-                    f = open(name, O_RDWR, 0644);
-                    if (f == -1)
+                    md->mfh = open(name, O_RDWR, 0644);
+                    if (md->mfh == -1)
                     {
                         adios_error (err_file_open_error,"MPI_AMR method: open() failed at append: %s\n", name);
                         return -1;
@@ -1348,7 +1316,7 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
 #ifdef HAVE_LUSTRE
                     struct obd_uuid uuids[1024];
                     int rc;
-                    rc = llapi_lov_get_uuids(f, uuids, &md->g_num_ost);
+                    rc = llapi_lov_get_uuids(md->mfh, uuids, &md->g_num_ost);
                     if (rc != 0)
                     {
                         log_warn ("MPI_AMR method: Lustre get uuids failed after opening the file: %s\n" ,
@@ -1356,8 +1324,7 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
                     }
 
 #endif 
-                    close (f);
-                    MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_WRONLY ,MPI_INFO_NULL ,&md->mfh);
+
                 }
             }
 
@@ -1736,7 +1703,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                             STOP_TIMER (ADIOS_TIMER_COMM);
                         }
 
-                        write_thread_data.fh = &md->fh;
+                        write_thread_data.fh = md->fh;
                         write_thread_data.base_offset = &index_start1;
                         write_thread_data.aggr_buff = (i == 0) ? fd->buffer : aggr_buff;
                         write_thread_data.total_data_size = &pg_sizes[i];
@@ -1939,7 +1906,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 index_start = -1;
                 total_data_size1 = buffer_offset;
 
-                write_thread_data.fh = &md->fh;
+                write_thread_data.fh = md->fh;
                 write_thread_data.base_offset = &index_start;
                 write_thread_data.aggr_buff = buffer;
                 write_thread_data.total_data_size = &total_data_size1;
@@ -2131,10 +2098,10 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
     }
 
     if (md && md->fh)
-        MPI_File_close (&md->fh);
+        close (md->fh);
 
     if (md && md->mfh)
-        MPI_File_close (&md->mfh);
+        close (md->mfh);
 
     if (   md->group_comm != MPI_COMM_WORLD
         && md->group_comm != MPI_COMM_SELF
@@ -2455,7 +2422,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 //fprintf (stderr,"rank %d: Write index+data with PG offset %llu, sizes %llu + %llu = %llu bytes\n", 
                 //        md->rank, index_start1, total_data_size, buffer_offset, total_data_size1);
 
-                write_thread_data.fh = &md->fh;
+                write_thread_data.fh = md->fh;
                 write_thread_data.base_offset = &index_start1;
                 write_thread_data.aggr_buff = aggr_buff;
                 write_thread_data.total_data_size = &total_data_size1;
@@ -2670,10 +2637,10 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
     }
 
     if (md && md->fh)
-        MPI_File_close (&md->fh);
+        close (md->fh);
 
     if (md && md->mfh)
-        MPI_File_close (&md->mfh);
+        close (md->mfh);
 
     if (   md->group_comm != MPI_COMM_WORLD
         && md->group_comm != MPI_COMM_SELF
