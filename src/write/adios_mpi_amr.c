@@ -594,8 +594,8 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     }
     else
     {
-        // by default, threading is disabled.
-        md->g_threading = 0;
+        // by default, threading is enabled.
+        md->g_threading = 1;
     }
     free (temp_string);
 
@@ -1073,7 +1073,7 @@ void adios_mpi_amr_init (const PairStruct * parameters
     md->g_merging_pgs = 0;
     md->g_num_ost = 0;
     md->is_local_fs = 0;
-    md->g_threading = 0;
+    md->g_threading = 1;
     md->is_color_set = 0;
     md->g_color1 = 0;
     md->g_color2 = 0;
@@ -1708,27 +1708,46 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                         write_thread_data.aggr_buff = (i == 0) ? fd->buffer : aggr_buff;
                         write_thread_data.total_data_size = &pg_sizes[i];
 
-                        //printf ("rank %d: Write PG to subfile %d, offset=%llu, size=%u\n", md->rank,
-                        //       fd->subfile_index, *write_thread_data.base_offset, pg_sizes[i]);
+                        //printf ("rank %d: Write PG to subfile %d, offset=%llu, size=%llu\n", md->rank,
+                        //         fd->subfile_index, *write_thread_data.base_offset, pg_sizes[i]);
 
-                        // This write call is not threaded
-                        START_TIMER (ADIOS_TIMER_IO);
-                        adios_mpi_amr_do_write_thread ((void *) &write_thread_data);
-                        STOP_TIMER (ADIOS_TIMER_IO);
-
-                        index_start1 += pg_sizes[i];
+                        if (md->g_threading)
+                        {
+                            pthread_create (&md->g_swt, NULL
+                                    ,adios_mpi_amr_do_write_thread
+                                    ,(void *) &write_thread_data
+                                    );
+                        }
+                        else
+                        {
+                            START_TIMER (ADIOS_TIMER_IO);
+                            adios_mpi_amr_do_write_thread ((void *) &write_thread_data);
+                            STOP_TIMER (ADIOS_TIMER_IO);
+                        }
 
                         if (i + 1 < new_group_size)
                         {
                             START_TIMER (ADIOS_TIMER_COMM);
                             MPI_Waitall (nMPIrequests, requests, statuses);
                             STOP_TIMER (ADIOS_TIMER_COMM);
+                        }
+
+                        if (md->g_threading)
+                        {
+                            pthread_join (md->g_swt, NULL);
+                        }
+
+                        if (i + 1 < new_group_size)
+                        {
                             // swap receive and aggregate buffers, so we can write out the just received PG while getting another one
                             void *tmp = aggr_buff;
                             aggr_buff = recv_buff;
                             recv_buff = tmp;
                             //memcpy (aggr_buff, recv_buff, pg_sizes[i + 1]);
                         }
+
+                        index_start1 += pg_sizes[i];
+
                     }
                 }
                 else
