@@ -1342,7 +1342,7 @@ int adios_common_declare_group (int64_t * id, const char * name
         ,const char * coordination_comm
         ,const char * coordination_var
         ,const char * time_index_name
-        ,enum ADIOS_FLAG stats
+        ,enum ADIOS_STATISTICS_FLAG stats
         )
 {
     struct adios_group_struct * g = (struct adios_group_struct *)
@@ -1363,7 +1363,7 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->group_comm = (coordination_comm ? strdup (coordination_comm) : 0L);
     g->time_index_name = (time_index_name ? strdup (time_index_name) : 0L);
     g->time_index = 0;
-    g->stats_on = stats;
+    g->stats_flag = stats;
     g->process_id = 0;
     g->methods = NULL;
     // ADIOS Schema
@@ -1849,14 +1849,22 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     adios_transform_init_transform_var(v);
 
     // Q.L. - Check whether stats are disabled or not
-    if (t->stats_on == adios_flag_yes)
+    if (t->stats_flag != adios_stat_no)
     {
-        // '1' at the bit location of stat id in adios_bp_v1.h, enables calculation of statistic.
-        for (i = 0; i < ADIOS_STAT_LENGTH; i++)
-            v->bitmap |= (1 << i);
-
-        // Default values for histogram not yet implemented. Disabling it.
-        v->bitmap ^= (1 << adios_statistic_hist);
+        if (t->stats_flag == adios_stat_minmax)
+        {
+            v->bitmap |= (1 << adios_statistic_min);
+            v->bitmap |= (1 << adios_statistic_max);
+            v->bitmap |= (1 << adios_statistic_finite);
+        }
+        else // if (t->stats_flag == adios_stat_full)
+        {
+            // '1' at the bit location of stat id in adios_bp_v1.h, enables calculation of statistic.
+            for (i = 0; i < ADIOS_STAT_LENGTH; i++)
+                v->bitmap |= (1 << i);
+            // Default values for histogram not yet implemented. Disabling it.
+            v->bitmap ^= (1 << adios_statistic_hist);
+        }
 
         // For complex numbers, the set of statistics occur thrice: stat[0] - magnitude, stat[1] - real, stat[2] - imaginary
         if (v->type == adios_complex || v->type == adios_double_complex)
@@ -5054,6 +5062,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
     if (var->bitmap == 0)
         return 0;
 
+    enum ADIOS_STATISTICS_FLAG stat_flag = fd->group->stats_flag;
     int32_t map[32];
     memset (map, -1, sizeof(map));
 
@@ -5090,7 +5099,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
 # define CHECK_FLOAT() (isnan (data [size]) || !isfinite (data [size]))
 # define CHECK_INT() (0)
 
-#define ADIOS_STATISTICS(a,b,NON_FINITE_CHECK) \
+#define ADIOS_STATISTICS_FULL(a,b,NON_FINITE_CHECK) \
 {\
     a * data = (a *) var->data; \
     int i, j; \
@@ -5156,6 +5165,50 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
         * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = have_finite_value; \
         return 0; \
     }
+
+#define ADIOS_STATISTICS_MINMAX(a,b,NON_FINITE_CHECK) \
+{\
+    a * data = (a *) var->data; \
+    struct adios_stat_struct * stats = var->stats[0]; \
+    map[adios_statistic_min] = 0; \
+    map[adios_statistic_max] = 1; \
+    map[adios_statistic_finite] = 2; \
+    stats[0].data = malloc(adios_get_stat_size(NULL, original_var_type, adios_statistic_min)); \
+    stats[1].data = malloc(adios_get_stat_size(NULL, original_var_type, adios_statistic_max)); \
+    stats[2].data = malloc(adios_get_stat_size(NULL, original_var_type, adios_statistic_finite)); \
+    a *min = (a *) stats[map[adios_statistic_min]].data; \
+    a *max = (a *) stats[map[adios_statistic_max]].data; \
+    int have_finite_value = 0; \
+    size = 0; \
+    while ((size * b) < total_size) \
+    { \
+        if (NON_FINITE_CHECK()) {\
+            size ++; \
+            continue; \
+        }\
+        if (!have_finite_value) { \
+            *min = data [size]; \
+            *max = data [size]; \
+            have_finite_value = 1; \
+            size ++; \
+            continue; \
+        } \
+        if (data [size] < *min) \
+            *min = data [size]; \
+        if (data [size] > *max) \
+            *max = data [size]; \
+        size++; \
+    } \
+    * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = have_finite_value; \
+    return 0; \
+}
+
+#define ADIOS_STATISTICS(a,b,NON_FINITE_CHECK) \
+    if (stat_flag == adios_stat_minmax) \
+        ADIOS_STATISTICS_MINMAX(a,b,NON_FINITE_CHECK) \
+    else \
+        ADIOS_STATISTICS_FULL(a,b,NON_FINITE_CHECK)
+
 
 #define MIN_MAX(a,b)\
     {\
@@ -5265,11 +5318,14 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             }
             */
 
-            *cnt_r = *cnt_i = *cnt_m = 0;
             *min_r = *min_i = *min_m = HUGE_VAL;
             *max_r = *max_i = *max_m = -HUGE_VAL;
-            *sum_r = *sum_i = *sum_m = 0;
-            *sum_square_r = *sum_square_i = *sum_square_m = 0;
+            if (stat_flag == adios_stat_full)
+            {
+                *cnt_r = *cnt_i = *cnt_m = 0;
+                *sum_r = *sum_i = *sum_m = 0;
+                *sum_square_r = *sum_square_i = *sum_square_m = 0;
+            }
 
             while ((size * sizeof(float)) < total_size) {
 
@@ -5298,33 +5354,35 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
                 if (magnitude > *max_m)
                     *max_m = magnitude;
 
-                *sum_r += data [size];
-                *sum_i += data [size + 1];
-                *sum_m += magnitude;
-
-                *sum_square_r += (double) data [size] * data [size];
-                *sum_square_i += (double) data [size + 1] * data [size + 1];
-                *sum_square_m += magnitude * magnitude;
-
-                *cnt_r = *cnt_r + 1;
-                *cnt_i = *cnt_i + 1;
-                *cnt_m = *cnt_m + 1;
-                // Histogram not available yet
-                /*
-                if (map[adios_statistic_hist] != -1)
+                if (stat_flag == adios_stat_full)
                 {
-                    hist = hist_r;
-                    HIST (data[size]);
+                    *sum_r += data [size];
+                    *sum_i += data [size + 1];
+                    *sum_m += magnitude;
 
-                    hist = hist_i;
-                    HIST (data[size + 1]);
+                    *sum_square_r += (double) data [size] * data [size];
+                    *sum_square_i += (double) data [size + 1] * data [size + 1];
+                    *sum_square_m += magnitude * magnitude;
 
-                    hist = hist_m;
-                    HIST (magnitude);
+                    *cnt_r = *cnt_r + 1;
+                    *cnt_i = *cnt_i + 1;
+                    *cnt_m = *cnt_m + 1;
+                    // Histogram not available yet
+                    /*
+                    if (map[adios_statistic_hist] != -1)
+                    {
+                        hist = hist_r;
+                        HIST (data[size]);
+
+                        hist = hist_i;
+                        HIST (data[size + 1]);
+
+                        hist = hist_m;
+                        HIST (magnitude);
+                    }
+                    */
                 }
-                */
-
-                   size += 2;
+                size += 2;
             }
 
             if (map[adios_statistic_finite] != -1)
@@ -5395,11 +5453,14 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
             cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
 
-            *cnt_r = *cnt_i = *cnt_m = 0;
             *min_r = *min_i = *min_m = HUGE_VAL;
             *max_r = *max_i = *max_m = -HUGE_VAL;
-            *sum_r = *sum_i = *sum_m = 0;
-            *sum_square_r = *sum_square_i = *sum_square_m = 0;
+            if (stat_flag == adios_stat_full)
+            {
+                *cnt_r = *cnt_i = *cnt_m = 0;
+                *sum_r = *sum_i = *sum_m = 0;
+                *sum_square_r = *sum_square_i = *sum_square_m = 0;
+            }
 
             while ((size * sizeof(double)) < total_size)
             {
@@ -5428,34 +5489,36 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
                 if (magnitude > *max_m)
                     *max_m = magnitude;
 
-                *sum_r += data [size];
-                *sum_i += data [size + 1];
-                *sum_m += magnitude;
-
-                *sum_square_r += (long double) data [size] * data [size];
-                *sum_square_i += (long double) data [size + 1] * data [size + 1];
-                *sum_square_m += magnitude * magnitude;
-
-                // Histgram has not available for complex yet
-                /*
-                if (map[adios_statistic_hist] != -1)
+                if (stat_flag == adios_stat_full)
                 {
-                    hist = hist_r;
-                    HIST (data[size]);
+                    *sum_r += data [size];
+                    *sum_i += data [size + 1];
+                    *sum_m += magnitude;
 
-                    hist = hist_i;
-                    HIST (data[size + 1]);
+                    *sum_square_r += (long double) data [size] * data [size];
+                    *sum_square_i += (long double) data [size + 1] * data [size + 1];
+                    *sum_square_m += magnitude * magnitude;
 
-                    hist = hist_m;
-                    HIST (magnitude);
+                    // Histgram has not available for complex yet
+                    /*
+                    if (map[adios_statistic_hist] != -1)
+                    {
+                        hist = hist_r;
+                        HIST (data[size]);
+
+                        hist = hist_i;
+                        HIST (data[size + 1]);
+
+                        hist = hist_m;
+                        HIST (magnitude);
+                    }
+                    */
+
+                    *cnt_r = *cnt_r + 1;
+                    *cnt_i = *cnt_i + 1;
+                    *cnt_m = *cnt_m + 1;
                 }
-                */
-
-                *cnt_r = *cnt_r + 1;
-                *cnt_i = *cnt_i + 1;
-                *cnt_m = *cnt_m + 1;
-
-                   size += 2;
+                size += 2;
             }
 
             if (map[adios_statistic_finite] != -1)

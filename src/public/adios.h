@@ -98,7 +98,7 @@ void adios_set_max_buffer_size (uint64_t max_buffer_size_MB);
 int adios_declare_group (int64_t * id, 
                          const char * name,
                          const char * time_index, 
-                         enum ADIOS_FLAG stats
+                         enum ADIOS_STATISTICS_FLAG stats
                         );
 
 // To free a ADIOS group

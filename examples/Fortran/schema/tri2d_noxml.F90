@@ -222,7 +222,7 @@ program tri2d_f_noxml
 
     call adios_init_noxml (comm, adios_err)
     call adios_set_max_buffer_size (10) 
-    call adios_declare_group (m_adios_group, "tri2d", "", 1, adios_err)
+    call adios_declare_group (m_adios_group, "tri2d", "", ADIOS_STAT_DEFAULT, adios_err)
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
 
     ! This example doesn't use varid during writing.

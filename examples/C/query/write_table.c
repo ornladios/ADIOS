@@ -95,7 +95,7 @@ int main (int argc, char ** argv)
 	adios_init_noxml (comm);
 	adios_set_max_buffer_size (1);
 
-	adios_declare_group (&g, "table", "", adios_flag_yes);
+	adios_declare_group (&g, "table", "", adios_stat_default);
 	adios_select_method (g, "POSIX", "", "");
 
 	sprintf (dimstr, "%d,%d", NX, NY);

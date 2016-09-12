@@ -43,7 +43,7 @@ program no_xml_write_byid
     call adios_init_noxml (comm, adios_err)
     call adios_set_max_buffer_size (10) 
 
-    call adios_declare_group (m_adios_group, "restart", "iter", 1, adios_err)
+    call adios_declare_group (m_adios_group, "restart", "iter", ADIOS_STAT_DEFAULT, adios_err)
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
 
     G = 2 * NX * size

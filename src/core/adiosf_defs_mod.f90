@@ -64,6 +64,14 @@ module adios_defs_mod
     integer, parameter :: ADIOS_SELECTION_TYPE_AUTO         = 3
 
     !
+    ! Statistics option in adios_declare_group()
+    !
+    integer, parameter :: ADIOS_STAT_NO      = -1   ! turn off statistics generation
+    integer, parameter :: ADIOS_STAT_DEFAULT = 0    ! min + max only
+    integer, parameter :: ADIOS_STAT_FULL    = 1    ! all statistics turned on
+
+
+    !
     ! ADIOS error codes
     !
     integer, parameter :: err_no_error                        = 0

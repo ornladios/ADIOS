@@ -135,7 +135,7 @@ int main (int argc, char ** argv)
     int64_t       m_adios_group;
     int64_t       m_adios_file;
 
-    adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
+    adios_declare_group (&m_adios_group, "restart", "", adios_stat_default);
     adios_select_method (m_adios_group, adios_write_method, initstring, "");
 
     adios_define_var (m_adios_group, "NX"

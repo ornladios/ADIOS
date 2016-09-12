@@ -502,7 +502,7 @@ void FC_FUNC_(adios_timing_write_xml, ADIOS_TIMING_WRITE_XML) (int64_t * fd_p, c
 // group a list of vars into a composite group
 void FC_FUNC_(adios_declare_group, ADIOS_DECLARE_GROUP) 
     (int64_t * id, const char * name
-    ,const char * time_index, enum ADIOS_FLAG *stats
+    ,const char * time_index, enum ADIOS_STATISTICS_FLAG *stats
     ,int * err, int name_size, int time_index_size
     )
 {
@@ -513,8 +513,12 @@ void FC_FUNC_(adios_declare_group, ADIOS_DECLARE_GROUP)
     buf1 = futils_fstr_to_cstr (name, name_size);
     buf2 = futils_fstr_to_cstr (time_index, time_index_size);
 
+    enum ADIOS_STATISTICS_FLAG stat_flag = *stats;
+    if (stat_flag == adios_stat_no_do_not_use_this)
+        stat_flag = adios_stat_no;
+
     if (buf1 != 0 && buf2 != 0) {
-        int ret = adios_common_declare_group (id, buf1, adios_flag_yes, "", "", buf2, *stats);
+        int ret = adios_common_declare_group (id, buf1, adios_flag_yes, "", "", buf2, stat_flag);
         free (buf1);
         free (buf2);
         if (ret == 1) {

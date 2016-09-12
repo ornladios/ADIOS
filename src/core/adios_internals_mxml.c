@@ -1052,7 +1052,8 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
 
     int64_t      ptr_new_group;
     struct adios_group_struct * new_group;
-    enum ADIOS_FLAG host_language_fortran = adios_flag_yes, enable_stats = adios_flag_yes;
+    enum ADIOS_FLAG host_language_fortran = adios_flag_yes;
+    enum ADIOS_STATISTICS_FLAG enable_stats = adios_stat_default;
     int i;
 
     for (i = 0; i < node->value.element.num_attrs; i++)
@@ -1110,25 +1111,28 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
         }
     }
 
-    if (!stats)
+    if (!stats || !strcasecmp (stats, "default") || !strcasecmp (stats, "minmax"))
     {
-        enable_stats = adios_flag_yes;
+        enable_stats = adios_stat_default;
     }
     else
     {
-        if (!strcasecmp (stats, "On"))
+        if (!strcasecmp (stats, "minmax"))
         {
-            enable_stats = adios_flag_yes;
+            enable_stats = adios_stat_minmax;
         }
-        else if (!strcasecmp (stats, "Off"))
+        else if (!strcasecmp (stats, "on") || !strcasecmp(stats, "full"))
         {
-            enable_stats = adios_flag_no;
+            enable_stats = adios_stat_full;
+        }
+        else if (!strcasecmp (stats, "off") || !strcasecmp(stats, "no"))
+        {
+            enable_stats = adios_stat_no;
         }
         else
         {
-            log_error ("config.xml, invalid stats %s"
-                    ,stats
-                    );
+            log_error ("config.xml: invalid statistics flag %s. "
+                       "Valid options are [off|on|default|minmax].\n", stats);
             return 0;
         }
     }
@@ -2071,6 +2075,8 @@ void PRINT_MXML_NODE (mxml_node_t *root)
     }
 }
 
+static const char * config_file_name; // hold the name of config to allow for error messages
+
 int adios_parse_config (const char * config, MPI_Comm comm)
 {
     FILE * fp = 0;
@@ -2175,11 +2181,12 @@ int adios_parse_config (const char * config, MPI_Comm comm)
         PRINT_MXML_NODE(root);
     }
 
-
+    config_file_name = config;
     if (!root || !root->value.element.name || strcasecmp (root->value.element.name, "adios-config"))
     {
         adios_error (err_invalid_xml_doc, "config.xml: did not find adios-config xml element\n");
         mxmlRelease (doc);
+        config_file_name = NULL;
         return 0;
     }
     else
@@ -2226,6 +2233,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                         );
 
                 mxmlRelease (doc);
+                config_file_name = NULL;
 
                 return 0;
             }
@@ -2293,6 +2301,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     }
 
     mxmlRelease (doc);
+    config_file_name = NULL;
 
     if (!saw_datagroup)
     {

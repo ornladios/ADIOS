@@ -43,6 +43,15 @@ enum ADIOS_FLAG {adios_flag_unknown = 0
                 ,adios_flag_no = 2
                 };
 
+enum ADIOS_STATISTICS_FLAG {
+    adios_stat_no      = -1,   // turn off statistics generation
+    adios_stat_minmax  = 0,    // min + max only
+    adios_stat_full    = 1,    // all statistics turned on
+
+    adios_stat_default = adios_stat_minmax,
+    adios_stat_no_do_not_use_this = 2 // keep it for historic reason (== adios_flag_no)
+};
+
 enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
                              ,ADIOS_BUFFER_ALLOC_NOW
                              ,ADIOS_BUFFER_ALLOC_LATER
