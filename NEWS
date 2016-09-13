@@ -1,3 +1,9 @@
+    - performance bug in MPI_AGGREGATE method since 1.9.0 fixed 
+    - collect min/max statistics only by default
+      adios_declare_group() signature changed with option for statistics 
+      collection: off, minmax, full
+    - fix: bug building with hdf5 1.10
+
 1.10.0 Release July 2016
     - Fortran API for inquiring selections
     - bprecover utility
