@@ -5050,7 +5050,8 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
 int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct adios_var_struct * var)
 {
     uint64_t total_size = 0;
-    uint64_t size = 0;
+    uint64_t n = 0;
+    uint64_t total_n = 0;
     enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var(var);
 
     if (var->transform_type != adios_transform_none) {
@@ -5096,8 +5097,10 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
 
 
 
-# define CHECK_FLOAT() (isnan (data [size]) || !isfinite (data [size]))
+# define CHECK_FLOAT() (isnan (data [n]) || !isfinite (data [n]))
 # define CHECK_INT() (0)
+# define CHECK_FLOAT_NAN() (isnan (data [n]))
+# define CHECK_INT_NAN() (0)
 
 #define ADIOS_STATISTICS_FULL(a,b,NON_FINITE_CHECK) \
 {\
@@ -5131,42 +5134,42 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             hist->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, "")); \
         } \
         int have_finite_value = 0; \
-        size = 0; \
-        while ((size * b) < total_size) \
+        n = 0; \
+        while ((n * b) < total_size) \
         { \
             if (NON_FINITE_CHECK()) {\
-                size ++; \
+                n ++; \
                 continue; \
             }\
             if (!have_finite_value) { \
-                *min = data [size]; \
-                *max = data [size]; \
-                *sum = data [size]; \
-                *sum_square = (data [size] * data [size]) ; \
+                *min = data [n]; \
+                *max = data [n]; \
+                *sum = data [n]; \
+                *sum_square = (data [n] * data [n]) ; \
                 *cnt = *cnt + 1; \
                 if (map[adios_statistic_hist] != -1) \
-                HIST(data [size]); \
+                HIST(data [n]); \
                 have_finite_value = 1; \
-                size ++; \
+                n ++; \
                 continue; \
             } \
-            if (data [size] < *min) \
-            *min = data [size]; \
-            if (data [size] > *max) \
-            *max = data [size]; \
-            *sum += data [size]; \
-            *sum_square += (data [size] * data [size]) ; \
+            if (data [n] < *min) \
+            *min = data [n]; \
+            if (data [n] > *max) \
+            *max = data [n]; \
+            *sum += data [n]; \
+            *sum_square += (data [n] * data [n]) ; \
             *cnt = *cnt + 1; \
             if (map[adios_statistic_hist] != -1) \
-            HIST(data [size]); \
-            size++; \
+            HIST(data [n]); \
+            n++; \
         } \
         if (map[adios_statistic_finite] != -1) \
         * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = have_finite_value; \
         return 0; \
     }
 
-#define ADIOS_STATISTICS_MINMAX(a,b,NON_FINITE_CHECK) \
+#define ADIOS_STATISTICS_MINMAX(a,b,NAN_CHECK) \
 {\
     a * data = (a *) var->data; \
     struct adios_stat_struct * stats = var->stats[0]; \
@@ -5179,33 +5182,35 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
     a *min = (a *) stats[map[adios_statistic_min]].data; \
     a *max = (a *) stats[map[adios_statistic_max]].data; \
     int have_finite_value = 0; \
-    size = 0; \
-    while ((size * b) < total_size) \
+    total_n = total_size / b; \
+    n = 0; \
+    while (n < total_n && NAN_CHECK()) \
     { \
-        if (NON_FINITE_CHECK()) {\
-            size ++; \
-            continue; \
-        }\
-        if (!have_finite_value) { \
-            *min = data [size]; \
-            *max = data [size]; \
-            have_finite_value = 1; \
-            size ++; \
-            continue; \
-        } \
-        if (data [size] < *min) \
-            *min = data [size]; \
-        if (data [size] > *max) \
-            *max = data [size]; \
-        size++; \
+        n++; \
+    } \
+    if (n < total_n) { \
+        *min = *data; \
+        *max = *data; \
+        have_finite_value = 1; \
+        data = data + n; \
+        n++; \
+    }\
+    while (n < total_n) \
+    { \
+        if (*data < *min) \
+            *min = *data; \
+        if (*data > *max) \
+            *max = *data; \
+        n++; \
+        data++; \
     } \
     * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = have_finite_value; \
     return 0; \
 }
 
-#define ADIOS_STATISTICS(a,b,NON_FINITE_CHECK) \
+#define ADIOS_STATISTICS(a,b,NON_FINITE_CHECK,NAN_CHECK) \
     if (stat_flag == adios_stat_minmax) \
-        ADIOS_STATISTICS_MINMAX(a,b,NON_FINITE_CHECK) \
+        ADIOS_STATISTICS_MINMAX(a,b,NAN_CHECK) \
     else \
         ADIOS_STATISTICS_FULL(a,b,NON_FINITE_CHECK)
 
@@ -5226,37 +5231,37 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
     switch (original_var_type)
     {
         case adios_byte:
-            ADIOS_STATISTICS(int8_t,1,CHECK_INT)
+            ADIOS_STATISTICS(int8_t,1,CHECK_INT,CHECK_INT_NAN)
 
         case adios_unsigned_byte:
-            ADIOS_STATISTICS(uint8_t,1,CHECK_INT)
+            ADIOS_STATISTICS(uint8_t,1,CHECK_INT,CHECK_INT_NAN)
 
         case adios_short:
-            ADIOS_STATISTICS(int16_t,2,CHECK_INT)
+            ADIOS_STATISTICS(int16_t,2,CHECK_INT,CHECK_INT_NAN)
 
         case adios_unsigned_short:
-            ADIOS_STATISTICS(uint16_t,2,CHECK_INT)
+            ADIOS_STATISTICS(uint16_t,2,CHECK_INT,CHECK_INT_NAN)
 
         case adios_integer:
-            ADIOS_STATISTICS(int32_t,4,CHECK_INT)
+            ADIOS_STATISTICS(int32_t,4,CHECK_INT,CHECK_INT_NAN)
 
         case adios_unsigned_integer:
-            ADIOS_STATISTICS(uint32_t,4,CHECK_INT)
+            ADIOS_STATISTICS(uint32_t,4,CHECK_INT,CHECK_INT_NAN)
 
         case adios_long:
-            ADIOS_STATISTICS(int64_t,8,CHECK_INT)
+            ADIOS_STATISTICS(int64_t,8,CHECK_INT,CHECK_INT_NAN)
 
         case adios_unsigned_long:
-            ADIOS_STATISTICS(uint64_t,8,CHECK_INT)
+            ADIOS_STATISTICS(uint64_t,8,CHECK_INT,CHECK_INT_NAN)
 
         case adios_real:
-            ADIOS_STATISTICS(float,4,CHECK_FLOAT)
+            ADIOS_STATISTICS(float,4,CHECK_FLOAT,CHECK_FLOAT_NAN)
 
         case adios_double:
-            ADIOS_STATISTICS(double,8,CHECK_FLOAT)
+            ADIOS_STATISTICS(double,8,CHECK_FLOAT,CHECK_FLOAT_NAN)
 
         case adios_long_double:
-            ADIOS_STATISTICS(long double,16,CHECK_FLOAT)
+            ADIOS_STATISTICS(long double,16,CHECK_FLOAT,CHECK_FLOAT_NAN)
 
         case adios_complex:
         {
@@ -5327,41 +5332,41 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
                 *sum_square_r = *sum_square_i = *sum_square_m = 0;
             }
 
-            while ((size * sizeof(float)) < total_size) {
+            while ((n * sizeof(float)) < total_size) {
 
-                magnitude = sqrt((double) data [size] * data [size] + (double) data[size + 1] * data[size + 1]);
+                magnitude = sqrt((double) data [n] * data [n] + (double) data[n + 1] * data[n + 1]);
 
                 // Both real and imaginary parts have to be finite, else skip calculating the characteristic
-                if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
-                    size += 2;
+                if ( isnan(data [n]) || !isfinite(data [n]) || isnan(data[n + 1]) || !isfinite(data[n + 1]) ) {
+                    n += 2;
                     continue;
                 }
 
                 finite = 1;
 
                 // Updating the characteristic values
-                if (data [size] < *min_r)
-                    *min_r = data [size];
-                if (data [size + 1] < *min_i)
-                    *min_i = data [size + 1];
+                if (data [n] < *min_r)
+                    *min_r = data [n];
+                if (data [n + 1] < *min_i)
+                    *min_i = data [n + 1];
                 if (magnitude < *min_m)
                     *min_m = magnitude;
 
-                if (data [size] > *max_r)
-                    *max_r = data [size];
-                if (data [size + 1] > *max_i)
-                    *max_i = data [size + 1];
+                if (data [n] > *max_r)
+                    *max_r = data [n];
+                if (data [n + 1] > *max_i)
+                    *max_i = data [n + 1];
                 if (magnitude > *max_m)
                     *max_m = magnitude;
 
                 if (stat_flag == adios_stat_full)
                 {
-                    *sum_r += data [size];
-                    *sum_i += data [size + 1];
+                    *sum_r += data [n];
+                    *sum_i += data [n + 1];
                     *sum_m += magnitude;
 
-                    *sum_square_r += (double) data [size] * data [size];
-                    *sum_square_i += (double) data [size + 1] * data [size + 1];
+                    *sum_square_r += (double) data [n] * data [n];
+                    *sum_square_i += (double) data [n + 1] * data [n + 1];
                     *sum_square_m += magnitude * magnitude;
 
                     *cnt_r = *cnt_r + 1;
@@ -5382,7 +5387,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
                     }
                     */
                 }
-                size += 2;
+                n += 2;
             }
 
             if (map[adios_statistic_finite] != -1)
@@ -5462,41 +5467,41 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
                 *sum_square_r = *sum_square_i = *sum_square_m = 0;
             }
 
-            while ((size * sizeof(double)) < total_size)
+            while ((n * sizeof(double)) < total_size)
             {
-                magnitude = sqrt((long double) data [size] * data [size] + 
-                                 (long double) data[size + 1] * data[size + 1]);
+                magnitude = sqrt((long double) data [n] * data [n] + 
+                                 (long double) data[n + 1] * data[n + 1]);
 
                 // Both real and imaginary parts have to be finite, else skip calculating the characteristic
-                if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
-                    size += 2;
+                if ( isnan(data [n]) || !isfinite(data [n]) || isnan(data[n + 1]) || !isfinite(data[n + 1]) ) {
+                    n += 2;
                     continue;
                 }
 
                 finite = 1;
 
-                if (data [size] < *min_r)
-                    *min_r = data [size];
-                if (data [size + 1] < *min_i)
-                    *min_i = data [size + 1];
+                if (data [n] < *min_r)
+                    *min_r = data [n];
+                if (data [n + 1] < *min_i)
+                    *min_i = data [n + 1];
                 if (magnitude < *min_m)
                     *min_m = magnitude;
 
-                if (data [size] > *max_r)
-                    *max_r = data [size];
-                if (data [size + 1] > *max_i)
-                    *max_i = data [size + 1];
+                if (data [n] > *max_r)
+                    *max_r = data [n];
+                if (data [n + 1] > *max_i)
+                    *max_i = data [n + 1];
                 if (magnitude > *max_m)
                     *max_m = magnitude;
 
                 if (stat_flag == adios_stat_full)
                 {
-                    *sum_r += data [size];
-                    *sum_i += data [size + 1];
+                    *sum_r += data [n];
+                    *sum_i += data [n + 1];
                     *sum_m += magnitude;
 
-                    *sum_square_r += (long double) data [size] * data [size];
-                    *sum_square_i += (long double) data [size + 1] * data [size + 1];
+                    *sum_square_r += (long double) data [n] * data [n];
+                    *sum_square_i += (long double) data [n + 1] * data [n + 1];
                     *sum_square_m += magnitude * magnitude;
 
                     // Histgram has not available for complex yet
@@ -5518,7 +5523,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
                     *cnt_i = *cnt_i + 1;
                     *cnt_m = *cnt_m + 1;
                 }
-                size += 2;
+                n += 2;
             }
 
             if (map[adios_statistic_finite] != -1)
