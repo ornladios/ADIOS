@@ -1,10 +1,14 @@
 AM_CPPFLAGS=-I$(top_builddir)/src/public -I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
 
+AUTOMAKE_OPTIONS = no-dependencies subdir-objects
+METASOURCES=AUTO
+SUBDIRS=
+
 if BUILD_MXML
-SUBDIRS = mxml 
-MXML_BUILDDIR=mxml/mxml-2.9
-MXML_LIB=libmxml_a
-MXML_OBJECTS = ${MXML_BUILDDIR}/${MXML_LIB}-mxml-attr.${OBJEXT}     \
+    SUBDIRS += mxml 
+    MXML_BUILDDIR=mxml/mxml-2.9
+    MXML_LIB=libmxml_a
+    MXML_OBJECTS = ${MXML_BUILDDIR}/${MXML_LIB}-mxml-attr.${OBJEXT}     \
                      ${MXML_BUILDDIR}/${MXML_LIB}-mxml-get.${OBJEXT}      \
                      ${MXML_BUILDDIR}/${MXML_LIB}-mxml-private.${OBJEXT}  \
                      ${MXML_BUILDDIR}/${MXML_LIB}-mxml-string.${OBJEXT}   \
@@ -16,8 +20,25 @@ MXML_OBJECTS = ${MXML_BUILDDIR}/${MXML_LIB}-mxml-attr.${OBJEXT}     \
                      ${MXML_BUILDDIR}/${MXML_LIB}-mxml-set.${OBJEXT} 
 endif BUILD_MXML
 
-AUTOMAKE_OPTIONS = no-dependencies subdir-objects
-METASOURCES=AUTO
+if BUILD_ZFP
+    SUBDIRS += zfp 
+    ZFP_BUILDDIR=zfp/zfp-0.5.0/src
+    ZFP_LIB=libzfp_a
+    ZFP_OBJECTS = ${ZFP_BUILDDIR}/${ZFP_LIB}-bitstream.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode1f.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode1d.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode1f.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode1d.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode2f.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode2d.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode2f.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode2d.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode3f.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode3d.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode3f.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode3d.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-zfp.${OBJEXT} 
+endif BUILD_ZFP
 
 bin_PROGRAMS=
 #if HAVE_NSSI
@@ -344,6 +365,9 @@ libadios_nompi_a_LIBADD = $(libcoreonce_a_OBJECTS)
 if BUILD_MXML
 libadios_nompi_a_LIBADD += ${MXML_OBJECTS} 
 endif
+if BUILD_ZFP
+libadios_nompi_a_LIBADD += ${ZFP_OBJECTS} 
+endif BUILD_ZFP
 # force building the noinst_LIBRARIES first, before libadios_nompi.a
 EXTRA_libadios_nompi_a_DEPENDENCIES = libcoreonce.a 
 if !RESEARCH_TRANSPORTS
@@ -374,6 +398,10 @@ if BUILD_MXML
 libadiosf_nompi_a_LIBADD += ${MXML_OBJECTS}
 libadiosf_nompi_v1_a_LIBADD += ${MXML_OBJECTS} 
 endif
+if BUILD_ZFP
+libadiosf_nompi_a_LIBADD += ${ZFP_OBJECTS} 
+libadiosf_nompi_v1_a_LIBADD += ${ZFP_OBJECTS} 
+endif BUILD_ZFP
 EXTRA_libadiosf_nompi_a_DEPENDENCIES = libcoreonce.a 
 EXTRA_libadiosf_nompi_v1_a_DEPENDENCIES = libcoreonce.a 
 if !RESEARCH_TRANSPORTS
@@ -405,6 +433,9 @@ libadios_a_LIBADD = $(libcoreonce_a_OBJECTS)
 if BUILD_MXML
 libadios_a_LIBADD += ${MXML_OBJECTS} 
 endif
+if BUILD_ZFP
+libadios_a_LIBADD += ${ZFP_OBJECTS} 
+endif BUILD_ZFP
 # force building the noinst_LIBRARIES first, before libadios.a
 EXTRA_libadios_a_DEPENDENCIES = libcoreonce.a 
 
@@ -437,6 +468,10 @@ if BUILD_MXML
 libadiosf_a_LIBADD += ${MXML_OBJECTS}
 libadiosf_v1_a_LIBADD += ${MXML_OBJECTS}
 endif
+if BUILD_ZFP
+libadiosf_a_LIBADD += ${ZFP_OBJECTS} 
+libadiosf_v1_a_LIBADD += ${ZFP_OBJECTS} 
+endif BUILD_ZFP
 EXTRA_libadiosf_a_DEPENDENCIES = libcoreonce.a 
 EXTRA_libadiosf_v1_a_DEPENDENCIES = libcoreonce.a 
 
@@ -521,6 +556,9 @@ libadiosread_nompi_a_CPPFLAGS += $(MACRODEFFLAG)DMALLOC
 endif
 libadiosread_nompi_a_CPPFLAGS  += $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 libadiosread_nompi_a_LIBADD = $(libcoreonce_a_OBJECTS)
+if BUILD_ZFP
+libadiosread_nompi_a_LIBADD += ${ZFP_OBJECTS} 
+endif BUILD_ZFP
 EXTRA_libadiosread_nompi_a_DEPENDENCIES = libcoreonce.a 
 
 if BUILD_FORTRAN
@@ -571,6 +609,10 @@ libadiosreadf_nompi_a_SOURCES += core/adiosf_defs_mod.f90 \
                         	 query/adios_query_mod.f90
 libadiosreadf_nompi_a_LIBADD = $(libcoreonce_a_OBJECTS)
 libadiosreadf_nompi_v1_a_LIBADD = $(libcoreonce_a_OBJECTS)
+if BUILD_ZFP
+libadiosreadf_nompi_a_LIBADD += ${ZFP_OBJECTS} 
+libadiosreadf_nompi_v1_a_LIBADD += ${ZFP_OBJECTS} 
+endif BUILD_ZFP
 EXTRA_libadiosreadf_nompi_a_DEPENDENCIES = libcoreonce.a 
 EXTRA_libadiosreadf_nompi_v1_a_DEPENDENCIES = libcoreonce.a 
 
@@ -636,6 +678,9 @@ endif
 
 libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 libadiosread_a_LIBADD = $(libcoreonce_a_OBJECTS)
+if BUILD_ZFP
+libadiosread_a_LIBADD += ${ZFP_OBJECTS} 
+endif BUILD_ZFP
 EXTRA_libadiosread_a_DEPENDENCIES = libcoreonce.a 
 
 if BUILD_FORTRAN
@@ -688,6 +733,10 @@ libadiosreadf_a_SOURCES += core/adiosf_defs_mod.f90 \
 
 libadiosreadf_a_LIBADD = $(libcoreonce_a_OBJECTS)
 libadiosreadf_v1_a_LIBADD = $(libcoreonce_a_OBJECTS)
+if BUILD_ZFP
+libadiosreadf_a_LIBADD += ${ZFP_OBJECTS} 
+libadiosreadf_v1_a_LIBADD += ${ZFP_OBJECTS} 
+endif BUILD_ZFP
 EXTRA_libadiosreadf_a_DEPENDENCIES = libcoreonce.a 
 EXTRA_libadiosreadf_v1_a_DEPENDENCIES = libcoreonce.a 
 
@@ -724,6 +773,9 @@ if BUILD_MXML
 libadios_internal_nompi_a_LIBADD += ${MXML_OBJECTS}
 endif
 endif
+if BUILD_ZFP
+libadios_internal_nompi_a_LIBADD += ${ZFP_OBJECTS} 
+endif BUILD_ZFP
 EXTRA_libadios_internal_nompi_a_DEPENDENCIES = libcoreonce.a 
 
 

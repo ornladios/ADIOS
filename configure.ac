@@ -176,7 +176,24 @@ AC_APLOD
 AC_ALACRITY
 AC_FASTBIT
 AC_BGQ
+
+
 AC_ZFP
+dnl ZFP is included in the source, so we build it unless a) explicitely disabled by --without-zfp
+dnl or b) an external zfp lib is provided by --with-zfp=path
+dnl config/ac_zfp.m4 sets BUILD_ZFP if none of the above options were given
+if test -z "${BUILD_ZFP_TRUE}"; then
+    AC_MSG_NOTICE([Build the included ZFP source. Use --without-zfp to turn this off, --with-zfp=path to use an external library.])
+    AM_CONDITIONAL(HAVE_ZFP,true)
+    ZFP_CPPFLAGS="${CPPFLAGS} -I\$(top_srcdir)/src/zfp/zfp-0.5.0/inc"
+    ZFP_BUILD_LDFLAGS=
+    ZFP_LDFLAGS=
+    ZFP_LIBS=
+    AC_SUBST(ZFP_CPPFLAGS)
+    AC_SUBST(ZFP_LIBS)
+    AC_SUBST(ZFP_LDFLAGS)
+fi
+
 
 AC_LANG(C)
 
@@ -847,6 +864,9 @@ AC_SUBST(VERSION_MICRO)
 
 if test -z "${BUILD_MXML_TRUE}" -a -z "${BUILD_WRITE_TRUE}"; then
     AC_CONFIG_FILES([src/mxml/Makefile])
+fi
+if test -z "${BUILD_ZFP_TRUE}"; then
+    AC_CONFIG_FILES([src/zfp/Makefile])
 fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile

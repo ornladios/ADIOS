@@ -20,16 +20,20 @@ AC_DEFUN([AC_ZFP],[
 
 AC_MSG_NOTICE([=== checking for ZFP ===])
 AM_CONDITIONAL(HAVE_ZFP,true)
+AM_CONDITIONAL(BUILD_ZFP,false)
 
 AC_ARG_WITH(zfp,
         [  --with-zfp=DIR      Location of ZFP library],
         [ZFP_LDFLAGS="-L$withval/lib";
          ZFP_LIBS="-lzfp";
          ZFP_CPPFLAGS="-I$withval/inc";],
-        [with_zfp=no])
+        [with_zfp=builtin])
 
 if test "x$with_zfp" == "xno"; then
    AM_CONDITIONAL(HAVE_ZFP,false)
+
+elif test "x$with_zfp" == "xbuiltin"; then
+   AM_CONDITIONAL(BUILD_ZFP,true)
 
 else
     save_CPPFLAGS="$CPPFLAGS"
