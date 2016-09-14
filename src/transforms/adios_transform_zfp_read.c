@@ -5,8 +5,9 @@
  * 	Contact: eric.d.suchyta@gmail.com
  */
 
-#ifdef ZFP
+#include "core/transforms/adios_transforms_hooks_read.h"
 
+#ifdef ZFP
 
 /* general C stuff */
 #include <stdint.h>	// uint64_t
@@ -18,7 +19,6 @@
 
 /* Were in the template included from ADIOS. Not necessarily sure if they're all strictly needed. */
 #include "util.h"
-#include "core/transforms/adios_transforms_hooks_read.h"
 #include "core/transforms/adios_transforms_reqgroup.h"
 
 
