@@ -31,6 +31,64 @@
 #include "zfp.h"
 
 
+/* Basically giving an address and a size */
+static void zfp_write_metadata_var(char* pos, void* towrite, size_t size, size_t* offset)
+{
+    memcpy(pos + *offset, towrite, size);
+    *offset += size;
+    return;
+}
+
+
+/* This is called in the main transform-level function.
+ * In a nutshell: compress array, using the settings in the other args to configure the compression. Connect to the ADIOS output buffer.
+ */
+static int zfp_compression(struct zfp_buffer* zbuff, const void* array, void** abuff, uint64_t* asize, int sharedbuffer, struct adios_file_struct* fd)
+{
+    zfp_initialize((void*) array, zbuff);
+    if (zbuff->error)
+    {
+        return 0;
+    }
+
+
+    if (sharedbuffer)
+    {
+        if (!shared_buffer_reserve(fd, zbuff->buffsize))
+        {
+            adios_error(err_no_memory, "Cannot allocate shared buffer of %zu bytes for ZFP transform for variable %s\n",
+                        zbuff->buffsize, zbuff->name);
+            zbuff->error = true;
+
+            return 0;
+        }
+        *abuff =  fd->offset + fd->buffer;
+    }
+    else
+    {
+        *abuff = malloc(zbuff->buffsize);
+        if (! *abuff)
+        {
+            adios_error(err_no_memory, "Cannot allocate buffer of %zu bytes for ZFP transform for variable %s\n",
+                        zbuff->buffsize, zbuff->name);
+            zbuff->error = true;
+            return 0;
+        }
+    }
+
+
+    zfp_streaming(zbuff, *abuff, 0, asize);
+    if (zbuff->error)
+    {
+        return 0;
+    }
+
+
+    return 1;
+}
+
+
+
 /* see zfp_metadata in adios_transform_zfp_common.h */
 uint16_t adios_transform_zfp_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
@@ -98,20 +156,24 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	/* make sure the user only gives the sensible number of key:values -- 1. */
 	if (var->transform_spec->param_count == 0)
 	{
-		sprintf(zbuff->msg, "No compression mode specified. Choose from: accuracy, precision, rate");
-		zfp_error(zbuff);
-		return 0;
+	    adios_error(err_invalid_argument, "No ZFP compression mode specified for variable %s. "
+	                "Choose from: accuracy, precision, rate\n", zbuff->name);
+	    zbuff->error = true;
+	    return 0;
 	}
 	else if (var->transform_spec->param_count > 1)
 	{
-		sprintf(zbuff->msg, "Too many parameters specified. You can only give one key:value, the compression mode and it's tolerance.");
-		zfp_error(zbuff);
+	    adios_error(err_invalid_argument, "Too many ZFP parameters specified for variable %s. "
+	                "You can only give one key:value, the compression mode and it's tolerance.\n",
+	                zbuff->name);
+	    zbuff->error = true;
 		return 0;
 	}
 	else if (var->transform_spec->param_count < 0)
 	{
-		sprintf(zbuff->msg, "Negative number of parameters interpretted. This shouldn't happen.");
-		zfp_error(zbuff);
+	    adios_error(err_invalid_argument, "Negative number of ZFP parameters for variable %s indicates corruption.\n",
+	                zbuff->name);
+        zbuff->error = true;
 		return 0;
 	}
 
@@ -132,15 +194,19 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 	}
 	else 
 	{
-		sprintf(zbuff->msg, "An unknown compression mode was specified for zfp: %s. Availble choices are: accuracy, precision, rate.", param->key);
-		zfp_error(zbuff);
+        adios_error(err_invalid_argument, "An unknown ZFP compression mode '%s' was specified for variable %s. "
+                    "Available choices are: accuracy, precision, rate.\n",
+                    param->key, zbuff->name);
+        zbuff->error = true;
 		return 0;
 	}
 
 	if (param->value == NULL)
 	{
-		sprintf(zbuff->msg, "Compression type %s must be given a value to set the output storage parameter", param->key);
-		zfp_error(zbuff);
+        adios_error(err_invalid_argument, "ZFP compression type %s must be given a value "
+                    "to set the output storage parameter for variable %s.\n",
+                    param->key, zbuff->name);
+        zbuff->error = true;
 		return 0;
 	}
 	strcpy(zbuff->ctol, param->value);

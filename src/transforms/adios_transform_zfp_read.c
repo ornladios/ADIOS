@@ -31,6 +31,82 @@
 #include "zfp.h"
 
 
+
+/* Basically giving an address and a size */
+static void* zfp_read_metadata_var(const void* pos, size_t size, size_t* offset)
+{
+    *offset += size;
+    return ((void*) pos + *offset - size);
+}
+
+
+/* Read string by iterating over byes */
+static void read_metastring(char s[ZFP_STRSIZE], const void* pos, size_t* offset)
+{
+    int i;
+    for (i=0; i<ZFP_STRSIZE; i++)
+    {
+        s[i] = *((char*)zfp_read_metadata_var(pos, 1, offset));
+    }
+    return;
+}
+
+
+/* Read each memory location and cast to the correct type */
+static struct zfp_metadata* zfp_read_metadata(struct zfp_metadata* metadata, adios_transform_pg_read_request *completed_pg_reqgroup)
+{
+    const void* pos = completed_pg_reqgroup->transform_metadata;
+    size_t offset = 0;
+
+    metadata->usize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), &offset));
+    metadata->csize = *((uint64_t*)zfp_read_metadata_var(pos, sizeof(uint64_t), &offset));
+    metadata->cmode = *((uint*)zfp_read_metadata_var(pos, sizeof(uint), &offset));
+    read_metastring(metadata->ctol, pos, &offset);
+    read_metastring(metadata->name, pos, &offset);
+
+    return metadata;
+}
+
+
+
+/* This is called in the main transform-level function.
+ * In a nutshell: decompress array, using (undoing) the settings in the other args. Connect to the ADIOS buffer.
+ */
+static int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carray)
+{
+    zfp_initialize(uarray, zbuff);
+    if (zbuff->error)
+    {
+        return 0;
+    }
+
+    /* The buffersize and compressed size aren't the same, this check doesn't make a lot of sense.
+    if (zbuff->buffsize != csize)
+    {
+        log_warn("ZFP thinks compressed size should be %u" \
+                "bytes. ADIOS thinks compressed size should be %" PRIu64 \
+                "bytes. Likely corruption.\n", zbuff->buffsize, csize);
+    }
+    */
+
+
+    zfp_streaming(zbuff, carray, 1, NULL);
+    if (zbuff->error)
+    {
+        return 0;
+    }
+    /* Possibly add a check for output size later, if it matches what ADIOS though it should be.
+    if (zusize != usize)
+    {
+        log_warn("ZFP thinks uncompressed size is %u" \
+                "bytes. ADIOS thinks uncompressed size is %" PRIu64 \
+                "bytes. Likely corruption.\n", zusize, usize);
+    }
+    */
+
+    return 1;
+}
+
 /* ZFP is installed */
 int adios_transform_zfp_is_implemented (void) {return 1;}
 
@@ -87,18 +163,16 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 	/* Do the metadata and ADIOS agree? */
 	if (metadata->csize != csize)
 	{
-		sprintf(zbuff->msg, "Metadata thinks compressed size is %" PRIu64 \
+		log_warn("zfp processing variable %s: Metadata thinks compressed size is %" PRIu64 \
 				"bytes. ADIOS thinks compressed size is %" PRIu64 \
-				"bytes. Likely corruption.\n", metadata->csize, csize);
-		zfp_warn(zbuff);
+				"bytes. Likely corruption.\n", zbuff->name, metadata->csize, csize);
 	}
 
 	if (metadata->usize != usize)
 	{
-		sprintf(zbuff->msg, "Metadata thinks uncompressed size is %" PRIu64 \
+		log_warn("zfp processing variable %s: Metadata thinks uncompressed size is %" PRIu64 \
 				"bytes. ADIOS thinks uncompressed size is %" PRIu64 \
-				"bytes. Likely corruption.\n", metadata->usize, usize);
-		zfp_warn(zbuff);
+				"bytes. Likely corruption.\n", zbuff->name, metadata->usize, usize);
 	}
 
 
@@ -129,8 +203,8 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 	udata = malloc(usize);
 	if(!udata)
 	{
-		sprintf(zbuff->msg, "Ran out of memory allocating uncompressed buffer.");
-		zfp_error(zbuff);
+		adios_error(err_no_memory, "Ran out of memory allocating uncompressed "
+		        "buffer for ZFP transformation.\n");
 		return NULL;
 	}
 
