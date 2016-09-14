@@ -76,7 +76,7 @@ int main (int argc, char ** argv)
         int64_t       m_adios_group;
         int64_t       m_adios_file;
 
-        adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
+        adios_declare_group (&m_adios_group, "restart", "", adios_stat_default);
         adios_select_method (m_adios_group, "MPI", "", "");
         //adios_select_method (m_adios_group, "MPI_AGGREGATE", "num_ost=2;num_aggregators=2;aggregation_type=2;verbose=3", "");
 

@@ -81,7 +81,9 @@ has an indispensable attribute called \verb+name+ whose value is usually defined
 as a descriptive string indicating the function of the group. In this case, the 
 string is called ``restart,'' because the files into which this group is written 
 are used as checkpoints. The second attribute ``host-language'' indicates the language 
-in which this group's I/O operations are written. 
+in which this group's I/O operations are written. If missing, the group will inherit the language declared in 
+the adios-config element. The third attribute ``stats'' turns on or off per-process statistics collection. 
+Min and max values for each array on each processor is a quick way for debugging the dataset but also the MINMAX query method needs this information to work (see Chapter~\ref{chapter:query_api}). Full statistics will include average and standard deviation. These latter statistics are only pre-calculated at write time, and completed at write time. The statistics calculation causes an overhead on large arrays so we suggest to use minmax collection only by default unless there is a need for more statistics. 
 %The value of attribute ``coordination-communicator'' 
 %is used to coordinate the operations on a shared file accessed by multiple processes 
 %in the same communicator domain. ``Coordination-var'' provides the ability to use 
@@ -98,13 +100,13 @@ in which this group's I/O operations are written.
 
 Required:
 \begin{itemize}
-
-\item host-language---language in which the source code for group is written
+\item name---containing a descriptive string to name the group
 \end{itemize}
 
 Optional:
 \begin{itemize}
-\item name---containing a descriptive string to name the group
+\item stats---what statistics should be calculated (allowed values: off, minmax, on, default (which is minmax))
+\item host-language---language in which the source code for group is written
 %\item coordination-communicator---MPI-IO writing to a shared file
 %\item coordination-var---coordination variables for non-MPI methods, such as Datatap method
 %\item time-index---time attribute variable
@@ -409,7 +411,7 @@ are provided.
 
 \begin{lstlisting}[language=XML, caption={Example XML file.}, label=list-example-xml]
 <adios-config host-language="C">
-    <adios-group name="temperature" coordination-communicator="comm">
+    <adios-group name="temperature" stats=''default''>
         <var name="NX" type="integer"/>
         <var name="t" type="double" dimensions="NX"/>
         <attribute name="recorded date" path="/" value="Sep 19, 2008" 

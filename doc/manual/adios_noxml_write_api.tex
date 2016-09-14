@@ -63,6 +63,7 @@ call adios_init_noxml (comm, ierr)
 \end{lstlisting}
 
 \subsection{adios\_set\_max\_buffer\_size}
+\label{section-noxml-maxbuffersize}
 This routine sets a maximum on the buffer size used by ADIOS to buffer data in one adios\_open()...adios\_close() operation.
 If multiple operations are going on at the same time, each buffer will be limited independently.
 
@@ -115,7 +116,7 @@ attribute is detailed in Chapter \ref{chapter-xml}.
 int adios_declare_group (int64_t * id, 
                          const char * name,
                          const char * time_index,
-                         enum ADIOS_FLAG stats)
+                         enum ADIOS_STATISTICS_FLAG stats)
 \end{lstlisting}
 
 Input: 
@@ -127,11 +128,11 @@ Input:
 attribute, an empty string (\verb+""+) should be passed
 
 \item stats - a flag indicating whether or not to generate ADIOS statistics during writing, 
-such as min/max/standard deviation. The value of \textit{stats} can be either 
-\verb+adios_flag_yes+ or \verb+adios_flag_no+. If stats is set to \verb+adios_flag_yes+, 
-ADIOS internally calculates and outputs statistics for each processor automatically. 
+such as min, max, average and standard deviation. The value of \textit{stats} can be either 
+\verb+adios_stat_no+,  \verb+adios_stat_default+, or \verb+adios_stat_full+. If stats is set to \verb+adios_stat_default+, 
+ADIOS internally calculates and outputs min and max for each processor automatically. If it is set to full, additional statistics are calculated including partially calculated data for average and standard deviation, which are completed at read time. 
 The downside of turning stats on is that it consumes more CPU and memory during writing 
-and the metadata will be larger. 
+and the metadata will be larger. Min and max should be turned on to enable the MINMAX query method to work on the dataset (see Chapter~\ref{chapter:query_api}). 
 \end{itemize}
 
 Output: 

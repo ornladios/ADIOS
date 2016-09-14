@@ -43,9 +43,11 @@
 #include "dmalloc.h"
 #endif
 
-typedef int bool;
-#define false 0
-#define true  1
+#ifndef bool
+    typedef int bool;
+#   define false 0
+#   define true  1
+#endif
 
 bool noindex = false;              // do no print array indices with data
 bool printByteAsChar = false;      // print 8 bit integer arrays as string

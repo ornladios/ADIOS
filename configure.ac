@@ -23,12 +23,15 @@ AC_PROG_CXX
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C])])
-
-AC_LANG(C++)
-ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C++])])
+if test -z "${HAVE_MPI_TRUE}"; then
+    AC_LANG(C++)
+    ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C++])])
+else
+    AC_DEFINE(HAVE_MPI,0,[Don not have MPI to build parallel libraries])
+fi
 
 AC_ARG_ENABLE(fortran,
-    [AS_HELP_STRING([--disable-fortran],[disable Fortran test programs in ADIOS.])])
+    [AS_HELP_STRING([--disable-fortran],[disable building Fortran libraries.])])
 AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
 
 AC_CANONICAL_HOST
@@ -40,8 +43,10 @@ if test "x$enable_fortran" != "xno"; then
     F77=$FC
     dnl AC_PROG_F77
     dnl AC_PROG_F77_C_O
-    AC_LANG(Fortran)
-    ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for Fortran])])
+    if test -z "${HAVE_MPI_TRUE}"; then
+        AC_LANG(Fortran)
+        ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for Fortran])])
+    fi
 fi
 
 AC_LANG(C)
@@ -134,12 +139,12 @@ fi
 
 # Make sure we find Python2
 m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
-                  [python2 python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0 python])
+                  [python python2 python3 python3.3 python3.2 python3.1 python3.0 python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0])
 AM_PATH_PYTHON([2.0])
-AS_VERSION_COMPARE([${PYTHON_VERSION}], [3.0], [HAVE_PYTHON2=yes], [HAVE_PYTHON2=no], [HAVE_PYTHON2=no])
-if test "x${HAVE_PYTHON2}" == "xno"; then 
-    AC_MSG_ERROR([ADIOS requires python 2.x installed.])
-fi
+dnl AS_VERSION_COMPARE([${PYTHON_VERSION}], [3.0], [HAVE_PYTHON2=yes], [HAVE_PYTHON2=no], [HAVE_PYTHON2=no])
+dnl if test "x${HAVE_PYTHON2}" == "xno"; then 
+dnl     AC_MSG_ERROR([ADIOS requires python 2.x installed.])
+dnl fi
 dnl Set PYTHON_EXECUTABLE to have the same variable as with CMake
 AC_SUBST(PYTHON_EXECUTABLE,${PYTHON})
 
@@ -941,6 +946,11 @@ if test -z "${BUILD_FORTRAN_TRUE}"; then
 else
     echo "  - Build only the C libraries (no Fortran)";
 fi
+if test -z "${HAVE_MPI_TRUE}"; then
+    echo "  - Build both the parallel and sequential libraries";
+else
+    echo "  - Build only the sequential libraries (no MPI)";
+fi
 echo
 echo "  - General Compile FLAGS";
 echo "      - CC  = $CC";
@@ -953,11 +963,13 @@ echo "      - FCFLAGS  = $FCFLAGS";
 echo "      - LDLAGS   = $LDFLAGS";
 echo "      - LIBS     = $LIBS";
 echo
-echo "      - MPICC   = $MPICC";
-echo "      - MPICXX  = $MPICXX";
-echo "      - MPIFC   = $MPIFC";
-echo "      - MPILIBS = $MPILIBS";
-echo
+if test -z "${HAVE_MPI_TRUE}"; then
+    echo "      - MPICC   = $MPICC";
+    echo "      - MPICXX  = $MPICXX";
+    echo "      - MPIFC   = $MPIFC";
+    echo "      - MPILIBS = $MPILIBS";
+    echo
+fi
 
 if test "x$enable_research_transports" == "xyes"; then
     echo "  - Research Transports Included";

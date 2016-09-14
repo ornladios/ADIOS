@@ -84,15 +84,18 @@ Linux clusters and Mac OSX.
 %
 
 \section {What's new in version 1.10}
-The new feature of this release is the new Query API and three query methods, Minmax, FastBit and Alacrity. This release makes the oft-criticized \verb+adios_group_size()+ call optional. Another convenience is that the MXML dependency is now built with ADIOS so it does not need to be built separately. In the xml configuration file for an application, the buffer allocation command should be removed. 
+The new feature of this release is the new Query API and three query methods, Minmax, FastBit and Alacrity. This release makes the oft-criticized \verb+adios_group_size()+ call optional. Another convenience is that the MXML dependency is now built with ADIOS so it does not need to be built separately. Also, a sequential-only build is possible using the --without-mpi option. 
+
+Changes to the APIs are that the buffer allocation command should be modified or removed, either in the xml configuration file (see section~\ref{section-xml-buffers-pecification}) or in the source code (see section~\ref{section-noxml-maxbuffersize}).
 
 \begin{itemize}
-\item Updated Query API
+\item Updated Query API, see Chapter~\ref{chapter:query_api}
 \item Minmax, FastBit and Alacrity query methods
 \item \verb+adios_group_size()+ is optional
 \item ADIOS builds without first installing Mini-XML separately
-\item \verb+bprecover+ utility to recover datasets with many output steps where a step becomes corrupted
+\item \verb+bprecover+ utility to recover datasets with many output steps where a step becomes corrupted, see ~\ref{section-utils-bprecover}
 \item Point selections can provide a container selection to improve read performance
+\item Added --without-mpi option to configure, so that only the sequential libraries are built
 \item Adios Python wrapper
     \begin{itemize}
     \item Updated to support both python 2 and python 3

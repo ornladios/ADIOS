@@ -1,8 +1,15 @@
-...
+    - performance bug in MPI_AGGREGATE method since 1.9.0 fixed 
+    - collect min/max statistics only by default
+      adios_declare_group() signature changed with option for statistics 
+      collection: off, minmax, full
+    - fix: bug building with hdf5 1.10
+
+1.10.0 Release July 2016
     - Fortran API for inquiring selections
     - bprecover utility
       - recover a BP file which has a damaged index data
     - adios_group_size() optional now
+    - --without-mpi option in configure to build only the sequential libraries
     - Python/Numpy wrapper improvements:
       - Support both python 2 and python 3
       - Read options with point and block selection 

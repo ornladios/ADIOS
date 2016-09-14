@@ -1,3 +1,4 @@
+#!/usr/bin/env sh
 aclocal -I config
 libtoolize --force --copy
 autoconf

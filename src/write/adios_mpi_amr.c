@@ -1584,6 +1584,32 @@ int adios_MPI_Recv(void *buf, uint64_t count, int source,
 
 }
 
+/* Help routine to receive data size greater than 2 GB non-blocking
+ * Returns the number of MPI_Irecv requests made.
+ * requests should be pre-allocated before calling.
+ */
+int adios_MPI_Irecv(void *buf, uint64_t count, int source,
+                    int tag, MPI_Comm comm, MPI_Request *requests)
+{
+    int n = 0;
+    while (count > INT32_MAX)
+    {
+        MPI_Irecv (buf, INT32_MAX, MPI_BYTE, source, tag, comm, requests+n);
+        count -= INT32_MAX;
+        buf += INT32_MAX;
+        n++;
+    }
+
+    if (count)
+    {
+        int temp_count = (int) count;
+        MPI_Irecv (buf, temp_count, MPI_BYTE, source, tag, comm, requests+n);
+    }
+    n++;
+
+    return n;
+}
+
 void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                             ,struct adios_method_struct * method
                             )
@@ -1630,7 +1656,6 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             {
                 //printf ("do not merge pg\n");
                 uint64_t pg_size;
-                MPI_Status status;
 
                 pg_size = fd->bytes_written;
                 pg_sizes = (uint64_t *) malloc (new_group_size * 8);
@@ -1656,6 +1681,10 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     disp[i] = disp[i - 1] + pg_sizes[i - 1];
                     max_data_size = (pg_sizes[i] > max_data_size) ? pg_sizes[i] : max_data_size;
                 }
+
+                int nMPIrequests = max_data_size / UINT32_MAX + 1;
+                MPI_Request *requests = (MPI_Request *) malloc (nMPIrequests * sizeof (MPI_Request));
+                MPI_Status *statuses = (MPI_Status *) malloc (nMPIrequests * sizeof (MPI_Status));
 
                 if (is_aggregator (md->rank))
                 {
@@ -1702,8 +1731,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                         if (i + 1 < new_group_size)
                         {
                             START_TIMER (ADIOS_TIMER_COMM);
-                            adios_MPI_Recv (recv_buff, pg_sizes[i + 1], new_rank + 1
-                                      ,0, md->g_comm1, &status);
+                            nMPIrequests = adios_MPI_Irecv (recv_buff, pg_sizes[i + 1], new_rank + 1
+                                                            ,0, md->g_comm1, requests);
                             STOP_TIMER (ADIOS_TIMER_COMM);
                         }
 
@@ -1724,7 +1753,14 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                         if (i + 1 < new_group_size)
                         {
-                            memcpy (aggr_buff, recv_buff, pg_sizes[i + 1]);
+                            START_TIMER (ADIOS_TIMER_COMM);
+                            MPI_Waitall (nMPIrequests, requests, statuses);
+                            STOP_TIMER (ADIOS_TIMER_COMM);
+                            // swap receive and aggregate buffers, so we can write out the just received PG while getting another one
+                            void *tmp = aggr_buff;
+                            aggr_buff = recv_buff;
+                            recv_buff = tmp;
+                            //memcpy (aggr_buff, recv_buff, pg_sizes[i + 1]);
                         }
                     }
                 }
@@ -1743,15 +1779,15 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                         {
                             START_TIMER (ADIOS_TIMER_COMM);
                             // Recv data from upstream rank
-                            adios_MPI_Recv (recv_buff, pg_sizes[i], new_rank + 1
-                                      ,0, md->g_comm1, &status);
+                            nMPIrequests = adios_MPI_Irecv (recv_buff, pg_sizes[i], new_rank + 1
+                                                            ,0, md->g_comm1, requests);
 
                             if (i == new_rank + 1)
                                 // Send my data to downstream rank
                                 adios_MPI_Send (fd->buffer, pg_size, new_rank - 1
                                          ,0, md->g_comm1);
 
-                            //MPI_Wait (&request, &status);
+                            MPI_Waitall(nMPIrequests, requests, statuses);
                             // Send it to downstream rank
                             adios_MPI_Send (recv_buff, pg_sizes[i], new_rank - 1
                                      ,0, md->g_comm1);
@@ -1762,6 +1798,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                 FREE (aggr_buff);
                 FREE (recv_buff);
+                FREE (requests);
+                FREE (statuses);
             }
             else 
             {

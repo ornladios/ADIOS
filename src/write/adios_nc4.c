@@ -206,9 +206,9 @@ static struct open_file *open_file_delete(const char *path, const char *name)
         if ((strcmp(path, of->fpath) == 0) && (strcmp(name, of->fname) == 0)) {
             if (DEBUG>3) printf("fpath(%s) fname(%s) matches search\n", of->fpath, of->fname);
             if (list_is_head(&open_file_list, elmt)) {
-                list_rem_next(&open_file_list, NULL, &of);
+                list_rem_next(&open_file_list, NULL, (void**)&of);
             } else {
-                list_rem_next(&open_file_list, prev, &of);
+                list_rem_next(&open_file_list, prev, (void**)&of);
             }
         }
         prev = elmt;
@@ -1468,7 +1468,7 @@ int adios_nc4_open(
 void adios_nc4_write(
         struct adios_file_struct *fd,
         struct adios_var_struct *v,
-        void *data,
+        const void *data,
         struct adios_method_struct *method)
 {
     struct open_file *of=NULL;

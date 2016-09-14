@@ -41,7 +41,9 @@
 #include "core/adios_logger.h"
 #include "core/a2sel.h"
 #include "public/adios_error.h"
+#define  FLEXPATH_SIDE "READER"
 #include "core/flexpath.h"
+#include "core/futils.h"
 
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
@@ -129,6 +131,8 @@ typedef struct _flexpath_reader_file
     char *file_name;
     char *group_name; // assuming one group per file right now.
     int host_language;
+
+    int verbose;
 
     EVstone stone;
 
@@ -260,6 +264,7 @@ new_flexpath_reader_file(const char *fname)
 	log_error("Cannot create data for new file.\n");
 	exit(1);
     }
+    fp_verbose_init(fp);
     fp->file_name = strdup(fname);
     fp->writer_coordinator = -1;
     fp->last_writer_step = -1;
@@ -316,10 +321,9 @@ ffs_type_to_adios_type(const char *ffs_type, int size)
 	return adios_complex;
     else if (!strcmp("double_complex", filtered_type))
         return adios_double_complex;
-    else {
-	fprintf(stderr, "returning unknown for: ffs_type: %s\n", ffs_type);
-	return adios_unknown;
-    }
+
+    fprintf(stderr, "returning unknown for: ffs_type: %s\n", ffs_type);
+    return adios_unknown;
 }
 
 ADIOS_VARINFO*
@@ -644,8 +648,10 @@ send_open_msg(flexpath_reader_file *fp, int destination)
     int cond = CMCondition_get(fp_read_data->cm, NULL);
     msg.condition = cond;
 
+    fp_verbose(fp, "sending open msg, WAITING on response\n");
     EVsubmit(fp->bridges[destination].op_source, &msg, NULL);
     CMCondition_wait(fp_read_data->cm, cond);
+    fp_verbose(fp, "WAIT finished, setting opened to 1, destination %d\n", destination);
     fp->bridges[destination].opened = 1;
 }
 
@@ -664,7 +670,30 @@ send_close_msg(flexpath_reader_file *fp, int destination)
     int cond = CMCondition_get(fp_read_data->cm, NULL);
     msg.condition = cond;
     EVsubmit(fp->bridges[destination].op_source, &msg, NULL);
+    fp_verbose(fp, "sending close msg, setting opened to 0, destination %d, WAITING\n", destination);
     CMCondition_wait(fp_read_data->cm, cond);
+    fp_verbose(fp, "Done with WAIT\n");
+    fp->bridges[destination].opened = 0;
+}
+
+void
+send_finalize_msg(flexpath_reader_file *fp, int destination)
+{
+    if (!fp->bridges[destination].created) {
+	build_bridge(&(fp->bridges[destination]));
+    }
+    op_msg msg;
+    msg.process_id = fp->rank;
+    msg.file_name = fp->file_name;
+    msg.step = fp->mystep;
+    msg.type = FINALIZE_MSG;
+    //msg.condition = -1;
+    int cond = CMCondition_get(fp_read_data->cm, NULL);
+    msg.condition = cond;
+    EVsubmit(fp->bridges[destination].op_source, &msg, NULL);
+    fp_verbose(fp, "sending finalize msg, setting opened to 0, destination %d, WAITING\n", destination);
+    CMCondition_wait(fp_read_data->cm, cond);
+    fp_verbose(fp, "Done with WAIT\n");
     fp->bridges[destination].opened = 0;
 }
 
@@ -683,7 +712,9 @@ send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type, int u
     // maybe check to see if the bridge is create first.
     EVsubmit(fp->bridges[destination].flush_source, &msg, NULL);
     if (use_condition) {
+	fp_verbose(fp, "WAIT in send_flush_msg\n");
 	CMCondition_wait(fp_read_data->cm, msg.condition);
+	fp_verbose(fp, "Done with WAIT\n");
     }
 }
 
@@ -707,6 +738,7 @@ send_var_message(flexpath_reader_file *fp, int destination, char *varname)
             build_bridge(&(fp->bridges[destination]));
 	}
 	if (!fp->bridges[destination].opened) {
+	    fp_verbose(fp, "sending open msg in var_message, destination %d, opened was %d\n", destination, fp->bridges[destination].opened);
 	    fp->bridges[destination].opened = 1;
 	    send_open_msg(fp, destination);
 	}
@@ -1177,7 +1209,6 @@ adios_read_flexpath_open(const char * fname,
 			 enum ADIOS_LOCKMODE lock_mode,
 			 float timeout_sec)
 {
-    fp_log("FUNC", "entering flexpath_open\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));
     if (!adiosfile) {
 	adios_error (err_no_memory,
@@ -1186,6 +1217,7 @@ adios_read_flexpath_open(const char * fname,
     }
 
     flexpath_reader_file *fp = new_flexpath_reader_file(fname);
+    fp_verbose(fp, "entering flexpath_open\n");
     fp->host_language = futils_is_called_from_fortran();
     adios_errno = 0;
     fp->stone = EValloc_stone(fp_read_data->cm);
@@ -1264,7 +1296,9 @@ adios_read_flexpath_open(const char * fname,
 	fprintf(read_ready, "ready");
 	fclose(read_ready);
     }
+    fp_verbose(fp, "waiting on First barrier in OPEN\n");
     MPI_Barrier(fp->comm);
+    fp_verbose(fp, "done with First barrier in OPEN\n");
 
     FILE * fp_in = fopen(writer_ready_filename,"r");
     while (!fp_in) {
@@ -1300,7 +1334,9 @@ adios_read_flexpath_open(const char * fname,
     fclose(fp_in);
     fp->num_bridges = num_bridges;
     // clean up of writer's files
+    fp_verbose(fp, "waiting on second barrier in OPEN\n");
     MPI_Barrier(fp->comm);
+    fp_verbose(fp, "done with second barrier in OPEN\n");
     if (fp->rank == 0) {
 	unlink(writer_info_filename);
 	unlink(writer_ready_filename);
@@ -1328,6 +1364,7 @@ adios_read_flexpath_open(const char * fname,
     }
 
     // requesting initial data.
+    fp_verbose(fp, "sending open msg in read_open\n");
     send_open_msg(fp, fp->writer_coordinator);
 
 
@@ -1336,7 +1373,9 @@ adios_read_flexpath_open(const char * fname,
     fp->req.num_pending = 1;
     fp->req.num_completed = 0;
     send_flush_msg(fp, fp->writer_coordinator, DATA, 0);
+    fp_verbose(fp, "sent flush msg in read_open, WAITING\n");
     CMCondition_wait(fp_read_data->cm, fp->req.condition);
+    fp_verbose(fp, "done with WAIT in read_open\n");
 
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
     fp->data_read = 0;
@@ -1357,21 +1396,32 @@ adios_read_flexpath_open(const char * fname,
     adiosfile->version = -1;
     adiosfile->file_size = 0;
     adios_errno = err_no_error;
-    fp_log("FUNC", "leaving flexpath_open\n");
+    fp_verbose(fp, "leaving flexpath_open\n");
     return adiosfile;
 }
 
 int adios_read_flexpath_finalize_method ()
 {
-    return 0;
+    /* flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh; */
+    /* int i; */
+    /* for (i=0; i<fp->num_bridges; i++) { */
+    /*     if (fp->bridges[i].created && !fp->bridges[i].opened) { */
+    /* 	    fp_verbose(fp, "sending open msg in flexpath_release_step\n"); */
+    /* 	    send_finalize_msg(fp, i); */
+    /*     } */
+    /* } */
+    /* return 1; */
 }
 
 void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     int i;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    fp_verbose(fp, "waiting at flexpath_release step barrier\n");
     MPI_Barrier(fp->comm);
+    fp_verbose(fp, "done with flexpath_release step barrier\n");
     for (i=0; i<fp->num_bridges; i++) {
         if (fp->bridges[i].created && !fp->bridges[i].opened) {
+	    fp_verbose(fp, "sending open msg in flexpath_release_step\n");
 	    send_open_msg(fp, i);
         }
     }
@@ -1413,12 +1463,13 @@ int
 adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec)
 {    
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-    //fprintf(stderr, "reader_rank:%d:calling advance_step:step:%d\n", fp->rank, fp->mystep);
+    fp_verbose(fp, " waiting on first barrier in flexpath_advance_step:step:%d\n", fp->mystep);
     MPI_Barrier(fp->comm);
+    fp_verbose(fp, " wait complete in flexpath_advance_step:step:%d\n", fp->mystep);
     int count = 0; // for perf measurements
-    //fprintf(stderr, "reader_rank:%d:advance_step:sending flush step to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
+    fp_verbose(fp, "advance_step:sending flush step to coordinator:%d:step:%d\n", fp->writer_coordinator,fp->mystep);
     send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
-    //fprintf(stderr, "reader_rank:%d:advance_step:advance_step:after sending flush step to:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
+    //fprintf(stderr, "reader_rank:%d:advance_step:advance_step:after sending flush step to:%d:step:%d\n", fp->writer_coordinator,fp->mystep);
     //put this on a timer, so to speak, for timeout_sec
     while (fp->mystep == fp->last_writer_step) {
 	if (fp->writer_finalized) {
@@ -1426,9 +1477,9 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	    return err_end_of_stream;
 	}
 	CMsleep(fp_read_data->cm, 1);
-	//fprintf(stderr, "reader_rank:%d:advance_step:while loop sending flush step to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
+	fp_verbose(fp, "advance_step:while loop sending flush step to coordinator:%d:step:%d\n", fp->writer_coordinator,fp->mystep);
 	send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
-	//fprintf(stderr, "reader_rank:%d:advance_step:after while loop sending flush step to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
+	//fprintf(stderr, "reader_rank:%d:advance_step:after while loop sending flush step to coordinator:%d:step:%d\n", fp->writer_coordinator,fp->mystep);
     }
 
     int i=0;
@@ -1438,7 +1489,9 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	    send_close_msg(fp, i);
 	}
     }
+    fp_verbose(fp, "waiting on second barrier in flexpath_advance_step:step:%d\n", fp->mystep);
     MPI_Barrier(fp->comm);
+    fp_verbose(fp, "done with second barrier in flexpath_advance_step:step:%d\n", fp->mystep);
 
     count = 0;
     adiosfile->current_step++;
@@ -1446,6 +1499,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 
     for (i=0; i<fp->num_bridges; i++) {
 	if (fp->bridges[i].created && !fp->bridges[i].opened) {
+	    fp_verbose(fp, "sending open msg in flexpath_advance_step\n");
 	    send_open_msg(fp, i);
 	    count++;
         }
@@ -1454,15 +1508,15 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     fp->req.num_completed = 0;
     fp->req.num_pending = 1;
     fp->req.condition = CMCondition_get(fp_read_data->cm, NULL);
-    //fprintf(stderr, "reader_rank:%d:advance_step:while loop sending flush DATA to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
+    fp_verbose(fp, "advance_step: sending flush DATA to coordinator, then WAITING:%d:step:%d\n", fp->writer_coordinator,fp->mystep);
     send_flush_msg(fp, fp->writer_coordinator, DATA, 0);
     CMCondition_wait(fp_read_data->cm, fp->req.condition);
-    //fprintf(stderr, "reader_rank:%d:advance_step:while loop after flush DATA to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
+    fp_verbose(fp, "advance_step:Condition wait is complete:%d:step:%d\n", fp->writer_coordinator,fp->mystep);
     // should only happen if there are more steps available.
     // writer should have advanced.
-    //fprintf(stderr, "reader_rank:%d:advance_step:while loop sending flush EVGROUP to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
+    fp_verbose(fp, "advance_step: sending flush EVGROUP to coordinator:%d:step:%d\n", fp->writer_coordinator,fp->mystep);
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
-    //fprintf(stderr, "reader_rank:%d:advance_step:while loop after flush EVGROUP to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
+    //fprintf(stderr, "reader_rank:%d:advance_step:while loop after flush EVGROUP to coordinator:%d:step:%d\n", fp->writer_coordinator,fp->mystep);
     return 0;
 }
 
@@ -1528,8 +1582,8 @@ int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk
 
 int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 {
-    fp_log("FUNC", "entering perform_reads.\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    fp_verbose(fp, "entering perform_reads.\n");
     fp->data_read = 0;
     int i;
     int batchcount = 0;
@@ -1551,11 +1605,9 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 	if ((total_sent % FP_BATCH_SIZE == 0) || (total_sent == num_sendees)) {
             fp->req.num_pending = batchcount;
 
-	    /* fprintf(stderr, "\t\treader rank:%d:blocking on:%d:step:%d\n", */
-	    /* 	    fp->rank, fp->req.condition, fp->mystep); */
+	    fp_verbose(fp, "in perform_reads, blocking on:%d:step:%d\n", fp->req.condition, fp->mystep);
             CMCondition_wait(fp_read_data->cm, fp->req.condition);
-	    /* fprintf(stderr, "\t\treader rank:%d:after blocking:%d:step:%d\n", */
-	    /* 	    fp->rank, fp->req.condition, fp->mystep); */
+	    fp_verbose(fp, "after blocking:%d:step:%d\n", fp->req.condition, fp->mystep);
 	    fp->req.num_completed = 0;
 	    //fp->req.num_pending = 0;
 	    //total_sent = 0;
@@ -1583,7 +1635,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 
 	tmpvars = tmpvars->next;
     }
-    fp_log("FUNC", "leaving perform_reads.\n");
+    fp_verbose(fp, "leaving perform_reads.\n");
     return 0;
 }
 
@@ -1608,10 +1660,10 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 				       int nsteps,
 				       void *data)
 {
-    fp_log("FUNC", "entering schedule_read_byid\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     flexpath_var *fpvar = fp->var_list;
 
+    fp_verbose(fp, "entering schedule_read_byid\n");
     while (fpvar) {
         if (fpvar->id == varid)
         	break;
@@ -1722,7 +1774,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	break;
     }
     }
-    fp_log("FUNC", "entering schedule_read_byid\n");
+    fp_verbose(fp, "entering schedule_read_byid\n");
     return 0;
 }
 
@@ -1771,10 +1823,10 @@ adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 ADIOS_VARINFO*
 adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
-    fp_log("FUNC", "entering flexpath_inq_var\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     ADIOS_VARINFO *v = NULL;
 
+    fp_verbose(fp, "entering flexpath_inq_var\n");
     flexpath_var *fpvar = find_fp_var(fp->var_list, varname);
     if (fpvar) {
         v = calloc(1, sizeof(ADIOS_VARINFO));
@@ -1786,7 +1838,7 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
         }
 
 	v = convert_var_info(fpvar, v, varname, adiosfile);
-	fp_log("FUNC", "leaving flexpath_inq_var\n");
+	fp_verbose(fp, "leaving flexpath_inq_var\n");
     }
     else {
         adios_error(err_invalid_varname, "Cannot find var %s\n", varname);
@@ -1797,11 +1849,11 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 ADIOS_VARINFO*
 adios_read_flexpath_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
 {
-    fp_log("FUNC", "entering flexpath_inq_var_byid\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    fp_verbose(fp, "entering flexpath_inq_var_byid\n");
     if (varid >= 0 && varid < adiosfile->nvars) {
 	ADIOS_VARINFO *v = adios_read_flexpath_inq_var(adiosfile, adiosfile->var_namelist[varid]);
-	fp_log("FUNC", "leaving flexpath_inq_var_byid\n");
+	fp_verbose(fp, "leaving flexpath_inq_var_byid\n");
 	return v;
     }
     else {

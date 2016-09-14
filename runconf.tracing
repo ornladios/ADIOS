@@ -1,0 +1,251 @@
+#!/bin/bash
+#
+# This script is for configuring adios on the authors' machines
+# You can study it to figure out how to configure adios on your system
+#
+
+SRCDIR=`dirname ${BASH_SOURCE[0]}`
+
+if [ `hostname | cut -c 1-4` == "sith" ]; then
+
+    ########
+    # Sith #
+    ########
+    source /etc/profile.d/modules.sh
+    TARGET=`module list 2>&1 | grep "PE"- | sed "s/^.*PE-\([a-z]*\).*/\1/"`
+
+    if [ -z "$TARGET" ]; then
+        echo "Cannot determine Programming environment. Exit"
+        exit 1
+    fi
+    echo "Configure on SITH for $TARGET env. for user ${USER} with Vampirtrace"
+    module unload hdf5
+    module unload netcdf
+    module unload python
+    #module unload PE-gnu
+    #module unload PE-pgi
+    #module unload PE-intel
+    #module unload PE-pathscale
+    #module unload pgi gcc intel pathscale
+    #module load PE-$TARGET
+    module load python
+    # Use both seq hdf5 (for utils) and 
+    #   parallel hdf5 (for PHDF5 method)
+    module load hdf5/1.8.10
+    SEQ_HDF5_DIR=$HDF5_DIR
+    SEQ_HDF5_CLIB=$HDF5_CLIB
+    module unload hdf5
+    module load hdf5/1.8.10_par
+    PAR_HDF5_DIR=$HDF5_DIR
+    PAR_HDF5_CLIB=$HDF5_CLIB
+    module unload hdf5
+    # Seq. and Parallel NetCDF 4 
+    module load netcdf/4.1.3
+    SEQ_NC_DIR=$NETCDF_DIR
+    SEQ_NC_CLIB=$NETCDF_CLIB
+    module unload netcdf
+    module load netcdf/4.1.3_par
+    PAR_NC_DIR=$NETCDF_DIR
+    PAR_NC_CLIB=$NETCDF_CLIB
+    module unload netcdf
+    #module load szip
+    module load bzip2
+    module unload dataspaces
+    unset DATASPACES_DIR
+    module load dataspaces/1.6.0
+    module load vampirtrace
+    export MPICC="vtcc -vt:cc mpicc"
+    export MPICXX="vtCC -vt:CC mpiCC"
+    export MPIFC="vtf90 -vt:f90 mpif90"
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
+    export CFLAGS="-g -O0 -fPIC" 
+    export CXXFLAGS="-g -O0 -fPIC" 
+    export FCFLAGS="-g -O0 -fPIC" 
+    WITHFLEX=""
+    WITHFGR=""
+    WITHFASTBIT=""
+    WITHALACRITY=""
+    if [ "$TARGET" == "pgi" ]; then
+        export CC="vtcc -vt:cc pgcc"
+        export CXX="vtCC -vt:CC pgCC"
+        export FC="vtf90 -vt:f90 pgf90"
+        WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
+        WITHFGR="--with-fgr=/ccs/proj/e2e/qliu/tap" 
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/pgi"
+        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.4.7"
+        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.pgi"
+        #DATASPACES_DIR="/ccs/home/hbui/usr/software/dataspaces-dev"
+    elif [ "$TARGET" == "gnu" ]; then
+        export CC="vtcc -vt:cc gcc"
+        export CXX="vtCC -vt:CC g++"
+        export FC="vtf90 -vt:f90 gfortran"
+        #export CFLAGS="$CFLAGS -gdwarf-3" 
+        #export FCFLAGS="$FCFLAGS -gdwarf-3" 
+        WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/gnu"
+        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
+        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.gnu"
+    elif [ "$TARGET" == "intel" ]; then
+        export CC="vtcc -vt:cc icc"
+        export CXX="vtCC -vt:CC icpc"
+        export FC="vtf90 -vt:f90 ifort"
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/intel"
+        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
+    else
+        echo "TARGET must be pgi or gnu or intel"
+        exit 1
+    fi
+        
+    $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/sith.vampirtrace.$TARGET \
+        --config-cache \
+        --disable-maintainer-mode \
+        --disable-fortran \
+        --enable-dependency-tracking \
+        --enable-research-transports \
+        --with-lustre \
+        --with-hdf5=${SEQ_HDF5_DIR} \
+        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
+        --with-zlib \
+        --with-bzip2=$BZIP2_DIR \
+        --with-dataspaces=$DATASPACES_DIR \
+        $WITHFLEX \
+        $WITHFASTBIT \
+        $WITHALACRITY \
+        --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
+        --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
+        #$WITHFASTBIT \
+        #--with-netcdf=${SEQ_NC_DIR} \
+        #--with-netcdf-libs="${SEQ_NC_CLIB}" \
+        #--with-dimes=$DATASPACES_DIR \
+        #--with-glib=/ccs/proj/e2e/qliu/glib
+        #$WITHFGR \
+        #--with-szip=$SZIP_DIR \
+        #--with-phdf5=${PAR_HDF5_DIR} \
+        #--with-phdf5-libs="${PAR_HDF5_CLIB}" \
+        #--with-nc4par=${PAR_NC_DIR} \
+        #--with-nc4par-libs="${PAR_NC_CLIB}" \
+        #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
+        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
+        #--enable-shared --disable-static
+        #--without-datatap #--without-infiniband
+        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
+        #--with-datatap=/ccs/home/habbasi/work/ewok/
+        #--enable-datatap=ib
+
+    echo ""
+    echo "At job runtime do"
+    echo "  module load vampirtrace"
+
+elif [ `hostname | cut -c 1-5` == "titan" ]; then
+
+    #source /opt/modules/default/etc/modules.sh
+    TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
+    
+    #########
+    # Titan #
+    #########
+    #TARGET=pgi
+    echo "Configure on TITAN (XK7) with Score-P for $TARGET env."
+    module unload szip
+    module unload hdf5
+    module unload netcdf
+    module unload hdf5-parallel
+    module unload netcdf-hdf5parallel
+    module unload fastbit
+    module unload craype-interlagos craype-interlagos-cu 
+    module unload craype-barcelona craype-abudhabi craype-abudhabi-cu 
+    module unload craype-ivybridge craype-sandybridge craype-haswell 
+    module unload craype-mc8 craype-mc12
+    module load craype-istanbul
+    module load dataspaces # /1.6.1
+    module load scorep
+    unset EXTRA_CFLAGS
+    unset EXTRA_LIBS
+    unset LDFLAGS
+    unset WITHFLEX
+    unset WITHFASTBIT
+    export CC="scorep-cc"
+    export FC="scorep-ftn"
+    export CXX="scorep-CC"
+    if [ "$TARGET" == "pgi" ]; then
+        # FASTBIT needs libstdc++ and -pgcpplibs flag
+        export LDFLAGS="-pgc++libs" 
+        #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
+        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$target-cpu"
+    elif [ "$TARGET" == "gnu" ]; then
+        #export CC=gcc
+        #export FC=gfortran
+        #export CXX=g++
+        #export MPICC=cc
+        #export MPIFC=ftn
+        #export MPICXX=CC
+        # NSSI/FLEXPATH/FASTBIT needs libstdc++
+        export LDFLAGS="" 
+        module load fastbit
+        WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
+        # FASTBIT needs libstdc++
+        WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
+        #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
+        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+    elif [ "$TARGET" == "cray" ]; then
+        export EXTRA_CFLAGS="-h gnu"
+    fi
+ 
+    # NOTE hdf5-parallel module does not work with C++ compiler
+    #module load hdf5-parallel
+    #module load netcdf-hdf5parallel
+    module load szip
+    #module load papi
+    # use the two lines below for openmpi
+    #export CC=mpicc
+    #export FC=mpif90
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
+    export CFLAGS="-fPIC -g -O2 ${EXTRA_CFLAGS}" 
+    LIBS="$EXTRA_LIBS" SCOREP_WRAPPER=OFF ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6-scorep.$TARGET \
+    --enable-dependency-tracking \
+    --disable-maintainer-mode \
+    --with-cray-pmi=/opt/cray/pmi/default \
+    --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+    --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+    --with-dataspaces=$DATASPACES_DIR \
+    --with-dimes=$DATASPACES_DIR \
+    --without-infiniband \
+    $WITHFLEX \
+    $WITHFASTBIT \
+    --with-lustre \
+    --disable-timers --disable-timer-events \
+    --with-zlib --with-bzip2 
+
+    #--enable-skel-timing
+    #--with-fgr=/ccs/proj/e2e/qliu/tap \
+    #--with-glib=/ccs/proj/e2e/qliu/glib \
+    #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
+    #--with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
+    #--with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
+    #--with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
+    #--with-dimes=/ccs/proj/e2e/pnorbert/spaces/$TARGET
+    #--with-nssi=/ccs/proj/e2e/pnorbert/nssi/xt5/$TARGET \
+    #--with-datatap=/ccs/home/zf2/work/pe.$TARGET \
+    #--with-datatap=/ccs/proj/e2e/pnorbert/datatap/xt5/$TARGET \
+
+    echo ""
+    echo "After building src/ and utils/adios_lint, replace "
+    echo "   utils/adios_lint/adios_lint binary"
+    echo "from another non-tracing build, because this binary will not run on the login node."
+    echo "This binary is used in building tests/genarray and the build will fail at that point."
+    echo ""
+    echo "At job runtime do"
+    echo "  module load scorep"
+    echo "  export SCOREP_ENABLE_PROFILING=0"
+    echo "  export SCOREP_ENABLE_TRACING=1"
+
+
+
+else
+    echo "Could not determine what machine is this."
+    echo "This script is for configuring adios on the authors' machines."
+    echo "You can study it to figure out how to configure adios on your system."
+fi
+    
+    
+    

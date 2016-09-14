@@ -229,7 +229,7 @@ program tri2d_f_noxml
     !!
     !! Define the Data group
     !!
-    call adios_declare_group (data_group, "tri2d", "", 1, adios_err)
+    call adios_declare_group (data_group, "tri2d", "", ADIOS_STAT_DEFAULT, adios_err)
     call adios_select_method (data_group, "MPI", "", "", adios_err)
 
     ! This example doesn't use varid during writing.
@@ -299,7 +299,7 @@ program tri2d_f_noxml
     !!
     !! Define the Mesh group
     !!
-    call adios_declare_group (mesh_group, "trimesh", "", 1, adios_err)
+    call adios_declare_group (mesh_group, "trimesh", "", ADIOS_STAT_DEFAULT, adios_err)
     call adios_select_method (mesh_group, "MPI", "", "", adios_err)
     call adios_define_var (mesh_group, "npoints" &
                 ,"", adios_integer &

@@ -152,7 +152,7 @@ struct adios_group_struct
     char * group_by;
     char * time_index_name;
     uint32_t time_index;
-    enum ADIOS_FLAG stats_on;
+    enum ADIOS_STATISTICS_FLAG stats_flag;
     uint32_t process_id;
 
     struct adios_method_list_struct * methods;
@@ -493,7 +493,7 @@ int adios_common_declare_group (int64_t * id, const char * name
                                ,const char * coordination_comm
                                ,const char * coordination_var
                                ,const char * time_index_name
-                               ,enum ADIOS_FLAG stats
+                               ,enum ADIOS_STATISTICS_FLAG stats
                                );
 
 int64_t adios_common_define_var (int64_t group_id, const char * name

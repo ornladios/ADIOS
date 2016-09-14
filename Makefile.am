@@ -1,8 +1,12 @@
 ACLOCAL_AMFLAGS=-I config
 
-SUBDIRS = src utils tests examples
+SUBDIRS = src utils tests 
+if HAVE_MPI
+    SUBDIRS += examples
+endif
 
 EXTRA_DIST = runconf \
+	     README.md \
              KNOWN_BUGS \
              adios_config.makesrc.in \
              adios_config.flags.makesrc.in \
@@ -10,7 +14,7 @@ EXTRA_DIST = runconf \
              scripts/create.nssi.config.sh \
              scripts/kill.nssi.staging.sh \
              scripts/start.nssi.staging.sh \
-	     scripts/FindADIOS.cmake \
+	         scripts/FindADIOS.cmake \
              src/mxml/cmake_try_longlong.c
 
 #             wrappers/matlab/Makefile \
@@ -51,8 +55,8 @@ install-data-hook:
 	    git status -uno >> $(abs_top_builddir)/adios_git_status; \
 	    echo "_EOF_" >> $(abs_top_builddir)/adios_git_status; \
 	else \
-	    echo "GITLOG=\"git log not available\"" >> $(builddir)/adios_git_status; \
-	    echo "GITSTAT=\"git status not available\"" >> $(builddir)/adios_git_status; \
+	    echo "GITLOG=\"git log not available\"" >> $(abs_top_builddir)/adios_git_status; \
+	    echo "GITSTAT=\"git status not available\"" >> $(abs_top_builddir)/adios_git_status; \
 	    echo "Note: git command not found or $(PWD) is not a git repository."; \
 	fi) 
 	$(INSTALL_DATA) adios_config.flags $(DESTDIR)$(sysconfdir)
@@ -83,4 +87,11 @@ adios_config adios_config.flags: Makefile
 
 adios_config: adios_config.makesrc adios_config.flags
 adios_config.flags: adios_config.flags.makesrc
+
+README: README.md
+	cat $< > $@
+
+dist-hook:
+	rm -f README
+	rm -f $(distdir)/README
 

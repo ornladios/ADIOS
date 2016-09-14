@@ -20,6 +20,11 @@ if test "x$with_nc4par" == "xno"; then
 
    AM_CONDITIONAL(HAVE_NC4PAR,false)
 
+elif test -z "${HAVE_MPI_FALSE}"; then
+
+   AC_MSG_NOTICE([    skip NetCDF 4 Parallel because we don't build parallel])
+   AM_CONDITIONAL(HAVE_NC4PAR,false)
+
 else
 
     ac_use_cray_netcdf=no

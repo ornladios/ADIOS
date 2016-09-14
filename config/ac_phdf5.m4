@@ -37,6 +37,11 @@ if test "x$with_phdf5" == "xno"; then
 
    AM_CONDITIONAL(HAVE_PHDF5,false)
 
+elif test -z "${HAVE_MPI_FALSE}"; then
+
+   AC_MSG_NOTICE([    skip Parallel HDF5 because we don't build parallel])
+   AM_CONDITIONAL(HAVE_PHDF5,false)
+
 else
 
     ac_use_cray_hdf5=no  dnl will set to yes if we will use CRAY_HDF5_DIR below

@@ -11,7 +11,7 @@ class adiosConfig:
         doc = xml.dom.minidom.parse (config_file_name)
         nodes = doc.childNodes
         if (nodes.length != 1):
-            print 'malformed adios config file, should contain only a single adios-config element'
+            print('malformed adios config file, should contain only a single adios-config element')
             raise SystemExit
         self.config_node = nodes[0]
 
@@ -41,7 +41,7 @@ class adiosConfig:
 
     def get_buffer (self):
         #return the buffer info
-        print 'get_buffer is not yet implemented'
+        print('get_buffer is not yet implemented')
 
     def get_host_language (self):
         return self.config_node.getAttribute ('host-language')
@@ -65,7 +65,7 @@ class adiosGroup:
             if node.localName == 'var':
                 newvar = var (node, self, self.time_index)
                 self.vars.append (newvar)
-                #print 'Add to dict local var ['+newvar.get_fullpath()+']'
+                #print('Add to dict local var ['+newvar.get_fullpath()+']')
                 self.vardict [newvar.get_fullpath()] = newvar
                 self.vars_and_gwrites_and_attrs.append (newvar)
             #elif node.localName == 'attribute':
@@ -79,7 +79,7 @@ class adiosGroup:
                     if gb_node.localName == 'var':
                         newvar = var (gb_node, self, self.time_index)
                         self.vars.append (newvar)
-                        #print 'Add to dict global var ['+newvar.get_fullpath()+']'
+                        #print('Add to dict global var ['+newvar.get_fullpath()+']')
                         self.vardict [newvar.get_fullpath()] = newvar
                         self.vars_and_gwrites_and_attrs.append (newvar)
                     elif gb_node.localName == 'gwrite':
@@ -102,8 +102,8 @@ class adiosGroup:
 
     # Returns the variable from this group with the specified name, or None
     def get_var (self, varfullpath):
-        #print '          get_var('+varfullpath+')'
-        if self.vardict.has_key (varfullpath):
+        #print('          get_var('+varfullpath+')')
+        if varfullpath in self.vardict:
             return self.vardict [varfullpath]
 
         return None
@@ -184,10 +184,10 @@ class var:
             # place the dimensions in a list and remove the time-index if it is there.
             dims = filter (lambda x : x != self.time_index, self.var_node.getAttribute ('dimensions').split(',') )
             cleandims = []
-            #print '       get_dimensions of var '+self.get_fullpath()
+            #print('       get_dimensions of var '+self.get_fullpath())
             for d in dims:
 
-                #print '          dim "'+str(d)+'"'
+                #print('          dim "'+str(d)+'"')
                 if d.isdigit():
                     cleandims.append (d)
                     continue
@@ -196,10 +196,10 @@ class var:
                 # for that variable
                 dim_var = self.get_group().get_var (d)				
                 if dim_var != None:
-                    #print '            dim var found, get name...'
+                    #print('            dim var found, get name...')
                     d = dim_var.get_gwrite()
                 #else:
-                    #print '            dim var NOT found'
+                    #print('            dim var NOT found')
                     
 
                 cleandims.append (d)

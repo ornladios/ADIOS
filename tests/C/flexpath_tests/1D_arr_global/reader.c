@@ -152,17 +152,15 @@ int main (int argc, char **argv){
 	    p_test_failed("%s: rank %d\n", test_result.name, rank);
 
 
-#ifdef FLEXPATH_METHOD
-	adios_release_step(adios_handler);
+	adios_release_step(adios_handle);
 	// 0 - next available step, block for max 30 seconds until the next step
 	// is available
-	adios_advance_step(adios_handler, 0, 30);
+	adios_advance_step(adios_handle, 0, 30);
 	if (0 == adios_errno){
 		printf("Rank %d: proceeding to the next step ...\n", rank);
 	} else {
 		printf("ERROR: adios_advance_step(); anyway Quitting ... Rank %d: (%d) %s\n", rank, adios_errno, adios_errmsg());
 	}
-#endif
 
 
 just_clean:
