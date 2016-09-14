@@ -1,6 +1,6 @@
 MXML_SRCDIR=mxml-2.9
 
-AM_CPPFLAGS=-I$(top_srcdir)/mxml/${MXML_SRCDIR}
+AM_CPPFLAGS=-I$(srcdir)/${MXML_SRCDIR}
 
 AUTOMAKE_OPTIONS = no-dependencies subdir-objects
 METASOURCES=AUTO
