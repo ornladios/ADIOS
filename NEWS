@@ -2,6 +2,7 @@
     - collect min/max statistics only by default
       adios_declare_group() signature changed with option for statistics 
       collection: off, minmax, full
+    - added ZFP lossy compression transform method
     - fix: bug building with hdf5 1.10
 
 1.10.0 Release July 2016
