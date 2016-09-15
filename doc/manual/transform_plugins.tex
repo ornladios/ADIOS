@@ -27,7 +27,8 @@ Available data transformation methods (in XML transform tags in <var> elements):
     "identity" : Identity transform
     "bzip2"    : bzip2 compression
     "isobar"   : ISOBAR compression
-
+    "alacrity" : ALACRITY indexing
+    "zfp"      : zfp compression
 \end{lstlisting}
 
 
@@ -43,8 +44,8 @@ Data transforms are selected via the ADIOS XML file, as follows:
 \end{lstlisting}
 
 The above snippet of XML will cause the variable "/temperature" to be compressed using zlib, assuming ADIOS was configured with zlib support
-(see Section~\ref{sec:installation-data-transforms} for configuration instructions). ADIOS 1.6 includes support for transform plugins
-``zlib,'' ``bzip2,'' and ``szip'' (see Table~\ref{tbl:data-transforms-summary}).
+(see Section~\ref{sec:installation-data-transforms} for configuration instructions). \adiosversion includes support for 
+various compression (lossy and lossless) and indexing transform plugins (see Table~\ref{tbl:data-transforms-summary}).
 Some transform plugins accept parameters, which are appended after a colon following the transform name.
 For instance, zlib accepts an optional compression level between 1 and 9, with 1 being the fastest and
 9 being the highest compression ratio. Setting the level to 5 would be accomplished as follows:
@@ -63,11 +64,17 @@ omitted, which is typically the case.
 \begin{tabular}{l|l|l}
 \textbf{Transform name in XML} & \textbf{Description} & \textbf{Other info} \\
 \hline
-zlib & zlib lossless compression & requires the zlib external library \\
+zlib & lossless compression & requires the zlib external library \\
 \hline
-bzip2 & bzip2 lossless compression & requires the bzip2 external library \\
+bzip2 & lossless compression & requires the bzip2 external library \\
 \hline
-szip & szip lossless compression & requires the szip external library \\
+szip & lossless compression & requires the szip external library \\
+\hline
+zfp & lossy compression & included with ADIOS \\
+\hline
+isobar & lossless compression & requires the isobar external library \\
+\hline
+alacrity & indexing for queries & requires the alacrity external library \\
 \end{tabular}
 \caption{Summary of data transform plugins included in ADIOS}
 \label{tbl:data-transforms-summary}
