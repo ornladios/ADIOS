@@ -144,7 +144,7 @@ int main (int argc, char ** argv)
         printE ("%s\n", adios_errmsg());
     }
 
-    adios_declare_group (&m_adios_group, "query_minmax", "", adios_flag_yes);
+    adios_declare_group (&m_adios_group, "query_minmax", "", adios_stat_default);
     adios_select_method (m_adios_group, "POSIX", "", "");
 
 

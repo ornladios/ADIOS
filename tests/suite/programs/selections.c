@@ -182,7 +182,7 @@ int main (int argc, char ** argv)
 
     
     if (do_write) {
-        adios_declare_group (&m_adios_group, "selections", "iter", adios_flag_yes);
+        adios_declare_group (&m_adios_group, "selections", "iter", adios_stat_default);
         adios_select_method (m_adios_group, write_method, "verbose=2", "");
 
         define_vars();

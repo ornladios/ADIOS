@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
         int64_t       m_adios_group;
         int64_t       m_adios_file;
 
-        adios_declare_group (&m_adios_group, "restart", "iter", adios_flag_yes);
+        adios_declare_group (&m_adios_group, "restart", "iter", adios_stat_default);
         adios_select_method (m_adios_group, "MPI", "", "");
 
 

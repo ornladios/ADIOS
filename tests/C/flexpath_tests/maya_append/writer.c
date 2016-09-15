@@ -66,7 +66,7 @@ int main(int argc, char ** argv){
 	int64_t	adios_grp = 0;
 
 	// now declare a group and variables you will have in the group
-	adios_declare_group(&adios_grp, GRP_NAME, "", adios_flag_no);
+	adios_declare_group(&adios_grp, GRP_NAME, "", adios_stat_default);
 
 	uint64_t adios_groupsize = 0;
 

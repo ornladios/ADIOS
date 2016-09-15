@@ -66,7 +66,7 @@ int main(int argc, char ** argv){
 	int64_t	adios_grp;
 
 	// now declare a group
-	adios_declare_group(&adios_grp, "temperature", "iter", adios_flag_yes);
+	adios_declare_group(&adios_grp, "temperature", "iter", adios_stat_default);
 
 	SET_ERROR_IF_NOT_ZERO(adios_select_method(adios_grp, adios_opts.transport, "", ""), err_count);
 	RET_IF_ERROR(err_count, rank);

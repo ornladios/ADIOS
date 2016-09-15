@@ -101,7 +101,7 @@ int declare_group ()
 
     adios_set_max_buffer_size (10);
 
-    adios_declare_group (&m_adios_group, "restart", "iter", adios_flag_yes);
+    adios_declare_group (&m_adios_group, "restart", "iter", adios_stat_default);
     adios_select_method (m_adios_group, "MPI", "verbose=2", "");
 
     adios_define_var (m_adios_group, "NX"

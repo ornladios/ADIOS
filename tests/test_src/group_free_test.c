@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
         for (j = 0; j < NGROUPS; j++) 
         {
             sprintf (groupname, "group%1.1d", j);
-            adios_declare_group (&groupid[j], groupname, "", adios_flag_yes);
+            adios_declare_group (&groupid[j], groupname, "", adios_stat_default);
             adios_select_method (groupid[j], "MPI", "", "");
 
             for (i = 0; i < NBLOCKS; i++) 

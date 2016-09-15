@@ -52,7 +52,7 @@ int write_data (int start_step, int nsteps, int nblocks)
     int64_t       m_adios_group;
     int64_t       m_adios_file;
 
-    adios_declare_group (&m_adios_group, "append", "", adios_flag_yes);
+    adios_declare_group (&m_adios_group, "append", "", adios_stat_default);
     adios_select_method (m_adios_group, "MPI_LUSTRE", "", "");
 
     if (rank == 0) {
