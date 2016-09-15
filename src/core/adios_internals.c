@@ -5192,7 +5192,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
         *min = *data; \
         *max = *data; \
         have_finite_value = 1; \
-        data = data + n; \
+        data++; \
         n++; \
     }\
     while (n < total_n) \
