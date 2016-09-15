@@ -707,6 +707,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     # Installed Homebrew, gcc/gfortran 5.3.0 and OpenMPI 1.10.2 in /usr/local
     # But should work with default mpicc and gcc, using --disable-fortran or with Homebrew gfortran
     #
+    unset WITHZFP # build from the included zfp source
     USE_GCC5=false
     if [ $USE_GCC5 == "true" ]; then
         # If want to use gcc/gfortran 5.3.0
@@ -718,6 +719,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
         export OMPI_FC=/usr/local/bin/gfortran
         export WITHALACRITY="--with-alacrity=/opt/alacrity/gcc5"
         export WITHFASTBIT="--without-fastbit"
+        #export WITHZFP="--without-zfp"
         # ALACRITY, FASTBIT are C++ lib so we need to link with the actual libstdc++
         # if the automatically added -lstdc++ does not work
         #export LIBS="/usr/local/Cellar/gcc/5.3.0/lib/gcc/5/libstdc++.dylib" 
@@ -732,6 +734,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
         unset OMPI_FC
         export WITHALACRITY="--with-alacrity=/opt/alacrity/clang"
         export WITHFASTBIT="--with-fastbit=/opt/fastbit"
+        #export WITHZFP="--with-zfp=/Users/pnb/scratch/zfp-0.5.0"
         echo "Configure using clang"
         # Problem: test/test_src/selection_api.F90 link will fail because
         #   gfortran is used which finds the gcc-5 libstdc++ library instead of the system libstdc++
@@ -749,6 +752,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
         --with-zlib \
         ${WITHALACRITY} \
         ${WITHFASTBIT} \
+        ${WITHZFP} \
         --with-phdf5=/usr/local 
     #    --disable-mpi --disable-write --disable-fortran \
     #        --with-netcdf=/opt/netcdf \
