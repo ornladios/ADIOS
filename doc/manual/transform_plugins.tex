@@ -60,6 +60,24 @@ In fact, all three lossless compression plugins (zlib, bzip2, and szip) currentl
 1-to-9 compression level. The default compression for each library is used if this parameter is
 omitted, which is typically the case.
 
+The zfp transform accomodates the three high-level compression modes of the zfp API: rate, precision, and accuracy.
+In the compression settings string, users specify one the compression modes followed by an \texttt{=} and a numerical value.
+We refer users to \href{http://computation.llnl.gov/projects/floating-point-compression}{zfp software's} README for details,
+but exemplify the three possibilites below:
+\begin{lstlisting}[language=XML]
+<var name="/temperature"
+     ...
+     transform="zfp:rate=0.25"
+     transform="zfp:precision=16"
+     transform="zfp:accuray=0.0001"
+     />
+\end{lstlisting}
+Rate means a constant number of bits will be kept per zfp-block, where the rate is $ kept \; bits/ (64*blocksize)$ for 64-bit doubles.
+The precision value is an integer, which sets a maximum number of bit planes to output (up to a max of 64 for floating point doubles) -- 
+this is equivalent to setting a relative precision.
+Accuracy specifies an absolute error toleranece.
+
+
 \begin{table}%
 \begin{tabular}{l|l|l}
 \textbf{Transform name in XML} & \textbf{Description} & \textbf{Other info} \\
