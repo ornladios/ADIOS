@@ -107,6 +107,13 @@ cdef extern from "adios_types.h":
     ctypedef enum ADIOS_FLAG:
         pass
 
+    ctypedef enum ADIOS_STATISTICS_FLAG:
+        adios_stat_no
+        adios_stat_minmax
+        adios_stat_full
+        adios_stat_default
+        adios_stat_no_do_not_use_this
+
 cdef extern from "adios.h":
     ctypedef struct MPI_Comm:
         pass
@@ -146,7 +153,7 @@ cdef extern from "adios.h":
     cdef int adios_declare_group (int64_t * id,
                                   char * name,
                                   char * time_index,
-                                  ADIOS_FLAG stats)
+                                  ADIOS_STATISTICS_FLAG stats)
 
     cdef int adios_define_var (int64_t group_id,
                                char * name,
@@ -456,12 +463,12 @@ cpdef int allocate_buffer(int when,
 
 cpdef int64_t declare_group(str name,
                             str time_index = "",
-                            int stats = 1):
+                            int stats = adios_stat_default):
     cdef int64_t id = 0
     adios_declare_group (&id,
                          s2b(name),
                          s2b(time_index),
-                         <ADIOS_FLAG> stats)
+                         <ADIOS_STATISTICS_FLAG> stats)
     return id
 
 cpdef int define_var(int64_t group_id,
@@ -1794,7 +1801,7 @@ cdef class writer(object):
         >>>  fw.declare_group('group', method='MPI', method_params='verbose=3')
 
         """
-        self.gid = declare_group(gname, "", 1)
+        self.gid = declare_group(gname, "", adios_stat_default)
         self.gname = gname
         self.method = method
         self.method_params = method_params
