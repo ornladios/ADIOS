@@ -62,8 +62,8 @@
  * Method:    adios_init
  * Signature: (Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL 
-Java_gov_ornl_ccs_Adios_adios_1init 
+JNIEXPORT jint JNICALL
+Java_gov_ornl_ccs_Adios_adios_1init
 (JNIEnv *env, jclass cls, jstring xml_fname, jlong comm)
 {
     //std::cout << __FUNCTION__ << "..." << std::endl;
@@ -74,7 +74,7 @@ Java_gov_ornl_ccs_Adios_adios_1init
 
     result = adios_init(str_xml_fname, (MPI_Comm) comm);
     //std::cout << "result = " << result << std::endl;
-    
+
     STR_FREE(xml_fname);
 
     return result;
@@ -141,7 +141,7 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1group_1size
  * Signature: (JLjava/lang/String;D)I
  */
 FUNC_WRITE_ONE (
-    Java_gov_ornl_ccs_Adios_adios_1write__JLjava_lang_String_2B, 
+    Java_gov_ornl_ccs_Adios_adios_1write__JLjava_lang_String_2B,
     jbyte)
 
 FUNC_WRITE_ONE (
@@ -231,9 +231,9 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1mpi_1init
 {
     int argc = env->GetArrayLength(args);
     char **argv;
-    int result; 
-    
-    for (int i = 0; i < argc; i++) 
+    int result;
+
+    for (int i = 0; i < argc; i++)
     {
         jstring jstr = (jstring) env->GetObjectArrayElement(args, i);
         const char *chr = env->GetStringUTFChars(jstr, 0);
@@ -247,10 +247,10 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1mpi_1init
 
     result = MPI_Init(&argc, &argv);
 
-    for (int i = 0; i < argc; i++) 
+    for (int i = 0; i < argc; i++)
     {
         //free(argv[i]);
-        delete[] argv[i]; 
+        delete[] argv[i];
     }
 
     return result;
@@ -266,7 +266,7 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1mpi_1comm_1rank
 {
     int rank;
     MPI_Comm_rank((MPI_Comm) comm, &rank);
-    
+
     return rank;
 }
 
@@ -280,7 +280,7 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1mpi_1comm_1size
 {
     int size;
     MPI_Comm_size((MPI_Comm) comm, &size);
-    
+
     return size;
 }
 
@@ -354,7 +354,7 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
  * Method:    adios_init_noxml
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL 
+JNIEXPORT jint JNICALL
 Java_gov_ornl_ccs_Adios_adios_1init_1noxml
 (JNIEnv *env, jclass cls, jlong comm)
 {
@@ -386,7 +386,7 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1declare_1group
     STR_ALLOC(name);
     STR_ALLOC(time_index);
 
-    result = adios_declare_group(&id_p, str_name, str_time_index, (ADIOS_FLAG) stats);
+    result = adios_declare_group(&id_p, str_name, str_time_index, (ADIOS_STATISTICS_FLAG) stats);
 
     STR_FREE(name);
     STR_FREE(time_index);
@@ -411,7 +411,7 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1define_1var
     STR_ALLOC(local_offsets);
 
     result = adios_define_var((int64_t) group_id, str_name, str_path, (ADIOS_DATATYPES) type, str_dimensions, str_global_dimensions, str_local_offsets);
-    
+
     STR_FREE(name);
     STR_FREE(path);
     STR_FREE(dimensions);
@@ -430,12 +430,12 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1define_1attribute
 (JNIEnv * env, jclass cls, jlong group_id, jstring name, jstring path, jint type, jstring value, jstring var)
 {
     int result;
-    
+
     STR_ALLOC(name);
     STR_ALLOC(path);
     STR_ALLOC(value);
     STR_ALLOC(var);
-    
+
     result = adios_define_attribute((int64_t) group_id, str_name, str_path, (ADIOS_DATATYPES) type, str_value, str_var);
 
     STR_FREE(name);
@@ -455,17 +455,17 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1select_1method
 (JNIEnv * env, jclass cls, jlong group_id, jstring method, jstring parameters, jstring base_path)
 {
     int result;
-    
+
     STR_ALLOC(method);
     STR_ALLOC(parameters);
     STR_ALLOC(base_path);
-    
+
     result = adios_select_method((int64_t) group_id, str_method, str_parameters, str_base_path);
 
     STR_FREE(method);
     STR_FREE(parameters);
     STR_FREE(base_path);
-    
+
     return result;
 }
 
@@ -574,5 +574,3 @@ FUNC_READ_ARRAY(
     Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3D,
     jdouble,
     Double);
-
-

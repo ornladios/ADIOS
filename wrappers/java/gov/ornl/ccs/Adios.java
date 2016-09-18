@@ -66,7 +66,7 @@ public class Adios
     {
         return adios_init(xml_fname, comm);
     }
-    
+
 	/* Call adios_open. Return a group handler */
     public static long Open(String group_name, String file_name, String mode, long comm)
     {
@@ -232,16 +232,16 @@ public class Adios
     {
         return adios_init_noxml(comm);
     }
-    
+
 	/* Call adios_allocate_buffer */
     public static int AllocateBuffer(AdiosBufferAllocWhen when, long size)
     {
         return adios_allocate_buffer(when.getCode(), size);
     }
-    
+
 
 	/* Call adios_declare_group */
-    public static long DeclareGroup(String name, String time_index, AdiosFlag stats)
+    public static long DeclareGroup(String name, String time_index, AdiosStatisticsFlag stats)
     {
         return adios_declare_group(name, time_index, stats.getCode());
     }

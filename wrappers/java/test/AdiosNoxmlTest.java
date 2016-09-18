@@ -8,7 +8,7 @@ public class AdiosNoxmlTest
     public static void main(String[] args)
     {
         System.out.println(">>> AdiosJava Noxml Test Drive");
-        
+
         System.out.println(">>> ADIOS NOXML API ... ");
         Adios.MPI_Init(new String[0]);
         long comm = Adios.MPI_COMM_WORLD();
@@ -20,7 +20,7 @@ public class AdiosNoxmlTest
         Adios.Init_Noxml(comm);
         Adios.AllocateBuffer(AdiosBufferAllocWhen.NOW, 10);
 
-        long group_id = Adios.DeclareGroup("restart", "iter", AdiosFlag.YES);
+        long group_id = Adios.DeclareGroup("restart", "iter", AdiosStatisticsFlag.MINMAX);
         Adios.SelectMethod(group_id, "MPI", "", "");
         Adios.DefineVar(group_id, "NX", "", AdiosDatatype.INTEGER, "", "", "");
         Adios.DefineVar(group_id, "G", "", AdiosDatatype.INTEGER, "", "", "");
@@ -30,7 +30,7 @@ public class AdiosNoxmlTest
         System.out.println(">>> ADIOS Write API ... ");
         long adios_handle = Adios.Open ("restart", "adios_noxml.bp", "w", comm);
 
-        int NX = 10; 
+        int NX = 10;
         int G = NX * size;
         int O = NX * rank;
 
@@ -40,16 +40,16 @@ public class AdiosNoxmlTest
         }
 
         long groupsize = 4 + 4 + 4 + 8 * (1) * (NX);
-        
+
         long adios_totalsize = Adios.SetGroupSize(adios_handle, groupsize);
-        
+
         Adios.Write (adios_handle, "NX", NX);
         Adios.Write (adios_handle, "G", G);
         Adios.Write (adios_handle, "O", O);
         Adios.Write (adios_handle, "temperature", t);
         Adios.Close (adios_handle);
-        
-        Adios.Finalize (rank);        
+
+        Adios.Finalize (rank);
         Adios.MPI_Finalize();
 
         System.out.println(">>> Done.");
