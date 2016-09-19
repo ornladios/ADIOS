@@ -318,7 +318,7 @@ dnl adios_config will contain flags for users' code linking based on these flags
 dnl EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
 ADIOSLIB_EXTRA_CPPFLAGS="${MACRODEFFLAG}_FILE_OFFSET_BITS=64 ${MACRODEFFLAG}_LARGEFILE_SOURCE ${MACRODEFFLAG}_LARGEFILE64_SOURCE ${MACRODEFFLAG}_GNU_SOURCE ${MXML_CPPFLAGS}"
 ADIOSLIB_EXTRA_LDFLAGS="${MXML_BUILD_LDFLAGS}"
-if test -z "${BUILD_ZFP_TRUE}"; then
+if test -z "${HAVE_ZFP_TRUE}"; then
     ADIOSLIB_EXTRA_CPPFLAGS="${ADIOSLIB_EXTRA_CPPFLAGS} ${MACRODEFFLAG}ZFP ${ZFP_CPPFLAGS}"
     ADIOSLIB_EXTRA_LDFLAGS="${ADIOSLIB_EXTRA_LDFLAGS} ${ZFP_BUILD_LDFLAGS}"
 fi
@@ -855,15 +855,10 @@ AC_SUBST(VERSION_MICRO)
 #fi
 #AC_DEFINE_UNQUOTED(VERSION_SVNREV, "${SVNVERSION}", [svn revision number])
 
-
-if test -z "${BUILD_MXML_TRUE}" -a -z "${BUILD_WRITE_TRUE}"; then
-    AC_CONFIG_FILES([src/mxml/Makefile])
-fi
-if test -z "${BUILD_ZFP_TRUE}"; then
-    AC_CONFIG_FILES([src/zfp/Makefile])
-fi
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 src/zfp/Makefile
+                 src/mxml/Makefile
                  tests/Makefile
                  tests/test_src/Makefile
                  tests/C/Makefile
