@@ -192,7 +192,7 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type)
     return common_read_type_to_string (type);
 }
 
-int adios_type_size(enum ADIOS_DATATYPES type, void *data)
+int adios_type_size(enum ADIOS_DATATYPES type, const void *data)
 {
     return common_read_type_size(type, data);
 }

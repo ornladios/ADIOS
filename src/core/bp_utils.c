@@ -3143,7 +3143,7 @@ int is_global_array_generic (const struct adios_index_characteristic_dims_struct
  *  Note that adios_internals:adios_get_type_size returns
  *  strlen(var) for strings.
  */
-int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
+int bp_get_type_size (enum ADIOS_DATATYPES type, const void * var)
 {
     switch (type)
     {
@@ -3155,7 +3155,7 @@ int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
             if (!var)
                 return 1;
             else
-                return strlen ((char *) var) + 1;
+                return strlen ((const char *) var) + 1;
 
         case adios_string_array:
             return sizeof(char*);

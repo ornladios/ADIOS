@@ -3818,7 +3818,7 @@ const char * common_read_type_to_string (enum ADIOS_DATATYPES type)
 }
 
 
-int common_read_type_size(enum ADIOS_DATATYPES type, void *data)
+int common_read_type_size(enum ADIOS_DATATYPES type, const void *data)
 {
     return bp_get_type_size(type, data);
 }

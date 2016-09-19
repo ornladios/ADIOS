@@ -102,7 +102,7 @@ int common_read_get_attr_byid (const ADIOS_FILE  * fp, int attrid, enum ADIOS_DA
                          int * size, void ** data); 
 
 const char * common_read_type_to_string (enum ADIOS_DATATYPES type);
-int common_read_type_size(enum ADIOS_DATATYPES type, void *data);
+int common_read_type_size(enum ADIOS_DATATYPES type, const void *data);
 
 
 int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist);

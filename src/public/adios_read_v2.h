@@ -542,7 +542,7 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type);
  *  For other types, it does not care about data and returns
  *  the size occupied by one element.
  */
-int adios_type_size(enum ADIOS_DATATYPES type, void *data);
+int adios_type_size(enum ADIOS_DATATYPES type, const void *data);
 
 
 
