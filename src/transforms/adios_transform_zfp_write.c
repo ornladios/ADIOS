@@ -110,7 +110,7 @@ static void get_dims(const struct adios_dimension_struct* d, struct zfp_buffer* 
 {
 	int i;
 	zbuff->ndims = (uint) count_dimensions(d);
-	zbuff->dims = (uint*) malloc(zbuff->ndims*sizeof(uint));
+	zbuff->dims = malloc(zbuff->ndims*sizeof(uint));
 	for (i=0; i<zbuff->ndims; i++)
 	{
 		zbuff->dims[i] = (uint) adios_get_dimension_space_size(var, (struct adios_dimension_struct*) d);

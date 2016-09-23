@@ -80,15 +80,6 @@ static int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carra
         return 0;
     }
 
-    /* The buffersize and compressed size aren't the same, this check doesn't make a lot of sense.
-    if (zbuff->buffsize != csize)
-    {
-        log_warn("ZFP thinks compressed size should be %u" \
-                "bytes. ADIOS thinks compressed size should be %" PRIu64 \
-                "bytes. Likely corruption.\n", zbuff->buffsize, csize);
-    }
-    */
-
 
     zfp_streaming(zbuff, carray, 1, NULL);
     if (zbuff->error)
@@ -106,6 +97,7 @@ static int zfp_decompression(struct zfp_buffer* zbuff, void* uarray, void* carra
 
     return 1;
 }
+
 
 /* ZFP is installed */
 int adios_transform_zfp_is_implemented (void) {return 1;}
@@ -130,7 +122,6 @@ adios_datablock * adios_transform_zfp_subrequest_completed(adios_transform_read_
 }
 
 
-/* The main work is being done here. I think this happens when a "block" of data gets returned. */
 adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read_request *reqgroup, 
 		adios_transform_pg_read_request *completed_pg_reqgroup)
 {
@@ -153,10 +144,13 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 	/* Get the data native to ADIOS (as opposed to the metadata which only the tranform plugin knows about) */
 	uint64_t csize = (uint64_t)completed_pg_reqgroup->raw_var_length;
 	uint64_t usize = adios_get_type_size(reqgroup->transinfo->orig_type, "");
-	int d = 0;
-	for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
+
+	zbuff->ndims = (uint) reqgroup->transinfo->orig_ndim;
+	zbuff->dims = malloc(zbuff->ndims*sizeof(uint));
+	for(i=0; i<zbuff->ndims; i++)
 	{
-		usize *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
+		usize *= completed_pg_reqgroup->orig_varblock->count[i];
+		zbuff->dims[i] = (uint) completed_pg_reqgroup->orig_varblock->count[i];
 	}
 
 
@@ -183,15 +177,6 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 		return NULL;
 	}
 
-
-	/* dimensionality */
-	zbuff->ndims = (uint) reqgroup->transinfo->orig_ndim;
-	zbuff->dims = (uint*) malloc(zbuff->ndims*sizeof(uint));
-	for (i=0; i<zbuff->ndims; i++)
-	{
-		zbuff->dims[i] = (uint) reqgroup->transinfo->orig_dims[i];
-	}
-
 	
 	/* mode */
 	zbuff->mode = metadata->cmode;
@@ -204,7 +189,7 @@ adios_datablock * adios_transform_zfp_pg_reqgroup_completed(adios_transform_read
 	if(!udata)
 	{
 		adios_error(err_no_memory, "Ran out of memory allocating uncompressed "
-		        "buffer for ZFP transformation.\n");
+				"buffer for ZFP transformation.\n");
 		return NULL;
 	}
 

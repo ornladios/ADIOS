@@ -95,10 +95,10 @@ static int zfp_get_datatype(struct zfp_buffer* zbuff, enum ADIOS_DATATYPES type)
 	}
 	else 
 	{
-        adios_error(err_unspecified, "ZFP does not handle the type of variable %s. "
-                    "Supported types are adios_double, adios_real.\n",
-                    zbuff->name);
-        zbuff->error = true;
+		adios_error(err_unspecified, "ZFP does not handle the type of variable %s. "
+				"Supported types are adios_double, adios_real.\n",
+				zbuff->name);
+		zbuff->error = true;
 		return 0;
 	}
 	return 1;
@@ -125,10 +125,10 @@ static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 	}
 	else 
 	{
-        adios_error(err_invalid_dimension, "ZFP does not handle the %u dimensional variable %s. "
-                    "Only 1, 2, and 3 dimensions are handled.\n",
-                    zbuff->ndims, zbuff->name);
-        zbuff->error = true;
+		adios_error(err_invalid_dimension, "ZFP does not handle the %u dimensional variable %s. "
+			"Only 1, 2, and 3 dimensions are handled.\n",
+			zbuff->ndims, zbuff->name);
+		zbuff->error = true;
 		return;
 	}
 
@@ -140,10 +140,10 @@ static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 		int success = sscanf(zbuff->ctol, "%lf", &tol);
 		if (success != 1) 
 		{
-	        adios_error(err_invalid_argument, "Error in accuracy specification for variable %s: %s. "
-	                    "Provide a double value.\n",
-	                    zbuff->name, zbuff->ctol);
-	        zbuff->error = true;
+			adios_error(err_invalid_argument, "Error in accuracy specification for variable %s: %s. "
+					"Provide a double value.\n",
+					zbuff->name, zbuff->ctol);
+			zbuff->error = true;
 			return;
 		}
 	       	zfp_stream_set_accuracy(zbuff->zstream, tol, zbuff->type);
@@ -151,36 +151,23 @@ static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 	else if (zbuff->mode == 1) 	// precision
 	{
 		uint tol;
-
-		/*
-		int success = sscanf(zbuff->ctol, "%u", &tol);
-		if (success != 1)
-		{
-			adios_error(err_invalid_argument, "Error in precision specification for variable %s: %s. "
-                        "Provide an integer value.\n",
-                        zbuff->name, zbuff->ctol);
-            zbuff->error = true;
-			return;
-		}
-		*/
-		
 		long int ct;
 		char* end;
 		ct = strtol(zbuff->ctol, &end, 10);
 		if (ct == 0)
 		{
-            adios_error(err_invalid_argument, "Error in precision specification for variable %s: %s. "
-                        "Provide an integer value.\n",
-                        zbuff->name, zbuff->ctol);
-            zbuff->error = true;
+			adios_error(err_invalid_argument, "Error in precision specification for variable %s: %s. "
+					"Provide an integer value.\n",
+					zbuff->name, zbuff->ctol);
+			zbuff->error = true;
 			return;
 		}
 
 		if (*end != '\0')
 		{
 			log_warn("A float was given for ZFP precision for variable %s: %s "
-			        "-- the value was cast to an integer. ZFP accepts integer precisions.",
-                    zbuff->name, zbuff->ctol);
+					"-- the value was cast to an integer. ZFP accepts integer precisions.",
+					zbuff->name, zbuff->ctol);
 		}
 		tol = (uint) ct;
 
@@ -193,10 +180,10 @@ static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 		int success = sscanf(zbuff->ctol, "%lf", &tol);
 		if (success != 1)
 		{
-            adios_error(err_invalid_argument, "Error in rate specification for variable %s: %s. "
-                        "Provide a double value.\n",
-                        zbuff->name, zbuff->ctol);
-            zbuff->error = true;
+		       	adios_error(err_invalid_argument, "Error in rate specification for variable %s: %s. "
+					"Provide a double value.\n",
+					zbuff->name, zbuff->ctol);
+			zbuff->error = true;
 			return;
 		}
 		zfp_stream_set_rate(zbuff->zstream, tol, zbuff->type, zbuff->ndims, 0);  // I don't know what the 0 is.
@@ -212,7 +199,6 @@ static void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress
 
 	/* associate bit stream with allocated buffer */
 	zbuff->bstream = stream_open(abuff, zbuff->buffsize);
-	stream_open(abuff, zbuff->buffsize); 
 	zfp_stream_set_bit_stream(zbuff->zstream, zbuff->bstream);
 	zfp_stream_rewind(zbuff->zstream);
 
@@ -222,10 +208,9 @@ static void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress
 		int success = zfp_decompress(zbuff->zstream, zbuff->field);
 		if (!success)
 		{
-            adios_error(err_transform_failure, "ZFP decompression failed for variable %s\n",
-                        zbuff->name);
-            zbuff->error = true;
-            return;
+			adios_error(err_transform_failure, "ZFP decompression failed for variable %s\n", zbuff->name);
+			zbuff->error = true;
+			return;
 		}
 	}
 	else 
@@ -233,21 +218,18 @@ static void zfp_streaming(struct zfp_buffer* zbuff, void* abuff, bool decompress
 		*finalsize = (uint64_t) zfp_compress(zbuff->zstream, zbuff->field);
 		if (! *finalsize)
 		{
-            adios_error(err_transform_failure, "ZFP compression failed for variable %s\n",
-                        zbuff->name);
-            zbuff->error = true;
+			adios_error(err_transform_failure, "ZFP compression failed for variable %s\n", zbuff->name);
+			zbuff->error = true;
 			return;
 		}
 	}
 
-	
 	/* clean up */
 	zfp_field_free(zbuff->field);
 	zfp_stream_close(zbuff->zstream);
 	stream_close(zbuff->bstream);
 	free(zbuff->dims);
 }
-
 
 
 #endif /* ADIOS_TRANSFORM_ZFP_COMMON_H_ */
