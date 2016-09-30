@@ -56,6 +56,31 @@ int MPI_Comm_size(MPI_Comm comm, int *size) { *size = 1; return MPI_SUCCESS; }
 int MPI_Comm_free(MPI_Comm *comm) { *comm = 0; return MPI_SUCCESS; };
 MPI_Comm MPI_Comm_f2c(MPI_Fint comm) { return comm; }
 
+static int get_type_size (MPI_Datatype type)
+{
+    switch( type )
+    {
+      case MPI_BYTE:
+      case MPI_CHAR:
+          return sizeof( char );
+          break;
+      case MPI_INT:
+          return sizeof( int );
+          break;
+      case MPI_LONG_LONG:
+          return sizeof( uint64_t );
+          break;
+      case MPI_FLOAT:
+          return sizeof( float );
+          break;
+      case MPI_DOUBLE:
+          return sizeof( double );
+          break;
+      default:
+          return MPI_ERR_TYPE;
+    }
+}
+
 int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
                int root, MPI_Comm comm)
@@ -69,13 +94,17 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   {
     case MPI_INT : n = sizeof( int );
                    break;
+    case MPI_LONG_LONG : n = sizeof( uint64_t );
+                   break;
     default      : return MPI_ERR_TYPE ;
   }
   nsent = n * sendcnt ;
 
   switch( recvtype )
   {
-    case MPI_INT : nrecv = sizeof( int ) ;
+    case MPI_INT : n = sizeof( int ) ;
+                   break;
+    case MPI_LONG_LONG : n = sizeof( uint64_t );
                    break;
     default      : return MPI_ERR_TYPE ;
   }
@@ -122,7 +151,9 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   {
     case MPI_INT : n = sizeof( int ) ;
                    break;
-    default      : return MPI_ERR_TYPE ;
+    case MPI_LONG_LONG : n = sizeof( uint64_t );
+                   break;
+    default      : ier = MPI_ERR_TYPE ;
   }
   nsent = n * sendcnt ;
 
@@ -130,13 +161,18 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   {
     case MPI_INT : nrecv = sizeof( int ) ;
                    break;
-    default      : return MPI_ERR_TYPE ;
+    case MPI_LONG_LONG : n = sizeof( uint64_t );
+                   break;
+    default      : ier = MPI_ERR_TYPE ;
   }
   nrecv = n * recvcnt ;
 
   if( nrecv!=nsent ) ier = MPI_ERR_COUNT ;
 
-  if( ier == MPI_SUCCESS ) memcpy( sendbuf, recvbuf, nsent );
+  if( ier == MPI_SUCCESS ) {
+      if (recvbuf != MPI_IN_PLACE)
+          memcpy( recvbuf, sendbuf, nsent );
+  }
   else snprintf(mpierrmsg, ier, "could not scatter data\n" );
 
   return ier ;

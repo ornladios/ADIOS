@@ -40,19 +40,23 @@ typedef int MPI_Fint;
 #define MPI_SEEK_SET                SEEK_SET
 #define MPI_SEEK_CUR                SEEK_CUR
 #define MPI_SEEK_END                SEEK_END
-#define MPI_BYTE                    1          /* I need the size of the type here */
 #define MPI_INFO_NULL               0
 
 #define MPI_COMM_NULL               0
 #define MPI_COMM_WORLD              1
 #define MPI_COMM_SELF               2
 
-#define MPI_INT                     1
+#define MPI_BYTE                    1          /* I need the size of the type here. Why??? */
 #define MPI_CHAR                    2
-#define MPI_DOUBLE                  3
+#define MPI_INT                     3
+#define MPI_LONG_LONG               4
+#define MPI_FLOAT                   5
+#define MPI_DOUBLE                  6
 
 #define MPI_ANY_SOURCE              0
 #define MPI_ANY_TAG                 0
+
+#define MPI_IN_PLACE                (void*)0
 
 #define MPI_SUM                     0
 

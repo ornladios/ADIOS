@@ -134,7 +134,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_VAR_MERGE   = 22
               ,ADIOS_METHOD_MPI_BGQ     = 23
               ,ADIOS_METHOD_ICEE        = 24
-              ,ADIOS_METHOD_COUNT       = 25
+              ,ADIOS_METHOD_STAGING     = 25
+              ,ADIOS_METHOD_COUNT       = 26
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -162,12 +163,14 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
      //FORWARD_DECLARE_EMPTY(datatap)
      FORWARD_DECLARE_EMPTY(posix)
      FORWARD_DECLARE_EMPTY(posix1)
+     FORWARD_DECLARE_EMPTY(staging)
      //FORWARD_DECLARE_EMPTY(provenance)
      //FORWARD_DECLARE_EMPTY(adaptive)
 #else
      FORWARD_DECLARE(datatap)
      FORWARD_DECLARE(posix)
      FORWARD_DECLARE(posix1)
+     FORWARD_DECLARE(staging)
      FORWARD_DECLARE(provenance)
      FORWARD_DECLARE(adaptive)
 #endif

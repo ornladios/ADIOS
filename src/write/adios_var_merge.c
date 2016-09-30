@@ -794,7 +794,7 @@ static void init_layout_flag(struct adios_MPI_data_struct *md)
         md->layout[i]=-1;
 }
 
-void init_output_parameters(const PairStruct *params)
+static void init_output_parameters(const PairStruct *params)
 {
     const PairStruct *p = params;
 
@@ -1176,7 +1176,7 @@ void adios_var_merge_read (struct adios_file_struct * fd
 {
 }
 
-void release_resource()
+static void release_resource()
 {
     int cnt;
     struct aggr_var_struct *next;
@@ -1265,7 +1265,7 @@ void adios_var_merge_stop_calculation (struct adios_method_struct * method)
 {
 }
 
-void copy_aggr_data (void *dst, void *src,
+static void copy_aggr_data (void *dst, void *src,
         int idim,
         int ndim,
         uint64_t* size_in_dset,
