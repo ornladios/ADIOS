@@ -35,6 +35,11 @@ if test "x$with_dataspaces" == "xno"; then
 
    AM_CONDITIONAL(HAVE_DATASPACES,false)
 
+elif test -z "${HAVE_MPI_FALSE}"; then
+
+   AC_MSG_NOTICE([    DataSpaces does not build without MPI])
+   AM_CONDITIONAL(HAVE_DATASPACES,false)
+
 else
 
     dnl allow args --with-dataspaces incdir and --with-dataspaces-libdir
@@ -81,6 +86,7 @@ else
             ac_dataspaces_ok=no
     fi
 
+    save_CC="$CC"
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
@@ -97,6 +103,7 @@ else
     LIBS="$LIBS -ldspaces -ldscommon -ldart"
     LDFLAGS="$LDFLAGS $DATASPACES_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DATASPACES_CPPFLAGS"
+    CC="$MPICC"
     
     if test -z "${HAVE_DATASPACES_TRUE}"; then
             AC_CHECK_HEADERS(dataspaces.h,
@@ -106,43 +113,26 @@ else
     
     if test -z "${HAVE_DATASPACES_TRUE}"; then
         # Check for the DataSpaces library and headers
-        if test "x${ac_portals_lib_ok}" == "xyes"; then 
-            AC_TRY_COMPILE([#include "dataspaces.h"],
+        AC_MSG_CHECKING([if dataspaces code can be compiled and linked])
+        dnl if test "x${ac_portals_lib_ok}" == "xyes"; then 
+        dnl elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
+        dnl elif test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
+	    dnl elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
+	    dnl elif test "x${ac_pami_lib_ok}" == "xyes"; then
+        dnl else
+        dnl fi
+            AC_TRY_LINK([#include "dataspaces.h"],
                     [int err; err = dspaces_init(1,1,0,"");],
-                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
-                    [AM_CONDITIONAL(HAVE_DATASPACES,false)])
-        elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
-            AC_TRY_COMPILE([#include "dataspaces.h"],
-                    [int err; err = dspaces_init(1,1,0,"");],
-                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart -lrdmacm"],
-                    [AM_CONDITIONAL(HAVE_DATASPACES,false)])
-        elif test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
-            AC_TRY_COMPILE([#include "dataspaces.h"],
-                    [int err; err = dspaces_init(1,1,0,"");],
-                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
-                    [AM_CONDITIONAL(HAVE_DATASPACES,false)])
-	elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
-            AC_TRY_COMPILE([#include "dataspaces.h"],
-                    [int err; err = dspaces_init(1,1,0,"");],
-                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
-                    [AM_CONDITIONAL(HAVE_DATASPACES,false)])
-	elif test "x${ac_pami_lib_ok}" == "xyes"; then
-            AC_TRY_COMPILE([#include "dataspaces.h"],
-                    [int err; err = dspaces_init(1,1,0,"");],
-                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
-                    [AM_CONDITIONAL(HAVE_DATASPACES,false)])
-        else
-            dnl Now TCP is working #AM_CONDITIONAL(HAVE_DATASPACES,false)
-            AC_TRY_COMPILE([#include "dataspaces.h"],
-                    [int err; err = dspaces_init(1,1,0,"");],
-                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
-                    [AM_CONDITIONAL(HAVE_DATASPACES,false)])
-        fi
+                    [AC_MSG_RESULT(yes)
+                     DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AC_MSG_RESULT(no)
+                     AM_CONDITIONAL(HAVE_DATASPACES,false)])
     fi
 
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
     CPPFLAGS="$save_CPPFLAGS"
+    CC="$save_CC"
     
     AC_SUBST(DATASPACES_LIBS)
     AC_SUBST(DATASPACES_LDFLAGS)
