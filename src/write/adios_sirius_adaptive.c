@@ -805,7 +805,7 @@ int insert_node (double * newz, double * newr, double * newfield, int * size,
                   double z, double r, double field)
 {
     int found;
-
+printf ("(%e, %e)\n", z, r);
     found = 0;
     for (int node = 0; node < *size; node++)
     {
@@ -987,8 +987,8 @@ if (!strcmp (v->name, "dpot"))
                     int n3 = * ((int *) mesh->data + m * 3 + 2);
 
                     double * field = data;
-                    double * r = R;
-                    double * z = Z;
+                    double * r = R->data;
+                    double * z = Z->data;
                     /* Gradient formular from Mark 
                        grad u = u1 [y2-y3, x3-x2] + u2 [y3-y1, x1-x3] + u3 [y1-y2,x2-x1]
                      */
@@ -1000,7 +1000,7 @@ if (!strcmp (v->name, "dpot"))
                     grad[n1] = grad[n2] = grad[n3] = grad_mag;
 
                     //TODO: To add threshold stuff
-                    if (grad_mag > 1.0)
+                    if (grad_mag > 0.2)
                     {
                         ntaggedCells++;
                     }
@@ -1020,8 +1020,8 @@ printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
                     int n3 = * ((int *) mesh->data + m * 3 + 2);
 
                     double * field = data;
-                    double * r = R;
-                    double * z = Z;
+                    double * r = R->data;
+                    double * z = Z->data;
 
                     double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
                     double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
@@ -1030,7 +1030,7 @@ printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
                     grad[n1] = grad[n2] = grad[n3] = grad_mag;
 
                     //TODO: To add threshold stuff
-                    if (grad_mag > 1.0)
+                    if (grad_mag > 0.2)
                     {
                         int tri1 = insert_node (newz, newr, newfield, &newsize,
                                      z[n1], r[n1], field[n1]);
