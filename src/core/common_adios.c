@@ -700,7 +700,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
         {
             free(v->adata);
         }
-        v->data = v->adata = 0; // throw away pointers to user data in case of arrays to avoid trying
+//        v->data = v->adata = 0; // throw away pointers to user data in case of arrays to avoid trying
                                 // to free them in possible forthcoming adios_write() of the same variable
     }
 

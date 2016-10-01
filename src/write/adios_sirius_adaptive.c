@@ -214,16 +214,16 @@ struct adios_sa_data_struct
 static int declare_group (int64_t * id, const char * name
                           ,const char * time_index
                           ,enum ADIOS_FLAG stats
-    )
+                         )
 {
-    int ret;
-    ret = adios_common_declare_group (id, name, adios_flag_no
+    int ret = adios_common_declare_group (id, name, adios_flag_no
                                       ,""
                                       ,""
                                       ,time_index
                                       ,adios_flag_no
-        );
-    if (ret == 1) {
+                                      );
+    if (ret == 1)
+    {
         struct adios_group_struct * g = (struct adios_group_struct *) *id;
         g->all_unique_var_names = adios_flag_no;
     }
@@ -233,25 +233,31 @@ static int declare_group (int64_t * id, const char * name
 
 // temporary solution for compiling error
 static int select_method (int64_t group, const char * method
-                          ,const char * parameters
-                          ,const char * base_path
-    )
+                         ,const char * parameters
+                         ,const char * base_path
+                         )
 {
-    return adios_common_select_method_by_group_id (0, method, parameters, group ,base_path, 0);
+    return adios_common_select_method_by_group_id (0 
+                                                  ,method
+                                                  ,parameters
+                                                  ,group
+                                                  ,base_path
+                                                  ,0
+                                                  );
 }
 
-static void define_iogroups(struct adios_method_struct * method)
+static void define_iogroups (struct adios_method_struct * method)
 {
-    int len;
-    int l;
-    struct adios_sa_data_struct * md = (struct adios_sa_data_struct *) method->method_data;
+    int len, l;
+    struct adios_sa_data_struct * md = (struct adios_sa_data_struct *)
+                             method->method_data;
     
-    for (l=0; l < nlevels; l++)
+    for (l = 0; l < nlevels; l++)
     {
-        len=5+strlen(method->group->name); //new groupname= tg_groupname
-        md->level[l].grp_name=(char *)malloc(len);
-        memset(md->level[l].grp_name, 0x00, len);
-        sprintf(md->level[l].grp_name, "%s_L%d",method->group->name, l);
+        len = 5 + strlen (method->group->name); //new groupname= tg_groupname
+        md->level[l].grp_name = (char *)malloc (len);
+        memset (md->level[l].grp_name, 0x00, len);
+        sprintf (md->level[l].grp_name, "%s_L%d",method->group->name, l);
         declare_group (&(md->level[l].grp), md->level[l].grp_name, "", adios_flag_yes);
         select_method (md->level[l].grp, io_method[l], io_parameters[l],"");
     }
@@ -262,25 +268,26 @@ static int convert_file_mode(enum ADIOS_METHOD_MODE mode, char * file_mode)
     switch (mode)
     {
         case adios_mode_read:
-            strcpy(file_mode,"r");
+            strcpy (file_mode,"r");
             break;
 
         case adios_mode_write:
-            strcpy(file_mode,"w");
+            strcpy (file_mode,"w");
             break;
 
         case adios_mode_append:
-            strcpy(file_mode,"a");
+            strcpy (file_mode,"a");
             break;
 
         case adios_mode_update:
-            strcpy(file_mode,"u");
+            strcpy (file_mode,"u");
             break;
         default:
             fprintf (stderr, "adios_open: unknown file mode: %s\n", file_mode);
             return -1;
             break;
     }
+
     return 0;
 }
 
@@ -377,11 +384,13 @@ static void init_method_parameters(struct adios_sa_data_struct * md)
 
 
 int adios_sirius_adaptive_open (struct adios_file_struct * fd
-                       ,struct adios_method_struct * method, MPI_Comm comm)
+                               ,struct adios_method_struct * method
+                               ,MPI_Comm comm
+                               )
 {
 
-    struct adios_sa_data_struct * md = (struct adios_sa_data_struct *)
-        method->method_data;
+    struct adios_sa_data_struct 
+        * md = (struct adios_sa_data_struct *) method->method_data;
     char mode[2];
     int l;
 
@@ -389,9 +398,13 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "SIRIUS method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode
+                        ,"SIRIUS_ADAPTIVE method: "
+                         "Read mode is not supported.\n"
+                        );
             return -1;
         }
+
         case adios_mode_append:
         case adios_mode_update:
         case adios_mode_write:
@@ -402,14 +415,14 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
                 MPI_Comm_rank (md->group_comm, &md->rank);
                 MPI_Comm_size (md->group_comm, &md->size);
             }
+
             fd->group->process_id = md->rank;
 
-            //need to get the parameters form XML
-            //init_output_parameters(method->parameters);
             init_method_parameters(md);
+
             define_iogroups(method);
 
-            for (l=0; l < nlevels; l++)
+            for (l = 0; l < nlevels; l++)
             {
                 //check if the directory exists and create it if it doesn't
                 struct stat sb;
@@ -418,19 +431,33 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
                     //directory doesn't exist
                     //FIXME: there is a case where something already exists but
                     //isn't a directory. Hard to imagine though so I am ignoring
-                    //it for the time beingmdki
-                    mkdir(io_paths[l], 0700);
+                    //it for the time being
+                    mkdir (io_paths[l], 0700);
                 }
                 md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 1);
                 sprintf (md->level[l].filename, "%s/%s", io_paths[l], fd->name);
-                convert_file_mode(fd->mode, mode);
-                common_adios_open( &(md->level[l].fd), md->level[l].grp_name, md->level[l].filename, mode, comm);
+                convert_file_mode (fd->mode, mode);
+               
+                // Now call the transport
+                common_adios_open (&(md->level[l].fd)
+                                  ,md->level[l].grp_name
+                                  ,md->level[l].filename
+                                  ,mode
+                                  ,comm
+                                  );
             }
+
             break;
         }
+
         default:
         {
-            adios_error (err_invalid_file_mode, "SIRIUS method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode
+                        ,"SIRIUS_ADAPTIVE method: "
+                         "Unknown file mode requested: %d\n"
+                        ,fd->mode
+                        );
+
             return adios_flag_no;
         }
     }
@@ -438,8 +465,10 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
     return 1;
 }
 
-enum BUFFERING_STRATEGY adios_sirius_adaptive_should_buffer (struct adios_file_struct * fd
-                                                    ,struct adios_method_struct * method)
+enum BUFFERING_STRATEGY
+adios_sirius_adaptive_should_buffer (struct adios_file_struct * fd
+                                    ,struct adios_method_struct * method
+                                    )
 {
     //this method handles its own buffering
     return no_buffering;
@@ -447,15 +476,16 @@ enum BUFFERING_STRATEGY adios_sirius_adaptive_should_buffer (struct adios_file_s
 
 
 //initial variable structure
-static void init_var (struct var_struct *var)
+static void init_var_struct (struct var_struct * var)
 {
     var->name = NULL;
     var->path = NULL;
     var->type = adios_unknown;
-    var->next=NULL;
-    var->global_dimensions= (char *) calloc (128, sizeof(char));
+    var->next = NULL;
+    var->global_dimensions = (char *) calloc (128, sizeof(char));
     var->local_dimensions = (char *) calloc (128, sizeof(char));
-    var->local_offsets= (char *) calloc (128, sizeof(char));
+    var->local_offsets = (char *) calloc (128, sizeof(char));
+    var->size = 0;
 }
 
 
@@ -492,25 +522,33 @@ static int do_write (int64_t fd_p, const char * name, void * var)
 }
 
 
-static enum ADIOS_ERRCODES alloc_var (struct adios_sa_data_struct * md, int level)
+static enum ADIOS_ERRCODES
+alloc_var_struct (struct adios_sa_data_struct * md, int level)
 {
-    struct var_struct *var = (struct var_struct *) malloc (sizeof(struct var_struct));
-    if (!var) {
-        adios_error (err_no_memory, "No memory to allocate yet another var in SIRIUS method\n");
+    struct var_struct
+        * var = (struct var_struct *) malloc (sizeof(struct var_struct));
+    if (!var)
+    {
+        adios_error (err_no_memory, "No memory to allocate"
+                    "yet another var in SIRIUS_ADAPTIVE method\n"
+                    );
+
         return err_no_memory;
     }
 
-    var->prev=md->level[level].vars;
-    var->next=NULL;
+    var->prev = md->level[level].vars;
+    var->next = NULL;
     if (md->level[level].varcnt == 0)
     {
         //assign the header of the variable list
         md->level[level].vars_head = var;
     }
+
     md->level[level].vars = var;
 
     // initialize the variable structure
-    init_var (md->level[level].vars);
+    init_var_struct (md->level[level].vars);
+
     return err_no_error;
 }
 
@@ -763,6 +801,33 @@ void copy_box_data (void * data, uint64_t * ldims, BoxList * bl_head)
     }
 }
 
+int insert_node (double * newz, double * newr, double * newfield, int * size,
+                  double z, double r, double field)
+{
+    int found;
+
+    found = 0;
+    for (int node = 0; node < *size; node++)
+    {
+        if (z == newz[node] && r == newr[node])
+        {
+            found = 1;
+            return node;
+        }
+    }
+
+    if (!found)
+    {   
+        newz[*size] = z;
+        newr[*size] = r;
+        newfield[*size] = field;
+
+        (*size)++;
+
+        return (*size) - 1;
+    }
+}
+
 void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                  ,struct adios_var_struct * v
                                  ,const void * data
@@ -771,93 +836,341 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
 {
     struct adios_sa_data_struct * md = (struct adios_sa_data_struct *)
-        method->method_data;
-    struct var_struct *var;
+            method->method_data;
+    struct var_struct * var;
     int i, l, ndims = count_dimensions (v->dimensions);
+    int mesh_ndims;
     int type_size = adios_get_type_size (v->type,data);
     uint64_t varsize;
     uint64_t ldims[16], offsets[16], gdims[16];
+    uint64_t mesh_ldims[16], mesh_offsets[16], mesh_gdims[16];
     uint64_t coord[16], lcoord[16], rcoord[16];
-    uint64_t element, nelems;
+    uint64_t element, nelems, mesh_nelems;
+    uint32_t ntaggedCells = 0;
+    double * newz, * newr, * newfield;
+    int * newmesh;
+    int newsize = 0, cell_cnt = 0;
 
-    if (ndims == 0)
+    for (l = 0; l < nlevels; l++)
     {
-
-    }
-    else
-    {
-        /* Split the data into regions */
-        nelems = get_var_dimensions (v, ndims, gdims, ldims, offsets);
-   
-        uint8_t ** tags = alloc_2d_uint8_array (ldims);
-
-        for (element = 0; element < nelems; element++)
+        if (alloc_var_struct (md, l) != err_no_error)
         {
-            double lvalue, mvalue, rvalue, h = 0.01, grad = 0.0; 
-            int tagged = 0;
-
-            mvalue = *((double *)data + element);
-            get_coord (element, ndims, ldims, coord);
-
-            for (i = 0; i < ndims; i++)
-            {
-                int n = 0;
-                double sum = 0.0;
-
-                memcpy (lcoord, coord, ndims * 8);
-                memcpy (rcoord, coord, ndims * 8);
-
-                if (lcoord[i] > 0)
-                {
-                    lcoord[i] -= 1;
-                    lvalue = get_value_by_coord (data, ndims, ldims, lcoord);
-                    sum += abs ((mvalue - lvalue) / h);
-                    n++;
-                }
-
-                if ((rcoord[i] + 1) < ldims[i])
-                {
-                    rcoord[i] += 1;
-                    rvalue = get_value_by_coord (data, ndims, ldims, rcoord);
-                    sum += abs ((mvalue - rvalue) / h);
-                    n++;
-                }
-
-                sum = (n > 0) ? sum / n : 0;
-                grad += pow (sum, 2);
-            }
-
-            grad = sqrt (grad);
-            if (grad > threshold)
-            {
-                if (ndims == 2)
-                {
-                    tags[coord[0]][coord[1]] = 1;
-                }
-                //printf ("element = %d, %f\n", element, *((double *) data + element));
-            }
-        } //end for element
-
-        Box b;
-        for (i = 0; i < ndims; i++)
-        {
-            b.lower[i] = 0;
-            b.upper[i] = ldims[i] - 1;
+            return;
         }
 
-        BoxList * bl;
-        if (bl = create_partitions (tags, ndims, ldims, &b))
+        md->level[l].varcnt++;
+        var = md->level[l].vars;
+
+        if (ndims == 0)
         {
-            box_append (&bl_head, bl);
+            var->multidim = adios_flag_no;
+            var->data = malloc(type_size);
+            memcpy (var->data, data, type_size);
+
+            // name the variable just like the original
+            var->name = strdup (v->name);
+            var->path = strdup (v->path);
+            var->type = v->type;
+            var->size = type_size;
+
+            adios_common_define_var (md->level[l].grp
+                                    ,var->name
+                                    ,var->path
+                                    ,var->type
+                                    ,""
+                                    ,""
+                                    ,""
+                                    );
+        }
+        else
+        {
+            //get the number of elements
+            nelems = get_var_dimensions (v, ndims, gdims, ldims, offsets);
+            varsize = nelems * type_size;
+
+            if (v->type == adios_double)
+            {
+                // name the variable
+                int len = 5 + strlen (v->name);
+
+                var->name = (char *) malloc (len);
+                sprintf (var->name, "%s/L%d", v->name, l);
+                var->path = strdup (v->path);
+                var->type = adios_double;
+
+                if (l == 0)
+                {
+                    var->data = data;
+                    var->global_dimensions = print_dimensions (1, gdims);
+                    var->local_dimensions = print_dimensions (1, ldims);
+                    var->local_offsets = print_dimensions (1, offsets);
+                    var->size = varsize;
+                }
+                else if (l == 1)
+                {
+                    var->data = data;
+
+                    if (!strcmp (v->name, "R")
+                     || !strcmp (v->name, "Z"))
+                    {
+                        ldims[0] = gdims[0] = newsize;
+                        offsets[0] = 0;
+
+                        var->global_dimensions = print_dimensions (1, gdims);
+                        var->local_dimensions = print_dimensions (1, ldims);
+                        var->local_offsets = print_dimensions (1, offsets);
+
+                    }
+                    else
+                    {
+                        var->global_dimensions = print_dimensions (1, gdims);
+                        var->local_dimensions = print_dimensions (1, ldims);
+                        var->local_offsets = print_dimensions (1, offsets);
+                    }
+                } 
+
+if (!strcmp (v->name, "dpot"))
+{
+    if (l == 0)
+    {
+                double * grad = malloc (nelems * 8);
+                assert (grad);
+
+                struct adios_var_struct * mesh = adios_find_var_by_name (fd->group, "mesh");
+
+                if (!mesh)
+                {
+                    adios_error (err_invalid_varname, 
+                                 "Bad var name (ignored) in SIRIUS_ADAPTIVE"
+                                 " adios_write(): %s\n", mesh->name);
+                    return 1;
+                }
+
+                mesh_ndims = count_dimensions (mesh->dimensions);
+                mesh_nelems = get_var_dimensions (mesh, 
+                                                  mesh_ndims, 
+                                                  mesh_gdims, 
+                                                  mesh_ldims,  
+                                                  mesh_offsets
+                                                 );
+
+                if (mesh_ldims[1] != 3)
+                {
+                    printf ("The mesh is incorrect!\n");
+                    return -1;
+                }
+
+                struct adios_var_struct * R = adios_find_var_by_name (fd->group, "R");
+
+                if (!R)
+                {
+                    adios_error (err_invalid_varname,
+                                 "Bad var name (ignored) in SIRIUS_ADAPTIVE"
+                                 " adios_write(): %s\n", R->name);
+                    return 1;
+                }
+
+                struct adios_var_struct * Z = adios_find_var_by_name (fd->group, "Z");
+
+                if (!Z)
+                {
+                    adios_error (err_invalid_varname,
+                                 "Bad var name (ignored) in SIRIUS_ADAPTIVE"
+                                 " adios_write(): %s\n", Z->name);
+                    return 1;
+                }
+
+                for (int m = 0; m < mesh_ldims[0]; m++)
+                {
+                    int n1 = * ((int *) mesh->data + m * 3);
+                    int n2 = * ((int *) mesh->data + m * 3 + 1);
+                    int n3 = * ((int *) mesh->data + m * 3 + 2);
+
+                    double * field = data;
+                    double * r = R;
+                    double * z = Z;
+                    /* Gradient formular from Mark 
+                       grad u = u1 [y2-y3, x3-x2] + u2 [y3-y1, x1-x3] + u3 [y1-y2,x2-x1]
+                     */
+
+                    double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
+                    double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
+                    double grad_mag = sqrt (grad_z * grad_z + grad_r * grad_r);
+
+                    grad[n1] = grad[n2] = grad[n3] = grad_mag;
+
+                    //TODO: To add threshold stuff
+                    if (grad_mag > 1.0)
+                    {
+                        ntaggedCells++;
+                    }
+                }  // loop through the node connectivity array
+
+printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
+                newz = (double *) malloc (ntaggedCells * 3 * 8);
+                newr = (double *) malloc (ntaggedCells * 3 * 8);
+                newfield = (double *) malloc (ntaggedCells * 3 * 8);
+                newmesh = (int *) malloc (ntaggedCells * 3 * 4);
+                assert (newz && newr && newfield && newmesh);
+
+                for (int m = 0; m < mesh_ldims[0]; m++)
+                {
+                    int n1 = * ((int *) mesh->data + m * 3);
+                    int n2 = * ((int *) mesh->data + m * 3 + 1);
+                    int n3 = * ((int *) mesh->data + m * 3 + 2);
+
+                    double * field = data;
+                    double * r = R;
+                    double * z = Z;
+
+                    double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
+                    double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
+                    double grad_mag = sqrt (grad_z * grad_z + grad_r * grad_r);
+
+                    grad[n1] = grad[n2] = grad[n3] = grad_mag;
+
+                    //TODO: To add threshold stuff
+                    if (grad_mag > 1.0)
+                    {
+                        int tri1 = insert_node (newz, newr, newfield, &newsize,
+                                     z[n1], r[n1], field[n1]);
+                        int tri2 = insert_node (newz, newr, newfield, &newsize,
+                                     z[n2], r[n2], field[n2]);
+                        int tri3 = insert_node (newz, newr, newfield, &newsize,
+                                     z[n3], r[n3], field[n3]);
+                        newmesh[cell_cnt++] = tri1;
+                        newmesh[cell_cnt++] = tri2;
+                        newmesh[cell_cnt++] = tri3;
+                    }
+                }  // loop through the node connectivity
+    }
+    else if (l == 1)
+    {
+//        var->size = newsize * 8;
+    }
+}
+            }
+            else
+            {
+                /* Not a double */
+                if (l == 0)
+                {
+                    //only in level 0 do we need to store this variable
+                    var->name = strdup (v->name);
+                    var->path = strdup (v->path);
+                    var->type = v->type;
+                    var->size = varsize;
+                    //FIXME
+                    var->data = (void*)v->data;
+                    var->global_dimensions = print_dimensions (ndims, gdims);
+                    var->local_dimensions = print_dimensions (ndims, ldims);
+                    var->local_offsets = print_dimensions (ndims, offsets);
+                }
+                else
+                {
+                    var->size = 0;
+                }
+            }
+
+            if (var->size > 0)
+            {
+                adios_common_define_var (md->level[l].grp
+                                        ,var->name
+                                        ,var->path
+                                        ,var->type
+                                        ,var->local_dimensions
+                                        ,var->global_dimensions
+                                        ,var->local_offsets
+                                        );
+
+                if (!strcmp (v->name, "dpot") && l == 0)
+                {
+                    char * new_global_dimensions;
+                    char * new_local_dimensions;
+                    char * new_local_offsets;
+                    uint64_t new_gdims[16];
+                    uint64_t new_ldims[16];
+                    uint64_t new_offsets[16];
+
+                    new_gdims[0] = newsize;
+                    new_ldims[0] = newsize;
+                    new_offsets[0] = 0;
+
+                    new_global_dimensions = print_dimensions (1, &new_gdims);
+                    new_local_dimensions = print_dimensions (1, &new_ldims);
+                    new_local_offsets = print_dimensions (1, &new_offsets);
+
+                    adios_common_define_var (md->level[1].grp
+                                        ,"R/L1"
+                                        ,var->path
+                                        ,var->type
+                                        ,new_local_dimensions
+                                        ,new_global_dimensions
+                                        ,new_local_offsets
+                                        );
+
+                    adios_common_define_var (md->level[1].grp
+                                        , "Z/L1"
+                                        ,var->path
+                                        ,var->type
+                                        ,new_local_dimensions
+                                        ,new_global_dimensions
+                                        ,new_local_offsets
+                                        );
+
+                    adios_common_define_var (md->level[1].grp
+                                        , "dpot/L1"
+                                        ,var->path
+                                        ,var->type
+                                        ,new_local_dimensions
+                                        ,new_global_dimensions
+                                        ,new_local_offsets
+                                        );
+
+                    new_ldims[0] = ntaggedCells;
+                    new_ldims[1] = 3;
+                    new_local_dimensions = print_dimensions (2, &new_ldims);
+                    new_offsets[0] = 0;
+                    new_offsets[1] = 0;
+                    new_local_offsets = print_dimensions (2, &new_offsets);
+
+                    adios_common_define_var (md->level[1].grp
+                                        , "mesh/L1"
+                                        ,var->path
+                                        ,adios_integer
+                                        ,new_local_dimensions
+                                        ,""
+                                        ,new_local_offsets
+                                        );
+
+                }
+            }
+
         }
 
-        box_merge (&bl_head);
-        print_list (bl_head);
+        md->level[l].totalsize += var->size;
 
-        free_2d_uint8_array (tags, ldims);
+        if ( (!strcmp (v->name, "R") || !strcmp (v->name, "Z") ) && l == 1)
+        {
+        }
+        else
+        {
+            // write it out
+            if (md->level[l].vars->size > 0)
+            {
+                do_write (md->level[l].fd, var->name, var->data);
 
-        copy_box_data (data, ldims, bl_head);
-    }
+                if (!strcmp (v->name, "dpot") && l == 0)
+                {
+                    do_write (md->level[1].fd, "R/L1", newr);
+                    do_write (md->level[1].fd, "Z/L1", newz);
+                    do_write (md->level[1].fd, "mesh/L1", newmesh);
+                    do_write (md->level[1].fd, "dpot/L1", newfield);
+                }
+            }
+        } // if
+
+    } // for levels
 
 }
 
