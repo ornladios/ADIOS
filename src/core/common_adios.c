@@ -253,37 +253,34 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             gettimeofday(&tp, NULL);
             sprintf(epoch, "%d", (int) tp.tv_sec);
 
-            int def_adios_init_attrs = 1;
-            // if we append/update, define these attributes only at the first step
-            if (fd->mode != adios_mode_write && fd->group->time_index > 1)
-                def_adios_init_attrs = 0;
-
-            if (def_adios_init_attrs) {
-                log_debug ("Define ADIOS extra attributes, "
-                        "time = %d, rank = %d, epoch = %s subfile=%d\n",
-                        fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
-
-                adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH,
-                        adios_string, VERSION, NULL);
-
-                adios_common_define_attribute ((int64_t)fd->group, "create_time_epoch", ADIOS_ATTR_PATH,
-                        adios_integer, epoch, NULL);
-                adios_common_define_attribute ((int64_t)fd->group, "update_time_epoch", ADIOS_ATTR_PATH,
-                        adios_integer, epoch, NULL);
-                // id of last attribute is fd->group->member_count
-                fd->group->attrid_update_epoch = fd->group->member_count;
-
-            }
             /* FIXME: this code works fine, it does not duplicate the attribute,
                but the index will still contain all copies and the read will see
                only the first one. Thus updating an attribute does not work
                in practice.
              */
+
+            if (fd->group->time_index == 1)
+            {
+                log_debug ("Define ADIOS extra attributes, "
+                        "time = %d, rank = %d, epoch = %s subfile=%d\n",
+                        fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
+
+                adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH,
+                                               adios_string, VERSION, NULL);
+
+                adios_common_define_attribute ((int64_t)fd->group, "create_time_epoch", ADIOS_ATTR_PATH,
+                                               adios_integer, epoch, NULL);
+                adios_common_define_attribute ((int64_t)fd->group, "update_time_epoch", ADIOS_ATTR_PATH,
+                                               adios_integer, epoch, NULL);
+                // id of last attribute is fd->group->member_count
+                fd->group->attrid_update_epoch = fd->group->member_count;
+
+            }
             else
             {
                 // update attribute of update time (define would duplicate it)
                 struct adios_attribute_struct * attr = adios_find_attribute_by_id
-                    (fd->group->attributes, fd->group->attrid_update_epoch);
+                        (fd->group->attributes, fd->group->attrid_update_epoch);
                 if (attr) {
                     log_debug ("Update ADIOS extra attribute name=%s, "
                             "time = %d, rank = %d, epoch = %s, subfile=%d\n",
