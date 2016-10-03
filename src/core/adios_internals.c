@@ -3506,11 +3506,11 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
     struct adios_pg_struct * pg = fd->pgs_written;
     int pgid = 0;
 
-    printf("%d: ============build index, pg_start_in_file=%llu\n",fd->group->process_id, pg->pg_start_in_file);
+//    printf("%d: ============build index, pg_start_in_file=%llu\n",fd->group->process_id, pg->pg_start_in_file);
     
     //Yuan: if index has been built, update the offsets 
     if(fd->group->built_index==1) {
-        printf("index already buit, use it and move on\n");
+        //printf("index already buit, use it and move on\n");
         index->pg_root=g->index->pg_root; 
         index->pg_tail=g->index->pg_tail; 
         index->vars_root=g->index->vars_root; 
@@ -3525,19 +3525,19 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
         int cnt=0;
         while (g_item) {
             g_item->offset_in_file += pg->pg_start_in_file;
-            printf("pg offset = %llu\n", g_item->offset_in_file);
-            if(g_item->next!=NULL)
-                printf("one more pg\n");
+            //printf("pg offset = %llu\n", g_item->offset_in_file);
+            //if(g_item->next!=NULL)
+                //printf("one more pg\n");
 
             struct adios_index_var_struct_v1 * v_index = index->vars_root;
             while (v_index) {
-                    printf("old var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset); 
+                    //printf("old var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset); 
                     v_index->characteristics [cnt].offset +=
                         pg->pg_start_in_file;
                     v_index->characteristics [cnt].payload_offset +=
                         pg->pg_start_in_file;
-                    printf("var time index=%d\n",v_index->characteristics[cnt].time_index); 
-                    printf("var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset); 
+                    //printf("var time index=%d\n",v_index->characteristics[cnt].time_index); 
+                    //printf("var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset); 
 
                 v_index = v_index->next;
             }
@@ -3577,7 +3577,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
         g_item->time_index_name = (g->time_index_name ? strdup (g->time_index_name) : 0L);
         g_item->time_index = g->time_index;
         
-        printf("adios_build_index_v1 g->time_index=%d, start_in_file=%llu\n", g->time_index, pg->pg_start_in_file);
+        //printf("adios_build_index_v1 g->time_index=%d, start_in_file=%llu\n", g->time_index, pg->pg_start_in_file);
         g_item->offset_in_file = pg->pg_start_in_file;
         g_item->next = 0;
 
@@ -3589,6 +3589,8 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
         //pg_start_in_file is established correctly
         if(fd->group->do_ts_aggr==1)
             pg->pg_start_in_file=0;
+
+        //printf("after clearing... adios_build_index_v1 g->time_index=%d, start_in_file=%llu\n", g->time_index, pg->pg_start_in_file);
 
         /* For each written variable, create a variable entry in the index */
         struct adios_var_struct * v = pg->vars_written;
@@ -3612,8 +3614,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                 v_index->type = v->type;
                 v_index->characteristics_count = 1;
                 v_index->characteristics_allocated = 1;
+                //printf("var=%s v_offset=%llu start_in_file=%llu\n", v->name, v->write_offset, pg->pg_start_in_file); 
                 v_index->characteristics [0].offset = v->write_offset + pg->pg_start_in_file;
-                printf("var=%s offset=%llu\n", v->name, v_index->characteristics [0].offset); 
+                //printf("var=%s characteristic offset=%llu\n", v->name, v_index->characteristics [0].offset); 
                 // Find the old var in g->vars.
                 // We need this to calculate the correct payload_offset, because that
                 // holds the variable references in the dimensions, while v-> contains
@@ -3961,7 +3964,7 @@ int adios_write_index_v1 (char ** buffer
         index_size += len;
         group_size += len;
 
-        printf("write index time=%lu\n", pg_root->time_index);
+        //printf("write index time=%lu\n", pg_root->time_index);
         buffer_write (buffer, buffer_size, buffer_offset
                 ,&pg_root->time_index, 4
                 );
@@ -4044,7 +4047,7 @@ int adios_write_index_v1 (char ** buffer
         index_size += 8;
         var_size += 8;
 
-        printf("name=%s vars_root->characteristics_count=%d\n",vars_root->var_name, vars_root->characteristics_count);
+        //printf("name=%s vars_root->characteristics_count=%d\n",vars_root->var_name, vars_root->characteristics_count);
         for (i = 0; i < vars_root->characteristics_count; i++)
         {
             uint64_t size;

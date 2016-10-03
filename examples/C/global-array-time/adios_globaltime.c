@@ -11,7 +11,7 @@
 #include "adios.h"
 int main (int argc, char ** argv) 
 {
-	char        filename [256];
+	char        filename [256], fname[256];
 	int         rank, size, i, it;
 	int         NX = 10;
         // NY = 1 for testing purpose
@@ -38,10 +38,12 @@ int main (int argc, char ** argv)
         	for (i = 0; i < NY; i++)
             		p[i] = it*1000.0 + rank*NY + i;
 		
-                if (it==1)
-		    adios_open (&adios_handle, "restart", filename, "w", comm);
+            sprintf(fname, "%s-%d.bp", filename, it);                             
+
+            if (it==1)
+		    adios_open (&adios_handle, "restart", fname, "w", comm);
                 else
-		    adios_open (&adios_handle, "restart", filename, "a", comm);
+		    adios_open (&adios_handle, "restart", fname, "w", comm);
 
         	#include "gwrite_restart.ch"
         	adios_close (adios_handle);

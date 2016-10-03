@@ -365,12 +365,15 @@ methods = g->methods;
             gettimeofday(&tp, NULL);
             sprintf(epoch, "%d", (int) tp.tv_sec);
 
+            /* Yuan: norbert's fix of growing attr size
             int def_adios_init_attrs = 1;
             // if we append/update, define these attributes only at the first step
             if (fd->mode != adios_mode_write && fd->group->time_index > 1)
                 def_adios_init_attrs = 0;
 
             if (def_adios_init_attrs) {
+            */
+            if (fd->group->time_index == 1) {
                 log_debug ("Define ADIOS extra attributes, "
                         "time = %d, rank = %d, epoch = %s subfile=%d\n",
                         fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
@@ -479,7 +482,10 @@ methods = g->methods;
                 adios_databuffer_set_max_size(g->ts_buffsize);
                 bufsize=g->ts_buffsize;
             }
-            else {
+            //else {
+            //Yuan: ts buffering doesn't need buffer extension, only one
+            //time allocation at the first time step
+            else if(g->do_ts_aggr==0) { 
                 if (g->last_buffer_size > 0)
                     bufsize = g->last_buffer_size;
                 else
@@ -488,24 +494,28 @@ methods = g->methods;
 
             //printf("==open bufsize=%llu\n", bufsize);
 
-            if (!adios_databuffer_resize (fd, bufsize)) 
-            {
-                fd->bufstate = buffering_ongoing;
+            //Yuan: when ts buffering is on, only the first step needs to
+            //alloctate the buffer
+            if(g->do_ts_aggr==0 || (g->do_ts_aggr==1 && g->max_ts==g->ts_to_buffer)) {
+                if (!adios_databuffer_resize (fd, bufsize)) 
+                {
+                    fd->bufstate = buffering_ongoing;
 
-                // write the process group header
-                adios_write_open_process_group_header_v1 (fd);
+                    // write the process group header
+                    adios_write_open_process_group_header_v1 (fd);
 
-                // setup for writing vars
-                adios_write_open_vars_v1 (fd);
-            }
-            else
-            {
-                fd->bufstate = buffering_stopped;
-                adios_error (err_no_memory, 
-                             "Cannot allocate %" PRIu64 " bytes for buffered output "
-                             "of group %s in adios_open(). Output will fail.\n", 
-                             fd->buffer_size, g->name);
-                return adios_errno;
+                    // setup for writing vars
+                    adios_write_open_vars_v1 (fd);
+                }
+                else
+                {
+                    fd->bufstate = buffering_stopped;
+                    adios_error (err_no_memory, 
+                                 "Cannot allocate %" PRIu64 " bytes for buffered output "
+                                 "of group %s in adios_open(). Output will fail.\n", 
+                                 fd->buffer_size, g->name);
+                    return adios_errno;
+                }
             }
         }
     
@@ -707,7 +717,6 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     // as we can't do this after the data is transformed
     adios_generate_var_characteristics_v1 (fd, v);
 
-//    printf("adios_write fd->offset=%llu for variable= %s\n", fd->offset, v->name);
 
     uint64_t vsize = 0;
     if (fd->bufstate == buffering_ongoing)
@@ -718,6 +727,8 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
 
         if (fd->buffer_size < fd->offset + vsize)
         {
+//    printf("adios_write fd->offset=%llu for variable= %s buffer_size=%llu\n", fd->offset, v->name, fd->buffer_size);
+//            printf("max_ts=%d ts_to_buffer=%d\n", fd->group->max_ts, fd->group->ts_to_buffer);
             /* Trouble: this variable does not fit into the current buffer */
             // First, try to realloc the buffer 
             uint64_t extrasize = adios_databuffer_get_extension_size (fd);
@@ -1460,7 +1471,8 @@ struct adios_attribute_struct * a = fd->group->attributes;
         if(ts_fh==0 && fd->group->ts_buffsize>0) {
             fd->group->max_ts=fd->group->ts_buffsize/fd->bytes_written-1; //ts counters start from 0 
             fd->group->ts_to_buffer=fd->group->max_ts;
-            //printf("max_ts=%d ts_to_buffer=%d\n", fd->group->max_ts, fd->group->ts_to_buffer);
+        //    printf("ts_buffsize=%llu bytes_writen=%llu\n", fd->group->ts_buffsize, fd->bytes_written);
+        //    printf("max_ts=%d ts_to_buffer=%d\n", fd->group->max_ts, fd->group->ts_to_buffer);
         }
     }
     //Yuan: add time step aggregation logic
@@ -1472,7 +1484,12 @@ struct adios_attribute_struct * a = fd->group->attributes;
     {
         if (fd->group->last_buffer_size < fd->buffer_size) {
             // remember how much buffer we used for the next cycle
-            fd->group->last_buffer_size = fd->buffer_size;
+            // Yuan: with ts buffering, it will be the total amount of data
+            // written; however last_buffer_size isn't used anyways
+            if(fd->group->do_ts_aggr==0)  
+                fd->group->last_buffer_size = fd->buffer_size;
+            else
+                fd->group->last_buffer_size = fd->bytes_written;
         }
         if(fd->group->do_ts_aggr==0 || (fd->group->do_ts_aggr==1 && fd->group->ts_to_buffer==0)) { 
             adios_databuffer_free (fd);
@@ -1496,6 +1513,7 @@ struct adios_attribute_struct * a = fd->group->attributes;
         ts_fh=0;
         
     }
+
 
     //printf("close file==============\n");
 /*
