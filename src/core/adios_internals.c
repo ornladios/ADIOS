@@ -673,65 +673,63 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                             "value: '%s' not valid integer\n",value);
                     return 0;
                 }
-                else
+                switch (type)
                 {
-                    switch (type)
-                    {
-                        case adios_byte:
-                            if (t < SCHAR_MIN || t > SCHAR_MAX)
-                            {
-                                adios_error (err_out_of_bound,
-                                        "type is %s, value "
-                                        "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type),
-                                        value);
-                                return 0;
-                            }
-                            else
-                            {
-                                *out = malloc (1);
-                                *((int8_t *) *out) = t;
+                    case adios_byte:
+                        if (t < SCHAR_MIN || t > SCHAR_MAX)
+                        {
+                            adios_error (err_out_of_bound,
+                                         "type is %s, value "
+                                         "is out of range: '%s'\n",
+                                         adios_type_to_string_int (type),
+                                         value);
+                            return 0;
+                        }
+                        else
+                        {
+                            *out = malloc (1);
+                            *((int8_t *) *out) = t;
 
-                                return 1;
-                            }
-                        case adios_short:
-                            if (t < SHRT_MIN || t > SHRT_MAX)
-                            {
-                                adios_error (err_out_of_bound,
-                                        "type is %s, value "
-                                        "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type),
-                                        value);
-                                return 0;
-                            }
-                            else
-                            {
-                                *out = malloc (2);
-                                *((int16_t *) *out) = t;
+                            return 1;
+                        }
+                    case adios_short:
+                        if (t < SHRT_MIN || t > SHRT_MAX)
+                        {
+                            adios_error (err_out_of_bound,
+                                         "type is %s, value "
+                                         "is out of range: '%s'\n",
+                                         adios_type_to_string_int (type),
+                                         value);
+                            return 0;
+                        }
+                        else
+                        {
+                            *out = malloc (2);
+                            *((int16_t *) *out) = t;
 
-                                return 1;
-                            }
-                        case adios_integer:
-                            if (t < INT_MIN || t > INT_MAX)
-                            {
-                                adios_error (err_out_of_bound,
-                                        "type is %s, value "
-                                        "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type),
-                                        value);
-                                return 0;
-                            }
-                            else
-                            {
-                                *out = malloc (4);
-                                *((int32_t *) *out) = t;
+                            return 1;
+                        }
+                    case adios_integer:
+                        if (t < INT_MIN || t > INT_MAX)
+                        {
+                            adios_error (err_out_of_bound,
+                                         "type is %s, value "
+                                         "is out of range: '%s'\n",
+                                         adios_type_to_string_int (type),
+                                         value);
+                            return 0;
+                        }
+                        else
+                        {
+                            *out = malloc (4);
+                            *((int32_t *) *out) = t;
 
-                                return 1;
-                            }
-                        default:
-                                return 1;
-                    }
+                            return 1;
+                        }
+                    default:
+                        return 1;
                 }
+                break; // just to make eclipse happy
             }
         case adios_long:
             {
@@ -766,65 +764,63 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                             "value: '%s' not valid integer\n", value);
                     return 0;
                 }
-                else
+                switch (type)
                 {
-                    switch (type)
-                    {
-                        case adios_unsigned_byte:
-                            if (t > UCHAR_MAX)
-                            {
-                                adios_error (err_out_of_bound,
-                                        "type is %s, value "
-                                        "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type),
-                                        value);
-                                return 0;
-                            }
-                            else
-                            {
-                                *out = malloc (1);
-                                *((uint8_t *) *out) = t;
+                    case adios_unsigned_byte:
+                        if (t > UCHAR_MAX)
+                        {
+                            adios_error (err_out_of_bound,
+                                         "type is %s, value "
+                                         "is out of range: '%s'\n",
+                                         adios_type_to_string_int (type),
+                                         value);
+                            return 0;
+                        }
+                        else
+                        {
+                            *out = malloc (1);
+                            *((uint8_t *) *out) = t;
 
-                                return 1;
-                            }
-                        case adios_unsigned_short:
-                            if (t > USHRT_MAX)
-                            {
-                                adios_error (err_out_of_bound,
-                                        "type is %s, value "
-                                        "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type),
-                                        value);
-                                return 0;
-                            }
-                            else
-                            {
-                                *out = malloc (2);
-                                *((uint16_t *) *out) = t;
+                            return 1;
+                        }
+                    case adios_unsigned_short:
+                        if (t > USHRT_MAX)
+                        {
+                            adios_error (err_out_of_bound,
+                                         "type is %s, value "
+                                         "is out of range: '%s'\n",
+                                         adios_type_to_string_int (type),
+                                         value);
+                            return 0;
+                        }
+                        else
+                        {
+                            *out = malloc (2);
+                            *((uint16_t *) *out) = t;
 
-                                return 1;
-                            }
-                        case adios_unsigned_integer:
-                            if (t > UINT_MAX)
-                            {
-                                adios_error (err_out_of_bound,
-                                        "type is %s, value "
-                                        "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type),
-                                        value);
-                                return 0;
-                            }
-                            else
-                            {
-                                *out = malloc (4);
-                                *((uint32_t *) *out) = t;
+                            return 1;
+                        }
+                    case adios_unsigned_integer:
+                        if (t > UINT_MAX)
+                        {
+                            adios_error (err_out_of_bound,
+                                         "type is %s, value "
+                                         "is out of range: '%s'\n",
+                                         adios_type_to_string_int (type),
+                                         value);
+                            return 0;
+                        }
+                        else
+                        {
+                            *out = malloc (4);
+                            *((uint32_t *) *out) = t;
 
-                                return 1;
-                            }
-                        default:
-                                return 1;
-                    }
+                            return 1;
+                        }
+                    default:
+                        return 1;
                 }
+                break; // just to make eclipse happy
             }
         case adios_unsigned_long:
             {
