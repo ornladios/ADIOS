@@ -1,9 +1,25 @@
-...
+    - performance bug in MPI_AGGREGATE method since 1.9.0 fixed 
+    - collect min/max statistics only by default
+      adios_declare_group() signature changed with option for statistics 
+      collection: off, minmax, full
+    - added ZFP lossy compression transform method
+    - fix: bug building with hdf5 1.10
+
+1.10.0 Release July 2016
     - Fortran API for inquiring selections
     - bprecover utility
       - recover a BP file which has a damaged index data
     - adios_group_size() optional now
+    - --without-mpi option in configure to build only the sequential libraries
+    - Python/Numpy wrapper improvements:
+      - Support both python 2 and python 3
+      - Read options with point and block selection 
+      - Group management on reading
+      - Support auto completion with ipython
     - fix: bpmeta does not skip any subfiles when used with threads
+    - fix: Better xml processing to allow for multiple text lines as parameters for a method
+    - fix: Builds on OS X, both clang and gcc supported
+    - fix: support adios_inq_var_stat() in streaming mode
 
 1.9.0 Release Jul 2015
     - Array attributes are supported

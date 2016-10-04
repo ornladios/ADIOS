@@ -83,7 +83,7 @@ int main( int argc, char ** argv)
     adios_init_noxml (comm);
     strcpy(filename, "perf_transform.bp");
 
-    adios_declare_group (&m_adios_group, "transform", "iter", adios_flag_yes);
+    adios_declare_group (&m_adios_group, "transform", "iter", adios_stat_default);
     adios_select_method (m_adios_group, "MPI", "", "");
     define_vars();
 

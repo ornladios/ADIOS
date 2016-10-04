@@ -197,6 +197,11 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
 void adios_write_timing_variables (struct adios_file_struct * fd)
 {
+#ifdef _INTERNAL
+    /* the internal library does not need this and would result in link errors 
+       since common_adios_write_byid() is not included in that library */
+    return;
+#else
     if (!fd)
     {
         adios_error (err_invalid_file_pointer,
@@ -246,7 +251,7 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
 	    }
 
             char * labels = (char*)
-                              malloc ( (max_label_len+1) * timer_count * sizeof (char) );
+                              calloc ( (max_label_len+1) * timer_count, sizeof (char) );
 
 	    for (i = 0; i < g->prev_timing_obj->user_count; i++)
 	    {
@@ -295,11 +300,11 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
 
     free (timers);
 
+#endif /* _INTERNAL */
 }
 
 int adios_add_timing_variables (struct adios_file_struct * fd)
 {
-
     if (!fd)
     {
         adios_error (err_invalid_file_pointer,
@@ -544,6 +549,18 @@ void adios_timing_destroy (struct adios_timing_struct * timing_obj)
         if (timing_obj->times)
         {
             free (timing_obj->times);
+        }
+        if (timing_obj->names)
+        {
+            int i;
+            for (i = 0; i < timing_obj->internal_count; i++)
+            {
+                if (timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i])
+                {
+                    free(timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]);
+                }
+            }
+            free (timing_obj->names);
         }
         free (timing_obj);
     }

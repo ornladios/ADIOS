@@ -25,3 +25,7 @@ set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/
 # ALACRITY plugin:
 set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_alacrity_write.c)
 set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_alacrity_read.c)
+
+# zfp plugin:
+set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_zfp_write.c)
+set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_zfp_read.c)

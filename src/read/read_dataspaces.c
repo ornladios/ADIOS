@@ -13,18 +13,20 @@
 #include "config.h"
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include <errno.h>  /* errno */
 #include "public/adios_types.h"
 #include "public/adios_read.h"
 #include "public/adios_error.h"
 #include "core/globals.h"
 #include "core/util.h"
+#include "core/adios_clock.h"
 #include "core/adios_logger.h"
-//#include "core/bp_types.h"
+#include "core/common_read.h"
 #include "core/adios_read_hooks.h"
 #include "core/futils.h"
 #include "core/ds_metadata.h"
-#include "core/common_read.h" // common_read_selection_* functions
+#include "core/a2sel.h" // selection functions
 
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
@@ -404,10 +406,10 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
     // extract each variable
     log_debug("    Extract variables\n");
     for (i=0;i<vars_count;i++) {
-        log_debug("      var %d, b = %d\n", i, b);
+        log_debug("      var %d, b = %lld\n", i, (long long int)b);
         namelen = *(int*)b; // lenght of name
         b += sizeof(int);
-        log_debug("        namelen = %d, b = %d\n", namelen, b);
+        log_debug("        namelen = %d, b = %lld\n", namelen, (long long int)b);
         fp->var_namelist[i] = (char *) malloc (namelen+1);
         if (!fp->var_namelist[i]) {
             adios_error (err_no_memory, "Could not allocate space for variable name when opening a group\n"); 
@@ -420,30 +422,30 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
         }
         b += namelen;
         vars[i].name = strdup(fp->var_namelist[i]);  
-        log_debug("        name = %s, b = %d\n", vars[i].name, b);
+        log_debug("        name = %s, b = %lld\n", vars[i].name, (long long int)b);
         // type
         vars[i].type = *(enum ADIOS_DATATYPES*)b; 
         b += sizeof(int);
-        log_debug("        type = %d, b = %d\n", (int)vars[i].type, b);
+        log_debug("        type = %d, b = %lld\n", (int)vars[i].type, (long long int)b);
         // hastime
         vars[i].hastime = *(int*)b; 
         b += sizeof(int);
-        log_debug("        hastime = %d, b = %d\n", vars[i].hastime, b);
+        log_debug("        hastime = %d, b = %lld\n", vars[i].hastime, (long long int)b);
         // dimensions
         vars[i].ndims = *(int*)b; 
         b += sizeof(int);
-        log_debug("        ndims w/o time = %d, b = %d\n", vars[i].ndims, b);
+        log_debug("        ndims w/o time = %d, b = %lld\n", vars[i].ndims, (long long int)b);
         for (j=0; j < MAX_DS_NDIM; j++) {
             dims[j] = *(uint64_t*)b; 
             b += 8;
-            log_debug("          unordered dim[%d] = %lld, b = %d\n", j, dims[j], b);
+            log_debug("          unordered dim[%d] = %" PRIu64 ", b = %lld\n", j, dims[j], (long long int)b);
         }
         // reorder DS dimensions to Fortran/C dimensions
         ds_dimension_ordering (vars[i].ndims, futils_is_called_from_fortran(), 
                                1 /*unpack*/, didx);
         for (j=0; j < vars[i].ndims; j++) {
             vars[i].dims[j] = dims[didx[j]];
-            log_debug("          dim[%d] = %lld, b = %d\n", j, vars[i].dims[j], b);
+            log_debug("          dim[%d] = %" PRIu64 ", b = %lld\n", j, vars[i].dims[j], (long long int)b);
         }
 
         if (vars[i].ndims == 0 && !vars[i].hastime) {
@@ -468,7 +470,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
             }
             
             b += datasize;
-            log_debug("        value read, b = %d\n", b);
+            log_debug("        value read, b = %lld\n", (long long int)b);
         } else {
             vars[i].value = NULL;
         }
@@ -508,7 +510,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
             memcpy (attrs[i].value, b, datasize);
             if (attrs[i].type == adios_string) 
                 ((char*)attrs[i].value)[datasize] = '\0';
-            log_debug("        value read, b = %d\n", b);
+            log_debug("        value read, b = %lld\n", (long long int)b);
         } else {
             log_error("Cannot allocate %d bytes to store the value of attribute %s\n",
                     datasize, attrs[i].name);
@@ -539,7 +541,7 @@ static int get_groupdata (ADIOS_FILE *fp)
     int err;
     char ds_name[MAX_DS_NAMELEN];
     snprintf (ds_name, MAX_DS_NAMELEN, "GROUP@%s/%s",fp->path, ds->group_name);
-    log_debug("-- %s, rank %d: Get variable %s with size %lld\n", __func__, 
+    log_debug("-- %s, rank %d: Get variable %s with size %" PRIu64 "\n", __func__, 
               ds->mpi_rank, ds_name, readsize[0]);
     err = get_meta (ds_name, adios_byte, ds->current_step, ds->mpi_rank, 
                      ndim, 0, offset, readsize, group_info_buf, ds->comm);
@@ -602,7 +604,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
     int err, i;
     char ds_vname[MAX_DS_NAMELEN];
     char ds_fname[MAX_DS_NAMELEN];
-    double t1 = adios_gettime();
+    double t1 = adios_gettime_double();
     enum STEP_STATUS step_status = STEP_OK;
 
     snprintf(ds_vname, MAX_DS_NAMELEN, "VERSION@%s",fp->path);
@@ -721,7 +723,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
 
         // check if we need to stay in loop 
         if (stay_in_poll_loop) {
-            if (timeout_sec >= 0.0 && (adios_gettime()-t1 > timeout_sec))
+            if (timeout_sec >= 0.0 && (adios_gettime_double()-t1 > timeout_sec))
                 stay_in_poll_loop = 0;
             else
                 adios_nanosleep (poll_interval_msec/1000, 
@@ -893,7 +895,7 @@ int adios_read_dataspaces_close (ADIOS_FILE *fp)
     struct dataspaces_data_struct * ds = 
                 (struct dataspaces_data_struct *) fp->fh;
 
-    log_debug("-- %s, rank %d: fp=%x\n", __func__, ds->mpi_rank, fp);
+    log_debug("-- %s, rank %d: fp=%p\n", __func__, ds->mpi_rank, fp);
 
     /* Release read lock locked in fopen */
     unlock_file (fp, ds);
@@ -1317,7 +1319,7 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
                     }
                     reqsize *= sel->u.bb.count[i];
                 }
-                r->sel = copy_selection (sel);
+                r->sel = a2sel_copy (sel);
                 break;
 
             case ADIOS_SELECTION_POINTS:
@@ -1330,7 +1332,7 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
                     return err_out_of_bound;
                 }
                 reqsize *= sel->u.points.npoints;
-                r->sel = copy_selection (sel);
+                r->sel = a2sel_copy (sel);
                 break;
 
             case ADIOS_SELECTION_WRITEBLOCK:
@@ -1338,7 +1340,7 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
                 /* We cannot do this with DataSpaces yet (fp->nwriter == 1) */
                 /* Read the whole variable */
                 s = (uint64_t *) calloc (var->ndims, sizeof(uint64_t));
-                r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
+                r->sel = a2sel_boundingbox(var->ndims, s, var->dims);
                 for (i=0; i<var->ndims; i++) 
                     reqsize *= var->dims[i];
                 break;
@@ -1370,14 +1372,14 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
                     if (ld0 > 0) {
                         s[0] = off0;
                         c[0] = ld0;
-                        r->sel = common_read_selection_boundingbox(
+                        r->sel = a2sel_boundingbox(
                                 var->ndims, s, c);
                     }
                     for (i=0; i<var->ndims; i++) 
                         reqsize *= c[i];
                 } else {
                     /* Scalar: just read it for each process */
-                    r->sel = common_read_selection_boundingbox(0, 0, 0);
+                    r->sel = a2sel_boundingbox(0, 0, 0);
                 }
 
                 break;
@@ -1385,7 +1387,7 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
     } else {
         // NULL selection means the whole variable
         s = (uint64_t *) calloc (var->ndims, sizeof(uint64_t));
-        r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
+        r->sel = a2sel_boundingbox(var->ndims, s, var->dims);
         for (i=0; i<var->ndims; i++) 
             reqsize *= var->dims[i];
     }
@@ -1550,7 +1552,7 @@ int adios_read_dataspaces_perform_reads (const ADIOS_FILE *fp, int blocking)
         ds->req_list = ds->req_list->next;
         // FIXME: if we allocated start/count arrays in schedule read for r->sel,
         // we need to manually free them here
-        common_read_selection_delete(r->sel);
+        a2sel_free(r->sel);
         free(r);
         ds->nreq--;
     }
@@ -1660,10 +1662,10 @@ void ds_int64s_to_str(int ndim, uint64_t *values, char *s)
         s[0] = '\0';
         return;
     }
-    sprintf(s,"%llu", values[0]);
+    sprintf(s,"%" PRIu64, values[0]);
     for (i=1; i<ndim; i++)
     {
-        sprintf (v,",%llu", values[i]);
+        sprintf (v,",%" PRIu64, values[i]);
         strcat (s,v);
     }
 }

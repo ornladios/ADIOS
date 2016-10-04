@@ -9,10 +9,10 @@ include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/tests/test_src)
 
 
-set(C_PROGS_READONLY hashtest copy_subvolume text_to_pairstruct test_strutil)
+set(C_PROGS_READONLY hashtest copy_subvolume text_to_pairstruct test_strutil points_1DtoND trim_spaces)
 
 if(BUILD_WRITE)
-    set(C_PROGS_WRITE transforms_specparse group_free_test)
+    set(C_PROGS_WRITE transforms_specparse group_free_test query_minmax read_points_2d read_points_3d array_attribute)
 endif(BUILD_WRITE)
 
 if(BUILD_FORTRAN)

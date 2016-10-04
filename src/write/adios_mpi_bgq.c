@@ -586,6 +586,7 @@ int adios_mpi_bgq_open (struct adios_file_struct * fd
         if (!fd->group->prev_timing_obj)
             fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
     }
+    free (timer_names);
 #endif
 
     START_TIMER (ADIOS_TIMER_AD_OPEN);

@@ -148,11 +148,13 @@ enum ADIOS_ERRCODES {
 
     // Transform layer errors
     err_invalid_transform_type                = -300, // unknown transform is requested 
+    err_transform_failure                     = -301, // the execution of transform failed
 
     // Query errors
     err_unsupported_selection                 = -401, // unsupported selection
     err_invalid_query_value                   = -402, // value passed in expression is invalid
     err_incompatible_queries                  = -403, // cannot combine two queries
+    err_invalid_selection                     = -404, // something wrong with the selection object
 
     // Miscellaneous
     err_fgr                                   = -900, // FGR lib error

@@ -23,3 +23,20 @@ Additional BSD Notice
 
 3. Also, reference herein to any specific commercial products, process, or services by trade name, trademark, manufacturer or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or UT-BATTELLE, LLC. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or UT-BATTELLE, LLC, and shall not be used for advertising or product endorsement purposes.
 
+
+Note about Mini-XML
+===================
+The src/mxml/mxml-2.9 subdirectory contains the unmodified code of Mini-XML 2.9 which is otherwise freely accessible from
+   http://www.msweet.org/projects.php/Mini-XML
+The author of that open source software is Michael Sweet
+The mxml-2.9 library comes with the LGPL v2 license, see src/mxml/mxml-2.9/COPYING
+ADIOS can be linked with a pre-installed mxml library otherwise it will build mxml from this included source.
+
+Note about ZFP
+===================
+The src/zfp/zfp-0.5.0 subdirectory contains the unmodified code of ZFP which is otherwise freely accessible from
+  http://computation.llnl.gov/projects/floating-point-compression
+The author of that open source software is Peter Lindstrom
+The zfp library comes with a BSD license, see src/zfp/zfp-0.5.0/COPYING
+ADIOS can be linked with a pre-installed zfp library otherwise it will build zfp from this included source.
+

@@ -34,11 +34,21 @@ int64_t common_query_estimate(ADIOS_QUERY* q, int timestep);
 
 //void common_query_set_timestep(int timeStep);
 
-int common_query_evaluate(ADIOS_QUERY* q, 
+ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q, 
 			  ADIOS_SELECTION* outputBoundry,
 			  int timestep,
-			  uint64_t batchSize, 
-			  ADIOS_SELECTION** result);
+			  uint64_t batchSize);
+
+int common_query_read_boundingbox (
+        ADIOS_FILE *f,
+        ADIOS_QUERY *q,
+        const char *varname,
+        int timestep,
+        unsigned int nselections,
+        ADIOS_SELECTION *selections,
+        ADIOS_SELECTION *bb,
+        void *data
+   );
 
 void common_query_free(ADIOS_QUERY* q);
 
@@ -46,6 +56,7 @@ void common_query_free(ADIOS_QUERY* q);
 // this function then calls all query methods' finalize
 void common_query_finalize();
   
+
 #ifdef __cplusplus
 }
 #endif

@@ -9,10 +9,10 @@ noinst_PROGRAMS = adios_write adios_read
 
 adios_write_SOURCES = adios_write.c
 adios_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-adios_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_write_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 adios_read_SOURCES = adios_read.c
 adios_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-adios_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_read_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)

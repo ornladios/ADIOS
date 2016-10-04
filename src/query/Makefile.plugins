@@ -1,3 +1,4 @@
+query_method_SOURCES += query/query_minmax.c
 if HAVE_FASTBIT
 query_method_SOURCES += query/query_fastbit.c
 query_method_SOURCES += query/fastbit_adios.c

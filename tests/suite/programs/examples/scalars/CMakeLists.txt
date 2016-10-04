@@ -15,7 +15,7 @@ endif()
 target_link_libraries(scalars_write_C adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
 add_custom_command(
 	OUTPUT gwrite_scalars.ch
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/scalars/scalars_C.xml
+	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/scalars/scalars_C.xml
 	DEPENDS scalars_C.xml
 	)
 
@@ -33,7 +33,7 @@ if(BUILD_FORTRAN)
     target_link_libraries(scalars_write_F adiosf ${ADIOSLIB_LDADD})
     add_custom_command(
 	OUTPUT gwrite_scalars.fh
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/scalars/scalars_F.xml
+	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/scalars/scalars_F.xml
 	DEPENDS scalars_F.xml
 	)
 

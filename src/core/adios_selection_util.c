@@ -15,6 +15,7 @@
 #include "adios_subvolume.h"
 #include "adios_selection_util.h"
 #include "common_read.h"
+#include "util.h"
 
 //
 // NOTE: Intersection type guarantees:
@@ -38,13 +39,15 @@ ADIOS_SELECTION * adios_selection_intersect_bb_bb(const ADIOS_SELECTION_BOUNDING
         return NULL;
     }
 
+    ADIOS_SELECTION * bb;
     if (intersect_bb(bb1, bb2, new_start, NULL, NULL, new_count)) {
-        return common_read_selection_boundingbox(ndim, new_start, new_count);
+        bb = a2sel_boundingbox(ndim, new_start, new_count);
     } else {
-        free(new_start);
-        free(new_count);
-        return NULL;
+        bb = NULL;
     }
+    free(new_start);
+    free(new_count);
+    return bb;
 }
 
 ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
@@ -90,7 +93,10 @@ ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDIN
         return NULL;
     } else {
         new_pts = (uint64_t*)realloc(new_pts, new_npts * ndim * sizeof(uint64_t));
-        return common_read_selection_points(ndim, new_npts, new_pts);
+        ADIOS_SELECTION *bb = a2sel_boundingbox(ndim, bb1->start, bb1->count);
+        ADIOS_SELECTION *pts = a2sel_points(ndim, new_npts, new_pts, NULL, 0);
+        pts->u.points.container_selection = bb;
+        return pts;
     }
 }
 
@@ -139,7 +145,7 @@ ADIOS_SELECTION * adios_selection_intersect_pts_pts(const ADIOS_SELECTION_POINTS
         return NULL;
     } else {
         new_pts = (uint64_t*)realloc(new_pts, new_npts * sizeof(uint64_t));
-        return common_read_selection_points(ndim, new_npts, new_pts);
+        return a2sel_points(ndim, new_npts, new_pts, NULL, 0);
     }
 }
 
@@ -251,7 +257,7 @@ ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLO
 
 	if (!wb1->is_sub_pg_selection && !wb2->is_sub_pg_selection) {
 		// If neither selection is a sub-PG selection, the result is easy, and we can return immediately
-		ADIOS_SELECTION *inter_sel = common_read_selection_writeblock(wbindex);
+		ADIOS_SELECTION *inter_sel = a2sel_writeblock(wbindex);
 		inter_sel->u.block.is_absolute_index = is_abs_idx;
 		return inter_sel;
 	} else if (wb1->is_sub_pg_selection && wb2->is_sub_pg_selection) {
@@ -265,7 +271,7 @@ ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLO
 		);
 
 		if (intersects) {
-			ADIOS_SELECTION *inter_sel = common_read_selection_writeblock(wbindex);
+			ADIOS_SELECTION *inter_sel = a2sel_writeblock(wbindex);
 			inter_sel->u.block.is_absolute_index = is_abs_idx;
 			inter_sel->u.block.is_sub_pg_selection = 1;
 			inter_sel->u.block.element_offset = inter_elem_offset;
@@ -276,12 +282,12 @@ ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLO
 		}
 	} else if (wb1->is_sub_pg_selection) {
 		// Else, if only the first selection is sub-PG, so just use its range
-		ADIOS_SELECTION *newwb = common_read_selection_writeblock(wb1->index);
+		ADIOS_SELECTION *newwb = a2sel_writeblock(wb1->index);
 		newwb->u.block = *wb1;
 		return newwb;
 	} else if (wb2->is_sub_pg_selection) {
 		// Else, only the second selection is sub-PG, so just use its range
-		ADIOS_SELECTION *newwb = common_read_selection_writeblock(wb2->index);
+		ADIOS_SELECTION *newwb = a2sel_writeblock(wb2->index);
 		newwb->u.block = *wb2;
 		return newwb;
 	} else {
@@ -338,3 +344,5 @@ ADIOS_SELECTION * adios_selection_intersect_local(const ADIOS_SELECTION *s1, con
         return NULL;
     }
 }
+
+

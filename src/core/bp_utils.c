@@ -296,7 +296,7 @@ ADIOS_VARINFO * bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 
     v = bp_find_var_byid (fh, varid);
 
-    varinfo = (ADIOS_VARINFO *) malloc (sizeof (ADIOS_VARINFO));
+    varinfo = (ADIOS_VARINFO *) calloc (1, sizeof (ADIOS_VARINFO));
     assert (varinfo);
 
     /* Note: set varid as the real varid.
@@ -512,6 +512,7 @@ int bp_close (BP_FILE * fh)
 
     /* Free variable structures */
     /* alloc in bp_utils.c: bp_parse_vars() */
+    /* FIXME: this while loop is identical to adios_internals.c:adios_clear_vars_index_v1() */
     while (vars_root) {
         vr = vars_root;
         vars_root = vars_root->next;
@@ -553,6 +554,9 @@ int bp_close (BP_FILE * fh)
 
                 free (vr->characteristics[j].stats);
                 vr->characteristics[j].stats = 0;
+
+                // NCSU ALACRITY-ADIOS - Clear the transform metadata
+                adios_transform_clear_transform_characteristic(&vr->characteristics[j].transform);
             }
         }
         if (vr->characteristics)
@@ -580,8 +584,17 @@ int bp_close (BP_FILE * fh)
         ar = attrs_root;
         attrs_root = attrs_root->next;
         for (j = 0; j < ar->characteristics_count; j++) {
-            if (ar->characteristics[j].value)
-                free (ar->characteristics[j].value);
+            if (ar->characteristics[j].value) {
+                if (ar->type == adios_string_array)
+                    a2s_free_string_array (ar->characteristics [j].value, ar->nelems);
+                else
+                    free (ar->characteristics[j].value);
+                ar->characteristics[j].value = NULL;
+            }
+            if (ar->characteristics[j].dims.dims) {
+                free (ar->characteristics[j].dims.dims);
+                ar->characteristics[j].dims.dims = NULL;
+            }
         }
         if (ar->characteristics)
             free (ar->characteristics);
@@ -732,9 +745,9 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     BUFREAD64(b, b->pg_index_offset)
     mh->pgs_index_offset = b->pg_index_offset;
     // validity check  
-    if (b->pg_index_offset > b->file_size) {
+    if (b->pg_index_offset+MINIFOOTER_SIZE >= b->file_size) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. PG index offset (%" PRIu64 ") > file size (%" PRIu64 ")\n",
+                "Invalid BP file detected. PG index offset (%" PRIu64 ") is too big. File size is (%" PRIu64 ")\n",
                 b->pg_index_offset, b->file_size);
         return 1;
     }
@@ -742,15 +755,15 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     BUFREAD64(b, b->vars_index_offset)
     mh->vars_index_offset = b->vars_index_offset;
     // validity check  
-    if (b->vars_index_offset > b->file_size) {
+    if (b->vars_index_offset+MINIFOOTER_SIZE >= b->file_size) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Variable index offset (%" PRIu64 ") > file size (%" PRIu64 ")\n",
+                "Invalid BP file detected. Variable index offset (%" PRIu64 ") is too big. File size is (%" PRIu64 ")\n",
                 b->vars_index_offset, b->file_size);
         return 1;
     }
-    if (b->vars_index_offset < b->pg_index_offset) {
+    if (b->vars_index_offset <= b->pg_index_offset) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Variable index offset (%" PRIu64 ") < PG index offset (%" PRIu64 ")\n",
+                "Invalid BP file detected. Variable index offset (%" PRIu64 ") <= PG index offset (%" PRIu64 ")\n",
                 b->vars_index_offset, b->pg_index_offset);
         return 1;
     }
@@ -759,15 +772,15 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     BUFREAD64(b, b->attrs_index_offset)
     mh->attrs_index_offset = b->attrs_index_offset;
     // validity check  
-    if (b->attrs_index_offset > b->file_size) {
+    if (b->attrs_index_offset+MINIFOOTER_SIZE >= b->file_size) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") > file size (%" PRIu64 ")\n",
+                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") is too big. File size is (%" PRIu64 ")\n",
                 b->attrs_index_offset, b->file_size);
         return 1;
     }
-    if (b->attrs_index_offset < b->vars_index_offset) {
+    if (b->attrs_index_offset <= b->vars_index_offset) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") < Variable index offset (%" PRIu64 ")\n",
+                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") <= Variable index offset (%" PRIu64 ")\n",
                 b->attrs_index_offset, b->vars_index_offset);
         return 1;
     }
@@ -3130,7 +3143,7 @@ int is_global_array_generic (const struct adios_index_characteristic_dims_struct
  *  Note that adios_internals:adios_get_type_size returns
  *  strlen(var) for strings.
  */
-int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
+int bp_get_type_size (enum ADIOS_DATATYPES type, const void * var)
 {
     switch (type)
     {
@@ -3142,7 +3155,7 @@ int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
             if (!var)
                 return 1;
             else
-                return strlen ((char *) var) + 1;
+                return strlen ((const char *) var) + 1;
 
         case adios_string_array:
             return sizeof(char*);

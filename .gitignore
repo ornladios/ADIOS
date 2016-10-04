@@ -1,3 +1,25 @@
+# Added by Eric Suchyta, building in Docker container
+adios_config.flags.makesrc
+adios_config.makesrc
+tests/test_src/.deps/
+utils/adios_list_methods/adios_list_methods
+utils/adios_list_methods/adios_list_methods_nompi
+utils/adios_list_methods/adios_list_methods_readonly
+utils/adios_list_methods/adios_list_methods_readonly_nompi
+utils/gpp/gpp.py
+wrappers/numpy/build/
+*.dirstamp
+install
+config.cache
+tests/C/query/alacrity/adios_alac_query
+tests/C/query/alacrity/adios_build_alac_index
+tests/C/query/alacrity/adios_read_block
+tests/C/query/alacrity/adios_read_ext_test
+tests/C/query/alacrity/adios_show_bp_file
+tests/C/query/fastbit/fastbit_tests
+utils/fastbit/adios_index_fastbit
+
+
 # Object files
 *.o
 

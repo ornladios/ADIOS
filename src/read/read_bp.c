@@ -25,6 +25,9 @@
 #include "core/futils.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"
+#include "core/a2sel.h"
+#include "core/adios_clock.h"
+#include "core/adios_selection_util.h"
 
 #include "core/transforms/adios_transforms_transinfo.h"
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
@@ -37,8 +40,9 @@ static int chunk_buffer_size = 1024*1024*16;
 static int poll_interval_msec = 10000; // 10 secs by default
 static int show_hidden_attrs = 0; // don't show hidden attr by default
 
-static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE * fp, read_request * r);
-static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r);
+static ADIOS_VARCHUNK * read_var_bb  (const ADIOS_FILE * fp, read_request * r);
+static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE * fp, read_request * r);
+static ADIOS_VARCHUNK * read_var_wb  (const ADIOS_FILE * fp, read_request * r);
 
 static int map_req_varid (const ADIOS_FILE * fp, int varid);
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int step_offset);
@@ -329,7 +333,7 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
 static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int last_tidx, float timeout_sec)
 {
     BP_FILE * new_fh;
-    double t1 = adios_gettime();
+    double t1 = adios_gettime_double();
 
     log_debug ("enter get_new_step\n");
     /* First check if the file has been updated with more steps. */
@@ -374,7 +378,7 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
             {
                 stay_in_poll_loop = 1;
             }
-            else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
+            else if (timeout_sec > 0.0 && (adios_gettime_double () - t1 > timeout_sec))
             {
                 log_debug ("Time is out in get_new_step()\n");
                 stay_in_poll_loop = 0;
@@ -393,49 +397,213 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
     return found_stream;
 }
 
+
 //
-// returns # of segments to divide for the range discovered
+// returns # of elements in a bounding box' range (not size in bytes!)
 //
-uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t* max)
+static uint64_t adios_get_nelements_of_box (int ndim, uint64_t* start, uint64_t* count)
 {
-   uint64_t i=0, idx=0, k=0; 
-   for (i = 0; i < pts->npoints; i++)
-   {
-     idx = i * pts->ndim;
-     //printf("%ldth = [%ld, %ld, %ld] \n", i, pts->points[idx], pts->points[idx+1], pts->points[idx+2]);
-     for (k = 0; k < pts->ndim; k++) {
-        if (i == 0) {
-	  start[k] = pts->points[k]; max[k] = pts->points[k];
-	  continue;
-	}
-	//idx +=k;idx		
-	uint64_t curr = pts->points[idx+k];
-	if ((start[k] > curr)) { 
-	  start[k] = curr; //max[k] = curr;
-	} 
-	if (max[k] < curr) {
-	    max[k] = curr;
-	}		  
-     }	      
-     //printf("start[0]=%ld  max[0]=%ld \n", start[0], max[0]);
-   }
-   
-   uint64_t bbsize = 1;
-   for (k=0; k<pts->ndim; k++) {
-     bbsize *= max[k] - start[k]+1;
-     printf("... bb at %" PRIu64 " dimention: [%" PRIu64 ", %" PRIu64 "]\n", k, max[k], start[k]);
-   }
-   
-   uint64_t BBSIZELIMIT = 20000000; 	    
-   uint64_t nBB = bbsize/BBSIZELIMIT ;
-   
-   if (nBB * BBSIZELIMIT != bbsize) {
-     nBB += 1;
-   }
-   
-   printf("... nBB=%" PRIu64 "\n", nBB);
-   //return bbsize;
-   return nBB;   
+    int k=0;
+    uint64_t bbsize = 1;
+    for (k=0; k<ndim; k++) {
+        bbsize *= count[k];
+    }
+    return bbsize;
+}
+
+
+//
+// calculate the spanning N-dim bounding box for a list of N-dim points
+//
+static void mGetPointlistSpan(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t* count)
+{
+    uint64_t i=0, idx=0;
+    int d=0;
+    uint64_t max[pts->ndim];
+    for (i = 0; i < pts->npoints; i++)
+    {
+        idx = i * pts->ndim;
+        //printf("%ldth = [%ld, %ld, %ld] \n", i, pts->points[idx], pts->points[idx+1], pts->points[idx+2]);
+        for (d = 0; d < pts->ndim; d++) {
+            if (i == 0) {
+                start[d] = pts->points[d]; max[d] = pts->points[d];
+                continue;
+            }
+
+            uint64_t curr = pts->points[idx+d];
+            if ((start[d] > curr)) {
+                start[d] = curr;
+            }
+            if (max[d] < curr) {
+                max[d] = curr;
+            }
+        }
+        //printf("start[0]=%ld  max[0]=%ld \n", start[0], max[0]);
+    }
+    for (d = 0; d < pts->ndim; d++) {
+        count[d] = max[d] - start[d] + 1;
+    }
+    return;
+}
+
+/*
+ *  Calculate the spanning N-dim bounding box for a list of 1-dim points in an N-dim box.
+ *  Simply take the smallest and largest offset, then make a bounding box that fits all of them
+ *  Note that it is not giving the smallest container box. It can only decrease the box in the
+ *  slowest dimension without converting all points to N-dimension.
+ */
+static void mGetPointlistSpan1D(ADIOS_SELECTION_POINTS_STRUCT* pts, int ndim,
+        uint64_t* boxstart, uint64_t* boxcount,
+        uint64_t* spanstart, uint64_t* spancount)
+{
+    uint64_t i=0;
+    int d=0;
+    uint64_t span[2]; // min and max offsets
+    span[0] = 0xFFFFFFFFFFFFFFFF; // 18446744073709551615, the min offset
+    span[1] = 0; // the max offset
+
+    // find min and max offsets
+    uint64_t *pt = pts->points;
+    for (i = 0; i < pts->npoints; i++)
+    {
+        if (*pt < span[0])
+            span[0] = *pt;
+        if (*pt > span[1])
+            span[1] = *pt;
+        pt++;
+    }
+
+    // convert them to N-dim
+    uint64_t spanND[2*ndim];
+    a2sel_points_1DtoND_box (2, span, ndim, boxstart, boxcount, 1, spanND);
+
+    // correct sub-dimensions (some other points may be outside the naive span over two points
+    spanstart[0] = spanND[0];
+    spancount[0] = spanND[ndim]-spanND[0]+1;
+    for (d = 1; d < ndim; d++) {
+        spanstart[d] = boxstart[d];
+        spancount[d] = boxcount[d];
+    }
+    return;
+}
+
+#if 0
+//
+// returns # of segments to divide for a bounding box' range
+//
+static int mGetRange(int ndim, uint64_t* start, uint64_t* count)
+{
+    int k=0;
+    uint64_t bbsize = 1;
+    for (k=0; k<ndim; k++) {
+        bbsize *= count[k] - start[k]+1;
+        log_debug ("... bb at %d dimention: [%" PRIu64 ", %" PRIu64 "]\n", k, count[k], start[k]);
+    }
+
+    const uint64_t BBSIZELIMIT = 1048576; /* 1M elements, 4-8MB data usually to read at once */
+    uint64_t nBB = bbsize/BBSIZELIMIT ;
+
+    if (nBB * BBSIZELIMIT != bbsize) {
+        nBB += 1;
+    }
+
+    log_debug ("... nBB=%" PRIu64 "\n", nBB);
+    //return bbsize;
+    return (int) nBB;
+}
+#endif
+
+/*
+ * Pick the points of a point list from a contiguous array of data.
+ * The point coordinates are relative to the original 'bndim' dimensional container
+ * while data is in a sub-box of the original container:
+ * contstart[] should be the starting offsets of  the original container (points are relative to this)
+ * contcount[] should be the size of the original container
+ * nelems is the sum of elements (= PROD(count[i], i=0,...,bndim-1))
+ * substart[] should be the starting offsets of the sub-box in the original container (data is contained in this, with nelems values)
+ * subcount[] should be the size of the sub-box
+ * src is the data array containing data of the sub-box
+ * dest is the output data array for the points
+ * It returns the number of points that fall inside the sub-box, i.e. the number of copied elements
+ */
+static uint64_t pick_points_from_boundingbox (ADIOS_SELECTION *sel, int size_of_type,
+                                              int bndim, uint64_t *contstart, uint64_t *contcount,
+                                              uint64_t nelems, uint64_t *substart, uint64_t *subcount,
+                                              char *src, char *dest)
+{
+    uint64_t npoints = 0;
+    uint64_t j;
+    int d;
+    assert (sel->type == ADIOS_SELECTION_POINTS);
+    int pndim = sel->u.points.ndim;
+    assert (bndim==pndim || pndim==1);
+
+    uint64_t subproduct[bndim+1]; // number of elements in subcount
+    subproduct[bndim] = 1;
+    for (d = bndim-1; d >= 0; d--) {
+        subproduct[d] = subproduct[d+1] * subcount[d];
+    }
+    assert (nelems == subproduct[0]);
+
+    uint64_t suboffs[bndim]; // N-D offsets of starting points of sub-box from the starting point of original container
+    for (d = 0; d < bndim; d++) {
+        assert (substart[d] >= contstart[d]);
+        suboffs[d] = substart[d] - contstart[d];
+    }
+
+    uint64_t suboffset = 0; // 1D offset of starting point of sub-box from the starting point of original container
+    for (d = bndim-1; d >= 0; d--) {
+        suboffset += suboffs[d] * subproduct[d+1];
+    }
+
+    if (pndim == 1)
+    {
+        // 1D local points in N-D block
+        uint64_t *pt = sel->u.points.points;
+
+        for (j = 0; j < sel->u.points.npoints; j++)
+        {
+            if (suboffset <= *pt && *pt-suboffset < nelems)
+            {
+                memcpy (dest,
+                        src + (*pt-suboffset)*size_of_type,
+                        size_of_type);
+                npoints++;
+                dest += size_of_type;
+            }
+            pt++;
+        }
+    }
+    else
+    {
+        uint64_t *pt = sel->u.points.points; // first N-dim point in list
+        for (j = 0; j < sel->u.points.npoints; j++)
+        {
+            int64_t idxInBB = 0;
+            for (d = 0; d < bndim; d++)
+            {
+                if (suboffs[d] <= pt[d] && pt[d]-suboffs[d] < subcount[d])
+                {
+                    idxInBB += (pt[d] - suboffs[d]) * subproduct[d+1];
+                } else {
+                    // this point is outside of the sub-box
+                    idxInBB = -1;
+                    break;
+                }
+            }
+
+            if (idxInBB >= 0)
+            {
+                memcpy(dest, src+idxInBB*size_of_type, size_of_type);
+                //printf(" checking: %.3f vs %.3f \n", ((double*)(nr->data))[idxInBB], ((double*)(r->data))[i]);
+                //printf("checking: [%ld th bb]  [point %ld],  idxInBB=%ld value %.3f vs %.3f\n",j, i, idxInBB, ((double*)(nr->data))[idxInBB], ((double*)(r->data))[step]);
+                npoints++;
+                dest += size_of_type; // next slot for data in output data array
+            }
+            pt += bndim; // next N-dim point in list
+        }
+    }
+    return npoints;
 }
 
 /* This routine processes a read request and returns data in ADIOS_VARCHUNK.
@@ -444,18 +612,10 @@ uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t
 */
 static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 {
-    BP_FILE * fh = GET_BP_FILE (fp);
-
-    int size_of_type;
-    struct adios_index_var_struct_v1 * v;
-    uint64_t i;
-    read_request * nr;
-    ADIOS_SELECTION * sel, * nsel;
-    ADIOS_VARCHUNK * chunk = NULL;
-
     log_debug ("read_var()\n");
-    sel = r->sel;
-    v = bp_find_var_byid (fh, r->varid);
+
+    ADIOS_VARCHUNK * chunk = NULL;
+    ADIOS_SELECTION * sel = r->sel;
 
     switch (sel->type)
     {
@@ -463,129 +623,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             chunk = read_var_bb (fp, r);
             break;
         case ADIOS_SELECTION_POINTS:
-            /* The idea is we convert a point selection to bounding box section. */
-            size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
-            nr = (read_request *) malloc (sizeof (read_request));
-            assert (nr);
-
-            nr->varid = r->varid;
-            nr->from_steps = r->from_steps;
-            nr->nsteps = r->nsteps;
-            nr->data = r->data;
-            nr->datasize  = size_of_type;
-            nr->priv = r->priv;
-
-            nsel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
-            nr->sel = nsel;
-            assert (nsel);
-
-            nsel->type = ADIOS_SELECTION_BOUNDINGBOX;
-            nsel->u.bb.ndim = sel->u.points.ndim;
-            nsel->u.bb.start = (uint64_t *) malloc (nsel->u.bb.ndim * 8);
-            nsel->u.bb.count = (uint64_t *) malloc (nsel->u.bb.ndim * 8);
-            assert (nsel->u.bb.start && nsel->u.bb.count);
-
-            if ((sel->u.points.npoints < 100) || (r->nsteps > 1)) {
-                for (i = 0; i < nsel->u.bb.ndim; i++)
-                {
-                    nsel->u.bb.count[i] = 1;
-                }
-
-                for (i = 0; i < sel->u.points.npoints; i++)
-                {
-                    memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
-
-                    chunk = read_var_bb (fp, nr);
-                    nr->data = (char *) nr->data + size_of_type; // NCSU ALACRITY-ADIOS - Potential bug here; what if nsteps > 1? Shouldn't the buffer advance by size_of_type * nsteps?
-                    common_read_free_chunk (chunk);
-                }
-
-                free_selection (nsel);
-                free (nr);
-
-                chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
-                assert (chunk);
-
-                chunk->varid = r->varid;
-                chunk->type = v->type;
-                // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
-                chunk->from_steps = r->from_steps;
-                chunk->nsteps = r->nsteps;
-                chunk->sel = copy_selection (r->sel);
-                chunk->data = r->data;
-            } else { // Trying something new
-                uint64_t start[sel->u.points.ndim], max[sel->u.points.ndim];
-                uint64_t idx = 0, k=0, j=0;
-
-                uint64_t nBB = mGetRange(&(sel->u.points), start, max);
-
-                uint64_t regularHeight = (max[0]-start[0]+1)/nBB;
-                for (j=0; j<nBB; j++) {
-                    if (j == nBB-1) {
-                        nsel->u.bb.count[0] = (max[0]-start[0]+1) - (nBB-1)*regularHeight;
-                    } else {
-                        nsel->u.bb.count[0] = regularHeight;
-                    }
-                    nsel->u.bb.start[0] = start[0] + j * regularHeight;
-
-                    uint64_t currBBSize = nsel->u.bb.count[0];
-                    // other dimentions
-                    for (k=1; k<sel->u.points.ndim; k++) {
-                        nsel->u.bb.count[k] = (max[k] - start[k]+1);
-                        nsel->u.bb.start[k] = start[k];
-                        currBBSize *= nsel->u.bb.count[k];
-                    }
-
-                    uint64_t product[sel->u.points.ndim];
-                    for (k=0; k<sel->u.points.ndim; k++) {
-                        if (k==0) {
-                            product[k] = currBBSize/nsel->u.bb.count[k];
-                        } else {
-                            product[k] = product[k-1]/nsel->u.bb.count[k];
-                        }
-                    }
-
-                    nr->data = malloc(currBBSize * size_of_type);
-                    chunk = read_var_bb (fp, nr);
-
-                    for (i = 0; i < sel->u.points.npoints; i++) {
-                        idx = i * sel->u.points.ndim;
-                        int64_t idxInBB = 0;
-                        for (k=0; k<sel->u.points.ndim; k++) {
-                            //idx += k;
-                            uint64_t curr = sel->u.points.points[idx+k];
-                            if ((curr >= nsel->u.bb.start[k]) && (curr < nsel->u.bb.start[k] + nsel->u.bb.count[k])) {
-                                idxInBB += (curr - nsel->u.bb.start[k])* product[k];
-                            } else {
-                                idxInBB = -1;
-                                break;
-                            }
-                        }
-
-                        if (idxInBB >= 0) {
-                            memcpy((r->data)+i*size_of_type, (char*)(nr->data)+idxInBB*size_of_type, size_of_type);
-                            //printf(" checking: %.3f vs %.3f \n", ((double*)(nr->data))[idxInBB], ((double*)(r->data))[i]);
-                            //printf("checking: [%ld th bb]  [point %ld],  idxInBB=%ld value %.3f vs %.3f\n",j, i, idxInBB, ((double*)(nr->data))[idxInBB], ((double*)(r->data))[i]);
-                        }
-                    }
-
-                    free(nr->data);
-                    common_read_free_chunk (chunk);
-                }
-                free_selection (nsel);
-                free (nr);
-
-                chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
-                assert (chunk);
-
-                chunk->varid = r->varid;
-                chunk->type = v->type;
-                // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
-                chunk->from_steps = r->from_steps;
-                chunk->nsteps = r->nsteps;
-                chunk->sel = copy_selection (r->sel);
-                chunk->data = r->data;
-            }
+            chunk = read_var_pts (fp, r);
             break;
         case ADIOS_SELECTION_WRITEBLOCK:
             chunk = read_var_wb (fp, r);
@@ -1042,7 +1080,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
                     }
 
-                    copy_data (data
+                    adios_util_copy_data (data
                               ,fh->b->buff + fh->b->offset
                               ,0
                               ,hole_break
@@ -1086,8 +1124,377 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
     chunk->from_steps = r->from_steps;
     chunk->nsteps = r->nsteps;
-    chunk->sel = copy_selection (r->sel);
+    chunk->sel = a2sel_copy (r->sel);
     chunk->data = r->data;
+    return chunk;
+}
+
+/* This routine reads in data for point selection.
+*/
+static ADIOS_VARCHUNK * read_var_pts (const ADIOS_FILE *fp, read_request * r)
+{
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+    int size_of_type;
+
+    uint64_t i;
+    uint64_t nerr = 0; // number of out of bound errors (points outside of subselection block)
+    ADIOS_SELECTION * sel = r->sel;
+    assert (sel->type == ADIOS_SELECTION_POINTS);
+    ADIOS_VARCHUNK * chunk = NULL;
+    int pndim = sel->u.points.ndim; // dimensionality of points
+    int bndim; // dimensionality of subselection block
+    struct adios_index_var_struct_v1 * v;
+    int step, d;
+    uint64_t zeros[32] = {0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+                          0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0};
+    // for statistics
+    uint64_t nelems_read = 0;
+    uint64_t nelems_container = 0;
+    uint64_t points_read = 0;
+    int nreads_performed = 0;
+    double t_span = 0.0, t_read = 0.0, t_pick = 0.0;
+    double te, ttemp;
+    double tb = MPI_Wtime();
+
+
+    v = bp_find_var_byid (fh, r->varid);
+    size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
+
+    /* The idea is we convert a point selection to bounding box or writeblock selection. */
+    read_request nrs;
+    read_request *nr = &nrs;
+
+    nr->varid = r->varid;
+    nr->priv = r->priv;
+
+    ADIOS_SELECTION * container = sel->u.points.container_selection;
+    if (container &&
+        container->type != ADIOS_SELECTION_WRITEBLOCK &&
+        container->type != ADIOS_SELECTION_BOUNDINGBOX)
+    {
+        log_error ("The container selection of a point selection "
+                "must be either NULL or a bounding box or a writeblock. "
+                "We will use the default global bounding box\n");
+        container = NULL;
+    }
+
+    int free_container = 0;
+    if (!container)
+    {
+        // create full bounding box as container
+        ADIOS_VARINFO * vinfo = adios_read_bp_inq_var_byid (fp, r->varid);
+        container = a2sel_boundingbox (vinfo->ndim, zeros, vinfo->dims);
+        free_container = 1;
+        sel->u.points.container_selection = container; // save the container instead of NULL to be used in pick_points_from_boundingbox
+        common_read_free_varinfo (vinfo);
+    }
+
+    char * dest = (char*)(r->data); // pointer to output buffer, will increase
+        // continuously as we pick points
+
+    if (container->type == ADIOS_SELECTION_WRITEBLOCK)
+    {
+        // Read the writeblock and then pick the points from memory
+        ADIOS_SELECTION * wbsel = container;
+        ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &wbsel->u.block;
+        uint64_t ldims[32], gdims[32], offsets[32];
+
+        for (step = 0; step < r->nsteps; step++)
+        {
+            // Get the size of the writeblock
+            //  but first prepare fake request to call adios_wbidx_to_pgidx
+            ttemp = MPI_Wtime();
+            nr->from_steps = r->from_steps;
+            nr->nsteps = r->nsteps;
+            nr->sel = wbsel;
+            int wbidx = wb->is_absolute_index && !p->streaming ?
+                        wb->index :
+                        adios_wbidx_to_pgidx (fp, nr, step);
+
+            uint64_t nelems = 1;
+            /* get ldims for the chunk and then calculate payload size */
+            bndim = v->characteristics[wbidx].dims.count;
+            bp_get_dimension_characteristics_notime(&(v->characteristics[wbidx]), ldims, gdims, offsets, is_fortran_file (fh));
+            for (d = 0; d < bndim; d++)
+            {
+                nelems *= ldims [d];
+            }
+            t_span += MPI_Wtime() - ttemp;
+
+            // Read the writeblock
+            nr->data = malloc (nelems*size_of_type);
+            if (nr->data)
+            {
+                nr->from_steps = r->from_steps+step;
+                nr->nsteps = 1;
+                nr->datasize = nelems*size_of_type;
+                nr->sel = wbsel;
+                ttemp = MPI_Wtime();
+                ADIOS_VARCHUNK * wbchunk = read_var_wb (fp, nr);
+                t_read += MPI_Wtime() - ttemp;
+
+                // Get the points
+                ttemp = MPI_Wtime();
+                uint64_t np = pick_points_from_boundingbox (sel, size_of_type, bndim, zeros, ldims,
+                                              nelems, zeros, ldims, nr->data, dest);
+                if (np < sel->u.points.npoints) {
+                    // for each step we need to move npoints, so fill up the output array
+                    memset (dest, 0, (sel->u.points.npoints-np)*size_of_type);
+                }
+                t_pick += MPI_Wtime() - ttemp;
+                points_read += np;
+                dest += sel->u.points.npoints * size_of_type;
+
+                free (nr->data);
+                common_read_free_chunk (wbchunk);
+                nelems_read += nelems;
+                nelems_container += nelems;
+                nreads_performed++;
+            }
+            else
+            {
+                adios_error (err_no_memory, "Could not allocate memory to read %" PRIu64
+                        "bytes of writeblock %d\n", nelems_read*size_of_type, wbidx);
+                memset (dest, 0, sel->u.points.npoints * size_of_type);
+            }
+        }
+    }
+    else if (container->type == ADIOS_SELECTION_BOUNDINGBOX)
+    {
+        bndim = container->u.bb.ndim;
+        assert (pndim == bndim || pndim == 1);
+        ADIOS_SELECTION * nsel;
+        // make one or many bounding boxes around the points
+        nsel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
+        assert (nsel);
+
+        nr->sel = nsel;
+        nr->from_steps = r->from_steps;
+        nr->nsteps = 1;
+        nr->datasize  = size_of_type;
+
+        nsel->type = ADIOS_SELECTION_BOUNDINGBOX;
+        nsel->u.bb.ndim = bndim;
+        nsel->u.bb.start = (uint64_t *) malloc (nsel->u.bb.ndim * sizeof(uint64_t));
+        nsel->u.bb.count = (uint64_t *) malloc (nsel->u.bb.ndim * sizeof(uint64_t));
+        assert (nsel->u.bb.start && nsel->u.bb.count);
+
+        if ((sel->u.points.npoints < 5) || (r->nsteps > 1))
+        {
+            // few points to read, read them one by one
+            for (d = 0; d < nsel->u.bb.ndim; d++)
+            {
+                nsel->u.bb.count[d] = 1;
+            }
+
+            nr->data = dest;
+
+            for (step = 0; step < r->nsteps; step++)
+            {
+                for (i = 0; i < sel->u.points.npoints; i++)
+                {
+                    ttemp = MPI_Wtime();
+                    if (pndim == bndim)
+                    {
+                        for (d = 0; d < bndim; d++)
+                        {
+                            nsel->u.bb.start[d] = sel->u.points.points[d + i*pndim] + container->u.bb.start[d];
+                        }
+                    } else
+                    {
+                        a2sel_points_1DtoND_box (1, &sel->u.points.points[i], bndim, container->u.bb.start,
+                                                                container->u.bb.count, 1, nsel->u.bb.start);
+                    }
+                    t_pick += MPI_Wtime() - ttemp;
+                    //memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
+                    ttemp = MPI_Wtime();
+                    chunk = read_var_bb (fp, nr);
+                    t_read += MPI_Wtime() - ttemp;
+                    nreads_performed++;
+                    nr->data = (char *) nr->data + size_of_type;
+                    common_read_free_chunk (chunk);
+                }
+                nr->from_steps++;
+                nelems_container += adios_get_nelements_of_box (bndim, container->u.bb.start, container->u.bb.count);
+                nelems_read += sel->u.points.npoints;
+            }
+            //dest += r->nsteps * sel->u.points.npoints * size_of_type; // == nr->data
+        }
+        else
+        {
+            /* Points in a Bounding Box container */
+            // Create smaller bounding boxes and read them, then pick the points in memory
+            uint64_t start[bndim], count[bndim];
+            nelems_container = adios_get_nelements_of_box (bndim, container->u.bb.start, container->u.bb.count);
+
+            ttemp = MPI_Wtime();
+            if (bndim == pndim) {
+                // get the smallest box the points fit in
+                mGetPointlistSpan(&(sel->u.points), start, count);
+                // adjust this box (relative to (0,0)) to the original box
+                for (d = 0; d < bndim; d++) {
+                    start[d] += container->u.bb.start[d];
+                }
+            } else {
+                mGetPointlistSpan1D(&(sel->u.points), bndim, container->u.bb.start, container->u.bb.count, start, count);
+                //memcpy (start, container->u.bb.start, bndim*sizeof(uint64_t));
+                //memcpy (count, container->u.bb.count, bndim*sizeof(uint64_t));
+            }
+            t_span += MPI_Wtime() - ttemp;
+
+            uint64_t nelems = adios_get_nelements_of_box (bndim, start, count);
+
+            // allocate temporary array for reading block data
+            int max_buffersize = 268435456; // 256MB max read
+            if (nelems * size_of_type < max_buffersize)
+                max_buffersize = nelems * size_of_type;
+            void * readbuf = (void *) malloc (max_buffersize);
+            while (!readbuf && max_buffersize > 1024)
+            {
+                max_buffersize = max_buffersize / 2;
+                readbuf = (void *) malloc (nelems);
+            }
+
+            log_debug ("Allocated read buffer size = %d bytes (%d elements)\n", max_buffersize, max_buffersize/size_of_type);
+
+            // we read maximum 'maxreadn' elements at once
+            uint64_t maxreadn = max_buffersize/size_of_type;
+            if (nelems < maxreadn)
+                maxreadn = nelems;
+
+            // determine strategy how to read in:
+            //  - at once
+            //  - loop over 1st dimension
+            //  - loop over 1st & 2nd dimension
+            //  - etc
+            log_debug ("Read size strategy: \n");
+            uint64_t readn[bndim];
+            uint64_t sum = (uint64_t) 1;
+            uint64_t actualreadn = (uint64_t) 1;
+            for (d=bndim-1; d>=0; d--)
+            {
+                if (sum >= maxreadn) {
+                    readn[d] = 1;
+                } else {
+                    readn[d] = maxreadn / sum; // sum is small for 4 bytes here
+                    // this may be over the max count for this dimension
+                    if (readn[d] > count[d])
+                        readn[d] = count[d];
+                }
+                log_debug ("    dim %d: read %" PRId64 " elements\n", d, readn[d]);
+                sum = sum * count[d];
+                actualreadn = actualreadn * readn[d];
+            }
+            log_debug ("    read %" PRId64 " elements at once, %" PRId64 " in total (nelems=%" PRId64 ")\n", actualreadn, sum, nelems);
+
+            uint64_t *s = nsel->u.bb.start;
+            uint64_t *c = nsel->u.bb.count; // for block reading of smaller chunks
+            // init s and c
+            memcpy (s, start, bndim * 8);
+            memcpy (c, readn, bndim * 8);
+
+            nr->data = readbuf;
+            if (nr->data)
+            {
+                // read until we have read all 'nelems' elements
+                sum = 0;
+                while (sum < nelems) {
+
+                    // how many elements do we read in next?
+                    actualreadn = 1;
+                    for (d=0; d<bndim; d++)
+                        actualreadn *= c[d];
+                    /*
+                    log_debug ("Read the next block ");
+                    PRINT_DIMS64("  start", s, tdims, j);
+                    PRINT_DIMS64("  count", c, tdims, j);
+                    log_debug ("  read %d elems\n", actualreadn);
+                     */
+
+                    ttemp = MPI_Wtime();
+                    // read a slice finally
+                    chunk = read_var_bb (fp, nr);
+                    t_read += MPI_Wtime() - ttemp;
+
+                    if (chunk) {
+                        // Get the points
+                        ttemp = MPI_Wtime();
+                        uint64_t npoints = pick_points_from_boundingbox (sel, size_of_type,
+                                bndim, container->u.bb.start, container->u.bb.count,
+                                actualreadn, s, c, nr->data, dest);
+
+                        dest += npoints * size_of_type;
+                        common_read_free_chunk (chunk);
+                        nreads_performed++;
+                        t_pick += MPI_Wtime() - ttemp;
+                    }
+
+                    // prepare for next read
+                    sum += actualreadn;
+                    int incdim=1; // largest dim should be increased
+                    for (d=bndim-1; d>=0; d--) {
+                        if (incdim) {
+                            if (s[d]+c[d] == start[d]+count[d]) {
+                                // reached the end of this dimension
+                                s[d] = start[d];
+                                c[d] = readn[d];
+                                incdim = 1; // next smaller dim can increase too
+                            } else {
+                                // move up in this dimension up to total count
+                                s[d] += readn[d];
+                                if (s[d]+c[d] >             start[d]+count[d]) {
+                                    // do not reach over the limit
+                                    c[d] = start[d]+count[d]-s[d];
+                                }
+                                incdim = 0;
+                            }
+                        }
+                    }
+                } // end while sum < nelems
+                nelems_read += nelems;
+                free(readbuf);
+            }
+            else
+            {
+                adios_error (err_no_memory, "Could not allocate memory to read %" PRIu64
+                        "bytes of a bounding box\n", maxreadn*size_of_type);
+                memset (dest, 0, sel->u.points.npoints * size_of_type);
+            }
+        }
+
+        a2sel_free (nsel);
+    }
+
+    if (nerr > 0)
+    {
+        adios_error(err_out_of_bound, "%" PRIu64 " points were out of bound of the subselection\n", nerr);
+    }
+
+    chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
+    assert (chunk);
+
+    chunk->varid = r->varid;
+    chunk->type = v->type;
+    chunk->from_steps = r->from_steps;
+    chunk->nsteps = r->nsteps;
+    chunk->sel = a2sel_copy (r->sel);
+    chunk->data = r->data;
+
+    if (free_container)
+    {
+        a2sel_free(container);
+        sel->u.points.container_selection = NULL;
+    }
+
+    te = MPI_Wtime();
+    log_info ("Point selection reading: number of points = %" PRIu64
+            ", total container elements = %" PRIu64
+            ", number of reads = %d"
+            ", elements read from file = %" PRIu64
+            "\n       Time total = %6.2fs  span = %6.2fs  read = %6.2fs  picking = %6.2fs\n",
+            sel->u.points.npoints*r->nsteps, nelems_container, nreads_performed, nelems_read,
+            te-tb, t_span, t_read, t_pick);
     return chunk;
 }
 
@@ -1158,7 +1565,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     BP_FILE * fh;
     int stay_in_poll_loop = 1;
     int file_ok = 0;
-    double t1 = adios_gettime();
+    double t1 = adios_gettime_double();
 
     MPI_Comm_rank (comm, &rank);
     // We need to first check if this is a valid ADIOS-BP file. This is done by
@@ -1199,7 +1606,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
                             (int)(((uint64_t)poll_interval_msec * 1000000L)%1000000000L));
                         stay_in_poll_loop = 1;
                     }
-                    else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
+                    else if (timeout_sec > 0.0 && (adios_gettime_double () - t1 > timeout_sec))
                     {
                         stay_in_poll_loop = 0;
                     }
@@ -1621,22 +2028,35 @@ typedef struct {
     int16_t map[32];
     memset (map, -1, sizeof(map));
 
+    nsteps = varinfo->nsteps;
+    nb = varinfo->sum_nblocks;
+    int time = adios_step_to_time (fp, varinfo->varid, 0);
+
     var_root = bp_find_var_byid (fh, varinfo->varid);
+    // will loop from var_root->characteristics[from_ch..to_ch-1]
+    int from_ch = 0; 
+    int to_ch = var_root->characteristics_count;
+
+    if (fp->is_streaming) {
+        // find the current timestep in characteristics array, because when streaming from a file,
+        // var_root.characteristics contains many timesteps
+        from_ch = get_var_start_index (var_root, time); 
+        to_ch = from_ch + nb;
+        assert(from_ch < var_root->characteristics_count);
+        assert(to_ch  <= var_root->characteristics_count);
+    }
 
     // Bitmap shows which statistical information has been calculated
     i = j = 0;
-    while (var_root->characteristics[0].bitmap >> j)
+    while (var_root->characteristics[from_ch].bitmap >> j)
     {
-        if ((var_root->characteristics[0].bitmap >> j) & 1)
+        if ((var_root->characteristics[from_ch].bitmap >> j) & 1)
         {
             map [j] = i ++;
         }
 
         j ++;
     }
-
-    nsteps = varinfo->nsteps;
-    nb = varinfo->sum_nblocks;
 
     if (map[adios_statistic_min] != -1)
     {
@@ -1747,8 +2167,8 @@ typedef struct {
 */
     enum ADIOS_DATATYPES original_var_type = var_root->type;
 
-    if (var_root->characteristics[0].transform.transform_type != adios_transform_none) {
-        original_var_type = var_root->characteristics[0].transform.pre_transform_type;
+    if (var_root->characteristics[from_ch].transform.transform_type != adios_transform_none) {
+        original_var_type = var_root->characteristics[from_ch].transform.pre_transform_type;
     }
 
     size = bp_get_type_size (original_var_type, "");
@@ -1757,9 +2177,11 @@ typedef struct {
     if (original_var_type == adios_complex || original_var_type == adios_double_complex)
     {
         int type;
+        int idx; // block array index, = i-from_ch in loops
+        int tidx; // step array index, = timestep-fp->current_step in loops
         count = 3;
-        timestep = -1;
-        prev_timestep = 0;
+        timestep = fp->current_step; // 0..
+        prev_timestep = time; // 1..
 
         if (original_var_type == adios_complex)
         {
@@ -1773,7 +2195,7 @@ typedef struct {
         // Only a double precision returned for all complex values
         size = bp_get_type_size (adios_double, "");
 
-        for (i = 0; i < var_root->characteristics_count; i++)
+        for (i = from_ch; i < to_ch; i++)
         {
             // changes for 1.4.x. Q. Liu
             if (var_root->characteristics[i].time_index != prev_timestep)
@@ -1782,7 +2204,11 @@ typedef struct {
                 prev_timestep = var_root->characteristics[i].time_index;
             }
 
-            assert (timestep < nsteps);
+            idx = i - from_ch;
+            tidx = timestep - fp->current_step;
+
+            assert (tidx < nsteps);
+            assert (idx < nb);
 
             if (!var_root->characteristics[i].stats)
                 continue;
@@ -1810,30 +2236,30 @@ typedef struct {
                 }
 
                 if (per_step_stat) {
-                    if(!vs->steps->mins[timestep]) {
-                        MALLOC (vs->steps->mins[timestep], count * size, "minimum per timestep")
+                    if(!vs->steps->mins[tidx]) {
+                        MALLOC (vs->steps->mins[tidx], count * size, "minimum per timestep")
                         for (c = 0; c < count; c ++) {
-                            ((double **) vs->steps->mins)[timestep][c] = data[c];
+                            ((double **) vs->steps->mins)[tidx][c] = data[c];
                         }
                     } else {
                         for (c = 0; c < count; c ++) {
-                            if (data[c] < ((double **) vs->steps->mins)[timestep][c]) {
-                                ((double **) vs->steps->mins)[timestep][c] = data[c];
+                            if (data[c] < ((double **) vs->steps->mins)[tidx][c]) {
+                                ((double **) vs->steps->mins)[tidx][c] = data[c];
                             }
                         }
                     }
                 }
 
                 if (per_block_stat) {
-                    if(!vs->blocks->mins[i]) {
-                        MALLOC (vs->blocks->mins[i], count * size, "minimum per writeblock")
+                    if(!vs->blocks->mins[idx]) {
+                        MALLOC (vs->blocks->mins[idx], count * size, "minimum per writeblock")
                         for (c = 0; c < count; c ++) {
-                            ((double **) vs->blocks->mins)[i][c] = data[c];
+                            ((double **) vs->blocks->mins)[idx][c] = data[c];
                         }
                     } else {
                         for (c = 0; c < count; c ++) {
-                            if (data[c] < ((double **) vs->blocks->mins)[i][c]) {
-                                ((double **) vs->blocks->mins)[i][c] = data[c];
+                            if (data[c] < ((double **) vs->blocks->mins)[idx][c]) {
+                                ((double **) vs->blocks->mins)[idx][c] = data[c];
                             }
                         }
                     }
@@ -1858,28 +2284,28 @@ typedef struct {
                 }
 
                 if (per_step_stat) {
-                    if(!vs->steps->maxs[timestep]) {
-                        MALLOC (vs->steps->maxs[timestep], count * size, "maximum per timestep")
+                    if(!vs->steps->maxs[tidx]) {
+                        MALLOC (vs->steps->maxs[tidx], count * size, "maximum per timestep")
                         for (c = 0; c < count; c ++)
-                            ((double **) vs->steps->maxs)[timestep][c] = data[c];
+                            ((double **) vs->steps->maxs)[tidx][c] = data[c];
 
                     } else {
                         for (c = 0; c < count; c ++)
-                            if (data[c] > ((double **) vs->steps->maxs)[timestep][c])
-                                ((double **) vs->steps->maxs)[timestep][c] = data[c];
+                            if (data[c] > ((double **) vs->steps->maxs)[tidx][c])
+                                ((double **) vs->steps->maxs)[tidx][c] = data[c];
                     }
                 }
 
                 if (per_block_stat) {
-                    if(!vs->blocks->maxs[i]) {
-                        MALLOC (vs->blocks->maxs[i], count * size, "maximum per writeblock")
+                    if(!vs->blocks->maxs[idx]) {
+                        MALLOC (vs->blocks->maxs[idx], count * size, "maximum per writeblock")
                         for (c = 0; c < count; c ++)
-                            ((double **) vs->blocks->maxs)[i][c] = data[c];
+                            ((double **) vs->blocks->maxs)[idx][c] = data[c];
 
                     } else {
                         for (c = 0; c < count; c ++)
-                            if (data[c] > ((double **) vs->blocks->maxs)[i][c])
-                                ((double **) vs->blocks->maxs)[i][c] = data[c];
+                            if (data[c] > ((double **) vs->blocks->maxs)[idx][c])
+                                ((double **) vs->blocks->maxs)[idx][c] = data[c];
                     }
                 }
             }
@@ -1901,26 +2327,26 @@ typedef struct {
                 }
 
                 if (per_step_stat) {
-                    if(!sums[timestep]) {
-                        MALLOC(sums[timestep], count * sum_size, "summation per timestep")
+                    if(!sums[tidx]) {
+                        MALLOC(sums[tidx], count * sum_size, "summation per timestep")
                         for (c = 0; c < count; c ++)
-                            sums[timestep][c] = data[c];
+                            sums[tidx][c] = data[c];
 
                     } else {
                         for (c = 0; c < count; c ++)
-                            sums[timestep][c] = sums[timestep][c] + data[c];
+                            sums[tidx][c] = sums[tidx][c] + data[c];
                     }
                 }
 
                 if (per_block_stat) {
-                    if(!bsums[i]) {
-                        MALLOC(bsums[i], count * sum_size, "summation per writeblock")
+                    if(!bsums[idx]) {
+                        MALLOC(bsums[idx], count * sum_size, "summation per writeblock")
                         for (c = 0; c < count; c ++)
-                            bsums[i][c] = data[c];
+                            bsums[idx][c] = data[c];
 
                     } else {
                         for (c = 0; c < count; c ++)
-                            bsums[i][c] = bsums[i][c] + data[c];
+                            bsums[idx][c] = bsums[idx][c] + data[c];
                     }
                 }
             }
@@ -1942,26 +2368,26 @@ typedef struct {
                 }
 
                 if (per_step_stat) {
-                    if(!sum_squares[timestep]) {
-                        MALLOC(sum_squares[timestep], count * sum_size, "summation of square per timestep")
+                    if(!sum_squares[tidx]) {
+                        MALLOC(sum_squares[tidx], count * sum_size, "summation of square per timestep")
                         for (c = 0; c < count; c ++)
-                            sum_squares[timestep][c] = data[c];
+                            sum_squares[tidx][c] = data[c];
 
                     } else {
                         for (c = 0; c < count; c ++)
-                            sum_squares[timestep][c] = sum_squares[timestep][c] + data[c];
+                            sum_squares[tidx][c] = sum_squares[tidx][c] + data[c];
                     }
                 }
 
                 if (per_block_stat) {
-                    if(!bsum_squares[i]) {
-                        MALLOC(bsum_squares[i], count * sum_size, "summation of square per writeblock")
+                    if(!bsum_squares[idx]) {
+                        MALLOC(bsum_squares[idx], count * sum_size, "summation of square per writeblock")
                         for (c = 0; c < count; c ++)
-                            bsum_squares[i][c] = data[c];
+                            bsum_squares[idx][c] = data[c];
 
                     } else {
                         for (c = 0; c < count; c ++)
-                            bsum_squares[i][c] = bsum_squares[i][c] + data[c];
+                            bsum_squares[idx][c] = bsum_squares[idx][c] + data[c];
                     }
                 }
             }
@@ -1969,10 +2395,10 @@ typedef struct {
             if (map[adios_statistic_cnt] != -1 && stats[0][map[adios_statistic_cnt]].data)
             {
                 if (per_step_stat) {
-                    cnts[timestep] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
+                    cnts[tidx] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
                 }
                 if (per_block_stat) {
-                    bcnts[i] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
+                    bcnts[idx] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
                 }
                 gcnt += * (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
             }
@@ -2004,7 +2430,7 @@ typedef struct {
         if (per_block_stat) {
             if(vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1)) 
             {
-                for (i = 0; i < var_root->characteristics_count; i++)
+                for (i = 0; i < to_ch-from_ch; i++)
                 {
                     MALLOC(vs->blocks->avgs[i], count * sum_size, "average per writeblock")
                     MALLOC(vs->blocks->std_devs[i], count * sum_size, "standard deviation per writeblock")
@@ -2052,11 +2478,16 @@ typedef struct {
     }
     else
     {
-        timestep = -1;
-        prev_timestep = 0;
+        int idx; // array index, = i-from_ch in loops
+        int tidx; // step array index, = timestep-fp->current_step in loops
+        timestep = fp->current_step; // 0..
+        prev_timestep = time; // 1..
 
-        for (i = 0; i < var_root->characteristics_count; i++)
+        for (i = from_ch; i < to_ch; i++)
         {
+            //printf ("i = %3d, time_index = %d, prev = %d, count = %lld\n", 
+            //   i,  var_root->characteristics[i].time_index, prev_timestep, var_root->characteristics_count);
+
             // changes for 1.4.x. Q. Liu
             if (var_root->characteristics[i].time_index != prev_timestep)
             {
@@ -2064,7 +2495,12 @@ typedef struct {
                 prev_timestep = var_root->characteristics[i].time_index;
             }
 
-            assert (timestep < nsteps);
+            idx = i - from_ch;
+            tidx = timestep - fp->current_step;
+            //printf ("        tidx = %d, idx = %d, nsteps = %d, nb=%d\n", tidx, idx, nsteps, nb); 
+
+            assert (tidx < nsteps);
+            assert (idx < nb);
 
             if (!var_root->characteristics[i].stats)
             {
@@ -2090,26 +2526,26 @@ typedef struct {
                 }
 
                 if (per_step_stat) {
-                    if(!vs->steps->mins[timestep])
+                    if(!vs->steps->mins[tidx])
                     {
-                        MALLOC (vs->steps->mins[timestep], size, "minimum per timestep")
-                        memcpy(vs->steps->mins[timestep], stats[map[adios_statistic_min]].data, size);
+                        MALLOC (vs->steps->mins[tidx], size, "minimum per timestep")
+                        memcpy(vs->steps->mins[tidx], stats[map[adios_statistic_min]].data, size);
                     }
-                    else if (adios_lt(original_var_type, stats[map[adios_statistic_min]].data, vs->steps->mins[timestep]))
+                    else if (adios_lt(original_var_type, stats[map[adios_statistic_min]].data, vs->steps->mins[tidx]))
                     {
-                        memcpy(vs->steps->mins[timestep], stats[map[adios_statistic_min]].data, size);
+                        memcpy(vs->steps->mins[tidx], stats[map[adios_statistic_min]].data, size);
                     }
                 }
 
                 if (per_block_stat) {
-                    if(!vs->blocks->mins[i])
+                    if(!vs->blocks->mins[idx])
                     {
-                        MALLOC (vs->blocks->mins[i], size, "minimum per writeblock")
-                        memcpy(vs->blocks->mins[i], stats[map[adios_statistic_min]].data, size);
+                        MALLOC (vs->blocks->mins[idx], size, "minimum per writeblock")
+                        memcpy(vs->blocks->mins[idx], stats[map[adios_statistic_min]].data, size);
                     }
-                    else if (adios_lt(original_var_type, stats[map[adios_statistic_min]].data, vs->blocks->mins[i]))
+                    else if (adios_lt(original_var_type, stats[map[adios_statistic_min]].data, vs->blocks->mins[idx]))
                     {
-                        memcpy(vs->blocks->mins[i], stats[map[adios_statistic_min]].data, size);
+                        memcpy(vs->blocks->mins[idx], stats[map[adios_statistic_min]].data, size);
                     }
                 }
             }
@@ -2128,26 +2564,26 @@ typedef struct {
                 }
 
                 if (per_step_stat) {
-                    if(!vs->steps->maxs[timestep])
+                    if(!vs->steps->maxs[tidx])
                     {
-                        MALLOC (vs->steps->maxs[timestep], size, "maximum per timestep")
-                        memcpy(vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data, size);
+                        MALLOC (vs->steps->maxs[tidx], size, "maximum per timestep")
+                        memcpy(vs->steps->maxs[tidx], stats[map[adios_statistic_max]].data, size);
                     }
-                    else if (adios_lt(original_var_type, vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data))
+                    else if (adios_lt(original_var_type, vs->steps->maxs[tidx], stats[map[adios_statistic_max]].data))
                     {
-                        memcpy(vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data, size);
+                        memcpy(vs->steps->maxs[tidx], stats[map[adios_statistic_max]].data, size);
                     }
                 }
 
                 if (per_block_stat) {
-                    if(!vs->blocks->maxs[i])
+                    if(!vs->blocks->maxs[idx])
                     {
-                        MALLOC (vs->blocks->maxs[i], size, "maximum per writeblock")
-                        memcpy(vs->blocks->maxs[i], stats[map[adios_statistic_max]].data, size);
+                        MALLOC (vs->blocks->maxs[idx], size, "maximum per writeblock")
+                        memcpy(vs->blocks->maxs[idx], stats[map[adios_statistic_max]].data, size);
                     }
-                    else if (adios_lt(original_var_type, stats[map[adios_statistic_max]].data, vs->blocks->maxs[i]))
+                    else if (adios_lt(original_var_type, stats[map[adios_statistic_max]].data, vs->blocks->maxs[idx]))
                     {
-                        memcpy(vs->blocks->maxs[i], stats[map[adios_statistic_max]].data, size);
+                        memcpy(vs->blocks->maxs[idx], stats[map[adios_statistic_max]].data, size);
                     }
                 }
             }
@@ -2165,26 +2601,26 @@ typedef struct {
                 }
 
                 if (per_step_stat) {
-                    if(!sums[timestep])
+                    if(!sums[tidx])
                     {
-                        MALLOC(sums[timestep], sum_size, "summation per timestep")
-                        memcpy(sums[timestep], stats[map[adios_statistic_sum]].data, sum_size);
+                        MALLOC(sums[tidx], sum_size, "summation per timestep")
+                        memcpy(sums[tidx], stats[map[adios_statistic_sum]].data, sum_size);
                     }
                     else
                     {
-                        *sums[timestep] = *sums[timestep] + * ((double *) stats[map[adios_statistic_sum]].data);
+                        *sums[tidx] = *sums[tidx] + * ((double *) stats[map[adios_statistic_sum]].data);
                     }
                 }
 
                 if (per_block_stat) {
-                    if(!bsums[i])
+                    if(!bsums[idx])
                     {
-                        MALLOC(bsums[i], sum_size, "summation per writeblock")
-                        memcpy(bsums[i], stats[map[adios_statistic_sum]].data, sum_size);
+                        MALLOC(bsums[idx], sum_size, "summation per writeblock")
+                        memcpy(bsums[idx], stats[map[adios_statistic_sum]].data, sum_size);
                     }
                     else
                     {
-                        *bsums[i] = *bsums[i] + * ((double *) stats[map[adios_statistic_sum]].data);
+                        *bsums[idx] = *bsums[idx] + * ((double *) stats[map[adios_statistic_sum]].data);
                     }
                 }
             }
@@ -2203,26 +2639,26 @@ typedef struct {
                 }
 
                 if (per_step_stat) {
-                    if(!sum_squares[timestep])
+                    if(!sum_squares[tidx])
                     {
-                        MALLOC(sum_squares[timestep], sum_size, "summation of square per timestep")
-                        memcpy(sum_squares[timestep], stats[map[adios_statistic_sum_square]].data, sum_size);
+                        MALLOC(sum_squares[tidx], sum_size, "summation of square per timestep")
+                        memcpy(sum_squares[tidx], stats[map[adios_statistic_sum_square]].data, sum_size);
                     }
                     else
                     {
-                        *sum_squares[timestep] = *sum_squares[timestep] + * ((double *) stats[map[adios_statistic_sum_square]].data);
+                        *sum_squares[tidx] = *sum_squares[tidx] + * ((double *) stats[map[adios_statistic_sum_square]].data);
                     }
                 }
 
                 if (per_block_stat) {
-                    if(!bsum_squares[i])
+                    if(!bsum_squares[idx])
                     {
-                        MALLOC(bsum_squares[i], sum_size, "summation of square per writeblock")
-                        memcpy(bsum_squares[i], stats[map[adios_statistic_sum_square]].data, sum_size);
+                        MALLOC(bsum_squares[idx], sum_size, "summation of square per writeblock")
+                        memcpy(bsum_squares[idx], stats[map[adios_statistic_sum_square]].data, sum_size);
                     }
                     else
                     {
-                        *bsum_squares[i] = *bsum_squares[i] + * ((double *) stats[map[adios_statistic_sum_square]].data);
+                        *bsum_squares[idx] = *bsum_squares[idx] + * ((double *) stats[map[adios_statistic_sum_square]].data);
                     }
                 }
             }
@@ -2235,17 +2671,17 @@ typedef struct {
                     uint32_t freq = hist->frequencies[j];
                     vi->hist->gfrequencies[j] += freq;
                     if (ntimes > 0)
-                        vi->hist->frequenciess[timestep][j] += freq;
+                        vi->hist->frequenciess[tidx][j] += freq;
                 }
             }
 */
             if (map[adios_statistic_cnt] != -1 && stats[map[adios_statistic_cnt]].data)
             {
                 if (per_step_stat) {
-                    cnts[timestep] += * (uint32_t *) stats[map[adios_statistic_cnt]].data;
+                    cnts[tidx] += * (uint32_t *) stats[map[adios_statistic_cnt]].data;
                 }
                 if (per_block_stat) {
-                    bcnts[i] = * (uint32_t *) stats[map[adios_statistic_cnt]].data;
+                    bcnts[idx] = * (uint32_t *) stats[map[adios_statistic_cnt]].data;
                 }
                 gcnt += * (uint32_t *) stats[map[adios_statistic_cnt]].data;
             }
@@ -2287,7 +2723,7 @@ typedef struct {
         if (per_block_stat) {
             if(vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
             {
-                for (i = 0; i < var_root->characteristics_count; i++)
+                for (i = 0; i < to_ch-from_ch; i++)
                 {
                     MALLOC(vs->blocks->avgs[i], sum_size, "average per writeblock")
                     MALLOC(vs->blocks->std_devs[i], sum_size, "standard deviation per writeblock")
@@ -2771,7 +3207,7 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
 
     /* copy selection since we don't want to operate on user memory.
      */
-    r->sel = (!nullsel ? copy_selection (sel) : nullsel);
+    r->sel = (!nullsel ? a2sel_copy (sel) : nullsel);
     r->varid = mapped_varid;
     if (!p->streaming)
     {
@@ -2832,7 +3268,7 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
         // remove head from list
         r = p->local_read_request_list;
         p->local_read_request_list = p->local_read_request_list->next;
-        free_selection (r->sel); //common_read_selection_delete (r->sel);
+        a2sel_free (r->sel);
         r->sel = NULL;
         free(r);
 
@@ -3094,7 +3530,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             // remove head from list
             r = p->local_read_request_list;
             p->local_read_request_list = p->local_read_request_list->next;
-            free_selection (r->sel); //common_read_selection_delete (r->sel);
+            a2sel_free (r->sel);
             r->sel = NULL;
             free(r);
 
@@ -3125,7 +3561,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
                 // remove head from list
                 r = p->local_read_request_list;
                 p->local_read_request_list = p->local_read_request_list->next;
-                free_selection (r->sel); //common_read_selection_delete (r->sel);
+                a2sel_free (r->sel);
                 r->sel = NULL;
                 free(r);
 
@@ -3147,7 +3583,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             // remove head from list
             r = p->local_read_request_list;
             p->local_read_request_list = p->local_read_request_list->next;
-            free_selection (r->sel); //common_read_selection_delete (r->sel);
+            a2sel_free (r->sel);
             r->sel = NULL;
             free(r);
 
@@ -3170,7 +3606,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
                 // remove head from list
                 r = p->local_read_request_list;
                 p->local_read_request_list = p->local_read_request_list->next;
-                free_selection (r->sel); //common_read_selection_delete (r->sel);
+                a2sel_free (r->sel);
                 r->sel = NULL;
                 free(r);
 
@@ -3823,7 +4259,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
     chunk->from_steps = r->from_steps;
     chunk->nsteps = r->nsteps;
-    chunk->sel = copy_selection (r->sel);
+    chunk->sel = a2sel_copy (r->sel);
     chunk->data = data;
 
     return chunk;

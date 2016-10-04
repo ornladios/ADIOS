@@ -35,6 +35,7 @@ void adios_query_hooks_init (struct adios_query_hooks_struct ** t)
       (*t) [i].adios_query_finalize_fn = 0;
     }
 
+    ASSIGN_FNS(minmax, ADIOS_QUERY_METHOD_MINMAX);
 #ifdef ALACRITY
     ASSIGN_FNS(alac, ADIOS_QUERY_METHOD_ALACRITY);
 #endif

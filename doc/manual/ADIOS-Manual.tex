@@ -60,7 +60,7 @@
 \usepackage{hyperref}
 
 \newcommand{\comment}[1]{}
-\newcommand{\adiosversion}{ADIOS 1.9\xspace}
+\newcommand{\adiosversion}{ADIOS 1.10\xspace}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Define syntax highlighting for ADIOS
@@ -69,7 +69,9 @@
 sensitive=true,
 keywordsprefix=ADIOS_,
 morekeywords=[1]{
-adios_errno, err_file_not_found, err_end_of_stream, err_step_notready, err_step_deleted},
+adios_errno, err_file_not_found, err_end_of_stream, err_step_notready, err_step_deleted, 
+adios_stat_default, adios_stat_no, adios_stat_minmax, adios_stat_full,
+adios_flag_no, adios_flag_yes},
 morekeywords=[2]{
 % Write API (XML)
 adios_init, adios_finalize, adios_open, adios_write, adios_read, adios_close,
@@ -86,13 +88,14 @@ adios_inq_var, adios_inq_var_byid, adios_free_varinfo,
 adios_inq_var_stat, adios_inq_var_blockinfo,
 adios_get_attr, adios_get_attr_byid,
 adios_schedule_read, adios_schedule_read_byid, adios_perform_reads, adios_check_reads,
-adios_advance_step, adios_release_step,adios_free_chunk,
+adios_advance_step, adios_release_step, adios_free_chunk,
 adios_selection_boundingbox, adios_selection_points, adios_selection_writeblock,
 adios_selection_delete, adios_selection_auto, adios_errmsg,
 adios_type_to_string, adios_type_size, adios_get_grouplist,
 % Query API
 adios_query_create, adios_query_combine, adios_query_evaluate, adios_query_free,
 adios_query_estimate, adios_query_set_method, adios_query_is_method_available,
+adios_query_read_boundingbox,
 % Fortran Read
 adios_reset_dimension_order, adios_inq_ngroups, adios_inq_groupnames,
 adios_group_view, adios_inq_file, adios_inq_varnames, adios_inq_attrnames,
@@ -113,7 +116,9 @@ write, write_int, write_long, write_float, read, close, finalize,
 init_noxml, allocate_buffer, declare_group, 
 define_var, define_attribute, select_method,
 read_init, read_finalize, 
-printself, __init__,
+printself, __init__, __getitem__, __repr__,
+release_step, advance,
+read_points, read_writeblock,
 readvar, bpls,
 },
 upquote=true,

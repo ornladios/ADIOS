@@ -650,7 +650,7 @@ static int do_write (int64_t fd_p, const char * name, void * var)
 // temporary solution for compiling error
 static int declare_group (int64_t * id, const char * name
                         ,const char * time_index
-                        ,enum ADIOS_FLAG stats
+                        ,enum ADIOS_STATISTICS_FLAG stats
                         )
 {
     int ret;
@@ -758,7 +758,7 @@ static void define_iogroup(char *group_name)
     grp_name=(char *)malloc(len);
     memset(grp_name, 0x00, len);
     sprintf(grp_name, "agg_%s",group_name);
-    declare_group (&grp,grp_name, "", adios_flag_yes);
+    declare_group (&grp,grp_name, "", adios_stat_default);
     select_method (grp, io_method,io_parameters,"");
     grpflag=1;
 }

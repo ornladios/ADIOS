@@ -529,6 +529,7 @@ int doList_group (ADIOS_FILE *fp)
             if (retval) {
                 fprintf(stderr, "Error: %s\n", adios_errmsg());
             }
+            free(value);
         }
         len = strlen(adios_type_to_string(vartype));
         if (len > maxtypelen) maxtypelen = len;
@@ -743,6 +744,7 @@ int doList_group (ADIOS_FILE *fp)
     }
     free(names);
     free(isVar);
+    free(vis);
     return 0;
 }                
 
@@ -1183,7 +1185,6 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
     int  readn[MAX_DIMS];   // how big chunk to read in in each dimension?
     int  status;            
     bool incdim;            // used in incremental reading in
-    ADIOS_SELECTION * sel;  // boundnig box to read
     int ndigits_dims[32];        // # of digits (to print) of each dimension 
 
     if (getTypeInfo(vi->type, &elemsize)) {
@@ -1313,7 +1314,7 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
         }
 
         // read a slice finally
-        sel = adios_selection_boundingbox (vi->ndim, s+tidx, c+tidx);
+        ADIOS_SELECTION *sel = adios_selection_boundingbox (vi->ndim, s+tidx, c+tidx);
         if (timed) {
             status = adios_schedule_read_byid (fp, sel, vi->varid, s[0], c[0], data); 
         } else {
@@ -1327,6 +1328,7 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
         }
 
         status = adios_perform_reads (fp, 1); // blocking read performed here
+        adios_selection_delete (sel);
         if (status < 0) {
             fprintf(stderr, "Error when reading variable %s. errno=%d : %s \n", name, adios_errno, adios_errmsg());
             free(data);

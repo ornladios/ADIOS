@@ -95,7 +95,7 @@ int write_blocks ()
     int64_t       m_adios_group;
     int64_t       m_adios_file;
 
-    adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
+    adios_declare_group (&m_adios_group, "restart", "", adios_stat_default);
     adios_select_method (m_adios_group, "MPI", "", "");
 
     adios_define_var (m_adios_group, "NX"
@@ -199,6 +199,7 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
 
     v = adios_inq_var (f, "t");
     adios_inq_var_blockinfo (f, v);
+    adios_inq_var_stat (f, v, 0, 1);
 
     printf ("ndim = %d\n",  v->ndim);
     printf ("dims[%llu]",  v->dims[0]);

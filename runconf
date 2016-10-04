@@ -21,7 +21,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     echo "Configure on SITH for $TARGET env. for user ${USER}"
     module unload hdf5
     module unload netcdf
-    module unload mxml
     module unload python
     #module unload PE-gnu
     #module unload PE-pgi
@@ -29,9 +28,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     #module unload PE-pathscale
     #module unload pgi gcc intel pathscale
     #module load PE-$TARGET
-    module load mxml/2.9
-    MXMLDIR=$MXML_DIR
-    module unload mxml
     module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
@@ -67,12 +63,14 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     WITHFLEX=""
     WITHFGR=""
     WITHFASTBIT=""
+    WITHALACRITY=""
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
         export CXX=pgCC
         export FC=pgf90
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
         WITHFGR="--with-fgr=/ccs/proj/e2e/qliu/tap" 
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/pgi"
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.4.7"
         #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.pgi"
         #DATASPACES_DIR="/ccs/home/hbui/usr/software/dataspaces-dev"
@@ -83,12 +81,15 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         #export CFLAGS="$CFLAGS -gdwarf-3" 
         #export FCFLAGS="$FCFLAGS -gdwarf-3" 
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/gnu"
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
         #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.gnu"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
+        WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/intel"
+        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
@@ -96,16 +97,18 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/sith.$TARGET \
         --config-cache \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre \
-        --with-mxml=$MXMLDIR \
         --with-hdf5=${SEQ_HDF5_DIR} \
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         --with-zlib \
         --with-bzip2=$BZIP2_DIR \
         --with-dataspaces=$DATASPACES_DIR \
         $WITHFLEX \
+        $WITHFASTBIT \
+        $WITHALACRITY \
         --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
         #$WITHFASTBIT \
@@ -140,7 +143,6 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
         exit 1
     fi
     echo "Configure on Rhea for $TARGET env. for user ${USER}"
-    module unload mxml
     module unload hdf5
     module unload netcdf
     module unload PE-gnu
@@ -150,9 +152,6 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
     module unload pgi gcc intel pathscale
     module unload python
     module load PE-$TARGET
-    module load mxml
-    MXMLDIR=$MXML_DIR
-    module unload mxml
     module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
@@ -203,10 +202,10 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
     export CFLAGS="-g -fPIC" 
     $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/rhea.$TARGET \
         --config-cache \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre \
-        --with-mxml=$MXMLDIR 
         #--with-hdf5=${SEQ_HDF5_DIR} \
         #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         #--with-phdf5=${PAR_HDF5_DIR} \
@@ -242,7 +241,6 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
     module unload pgi gcc intel pathscale
     #module unload python
     module load PE-$TARGET
-    module load mxml
     #module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
@@ -293,6 +291,8 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
         
     export CFLAGS="-g -fPIC" 
     ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/yona.$TARGET \
+        --config-cache \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-research-transports  \
         --with-hdf5=${SEQ_HDF5_DIR} \
@@ -312,152 +312,98 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
-    BUILD_STAGING=true
     #source /opt/modules/default/etc/modules.sh
     TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
-    if [ $BUILD_STAGING == "false" ]; then
     
-        ################
-        # Titan #
-        ################
-        #TARGET=pgi
-        echo "Configure on TITAN (XK7) for $TARGET env."
-        export CC=cc
-        export FC=ftn
-        export CXX=CC
-        module unload szip
-        module unload hdf5
-        module unload netcdf
-        module unload netcdf-hdf5parallel
-        module unload hdf5-parallel
-        module unload mxml
-        module unload PrgEnv-gnu
-        module unload PrgEnv-pgi
-        module unload PrgEnv-intel
-        module unload PrgEnv-cray
-        #module unload papi
-        module load PrgEnv-$TARGET
-        #module unload intel
-        #module load intel/13.1.3.192
-        module swap craype-interlagos craype-istanbul
-        #module load szip
-        #module load xt-papi
-        module load mxml
-        # use the two lines below for openmpi
-        #export CC=mpicc
-        #export FC=mpif90
-        CFLAGS="-g -fPIC -O0" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
-            --enable-dependency-tracking \
-            --with-lustre
-            #--with-fgr=/ccs/proj/e2e/qliu/tap \
-            #--with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
-            #--with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
-#            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET
-#            --enable-research-transports \
-#            --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
-#            --with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
-#            --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
-#            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu7.2.3 \
-#            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
-#            --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
-            
-    else 
-    
-        ##########################
-        # Titan + staging #
-        ##########################
-        #TARGET=pgi
-        echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
-        export CC=cc
-        export FC=ftn
-        export CXX=CC
-        module unload szip
-        module unload hdf5
-        module unload netcdf
-        module unload hdf5-parallel
-        module unload netcdf-hdf5parallel
-        module unload mxml
-        module unload fastbit
-        module unload PrgEnv-gnu
-        module unload PrgEnv-pgi
-        module unload PrgEnv-intel
-        module unload PrgEnv-cray
-        #module unload papi
-        #module unload xtpe-quadcore
-        module load PrgEnv-$TARGET
-        module swap craype-interlagos craype-istanbul
-        module swap cray-libsci
-        module load dataspaces # /1.6.0
-        unset EXTRA_CFLAGS
-        unset EXTRA_LIBS
-        unset LDFLAGS
-        if [ "$TARGET" == "pgi" ]; then
-            #module swap pgi pgi/11.8.0
-            # FASTBIT needs libstdc++ and -pgcpplibs flag
-            export LDFLAGS="-pgcpplibs" 
-            export EXTRA_LIBS="/opt/gcc/4.8.2/snos/lib64/libstdc++.a"
-            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
-            WITHFLEX=""
-        elif [ "$TARGET" == "gnu" ]; then
-            export CC=gcc
-            export FC=gfortran
-            export CXX=g++
-            export MPICC=cc
-            export MPIFC=ftn
-            export MPICXX=CC
-            # NSSI/FLEXPATH/FASTBIT needs libstdc++
-            export LDFLAGS="" 
-            export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
-            WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
-            # FASTBIT needs libstdc++
-            #export EXTRA_LIBS="/opt/gcc/4.8.2/snos/lib64/libstdc++.a"
-            #module swap gcc gcc/4.4.4
-            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
-        elif [ "$TARGET" == "cray" ]; then
-            export EXTRA_CFLAGS="-h gnu"
-        fi
-     
-        # NOTE hdf5-parallel module does not work with C++ compiler
-        #module load hdf5-parallel
-        #module load netcdf-hdf5parallel
-        module load szip
-        #module load papi
-        module load mxml/2.9
+    #########
+    # Titan #
+    #########
+    #TARGET=pgi
+    echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
+    module unload szip
+    module unload hdf5
+    module unload netcdf
+    module unload hdf5-parallel
+    module unload netcdf-hdf5parallel
+    module unload fastbit
+    module unload craype-interlagos craype-interlagos-cu 
+    module unload craype-barcelona craype-abudhabi craype-abudhabi-cu 
+    module unload craype-ivybridge craype-sandybridge craype-haswell 
+    module unload craype-mc8 craype-mc12
+    module load craype-istanbul
+    module load dataspaces # /1.6.1
+    unset EXTRA_CFLAGS
+    unset EXTRA_LIBS
+    unset LDFLAGS
+    unset WITHFLEX
+    unset WITHFASTBIT
+    export CC=cc
+    export FC=ftn
+    export CXX=CC
+    if [ "$TARGET" == "pgi" ]; then
+        # FASTBIT needs libstdc++ and -pgcpplibs flag
+        export LDFLAGS="-pgc++libs" 
+        #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
+        export EXTRA_CFLAGS="-fast"
+        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$target-cpu"
+    elif [ "$TARGET" == "gnu" ]; then
+        #export CC=gcc
+        #export FC=gfortran
+        #export CXX=g++
+        #export MPICC=cc
+        #export MPIFC=ftn
+        #export MPICXX=CC
+        # NSSI/FLEXPATH/FASTBIT needs libstdc++
+        export LDFLAGS="" 
         module load fastbit
-        # use the two lines below for openmpi
-        #export CC=mpicc
-        #export FC=mpif90
-        export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
-        export CFLAGS="-fPIC -g -O2 ${EXTRA_CFLAGS}" 
-        LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
-        --enable-dependency-tracking \
-        --disable-maintainer-mode \
-        --with-cray-pmi=/opt/cray/pmi/default \
-        --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
-        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
-        --with-dataspaces=$DATASPACES_DIR \
-        --with-dimes=$DATASPACES_DIR \
-        --without-infiniband \
-        $WITHFLEX \
-        --with-fastbit=$FASTBIT_DIR \
-        --with-lustre \
-        --disable-timers --disable-timer-events \
-        --with-zlib --with-bzip2 
-
-        #--enable-skel-timing
-        #--with-fgr=/ccs/proj/e2e/qliu/tap \
-        #--with-glib=/ccs/proj/e2e/qliu/glib \
-        #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
-        #--with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
-        #--with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
-        #--with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
-        #--with-dimes=/ccs/proj/e2e/pnorbert/spaces/$TARGET
-        #--with-nssi=/ccs/proj/e2e/pnorbert/nssi/xt5/$TARGET \
-        #--with-datatap=/ccs/home/zf2/work/pe.$TARGET \
-        #--with-datatap=/ccs/proj/e2e/pnorbert/datatap/xt5/$TARGET \
-    
+        WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
+        # FASTBIT needs libstdc++
+        WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
+        #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
+        export EXTRA_CFLAGS="-Ofast"
+        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+    elif [ "$TARGET" == "cray" ]; then
+        export EXTRA_CFLAGS="-h gnu"
     fi
-    
+ 
+    # NOTE hdf5-parallel module does not work with C++ compiler
+    #module load hdf5-parallel
+    #module load netcdf-hdf5parallel
+    module load szip
+    #module load papi
+    # use the two lines below for openmpi
+    #export CC=mpicc
+    #export FC=mpif90
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
+    export CFLAGS="-fPIC -g ${EXTRA_CFLAGS}" 
+    LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
+    --enable-dependency-tracking \
+    --disable-maintainer-mode \
+    --with-cray-pmi=/opt/cray/pmi/default \
+    --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+    --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+    --with-dataspaces=$DATASPACES_DIR \
+    --with-dimes=$DATASPACES_DIR \
+    --without-infiniband \
+    $WITHFLEX \
+    $WITHFASTBIT \
+    --with-lustre \
+    --disable-timers --disable-timer-events \
+    --with-zlib --with-bzip2 
+
+    #--enable-skel-timing
+    #--with-fgr=/ccs/proj/e2e/qliu/tap \
+    #--with-glib=/ccs/proj/e2e/qliu/glib \
+    #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
+    #--with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
+    #--with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
+    #--with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
+    #--with-dimes=/ccs/proj/e2e/pnorbert/spaces/$TARGET
+    #--with-nssi=/ccs/proj/e2e/pnorbert/nssi/xt5/$TARGET \
+    #--with-datatap=/ccs/home/zf2/work/pe.$TARGET \
+    #--with-datatap=/ccs/proj/e2e/pnorbert/datatap/xt5/$TARGET \
+
+
 
 
 elif [ `hostname | cut -c 1-4` == "eos-" ]; then
@@ -477,16 +423,11 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
       module unload netcdf
       module unload netcdf-hdf5parallel
       module unload hdf5-parallel
-      module unload PrgEnv-gnu
-      module unload PrgEnv-pgi
-      module unload PrgEnv-intel
-      module unload PrgEnv-cray
       module unload papi
       module unload pmi
-      module load PrgEnv-$TARGET
       if [ "$TARGET" == "pgi" ]; then
-          # NSSI needs -pgcpplibs flag 
-          export LDFLAGS="-pgcpplibs" 
+          # NSSI needs -pgc++libs flag 
+          export LDFLAGS="-pgc++libs" 
           unset EXTRA_LIBS 
       elif [ "$TARGET" == "gnu" ]; then
           # NSSI needs libstdc++
@@ -500,13 +441,16 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
           unset EXTRA_LIBS 
           unset EXTRA_CFLAGS 
       fi
-      module load mxml
       module load pmi
+      module load craype-hugepages2M
       CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eos.$TARGET \
+          --disable-maintainer-mode \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
           --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+          --with-dataspaces=/ccs/proj/e2e/dataspaces/eos/1.6.1/$TARGET \
+          --with-dimes=/ccs/proj/e2e/dataspaces/eos/1.6.1/$TARGET \
             
 
 elif [ `hostname | cut -c 1-7` == "chester" ]; then
@@ -525,20 +469,21 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       module unload netcdf
       module unload netcdf-hdf5parallel
       module unload hdf5-parallel
-      module unload PrgEnv-gnu
-      module unload PrgEnv-pgi
-      module unload PrgEnv-intel
-      module unload PrgEnv-cray
-      module unload papi
-      module unload pmi
-      module load PrgEnv-$TARGET
-      module swap cray-libsci
       module swap craype-interlagos craype-istanbul
-      module load dataspaces/1.4.0
-      unset FLEXPATH
+      module load dataspaces/1.6.0
+      module load fastbit
+      WITHFASTBIT=""
+      WITHALACRITY=""
       if [ "$TARGET" == "pgi" ]; then
-          # NSSI needs -pgcpplibs flag 
-          export LDFLAGS="-pgcpplibs" 
+          export CC=pgcc
+          export FC=pgf90
+          export CXX=pgc++
+          export MPICC=cc
+          export MPIFC=ftn
+          export MPICXX=CC
+          # FASTBIT, ALACRITY need -pgcpplibs flag 
+          WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/xk6/pgi"
+          export LDFLAGS="-pgc++libs" 
           unset EXTRA_LIBS 
       elif [ "$TARGET" == "gnu" ]; then
           export CC=gcc
@@ -547,28 +492,25 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           export MPICC=cc
           export MPIFC=ftn
           export MPICXX=CC
-          # NSSI needs libstdc++
-          unset LDFLAGS 
-          export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
+          # FASTBIT, ALACRITY needs libstdc++
+          # PROBLEM: there is libstdc++.so and libtool uses that in any case leading to link error 
+          #WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/xk6/gnu"
+          #WITHFASTBIT="--with-fastbit=${FASTBIT_DIR}"
+          #export LDFLAGS="-static -static-libstdc++"
+          #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
           export FLEXPATH="--with-flexpath=/ccs/proj/e2e/chaos/titan/gnu"
           #module swap gcc gcc/4.4.4
       elif [ "$TARGET" == "cray" ]; then
           export EXTRA_CFLAGS="-h gnu"
+          WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/xk6/cray"
       else
           unset LDFLAGS 
           unset EXTRA_LIBS 
           unset EXTRA_CFLAGS 
       fi
-      #module load szip
-      #module load xt-papi
-      module load mxml
-      module load pmi
-      module load rca
-      # use the two lines below for openmpi
-      #export CC=mpicc
-      #export FC=mpif90
-      CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" LDFLAGS="$CRAY_RCA_POST_LINK_OPTS" \
+      CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" LDFLAGS="$LDFLAGS $CRAY_RCA_POST_LINK_OPTS" \
       ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
+          --disable-maintainer-mode \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
@@ -576,6 +518,8 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           --with-dataspaces=$DATASPACES_DIR \
           --with-dimes=$DATASPACES_DIR \
           $FLEXPATH \
+          $WITHALACRITY \
+          $WITHFASTBIT \
           --without-infiniband 
 #            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr \
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET \
@@ -585,7 +529,6 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
 #            --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
 #            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu7.2.3 \
 #            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
-#            --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
 #          --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
             
 
@@ -607,8 +550,8 @@ elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
     export CC=xlc_r
 
     ${SRCDIR}/configure --prefix=/home/qliu/4se/ADIOS \
+            --disable-maintainer-mode \
             --enable-dependency-tracking \
-            --with-mxml=/home/qliu/mxml \
             --without-datatap --without-infiniband --with-bgq
 
 elif [ `hostname -f | cut -c 1-5` == "vesta" ]; then
@@ -623,9 +566,67 @@ elif [ `hostname -f | cut -c 1-5` == "vesta" ]; then
     export CC=bgxlc
 
     ${SRCDIR}/configure --prefix=/home/qliu/ADIOS \
+            --disable-maintainer-mode \
             --enable-dependency-tracking \
-            --with-mxml=/home/qliu/mxml \
             --without-datatap --without-infiniband --with-bgq
+
+
+elif [ `hostname | cut -c 1-4` == "cori" ]; then
+
+    ##########
+    # CORI #
+    ##########
+    TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
+    echo "Configure on CORI for $TARGET env."
+    export MPICC=cc
+    export MPICXX=CC
+    export MPIFC=ftn
+    module unload darshan
+    module unload hdf5
+    module unload netcdf
+    module unload hdf5-parallel
+    module unload netcdf-hdf5parallel
+    module load python
+    WITHDART=""
+    if [ "$TARGET" == "pgi" ]; then
+        export CC=pgcc
+        export CXX=pgCC
+        export FC=pgf90
+        export LDFLAGS="-pgcpplibs"
+    elif [ "$TARGET" == "gnu" ]; then
+        export CC=gcc
+        export CXX=g++
+        export FC=gfortran
+        export LDFLAGS=""
+    elif [ "$TARGET" == "intel" ]; then
+        export CC=icc
+        export CXX=icpc
+        export FC=ifort
+        export LDFLAGS=""
+    elif [ "$TARGET" == "cray" ]; then
+        export EXTRA_CFLAGS="-h gnu"
+        export CC=cc
+        export CXX=CC
+        export FC=ftn
+        export LDFLAGS=""
+        export EXTRA_CFLAGS="-h gnu"
+    else
+        echo "TARGET must be one of [ pgi | gnu | intel | cray ]"
+        exit 1
+    fi
+
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
+    ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/1.10.0/cori/$TARGET \
+        --disable-maintainer-mode \
+        --enable-dependency-tracking \
+        --with-lustre=/usr \
+        --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
+        --with-cray-pmi-libdir=/opt/cray/pmi/default/lib64 \
+        --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+        --without-infiniband \
+        --without-hdf5 --without-netcdf
 
 elif [ `hostname | cut -c 1-6` == "edison" ]; then
     ##########
@@ -659,26 +660,22 @@ elif [ `hostname | cut -c 1-6` == "edison" ]; then
         export CXX=pgCC
         export FC=pgf90
         export LDFLAGS="-pgcpplibs"
-        #WITHDART="--with-dataspaces=/global/homes/p/pnorbert/dataspaces/1.1.0/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
         export LDFLAGS=""
-        #WITHDART="--with-dataspaces=/global/homes/p/pnorbert/dataspaces/1.1.0/$TARGET"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
         export LDFLAGS=""
-        WITHDART=""
     elif [ "$TARGET" == "cray" ]; then
         export EXTRA_CFLAGS="-h gnu"
         export CC=cc
         export CXX=CC
         export FC=ftn
         export LDFLAGS=""
-        WITHDART=""
         export EXTRA_CFLAGS="-h gnu"
     else
         echo "TARGET must be pgi or gnu or intel"
@@ -687,129 +684,15 @@ elif [ `hostname | cut -c 1-6` == "edison" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
     ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/master/edison/$TARGET \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
-        --with-mxml=$HOME/mxml/mxml.edison \
         --with-lustre=/usr \
-        $WITHDART \
         --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
         --with-cray-pmi-libdir=/opt/cray/pmi/default/lib64 \
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
         --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
-	--without-infiniband \
+    	--without-infiniband \
         --without-hdf5 --without-netcdf
-
-elif [ `hostname | cut -c 1-6` == "hopper" ]; then
-    ##########
-    # Hopper #
-    ##########
-    TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
-    echo "Configure on HOPPER for $TARGET env."
-    export MPICC=cc
-    export MPICXX=CC
-    export MPIFC=ftn
-    module unload hdf5
-    module unload netcdf
-    module unload hdf5-parallel
-    module unload netcdf-hdf5parallel
-    #module unload PrgEnv-gnu
-    #module unload PrgEnv-pgi
-    #module unload PrgEnv-pathscale
-    #module unload PrgEnv-cray
-    #module load PrgEnv-$TARGET
-    #module swap cray-libsci
-    module load python
-    if [ "$TARGET" == "pgi" ]; then
-        export CC=pgcc
-        export CXX=pgCC
-        export FC=pgf90
-        export LDFLAGS="-pgcpplibs"
-        WITHDART="--with-dataspaces=/global/homes/p/pnorbert/dataspaces/1.1.0/$TARGET"
-    elif [ "$TARGET" == "gnu" ]; then
-        export CC=gcc
-        export CXX=g++
-        export FC=gfortran
-        export LDFLAGS=""
-        WITHDART="--with-dataspaces=/global/homes/p/pnorbert/dataspaces/1.1.0/$TARGET"
-    elif [ "$TARGET" == "intel" ]; then
-        export CC=icc
-        export CXX=icpc
-        export FC=ifort
-        export LDFLAGS=""
-        WITHDART=""
-    elif [ "$TARGET" == "cray" ]; then
-        export EXTRA_CFLAGS="-h gnu"
-        export CC=cc
-        export CXX=CC
-        export FC=ftn
-        export LDFLAGS=""
-        WITHDART=""
-        export EXTRA_CFLAGS="-h gnu"
-    else
-        echo "TARGET must be pgi or gnu or intel"
-        exit 1
-    fi
-    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
-    export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
-    ${SRCDIR}/configure --prefix=/project/projectdirs/m499/adios/devel-hopper-$TARGET \
-        --enable-dependency-tracking \
-        --with-mxml=$HOME/mxml/mxml.hopper \
-        --with-lustre=/usr \
-        $WITHDART \
-        --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
-        --with-cray-pmi-libdir=/opt/cray/pmi/default/lib64 \
-        --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
-        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
-	--without-infiniband \
-        --without-hdf5 --without-netcdf
-
-
-elif [ `hostname | cut -c 1-6` == "kraken" ]; then
-    ##########
-    # Kraken #
-    ##########
-    source /opt/modules/default/etc/modules.sh
-    TARGET=`module list 2>&1 | grep PrgEnv | sed "s/^.*Env-\([a-z]*\).*/\1/"`
-
-    if [ -z "$TARGET" ]; then
-        echo "Cannot determine Programming environment. Exit"
-        exit 1
-    fi
-    echo ""
-    echo "Configure KRAKEN for the $TARGET compiler"
-    echo ""
-    export CC=cc
-    export FC=ftn
-    export CXX=CC
-    module unload szip
-    module unload hdf5
-    module unload netcdf
-    module unload hdf5-parallel
-    module unload netcdf-hdf5parallel
-    module unload xt-papi
-    module unload papi
-    if [ "$TARGET" == "pgi" ]; then
-        #module swap pgi pgi/10.4.0
-        # NSSI needs -pgcpplibs flag 
-        export EXTRA_LIBS=""
-        export LDFLAGS="-pgcpplibs" 
-    elif [ "$TARGET" == "gnu" ]; then
-        # NSSI needs libstdc++
-        export EXTRA_LIBS="/opt/gcc/4.4.4/snos/lib64/libstdc++.a"
-        export LDFLAGS="" 
-        #module swap gcc gcc/4.4.4
-    fi
-
-    module load szip
-    module load mxml
-    module load subversion
-    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
-    export CFLAGS="-fPIC -g -O0" 
-    ${SRCDIR}/configure --prefix=/${HOME}/adios/$TARGET \
-        --enable-dependency-tracking \
-        --with-portals=yes \
-        --without-netcdf --without-nc4par --without-hdf5 --without-phdf5 \
-        --with-dataspaces=${HOME}/dataspaces/1.3.0/$TARGET
-
 
 elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; then
 
@@ -817,29 +700,68 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     # Mac #
     #######
     echo "Configure on Mac"
-    # Originally installed MacPorts and GCC4.4 and OpenMPI 1.4.2 ports 
-    #    export CC=/opt/local/bin/gcc-mp-4.4
-    #    export FC=/opt/local/bin/gfortran-mp-4.4
-    #    export CXX=/opt/local/bin/g++-mp-4.4
-    #    export MPICC=/opt/local/bin/openmpicc
-    #    export MPIFC=/opt/local/bin/openmpif90
-    #    export MPICXX=/opt/local/bin/openmpicxx
-    #
-    # But should work with default mpicc and gcc, using --disable-fortran
-    # Homebrew installation of openmpi and gfortran (from gcc 4.9.2)
     #   but using Apple's default gcc compiler
-    export CC=/usr/bin/gcc
-    export FC=/usr/local/bin/gfortran
-    export CXX=/usr/bin/g++
+#    export OMPI_CC=$CC
+#    export OMPI_FC=$FC
+#    export OMPI_CXX=$CXX
+    # Installed Homebrew, gcc/gfortran 5.3.0 and OpenMPI 1.10.2 in /usr/local
+    # But should work with default mpicc and gcc, using --disable-fortran or with Homebrew gfortran
+    #
+    unset WITHZFP # build from the included zfp source
+    USE_GCC5=false
+    if [ $USE_GCC5 == "true" ]; then
+        # If want to use gcc/gfortran 5.3.0
+        export CC=/usr/local/bin/gcc-5
+        export CXX=/usr/local/bin/g++-5
+        export FC=/usr/local/bin/gfortran
+        export OMPI_CC=/usr/local/bin/gcc-5
+        export OMPI_CXX=/usr/local/bin/g++-5
+        export OMPI_FC=/usr/local/bin/gfortran
+        export WITHALACRITY="--with-alacrity=/opt/alacrity/gcc5"
+        export WITHFASTBIT="--without-fastbit"
+        export WITHFLEXPATH="--without-flexpath"
+        export WITHDATASPACES="--without-dataspaces --without-dimes"
+        #export WITHZFP="--without-zfp"
+        # ALACRITY, FASTBIT are C++ lib so we need to link with the actual libstdc++
+        # if the automatically added -lstdc++ does not work
+        #export LIBS="/usr/local/Cellar/gcc/5.3.0/lib/gcc/5/libstdc++.dylib" 
+        echo "Configure using gcc-5"
+    else
+        # If want to use clang C/C++ and gfortran 5.3.0
+        export CC=/usr/bin/gcc
+        export CXX=/usr/bin/g++
+        export FC=/usr/local/bin/gfortran
+        unset OMPI_CC
+        unset OMPI_CXX
+        unset OMPI_FC
+        export WITHALACRITY="--with-alacrity=/opt/alacrity/clang"
+        export WITHFASTBIT="--with-fastbit=/opt/fastbit"
+        export WITHDATASPACES="--with-dataspaces=/opt/dataspaces --without-dimes"
+        export WITHFLEXPATH="--with-flexpath=/opt/chaos"
+        #export WITHZFP="--with-zfp=/Users/pnb/scratch/zfp-0.5.0"
+        echo "Configure using clang"
+        # Problem: test/test_src/selection_api.F90 link will fail because
+        #   gfortran is used which finds the gcc-5 libstdc++ library instead of the system libstdc++
+        # Manual fix: use mpif90 for that build command, or use "gfortran ... -Wl,-flat_namespace" command
+    fi
+    # The rest is common for all
     export MPICC=/usr/local/bin/mpicc
     export MPIFC=/usr/local/bin/mpif90
     export MPICXX=/usr/local/bin/mpicxx
 
-    CFLAGS="-g -DO_LARGEFILE=0 -fno-common -Wall" ${SRCDIR}/configure --prefix=/opt/adios \
-        --with-mxml=/opt/mxml \
-    #    --disable-fortran \
+    export CFLAGS="-g -O0 -DO_LARGEFILE=0 -fno-common -Wall" 
+    export CXXFLAGS="-g -O0"
+    export FCFLAGS="-g -O0"
+    ${SRCDIR}/configure --prefix=/opt/adios --disable-shared \
+        --with-zlib \
+        ${WITHALACRITY} \
+        ${WITHFASTBIT} \
+        ${WITHZFP} \
+        ${WITHDATASPACES} \
+        ${WITHFLEXPATH} \
+        --with-phdf5=/usr/local 
+    #    --disable-mpi --disable-write --disable-fortran \
     #        --with-netcdf=/opt/netcdf \
-    #        --with-phdf5=/opt/hdf5 \
     #        --with-hdf5=/opt/hdf5.seq
 
 
@@ -852,7 +774,6 @@ elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
     export CC=mpicc
     ${SRCDIR}/configure --prefix=/usr/local/adios \
         --enable-dependency-tracking \
-        --with-mxml=/usr/local/adios 
         #--with-hdf5=/usr/local/hdf5-serial\
         #--with-phdf5=/usr/local \
         #--with-netcdf=/usr 
@@ -868,7 +789,6 @@ elif [ `hostname | cut -c 1-7` == "nostril" ]; then
     export CFLAGS="-fPIC"
     ${SRCDIR}/configure --prefix=/apps/adios/trunk \
         --enable-dependency-tracking \
-        --with-mxml=/usr \
         --without-netcdf --without-nc4par --without-hdf5 --without-phdf5
         #--with-hdf5=/usr/local/hdf5-serial\
         #--with-phdf5=/usr/local \
@@ -883,7 +803,6 @@ elif [ `hostname | cut -c 1-6` == "tomato" ]; then
     export CC=mpicc
     ${SRCDIR}/configure --prefix=/home/thkorde/local \
         --enable-dependency-tracking \
-        --with-mxml=/home/thkorde/local \
         --with-phdf5=/home/thkorde/local \
         --with-hdf5=/home/thkorde/local \
         --with-netcdf=/home/thkorde/local
@@ -899,8 +818,7 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
     export CFLAGS="-g -O0 -fPIC"
     ${SRCDIR}/configure --prefix=/home/qliu/ADIOS \
         --enable-dependency-tracking \
-        --with-mxml=/home/qliu/mxml \
-    --with-phdf5=/home/thkorde/local \
+        --with-phdf5=/home/thkorde/local \
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
@@ -919,7 +837,6 @@ elif [ `hostname | cut -c 1-2` == "ln" ]; then
 
     ${SRCDIR}/configure --prefix=/vol6/home/Jeremy/adios-install \
         --enable-dependency-tracking \
-        --with-mxml=/vol6/home/Jeremy/mxml-install \
         --enable-skel-timing \
         --disable-maintainer-mode 
 
@@ -932,6 +849,26 @@ elif [ `hostname | cut -c 1-2` == "ln" ]; then
         #--with-bzip2=/usr/lib/i386-linux-gnu \
         #--with-isobar=/opt/isobar \
         #--with-flexpath=/opt/chaos
+
+elif [ `hostname | cut -c 1-9` == "PC0098504" ]; then
+
+    #######################
+    #      Linux PC       # 
+    #######################
+    echo "Configure on Linux PC."
+    export MPICC=mpicc
+    export MPICXX=mpicxx
+    export MPIFC=mpif90
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export LDFLAGS="-lpthread"
+    export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
+    ${SRCDIR}/configure --prefix=/opt/adios/1.10 \
+        --enable-dependency-tracking \
+        --enable-timers \
+        --disable-timer-events 
 
 elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
 
@@ -947,22 +884,22 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export FC=gfortran
 
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    ${SRCDIR}/configure --prefix=/opt/adios/1.9 \
+    ${SRCDIR}/configure --prefix=/opt/adios/1.10 \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
-        --with-mxml=/opt/mxml \
+        --enable-timers \
+        --disable-timer-events \
         --with-zlib \
         --with-bzip2 \
         --with-szip=/opt/szip \
         --with-isobar=/opt/isobar \
         --with-flexpath=/opt/chaos \
+        --with-dataspaces=/opt/dataspaces --without-infiniband \
         --with-fastbit=/opt/fastbit \
-        --with-hdf5=/opt/hdf5-1.8.12 \
-        --with-phdf5=/opt/hdf5-1.8.12-parallel \
-        --with-netcdf=/opt/netcdf-4.3.0 \
-        --enable-timers \
-        --disable-timer-events
-
+        --with-alacrity=/opt/alacrity \
+        --with-hdf5=/opt/hdf5-1.8.17 \
+        --with-phdf5=/opt/hdf5-1.8.17-parallel \
+        --with-netcdf=/opt/netcdf-4.4.0 \
 
 
 else

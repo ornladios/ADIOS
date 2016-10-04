@@ -27,7 +27,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload pgi gcc intel pathscale
     module unload python
     module load PE-$TARGET
-    module load mxml
     module load python
     module load szip
     module load bzip2
@@ -44,7 +43,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export INSTALL_PREFIX="/ccs/home/jya/ADIOS/sith.$TARGET"
     export APLOD_DIR="/ccs/proj/e2e/ncsu/sith.gnu"
     export ISOBAR_DIR="/ccs/proj/e2e/ncsu/sith.gnu"
-    export ALACRITY_DIR
+    export ALACRITY_DIR="/ccs/proj/e2e/pnorbert/ALACRITY-ADIOS/synced/build.sith/build.gnu" 
     export NCSU_TIMER_DIR
     if [ "$TARGET" == "pgi" ]; then
         module load hdf5/1.8.10
@@ -66,7 +65,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
-        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
+        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
     elif [ "$TARGET" == "gnu" ]; then
         module load hdf5/1.8.10
         export SEQ_HDF5_DIR=$HDF5_DIR
@@ -86,7 +85,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 #        module unload netcdf/4.1.3_par
 #        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
-        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
+        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
     elif [ "$TARGET" == "intel" ]; then
         module load hdf5/1.8.10
         export SEQ_HDF5_DIR=$HDF5_DIR
@@ -132,7 +131,6 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
     module unload PE-pathscale
     module unload pgi
     module load PE-$TARGET
-    module load mxml
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
 #    module load hdf5/1.8.6
@@ -195,7 +193,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module unload netcdf
         module unload netcdf-hdf5parallel
         module unload hdf5-parallel
-        module unload mxml
         module unload PrgEnv-gnu
         module unload PrgEnv-pgi
         module unload PrgEnv-intel
@@ -207,7 +204,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         export CRAYPE_LINK_TYPE=static
         module load cray-mpich
         module load szip
-        module load mxml
         export CRAY_UGNI_DIR="/opt/cray/ugni/4.0-1.0401.5928.9.5.gem"
         export CRAY_PMI_DIR="/opt/cray/pmi/4.0.1-1.0000.9421.73.3.gem"
         export LUSTRE_DIR="/usr/lib64"
@@ -230,7 +226,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module unload netcdf
         module unload hdf5-parallel
         module unload netcdf-hdf5parallel
-        module unload mxml
         module unload PrgEnv-gnu
         module unload PrgEnv-pgi
         module unload PrgEnv-intel
@@ -242,7 +237,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         export CRAYPE_LINK_TYPE=static
         module load cray-mpich
         module load cray-netcdf-hdf5parallel
-        module load mxml
         module load szip
 
         unset EXTRA_LIBS
@@ -254,15 +248,15 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         export LUSTRE_DIR=/usr/lib64
         export BZIP2_DIR=${SYSROOT_DIR}/usr
         if [ "$TARGET" == "pgi" ]; then
-            module load dataspaces/1.4.0
+            module load dataspaces/1.6.0
             export DATASPACES_LIBDIR=${DATASPACES_DIR}/lib
             export LDFLAGS="-pgcpplibs -Wl,-Bstatic" 
 #            export FLEXPATH_DIR="/ccs/proj/e2e/chaos/titan/$TAGET"
-            export EXTRA_LIBS="/opt/gcc/4.8.2/snos/lib64/libstdc++.a"
+            export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
         elif [ "$TARGET" == "gnu" ]; then
             # currently dependencies are not available for > 4.7.2
             module load gcc/4.7.2
-            module load dataspaces/1.4.0
+            module load dataspaces/1.6.0
             export DATASPACES_DIR=$DATASPACES_DIR
             export FLEXPATH_DIR="/ccs/proj/e2e/chaos/titan/gnu"
 #            module load fastbit/svn
@@ -282,7 +276,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         export CFLAGS="-g -fPIC -O0"
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING"
         export adios_timers=ON
-        export INSTALL_PREFIX="/ccs/home/jya/ADIOS/titan.$TARGET" 
+        export INSTALL_PREFIX="/ccs/proj/e2e/pnorbert/ADIOS/titan.cmake.$TARGET" 
     fi
     
 
@@ -300,7 +294,6 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
       module unload netcdf
       module unload netcdf-hdf5parallel
       module unload hdf5-parallel
-      module unload mxml
       module unload PrgEnv-gnu
       module unload PrgEnv-pgi
       module unload PrgEnv-intel
@@ -310,7 +303,6 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
       module load cmake
       export CRAYPE_LINK_TYPE=static
       module load cray-mpich
-      module load mxml
       export BUILD_WRITE=ON
       export BUILD_FORTRAN=ON
       if [ "$TARGET" == "pgi" ]; then
@@ -328,7 +320,6 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
           unset LDFLAGS 
           unset EXTRA_LIBS 
       fi
-      module load mxml
       module load pmi
       export CFLAGS="-g -fPIC"
       export INSTALL_PREFIX="/ccs/home/jya/ADIOS/eos.$TARGET"
@@ -361,7 +352,6 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       export CRAYPE_LINK_TYPE=static
       module load cray-mpich
       module load cray-netcdf-hdf5parallel
-      module load mxml
       module load szip
       module load pmi
       module load ugni
@@ -406,7 +396,6 @@ elif [ "x"`hostname -f | cut -c 8-15` == "xintrepid" ]; then
     export CFLAGS=""
 #    export FC=xlf90
 #    export CC=xlc_r
-    export MXML_DIR = /home/jya/mxml
 
     
 elif [ `hostname | cut -c 1-4` == "nid0" ]; then
@@ -506,7 +495,6 @@ elif [ `hostname | cut -c 1-6` == "kraken" ]; then
     fi
 
     module load szip
-    module load mxml
     module load subversion
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-fPIC -g -O0" 
@@ -518,8 +506,28 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     # Mac #
     #######
     echo "Configure on Mac"
-    # Installed Homebrew, gfortran and OpenMPI 1.6.5 in /usr/local
-    # But should work with default mpicc and gcc, using --disable-fortran
+    # Installed Homebrew, gcc/gfortran 5.3.0 and OpenMPI 1.10.2 in /usr/local
+    # But should work with default mpicc and gcc, using --disable-fortran or with Homebrew gfortran
+    #
+    USE_GCC5=false
+    if [ $USE_GCC5 == "true" ]; then
+        # If want to use gcc/gfortran 5.3.0
+        export OMPI_CC=/usr/local/bin/gcc-5
+        export OMPI_CXX=/usr/local/bin/g++-5
+        export OMPI_FC=/usr/local/bin/gfortran
+        export ALACRITY_DIR="/opt/alacrity/gcc5"
+        unset FASTBIT_DIR
+        echo "Configure using gcc-5"
+    else
+        # If want to use clang C/C++ and gfortran 5.3.0
+        unset OMPI_CC
+        unset OMPI_CXX
+        unset OMPI_FC
+        export FASTBIT_DIR="/opt/fastbit"
+        export ALACRITY_DIR="/opt/alacrity/clang"
+        echo "Configure using clang"
+    fi
+    # The rest is common for all
     export CC=/usr/local/bin/mpicc
     export FC=/usr/local/bin/mpif90
     export CXX=/usr/local/bin/mpicxx
@@ -527,13 +535,15 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export adios_timers=ON
-    export MXML_DIR=/opt/mxml
     export INSTALL_PREFIX="/opt/adios"
-    export SEQ_HDF5_DIR=/usr/local
-    export SEQ_HDF5_LIBS="-L/usr/local/lib -lhdf5_hl -lhdf5 -lm"
-#        --with-mxml=/opt/mxml \
-#        --with-netcdf=/opt/netcdf \
-#        --with-phdf5=/opt/hdf5 \
+    export PAR_HDF5_DIR=/usr/local
+    export PAR_HDF5_LIBS="-L/usr/local/lib -lhdf5_hl -lhdf5 -lm"
+    unset SEQ_HDF5_DIR
+    unset SEQ_HDF5_LIBS
+    unset SEQ_NC_DIR
+    unset SEQ_NC_LIBS
+    unset PAR_NC_DIR
+    unset PAR_NC_LIBS
 
 
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
@@ -578,7 +588,6 @@ elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
     export INSTALL_PREFIX="/opt/adios/1.5.0"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -fPIC"
-    export MXML_DIR=/opt/mxml
     export SEQ_HDF5_DIR=/opt/hdf5
     export SEQ_HDF5_LIBS="-L/opt/hdf5/lib -lhdf5_hl -lhdf5 -lm"
     export PAR_HDF5_DIR=/opt/phdf5
@@ -591,20 +600,19 @@ elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
 elif [ `hostname | cut -c 1-9` == "PC0098504" ]; then
 
     #######################
-    #  Hasan's Linux PC   #
+    #      Linux PC       # 
     #######################
-    echo "Configure on Hasan's PC."
+    echo "Configure on Linux PC."
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export adios_timers=ON
     export CC=mpicc
     export CXX=mpicxx
     export FC=mpif90
-    export INSTALL_PREFIX="/home/pnb/adios/1.9"
+    export INSTALL_PREFIX="/opt/adios/1.10"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
     export LDFLAGS="-lpthread"
-    export MXML_DIR=/usr
 
 elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
 
@@ -618,16 +626,22 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export CC=mpicc
     export CXX=mpicxx
     export FC=mpif90
-    export INSTALL_PREFIX="/opt/adios/1.9"
+    export INSTALL_PREFIX="/opt/adios/1.10"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    export MXML_DIR=/opt/mxml/2.9
-    export SEQ_HDF5_DIR=/opt/hdf5-1.8.12
-    export SEQ_HDF5_LIBS="-L/opt/hdf5-1.8.12/lib -lhdf5_hl -lhdf5 -lm"
-    export PAR_HDF5_DIR=/opt/hdf5-1.8.12-parallel
-    export PAR_HDF5_LIBS="-L/opt/hdf5-1.8.12-parallel/lib -lhdf5_hl -lhdf5 -lm"
-    export SEQ_NC_DIR=/opt/netcdf-3.6.3
-    export SEQ_NC_LIBS="-L/opt/netcdf-3.6.3/lib -lnetcdf"
+    export BZIP2_DIR="/usr/lib"
+    export SZIP_DIR="/opt/szip"
+    export ISOBAR_DIR="/opt/isobar"
+    export FLEXPATH_DIR="/opt/chaos"
+    export DATASPACES_DIR="/opt/dataspaces"
+    export FASTBIT_DIR="/opt/fastbit"
+    export ALACRITY_DIR="/opt/alacrity"
+    export SEQ_HDF5_DIR=/opt/hdf5-1.8.17
+    export SEQ_HDF5_LIBS="-L/opt/hdf5-1.8.17/lib -lhdf5_hl -lhdf5 -lm"
+    export PAR_HDF5_DIR=/opt/hdf5-1.8.17-parallel
+    export PAR_HDF5_LIBS="-L/opt/hdf5-1.8.17-parallel/lib -lhdf5_hl -lhdf5 -lm"
+    export SEQ_NC_DIR=/opt/netcdf-4.4.0
+    export SEQ_NC_LIBS="-L/opt/netcdf-4.4.0/lib -lnetcdf"
 else
     echo "Could not determine what machine is this."
     echo "This script is for configuring adios on the authors' machines."

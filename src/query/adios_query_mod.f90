@@ -24,6 +24,7 @@ module adios_query_mod
     !
     ! ADIOS Query method                                 
     !
+    integer, parameter :: ADIOS_QUERY_METHOD_MINMAX   = 0 
     integer, parameter :: ADIOS_QUERY_METHOD_FASTBIT  = 1 
     integer, parameter :: ADIOS_QUERY_METHOD_ALACRITY = 2 
 

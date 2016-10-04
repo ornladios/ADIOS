@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+#include <getopt.h>
 
 #include "misc.h"
 #include "utils.h"

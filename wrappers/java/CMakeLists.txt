@@ -15,14 +15,14 @@ include_directories (${JNI_INCLUDE_DIRS})
 option (ADIOS_USE_MPI "Use parallel ADIOS" ON)
 
 find_package (ADIOS REQUIRED)
-add_definitions (${ADIOS_COMPILE_FLAGS})  
+add_definitions (${ADIOS_COMPILE_FLAGS})
 add_definitions (-DADIOS_USE_READ_API_1)
 include_directories (${ADIOS_INCLUDE_PATH})
 
 if (ADIOS_USE_MPI)
   find_package (MPI REQUIRED)
   include_directories (${MPI_CXX_INCLUDE_PATH})
-  add_definitions (-DADIOS_USE_MPI)  
+  add_definitions (-DADIOS_USE_MPI)
 else ()
   find_package (MPI REQUIRED)
 endif()
@@ -30,6 +30,7 @@ endif()
 set (SRC
   gov_ornl_ccs_AdiosDatatype.cxx
   gov_ornl_ccs_AdiosFlag.cxx
+  gov_ornl_ccs_AdiosStatisticsFlag.cxx
   gov_ornl_ccs_AdiosBufferAllocWhen.cxx
   gov_ornl_ccs_Adios.cxx
   gov_ornl_ccs_AdiosFile.cxx
@@ -93,4 +94,3 @@ install (FILES ${CMAKE_CURRENT_BINARY_DIR}/AdiosJava.jar DESTINATION lib)
 ENABLE_TESTING()
 add_test (test1 ${CMAKE_CURRENT_SOURCE_DIR}/test/test1.sh ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test AdiosTest)
 add_test (test2 ${CMAKE_CURRENT_SOURCE_DIR}/test/test2.sh ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test AdiosNoxmlTest)
-

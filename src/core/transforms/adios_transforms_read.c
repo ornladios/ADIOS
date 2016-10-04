@@ -13,6 +13,7 @@
 #include "core/util.h"
 
 #include "core/adios_selection_util.h"
+#include "core/a2sel.h"
 
 #include "core/transforms/adios_transforms_reqgroup.h"
 #include "core/transforms/adios_transforms_common.h"
@@ -173,7 +174,7 @@ inline static const ADIOS_SELECTION * create_pg_bounds_from_varblock(int ndim, c
     //const uint64_t *new_count = (uint64_t*)bufdup(orig_vb->count, sizeof(uint64_t), ndim);
 
     //return common_read_selection_boundingbox(ndim, new_start, new_count);
-    return common_read_selection_boundingbox(ndim, orig_vb->start, orig_vb->count);
+    return a2sel_boundingbox(ndim, orig_vb->start, orig_vb->count);
 }
 
 // Creates a bounding box for a the varblock specified by a given writeblock
@@ -205,7 +206,7 @@ static int generate_read_request_for_pg(
     const ADIOS_VARBLOCK *orig_vb = &transinfo->orig_blockinfo[blockidx];
 
     pg_bounds_sel = create_pg_bounds_from_varblock(transinfo->orig_ndim, orig_vb);
-    pg_writeblock_sel = common_read_selection_writeblock(blockidx);
+    pg_writeblock_sel = a2sel_writeblock(blockidx);
     pg_writeblock_sel->u.block.is_absolute_index = 1;
 
     // Find the intersection, if any
@@ -216,6 +217,7 @@ static int generate_read_request_for_pg(
     } else {
     	abort(); // Should never be called with other types of selections
     }
+    a2sel_free(pg_writeblock_sel);
 
     // If there is an intersection, generate a corresponding PG read request
     if (pg_intersection_sel) {
@@ -236,7 +238,7 @@ static int generate_read_request_for_pg(
         return 1;
     } else {
         // Cleanup
-        common_read_selection_delete((ADIOS_SELECTION *)pg_bounds_sel); // OK to delete, because this function only frees the outer struct, not the arrays within
+        a2sel_free((ADIOS_SELECTION *)pg_bounds_sel); // OK to delete, because this function only frees the outer struct, not the arrays within
         return 0;
     }
 }
@@ -435,7 +437,7 @@ static uint64_t apply_datablock_to_buffer_local_selections(
 				datablock->elem_type, swap_endianness);
 
 	// Clean up
-	common_read_selection_delete((ADIOS_SELECTION *)vb_bounds_sel);
+	a2sel_free((ADIOS_SELECTION *)vb_bounds_sel);
 	return used_count;
 }
 
@@ -476,7 +478,7 @@ static uint64_t apply_datablock_to_buffer_nonlocal_selections(
     		// Refitting the output selection to the intersection region, since we
     		// just allocated a buffer for that smaller region
     		if (global_output_buffer_sel != output_sel)
-    			common_read_selection_delete((ADIOS_SELECTION *)global_output_buffer_sel);
+    			a2sel_free((ADIOS_SELECTION *)global_output_buffer_sel);
     		output_sel = *out_inter_sel;
     		global_output_buffer_sel = *out_inter_sel;
     	}
@@ -490,9 +492,9 @@ static uint64_t apply_datablock_to_buffer_nonlocal_selections(
 
 	// Clean up
 	if (global_output_buffer_sel != output_sel)
-		common_read_selection_delete((ADIOS_SELECTION *)global_output_buffer_sel);
+		a2sel_free((ADIOS_SELECTION *)global_output_buffer_sel);
 	if (global_datablock_bounds != datablock->bounds)
-		common_read_selection_delete((ADIOS_SELECTION *)global_datablock_bounds);
+		a2sel_free((ADIOS_SELECTION *)global_datablock_bounds);
 
 	return used_count;
 }
@@ -585,7 +587,7 @@ static uint64_t apply_datablock_to_buffer_and_free(
 			*out_inter_sel = inter_sel;
 		} else {
 			// TODO: Deep delete the selection (delete points list, start/count arrays, etc.)
-			common_read_selection_delete(inter_sel);
+			a2sel_free(inter_sel);
 		}
 	}
 
@@ -765,7 +767,7 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
     reqgroup->orig_data = NULL;
 
     // Transfer ownership of orig_sel
-    chunk->sel = copy_selection(reqgroup->orig_sel);
+    chunk->sel = a2sel_copy(reqgroup->orig_sel);
     reqgroup->orig_sel = NULL;
 
     return chunk;

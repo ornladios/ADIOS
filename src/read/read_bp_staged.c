@@ -1481,7 +1481,7 @@ static void read_buffer (const ADIOS_FILE * fp,
 
                 if (idx_check2)
                 {
-                    copy_data (data
+                    adios_util_copy_data (data
                               ,fh->b->buff + fh->b->offset + slice_offset - buffer_offset
                               ,0
                               ,break_dim

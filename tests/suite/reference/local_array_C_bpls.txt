@@ -9,5 +9,5 @@ File info:
 
   integer  NX                  scalar = 10
   integer  NY                  scalar = 100
-  double   var_double_2Darray  {10, 100} = 0 / 49.99 / 24.995 / 14.4338
-  integer  var_int_1Darray     {10} = 0 / 49 / 24.5 / 14.4309
+  double   var_double_2Darray  {10, 100} = 0 / 49.99 / null  / null 
+  integer  var_int_1Darray     {10} = 0 / 49 / null  / null 

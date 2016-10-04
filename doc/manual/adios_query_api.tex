@@ -3,7 +3,7 @@
 
 \section{Introduction}
 
-The ADIOS Query API (introduced in ADIOS 1.8) extends the Read API with a query evaluation. Using the Read API only when reading a subset of a variable, one creates a selection first to select the subset of interest, then one performs the read operation. The query API gives a new way of creating that selection. A relational expression (of variables and values) can be created and the list of points that satisfy the expression will be the result of a query evaluation. The list of points (a kind of ADIOS selection) can then be directly used in the read functions. 
+The ADIOS Query API extends the Read API with a query evaluation. Using the Read API only when reading a subset of a variable, one creates a selection first to select the subset of interest, then one performs the read operation. The query API gives a new way of creating that selection. A relational expression (of variables and values) can be created and then either list of points or list of writeblocks that satisfy the expression will be the result of a query evaluation. The list of points (adios\_point\_selection) can then be directly used in the read functions. 
 
 
 \section{How to use the query functions}
@@ -26,23 +26,42 @@ q  = adios_query_combine(q3, ADIOS_QUERY_OP_AND, q4);
 \end{lstlisting}
 
 
-\noindent The next step is to evaluate a query. The evaluation is a separate step from reading the data. The result is a point-list selection.  A query method can be manually selected, otherwise, the query evaluation first tries to identify which query method is available for the query (currently only FastBit is supported). 
+\noindent The next step is to evaluate a query. The evaluation is a separate step from reading the data. The result varies by query method. FastBit returns a set of point-list selections, each point-list containing points in single writeblock. Alacrity returns a single point-list. Minmax returns a set of writeblock selections.  A query method can be manually selected, otherwise, the query evaluation first tries to identify which query method is available for the query (Minmax is selected if the variables have statistics in the BP file, FastBit otherwise). 
 
 \begin{lstlisting}[alsolanguage=C]
 enum ADIOS_QUERY_METHOD query_method = ADIOS_QUERY_METHOD_FASTBIT;
 adios_query_set_method (q, query_method); // optional call
-ADIOS_SELECTION *hits;
+ADIOS_QUERY_RESULT *query_result;
 uint64_t batchSize = 1 000 000 000;
-adios_query_evaluate (q, box, timestep, batchSize, &hits);
-...
-adios_schedule_read (f, hits, "xy", timestep, 1, data);
-adios_perform_reads (f, 1);
+query_result =  adios_query_evaluate(q, box, timestep, batchSize);
+
+if (query_result->status == ADIOS_QUERY_RESULT_ERROR) {
+    ... // Error status in adios_errno, 
+        // error message string given by adios_errmsg()
+}
+else if (query_result->status == ADIOS_QUERY_HAS_MORE_RESULTS)
+{
+    ... // here we have more results to retrieve in consecutive 
+        // adios_query_evaluate() calls
+}
+...  // allocate memory for data for box selection
+
+// read the points or writeblocks and fill data with those points/blocks
+adios_query_read_boundingbox (f, q, "xy", timestep,
+      query_result->nselections, query_result->selections, box, data);
+
 \end{lstlisting}
 
-The return value has the \verb+ADIOS_SELECTION*+ type, but actually it is a list of points, so one can use the internal structure. The number of the hits and the coordinates of the individual points are accessible directly via 
-\linebreak \verb+hits->u.points.npoints+ and \verb+hits->u.points.points+, see the \verb+ADIOS_SELECTION_POINTS_STRUCT+ struct in \verb+adios_selection.h+.
+The return value has the \verb+ADIOS_QUERY_RESULT+ type, which includes a status flag, the number of selections returned by the evaluation and a single pointer to an array of those selections. In case of methods that return exact points (FastBit, Alacrity), the number of the hits and the coordinates of the individual points are accessible directly via 
+ \verb+query_result[n]->u.points.npoints+ and 
+ \verb+hits->u.points.points+, where 
+ \verb+0 <= n < adios_query->nselections+.
 
-Although the internal structures are not copied when combining them together, each sub-query needs to be deleted separately to free all memory at the end. The selection should also be deleted. In ADIOS 1.8, \linebreak \verb+adios_selection_delete()+ never deletes the content of the structure, only the structure itself. Therefore, the point-list must be manually freed, although it was allocated inside the query evaluation function of the ADIOS library. 
+See the \verb+ADIOS_SELECTION_POINTS_STRUCT+ struct in \verb+adios_selection.h+ for the content of the struct. 
+\linebreak \verb+query_result->npoints+ shows the total number of exact hits in all selections. This can be used to allocate memory at once for all data. 
+One can use any of the selections individually in an \verb+adios_schedule_read()+ call to retrieve the data to those points, or use the convenience function above \verb+adios_query_read_boundingbox()+ to retrieve the data points and fill an array covering the original bounding box. The other points in the bounding box are not modified by the function, so one can pre-fill it with any default value. 
+
+Each sub-query needs to be deleted separately to free all memory at the end (freeing the top query does not free the sub-queries. The selection should also be deleted. In ADIOS 1.10, we cannot use the \linebreak \verb+adios_selection_delete()+. Therefore, the point-lists must be manually freed separately. 
 
 \begin{lstlisting}[alsolanguage=C]
 adios_query_free(q);             // free all the query structs
@@ -50,23 +69,38 @@ adios_query_free(q1);
 adios_query_free(q2);
 adios_query_free(q3);
 adios_query_free(q4);
-free (hits->u.points.points);    // free the points manually
-adios_selection_delete(hits);    // free the selection struct
+for (i=0; i < result->nselections; i++) {
+     free (result->selections[i].u.points.points); // free the points manually
+}
+free (result->selections);
+free (result);
 adios_selection_delete (boxsel); // don't forget the original selection
 \end{lstlisting}
+
+%
+% SECTION: Query methods
+%
+\section{Query methods in ADIOS 1.10}
+
+Just as with the write/read and transformation methods, ADIOS is designed to allow for adding new indexing and querying methods later. 
+
+\subsection{Minmax}
+The simplest and fastest query evaluation uses the min and max statistics in the BP file for each array and for each writer separately. A query evaluation returns a list of writeblocks (one writer process' output) including all writeblocks that may or may not have points that satisfy the query (i.e. excluding all writeblocks that surely has no points in it satisfying the query). This may not sound much advantage but with large scale applications and/or with large data blocks per writer, reducing the number of data blocks can speed up the read (by as much as the reduction is). The writeblock is the contiguous unit of data blocks in an ADIOS BP file, so it's the most efficient to read the data by writeblocks (that's what ADIOS does in general for any bounding box). This method does not depend on any external library. 
+
+\subsection{FastBit}
+The FastBit indexing library (\url{https://sdm.lbl.gov/fastbit}) is developed by the Lawrence Berkeley Laboratory. The FastBit index file is separate from the ADIOS data file and it should be created using the \verb+adios_index_fastbit+ utility. FastBit should be installed separately and ADIOS should be configured with it, see section~\ref{sec:installation-query-api}. FastBit query evaluation returns a set of point-list, each point-list contained by a single writeblock, which is used by ADIOS to speed up reading the data from disk. 
+
+\subsection{Alacity}
+The Alacrity indexing library (\url{https://github.com/ornladios/ALACRITY-ADIOS}) is developed by the North Carolina State University. The indexing is performed in an ADIOS transformation during write. One need to turn on \verb+alacrity+ transformation for each variable in the output, which one wants to query later. Alacrity query evaluation returns a single large point-list with the points that satisfy the query in the user-provided bounding box. 
+
 
 %
 % SECTION: Notes
 %
 \section{Notes}
 
-\subsection{FastBit}
-Currently, ADIOS is using the FastBit indexing library (\url{https://sdm.lbl.gov/fastbit}) created at the Lawrence Berkeley Laboratory. The FastBit index file is separate from the ADIOS data file and it should be created using the \verb+adios_index_fastbit+ utility. FastBit should be installed separately and ADIOS should be configured with it, see section~\ref{sec:installation-query-api}. 
-
-Just as with the write/read and transformation methods, ADIOS is designed to allow for adding new indexing and querying methods later. 
-
 \subsection{Query evaluation in a parallel program}
-The query evaluation is an independent local operation in every process. The parallelization of a query evaluation is to be done by the application by performing the evaluation on a subset of the data. Therefore, a query is created on a selection, which can be a bounding box, writeblock or point-list selection. Then, the result of a query evaluation is a point-list selection, which is a subset of the original selection.  
+The query evaluation is an independent local operation in every process. The parallelization of a query evaluation is to be done by the application by performing the evaluation on a subset of the data. Therefore, a query is created on a selection, which can be a bounding box, writeblock or point-list selection. Then, the result of a query evaluation is a subset of the original selection.  
 
 \subsection{Results too large to handle}
 The evaluate function is designed to return a subset of all possible solutions if there are too many to handle at once. The caller can tell in the \verb+batchSize+ parameter how much points should be returned at maximum. The evaluate function can be called repetitively to get all points in a loop. It's return value indicates if there still are more results to be returned. The memory to hold the point list is allocated in the ADIOS library during evaluation. It must be freed by the application when it's not needed anymore. The memory footprint of a point selection is high: one N dimensional point needs \verb+N*sizeof(uint64_t)+ bytes, so plan accordingly. 
@@ -74,8 +108,9 @@ The evaluate function is designed to return a subset of all possible solutions i
 \subsection{Selections everywhere in the query API? Why???}
 It may look like an overcomplicated design that each sub query has it's own input selection and then, the evaluate function takes yet another selection as input. The reason for this is that one may want to evaluate multiple sub-queries on different columns of a table (2D array) and read the data of yet another column from the rows that match the query. See an example at the end of this chapter in section~\ref{sec:query-example-columns}. The requirement about the selections is therefore that their shape matches (dimensionality and size) but not necessarily their locations (offsets).
 
-\subsection{Other notes}
-There is no default query engine in ADIOS 1.8 therefore, ADIOS must be built with FastBit support to get a code using the query API working. If the FastBit index for a particular data file is missing (or a particular variable), FastBit does evaluate the query using the data automatically. In the future, there may be a default simple query method that does not require any external libraries.
+\subsection{Default query method}
+In ADIOS 1.10, unless the user picks a query method, the Minmax method will be used by default if the statistics are present in the BP file. Otherwise, FastBit will be used, if ADIOS is built with FastBit support. Fastbit works on BP files that have not been indexed, but it will evaluate the query by reading all the data and therefore will be very slow. Alacrity will not be picked by ADIOS automatically in this version.
+
 
 
 %
@@ -105,7 +140,8 @@ ADIOS_QUERY *q1, *q2, *q;
 q1 = adios_query_create(f, col1, "A", ADIOS_EQ, "0");
 q2 = adios_query_create(f, col2, "A", ADIOS_LTEQ, "96");
 q  = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
-adios_query_evaluate(q, col3, timestep, batchSize, &hits);
+ADIOS_QUERY_RESULT *result = 
+    adios_query_evaluate(q, col3, timestep, batchSize);
 
 \end{lstlisting}
 
@@ -130,7 +166,7 @@ Please consult the \verb+adios_query.h+ for the data structures and functions di
 
 \item evaluate the query
 
-\item schedule and perform reading the data on the selection returned by the evaluation
+\item schedule and perform reading the data on the selections returned by the evaluation
 
 \item free data structures
 \end{itemize}
@@ -218,14 +254,15 @@ int64_t adios_query_estimate (ADIOS_QUERY* q, int timeStep);
 \subsection{adios\_query\_evaluate}
 Evaluate a query at a given \verb+timestep+. The number of points in the result \verb+queryResult+ will be limited to \verb+batchSize+. The coordinates of the result points are applied (are relative) to the \verb+outputBoundary+ selection. The memory to hold the result is allocated inside this function, but must be freed by the application later. 
 
-The return value 0 indicates a successful evaluation, which has returned all possible hits. A return value 1 indicates also success but with a result size limited by \verb+batchSize+. In this case, the application may call this function again  to get all the result.
+The return status \verb+ADIOS_QUERY_NO_MORE_RESULTS+  indicates a successful evaluation, which has returned all possible hits. A return value \verb+ADIOS_QUERY_HAS_MORE_RESULTS+ indicates also success but with a result size limited by \verb+batchSize+. In this case, the application may call this function again  to get all the result. \verb+ADIOS_QUERY_RESULT_ERROR+ status indicates an error, in which case the usual \verb+adios_errno+ error code and the error text returned by \verb+adios_errmsg()+ can be used to determine the problem.
  
 \begin{lstlisting}[alsolanguage=C]
-int  adios_query_evaluate (ADIOS_QUERY* q,
-                           ADIOS_SELECTION* outputBoundary,
-                           int timestep,
-                           uint64_t batchSize,
-                           ADIOS_SELECTION** queryResult);
+
+ADIOS_QUERY_RESULT * adios_query_evaluate (
+                         ADIOS_QUERY* q,
+                         ADIOS_SELECTION* outputBoundary,
+                         int timestep,
+                         uint64_t batchSize);
 \end{lstlisting}
 
 \subsection{adios\_query\_free}

@@ -24,7 +24,7 @@
 #include "core/adios_read_hooks.h"
 #include "core/futils.h"
 #include "core/ds_metadata.h"
-#include "core/common_read.h" // common_read_selection_* functions
+#include "core/a2sel.h" // selection functions
 
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
@@ -641,7 +641,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
     int err, i;
     char ds_vname[MAX_DS_NAMELEN];
     char ds_fname[MAX_DS_NAMELEN];
-    double t1 = adios_gettime();
+    double t1 = adios_gettime_double();
     enum STEP_STATUS step_status = STEP_OK;
 
     adios_errno = err_no_error; // clear error values now
@@ -747,7 +747,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
 
         // check if we need to stay in loop 
         if (stay_in_poll_loop) {
-            if (timeout_sec >= 0.0 && (adios_gettime()-t1 > timeout_sec))
+            if (timeout_sec >= 0.0 && (adios_gettime_double()-t1 > timeout_sec))
                 stay_in_poll_loop = 0;
             else
                 adios_nanosleep (poll_interval_msec/1000, 
@@ -1348,7 +1348,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
                     }
                     reqsize *= sel->u.bb.count[i];
                 }
-                r->sel = copy_selection (sel);
+                r->sel = a2sel_copy (sel);
                 break;
 
             case ADIOS_SELECTION_POINTS:
@@ -1361,7 +1361,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
                     return err_out_of_bound;
                 }
                 reqsize *= sel->u.points.npoints;
-                r->sel = copy_selection (sel);
+                r->sel = a2sel_copy (sel);
                 break;
 
             case ADIOS_SELECTION_WRITEBLOCK:
@@ -1369,7 +1369,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
                 /* We cannot do this with DataSpaces yet (fp->nwriter == 1) */
                 /* Read the whole variable */
                 s = (uint64_t *) calloc (var->ndims, sizeof(uint64_t));
-                r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
+                r->sel = a2sel_boundingbox(var->ndims, s, var->dims);
                 for (i=0; i<var->ndims; i++) 
                     reqsize *= var->dims[i];
                 break;
@@ -1401,14 +1401,14 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
                     if (ld0 > 0) {
                         s[0] = off0;
                         c[0] = ld0;
-                        r->sel = common_read_selection_boundingbox(
+                        r->sel = a2sel_boundingbox(
                                 var->ndims, s, c);
                     }
                     for (i=0; i<var->ndims; i++) 
                         reqsize *= c[i];
                 } else {
                     /* Scalar: just read it for each process */
-                    r->sel = common_read_selection_boundingbox(0, 0, 0);
+                    r->sel = a2sel_boundingbox(0, 0, 0);
                 }
 
                 break;
@@ -1416,7 +1416,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
     } else {
         // NULL selection means the whole variable
         s = (uint64_t *) calloc (var->ndims, sizeof(uint64_t));
-        r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
+        r->sel = a2sel_boundingbox(var->ndims, s, var->dims);
         for (i=0; i<var->ndims; i++) 
             reqsize *= var->dims[i];
     }
@@ -1580,7 +1580,7 @@ int adios_read_dimes_perform_reads (const ADIOS_FILE *fp, int blocking)
         ds->req_list = ds->req_list->next;
         // FIXME: if we allocated start/count arrays in schedule read for r->sel,
         // we need to manually free them here
-        common_read_selection_delete(r->sel);
+        a2sel_free(r->sel);
         free(r);
         ds->nreq--;
     }

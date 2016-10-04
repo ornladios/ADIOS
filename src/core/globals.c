@@ -10,6 +10,8 @@
  */
 
 #include "globals.h"
+#include <inttypes.h>
+
 
 static int globals_adios_appid = -1;
 static int globals_adios_was_set = 0;
@@ -244,18 +246,18 @@ void icee_dims_print(const char* name, const int ndims, const uint64_t *dims)
         fprintf(stderr, "%10s : none\n", name);
         break;
     case 1:
-        fprintf(stderr, "%10s : %llu\n", name, dims[0]);
+        fprintf(stderr, "%10s : %" PRIu64 "\n", name, dims[0]);
         break;
     case 2:
-        fprintf(stderr, "%10s : %llu,%llu\n", 
+        fprintf(stderr, "%10s : %" PRIu64 ",%" PRIu64 "\n", 
                 name, dims[0], dims[1]);
         break;
     case 3:
-        fprintf(stderr, "%10s : %llu,%llu,%llu\n", 
+        fprintf(stderr, "%10s : %" PRIu64 ",%" PRIu64 ",%" PRIu64 "\n", 
                 name, dims[0], dims[1], dims[2]);
         break;
     default:
-        fprintf(stderr, "%10s : %llu,%llu,%llu,...\n", 
+        fprintf(stderr, "%10s : %" PRIu64 ",%" PRIu64 ",%" PRIu64 ",...\n", 
                 name, dims[0], dims[1], dims[2]);
         break;
     }
@@ -275,7 +277,7 @@ void icee_varinfo_print(const icee_varinfo_rec_ptr_t vp)
         icee_dims_print("gdims", vp->ndims, vp->gdims);
         icee_dims_print("ldims", vp->ndims, vp->ldims);
         icee_dims_print("offsets", vp->ndims, vp->offsets);
-        fprintf(stderr, "%10s : %llu\n", "varlen", vp->varlen);
+        fprintf(stderr, "%10s : %" PRIu64 "\n", "varlen", vp->varlen);
         icee_data_print(vp->type, vp->varlen, vp->data);
     }
     else

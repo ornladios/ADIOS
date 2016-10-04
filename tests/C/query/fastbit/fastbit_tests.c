@@ -116,7 +116,7 @@ void logTimeMillis(__VA_ARGS__)
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel,
                              uint64_t* total_byte_size, uint64_t* dataSize, int timestep)
 {
-  *total_byte_size = common_read_type_size (v->type, v->value);
+  *total_byte_size = adios_type_size (v->type, v->value);
   *dataSize = 1;
 
   if (sel == 0) {
@@ -161,7 +161,7 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
     {
       const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(sel->u.block);
 
-      common_read_inq_var_blockinfo(f, v);
+      adios_inq_var_blockinfo(f, v);
       int i=0;
       int min = v->nblocks[0];
       int absBlockCounter = wb->index;
@@ -341,7 +341,7 @@ ADIOS_QUERY* getEntryQuery(mxml_node_t* queryNode, const char* entryName, ADIOS_
     if ((varName == NULL) || (value == NULL) || (opStr == NULL)) {
       return NULL;
     }    
-    enum ADIOS_PREDICATE_MODE op = getOp(opStr);
+    enum ADIOS_PREDICATE_MODE op = adios_query_getOp(opStr);
     
     ADIOS_SELECTION* sel = getSel(entryNode);
 
@@ -505,174 +505,188 @@ ADIOS_SELECTION* getOutputSelection(mxml_node_t* queryNode)
 
 int parseQueryXml(const char* xmlQueryFileName) 
 {
-  int rank;
-  MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    int rank;
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
-  //adios_query_init(ADIOS_QUERY_METHOD_FASTBIT);
+    //adios_query_init(ADIOS_QUERY_METHOD_FASTBIT);
 
 
-  FILE * fp = fopen (xmlQueryFileName,"r");
-  if (fp == NULL){
-    printf("No xml query file %s\n", xmlQueryFileName);    
-    return -1;
-  }
-
-  fseek(fp, 0, SEEK_END);  
-  long len = ftell(fp);
-  rewind(fp);
-
-  if (len == 0) {
-    printf("No content in file %s.\n", xmlQueryFileName);
-    return -1;
-  }
-  
-  printf("Reading: %s\n", xmlQueryFileName);
-
-  mxml_node_t* tree = mxmlLoadFile(NULL, fp, MXML_NO_CALLBACK);
-  fclose(fp);
-
-  if (tree == NULL) {
-    printf("Invalid xml file: %d.\n", xmlQueryFileName);
-    return -1;
-  }
-
-  ADIOS_FILE * f;
-  MPI_Comm    comm_dummy = 0;  // MPI_Comm is defined through adios_read.h 
-
-  adios_read_init_method(ADIOS_READ_METHOD_BP, comm_dummy, "verbose=2");
-
-  mxml_node_t* testsNode = mxmlFindElement(tree, tree, "tests", NULL, NULL, MXML_DESCEND);
-
-  mxml_node_t* queryNode; // mxmlFindElement(testsNode, testsNode, _gTagQuery, NULL, NULL, MXML_DESCEND);
-  
-
-  for (queryNode = mxmlFindElement(tree, tree, _gTagQuery, NULL, NULL, MXML_DESCEND);
-       queryNode != NULL;
-       queryNode = mxmlFindElement(queryNode, tree, _gTagQuery, NULL, NULL, MXML_DESCEND))
-				   
-    {
-      //printf("query: %s\n", queryNode->value.element.attrs[0].value);
-      mxml_value_t value = queryNode->value;
-      int i=0; 
-      const char* bpFileName = NULL;
-      const char* queryName = NULL;
-      uint64_t batchSize = 0;
-      
-
-      for (i = 0; i < value.element.num_attrs; i++) {	
-	mxml_attr_t currAttr = value.element.attrs[i];
-	if (strcasecmp(currAttr.name, _gAttrBPFile) == 0) {
-	  bpFileName = currAttr.value;
-	} else if (strcasecmp(currAttr.name, _gAttrQueryName) == 0) {
-	  queryName = currAttr.value;
-	} else if (strcasecmp(currAttr.name, _gAttrBatchSize) == 0) {
-	  batchSize = atol(currAttr.value);
-	}
-      }
-
-      if (bpFileName == 0) {
-	printf("missing data file in query.\n");
-	return -1;
-      }
-
-      logReport(-1, NULL);
-      printf("\n ... reading file: %s\n", bpFileName);
-
-      f = adios_read_open_file (bpFileName, ADIOS_READ_METHOD_BP, comm_dummy);
-      if (f == NULL) {
-	printf("::%s\n", adios_errmsg());
-	return -1;
-      }
-
-      logTimeMillis(" adios file read.\n");
-      ADIOS_QUERY* q = constructQuery(queryNode, f, queryName, batchSize);
-
-      ADIOS_SELECTION* outputBox = getOutputSelection(queryNode);
-      logReport(-1, q); // init timer
-
-      //adios_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
-      int timestep = 0;
-      fastbit_set_verbose_level(0);
-      //ADIOS_SELECTION* noBox = 0;
-      while (timestep <= f->last_step) {
-	printf("\n==> query=%s, %s, [TimeStep=%d of %d]\n",queryName, q->condition, timestep, f->last_step);
-#ifdef ESTIMATE
-	int64_t est = adios_query_estimate(q, timestep);
-	logTimeMillis(" estimated. %s", q->condition);
-	printf("\n .. query %s: %s, \t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
-#endif
-	ADIOS_SELECTION* currBatch = NULL;
-	int hasMore = 1; 
-
-	int readBatchCounter = 1; // 1 = no read back
-	int64_t numHits = 0;
-	while (hasMore > 0) {
-	  hasMore = adios_query_evaluate(q, outputBox, timestep, batchSize, &currBatch);
-	  logTimeMillis(" evaluated one batch: %s \n", q->condition);
-	  if (numHits == 0) {
-	    logReport(0, q);
-	  }
-	  if (currBatch != NULL) {
-	    int currBatchSize = currBatch->u.points.npoints;
-	    numHits += currBatchSize;
-	    printf("\n   evaluated: %ld hits for %s\n", currBatchSize, q->condition);
-	    
-	    if (readBatchCounter < 1) {
-	        if (currBatchSize <= 1048576) { // takes too long otherwise
-	            readBatchCounter ++;
-		    printf("\n   sample once on reading data out from ADIOS\n");
-		    ADIOS_QUERY* leaf = q;
-		    while (leaf->varinfo == NULL) {
-		        leaf = leaf->left;
-		    }
-		    uint64_t output_byte_size = common_read_type_size (leaf->varinfo->type, leaf->varinfo->value);
-		    output_byte_size *= currBatchSize;
-		    
-		    void* output = malloc (output_byte_size+1000);
-		    if (output == NULL) {
-		      logTimeMillis(".. unable to allocate enough memory for %ld bytes. Skip.\n", output_byte_size+1000);
-		    } else {
-		      adios_schedule_read (leaf->file, currBatch, leaf->varName, timestep, 1, output);
-		      adios_perform_reads (leaf->file, 1);
-		      logTimeMillis(" .. read batch data out from ADIOS, batchsize=%ld,  for: %s out of %ld\n", currBatchSize, leaf->condition, leaf->rawDataSize);
-		      free(output);
-		    }
-		}
-	    }
-	  } else {
-	    printf("\n   evaluated 0 hits for %s\n", q->condition);
-	  }
-
-	  if (currBatch != NULL) {
-	    free (currBatch->u.points.points);
-	    adios_selection_delete(currBatch);
-	  }
-	}
-
-	logReport(1, q);
-	logReport(-1, NULL);
-
-	//printf("\n skipping manual check. not enough memory\n");
-	printf("\n numHits = %ld, %s\n", numHits, q->condition);
-	if (numHits > 5000000) {
-	  //manualCheck(q, timestep, numHits);
-	} else {
-	  //printf("\n numHits = %ld\n", numHits);
-	}
-
-	logTimeMillis(" sequential scan done! %s\n", q->condition);
-	timestep ++;      
-      }
-      recursive_free(q);
-      adios_read_close(f);
-	
-      //mxmlDelete(queryNode);
+    FILE * fp = fopen (xmlQueryFileName,"r");
+    if (fp == NULL){
+        printf("No xml query file %s\n", xmlQueryFileName);
+        return -1;
     }
-  
-  mxmlDelete(testsNode);
-  mxmlDelete(tree);    
 
-  adios_read_finalize_method(ADIOS_READ_METHOD_BP);
+    fseek(fp, 0, SEEK_END);
+    long len = ftell(fp);
+    rewind(fp);
+
+    if (len == 0) {
+        printf("No content in file %s.\n", xmlQueryFileName);
+        return -1;
+    }
+
+    printf("Reading: %s\n", xmlQueryFileName);
+
+    mxml_node_t* tree = mxmlLoadFile(NULL, fp, MXML_NO_CALLBACK);
+    fclose(fp);
+
+    if (tree == NULL) {
+        printf("Invalid xml file: %d.\n", xmlQueryFileName);
+        return -1;
+    }
+
+    ADIOS_FILE * f;
+    MPI_Comm    comm_dummy = 0;  // MPI_Comm is defined through adios_read.h
+
+    adios_read_init_method(ADIOS_READ_METHOD_BP, comm_dummy, "verbose=2");
+
+    mxml_node_t* testsNode = mxmlFindElement(tree, tree, "tests", NULL, NULL, MXML_DESCEND);
+
+    mxml_node_t* queryNode; // mxmlFindElement(testsNode, testsNode, _gTagQuery, NULL, NULL, MXML_DESCEND);
+
+
+    for (queryNode = mxmlFindElement(tree, tree, _gTagQuery, NULL, NULL, MXML_DESCEND);
+            queryNode != NULL;
+            queryNode = mxmlFindElement(queryNode, tree, _gTagQuery, NULL, NULL, MXML_DESCEND))
+
+    {
+        //printf("query: %s\n", queryNode->value.element.attrs[0].value);
+        mxml_value_t value = queryNode->value;
+        int i=0;
+        const char* bpFileName = NULL;
+        const char* queryName = NULL;
+        uint64_t batchSize = 0;
+
+
+        for (i = 0; i < value.element.num_attrs; i++) {
+            mxml_attr_t currAttr = value.element.attrs[i];
+            if (strcasecmp(currAttr.name, _gAttrBPFile) == 0) {
+                bpFileName = currAttr.value;
+            } else if (strcasecmp(currAttr.name, _gAttrQueryName) == 0) {
+                queryName = currAttr.value;
+            } else if (strcasecmp(currAttr.name, _gAttrBatchSize) == 0) {
+                batchSize = atol(currAttr.value);
+            }
+        }
+
+        if (bpFileName == 0) {
+            printf("missing data file in query.\n");
+            return -1;
+        }
+
+        logReport(-1, NULL);
+        printf("\n ... reading file: %s\n", bpFileName);
+
+        f = adios_read_open_file (bpFileName, ADIOS_READ_METHOD_BP, comm_dummy);
+        if (f == NULL) {
+            printf("::%s\n", adios_errmsg());
+            return -1;
+        }
+
+        logTimeMillis(" adios file read.\n");
+        ADIOS_QUERY* q = constructQuery(queryNode, f, queryName, batchSize);
+
+        ADIOS_SELECTION* outputBox = getOutputSelection(queryNode);
+        logReport(-1, q); // init timer
+
+        //adios_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
+        int timestep = 0;
+        fastbit_set_verbose_level(0);
+        //ADIOS_SELECTION* noBox = 0;
+        while (timestep <= f->last_step)
+        {
+            printf("\n==> query=%s, %s, [TimeStep=%d of %d]\n",queryName, q->condition, timestep, f->last_step);
+#ifdef ESTIMATE
+            int64_t est = adios_query_estimate(q, timestep);
+            logTimeMillis(" estimated. %s", q->condition);
+            printf("\n .. query %s: %s, \t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
+#endif
+            ADIOS_QUERY_RESULT *currBatch = NULL;
+            int hasMore = 1;
+
+            int readBatchCounter = 1; // 1 = no read back
+            int64_t numHits = 0;
+            while (1)
+            {
+                currBatch = adios_query_evaluate(q, outputBox, timestep, batchSize);
+                logTimeMillis(" evaluated one batch: %s \n", q->condition);
+                if (numHits == 0) {
+                    logReport(0, q);
+                }
+                if (currBatch == NULL) {
+                    break;
+                }
+                if (currBatch->status == ADIOS_QUERY_RESULT_ERROR) {
+                    fprintf(stderr, "ERROR in querying evaluation: %s \n", adios_errmsg());
+                    break;
+                }
+
+                if (currBatch->nselections == 0) {
+                    printf("\n   evaluated 0 hits for %s\n", q->condition);
+                }
+
+                for (i = 0; i < currBatch->nselections; ++i)
+                {
+                    ADIOS_SELECTION *s = &(currBatch->selections[i]);
+
+                    int currBatchSize = s->u.points.npoints;
+                    numHits += currBatchSize;
+                    printf("\n   evaluated: %ld hits for %s\n", currBatchSize, q->condition);
+
+                    if (readBatchCounter < 1) {
+                        if (currBatchSize <= 1048576) { // takes too long otherwise
+                            readBatchCounter ++;
+                            printf("\n   sample once on reading data out from ADIOS\n");
+                            ADIOS_QUERY* leaf = q;
+                            while (leaf->varinfo == NULL) {
+                                leaf = leaf->left;
+                            }
+                            uint64_t output_byte_size = common_read_type_size (leaf->varinfo->type, leaf->varinfo->value);
+                            output_byte_size *= currBatchSize;
+
+                            void* output = malloc (output_byte_size+1000);
+                            if (output == NULL) {
+                                logTimeMillis(".. unable to allocate enough memory for %ld bytes. Skip.\n", output_byte_size+1000);
+                            } else {
+                                adios_schedule_read (leaf->file, currBatch, leaf->varName, timestep, 1, output);
+                                adios_perform_reads (leaf->file, 1);
+                                logTimeMillis(" .. read batch data out from ADIOS, batchsize=%ld,  for: %s out of %ld\n", currBatchSize, leaf->condition, leaf->rawDataSize);
+                                free(output);
+                            }
+                        }
+                    }
+                    free (s->u.points.points);
+                }
+
+                adios_selection_delete(currBatch->selections);
+
+
+                logReport(1, q);
+                logReport(-1, NULL);
+
+                //printf("\n skipping manual check. not enough memory\n");
+                printf("\n numHits = %ld, %s\n", numHits, q->condition);
+                if (numHits > 5000000) {
+                    //manualCheck(q, timestep, numHits);
+                } else {
+                    //printf("\n numHits = %ld\n", numHits);
+                }
+
+                logTimeMillis(" sequential scan done! %s\n", q->condition);
+                timestep ++;
+            }
+            recursive_free(q);
+            adios_read_close(f);
+
+            //mxmlDelete(queryNode);
+        }
+
+        mxmlDelete(testsNode);
+        mxmlDelete(tree);
+    }
+
+    adios_read_finalize_method(ADIOS_READ_METHOD_BP);
 }
 
 /*

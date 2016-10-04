@@ -1,22 +1,21 @@
-AC_INIT([adios], [1.9.0])
+AC_INIT([adios], [1.10.0])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
-dnl Require Automake 1.11.3 or better.
+dnl Require Automake 1.12.0 or better.
 dnl We need automake correctly generate object file path for .F90 modules when
 dnl enabling subdir-objects
 dnl Automake 1.10 wants to use ./adiosf_read_mod.o for libadiosf.a, although
 dnl it correctly places that object file into core/adiosf_read_mod.o
-AM_INIT_AUTOMAKE([1.11.1])    
+dnl Also use EXTRA_libraryname_DEPENDENCIES which is not available in 1.11
+AM_INIT_AUTOMAKE([1.12.0])    
 
 AM_MAINTAINER_MODE([enable])
 
 AC_LANG(C)
-AC_C_STRINGIZE
-dnl generates HAVE_STRINGIZE
 
 AC_PROG_CC
 AM_PROG_CC_C_O
@@ -24,12 +23,15 @@ AC_PROG_CXX
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C])])
-
-AC_LANG(C++)
-ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C++])])
+if test -z "${HAVE_MPI_TRUE}"; then
+    AC_LANG(C++)
+    ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C++])])
+else
+    AC_DEFINE(HAVE_MPI,0,[Don not have MPI to build parallel libraries])
+fi
 
 AC_ARG_ENABLE(fortran,
-    [AS_HELP_STRING([--disable-fortran],[disable Fortran test programs in ADIOS.])])
+    [AS_HELP_STRING([--disable-fortran],[disable building Fortran libraries.])])
 AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
 
 AC_CANONICAL_HOST
@@ -41,8 +43,10 @@ if test "x$enable_fortran" != "xno"; then
     F77=$FC
     dnl AC_PROG_F77
     dnl AC_PROG_F77_C_O
-    AC_LANG(Fortran)
-    ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for Fortran])])
+    if test -z "${HAVE_MPI_TRUE}"; then
+        AC_LANG(Fortran)
+        ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for Fortran])])
+    fi
 fi
 
 AC_LANG(C)
@@ -65,7 +69,42 @@ dnl g/^hardcode_libdir_flag_spec=".*"/s//hardcode_libdir_flag_spec=""/
 dnl g/^hardcode_libdir_flag_spec_ld=".*"/s//hardcode_libdir_flag_spec_ld=""/
 
 AC_SEARCH_LIBS([nanosleep], [rt])
-AC_CHECK_FUNCS([nanosleep strncpy strerror gettimeofday])
+AC_SEARCH_LIBS([clock_gettime], [rt])
+AC_CHECK_FUNCS([nanosleep gettimeofday clock_gettime clock_get_time strncpy strerror])
+
+AC_C_STRINGIZE
+dnl generates HAVE_STRINGIZE
+AC_FUNC_STRTOLD
+dnl generates HAVE_STRTOLD
+
+
+dnl ========== Some checks inherited from MXML's configure =============
+
+dnl Inline functions...
+AC_C_INLINE
+
+dnl Checks for string functions.
+AC_CHECK_FUNCS(strdup)
+AC_CHECK_FUNCS(snprintf vsnprintf)
+
+dnl Check for "long long" support...
+AC_CACHE_CHECK([for long long int], ac_cv_c_long_long,
+    [if test "$GCC" = yes; then
+        ac_cv_c_long_long=yes
+    else
+        AC_TRY_COMPILE(,[long long int i;],
+            ac_cv_c_long_long=yes,
+            ac_cv_c_long_long=no)
+    fi])
+
+if test $ac_cv_c_long_long = yes; then
+    AC_DEFINE(HAVE_LONG_LONG,1,[Have long long int, a type may be used by MXML])
+fi
+
+dnl ========== End of checks inherited from MXML's configure =============
+
+
+
 
 dnl check if -lm is needed to be added
 AC_SEARCH_LIBS([ceil], [m])
@@ -75,11 +114,39 @@ AC_ARG_ENABLE(write,
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 
 AC_MXML
-dnl MXML is required for Write API, turn off Write if MXML is not present
+dnl MXML is required for Write API, build from source in mxml/mxml-2.9 if not provided by user
 if test -z "${HAVE_MXML_FALSE}" -a -z "${BUILD_WRITE_TRUE}"; then
-    AC_MSG_ERROR([The ADIOS libraries for writing cannot be built without the MXML library. Either specify where the MXML library is found, or use --disable-write to build ADIOS for reading only.])
+    AC_MSG_NOTICE([External MXML library not provided. Build the included MXML source])
+    AM_CONDITIONAL(HAVE_MXML,true)
+    AM_CONDITIONAL(BUILD_MXML,true)
+    MXML_CPPFLAGS="${CPPFLAGS} -I\$(top_srcdir)/src/mxml/mxml-2.9"
+    MXML_BUILD_LDFLAGS=
+    MXML_LDFLAGS=
+    MXML_LIBS=
+    AC_SUBST(MXML_CPPFLAGS)
+    AC_SUBST(MXML_LIBS)
+    AC_SUBST(MXML_BUILD_LDFLAGS)
+    AC_SUBST(MXML_LDFLAGS)
+    AC_DEFINE_UNQUOTED(MXML_VERSION, [Mini-XML v2.9], [MXML version string])
+    dnl AC_DEFINE(HAVE_PTHREAD_H, 0, [We build Mini-XML without pthread support because ADIOS does not need it])
+    dnl AC_CONFIG_SUBDIRS([mxml/mxml-2.9])
+    dnl AC_MSG_ERROR([The ADIOS libraries for writing cannot be built without the MXML library. Either specify where the MXML library is found, or use --disable-write to build ADIOS for reading only.])
     dnl AM_CONDITIONAL([BUILD_WRITE], false)
+else
+    AM_CONDITIONAL(BUILD_MXML,false)
 fi
+
+
+# Make sure we find Python2
+m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
+                  [python python2 python3 python3.3 python3.2 python3.1 python3.0 python2.7 python2.6 python2.5 python2.4 python2.3 python2.2 python2.1 python2.0])
+AM_PATH_PYTHON([2.0])
+dnl AS_VERSION_COMPARE([${PYTHON_VERSION}], [3.0], [HAVE_PYTHON2=yes], [HAVE_PYTHON2=no], [HAVE_PYTHON2=no])
+dnl if test "x${HAVE_PYTHON2}" == "xno"; then 
+dnl     AC_MSG_ERROR([ADIOS requires python 2.x installed.])
+dnl fi
+dnl Set PYTHON_EXECUTABLE to have the same variable as with CMake
+AC_SUBST(PYTHON_EXECUTABLE,${PYTHON})
 
 dnl AC_PROG_GENGETOPT
 AC_PAMI
@@ -107,10 +174,26 @@ AC_SZIP
 AC_ISOBAR
 AC_APLOD
 AC_ALACRITY
-AC_RIDCOMPRESS
 AC_FASTBIT
-AX_NCSU_LIBTIMER
 AC_BGQ
+
+
+AC_ZFP
+dnl ZFP is included in the source, so we build it unless a) explicitely disabled by --without-zfp
+dnl or b) an external zfp lib is provided by --with-zfp=path
+dnl config/ac_zfp.m4 sets BUILD_ZFP if none of the above options were given
+if test -z "${BUILD_ZFP_TRUE}"; then
+    AC_MSG_NOTICE([Build the included ZFP source. Use --without-zfp to turn this off, --with-zfp=path to use an external library.])
+    AM_CONDITIONAL(HAVE_ZFP,true)
+    ZFP_CPPFLAGS="${CPPFLAGS} -I\$(top_srcdir)/src/zfp/zfp-0.5.0/inc"
+    ZFP_BUILD_LDFLAGS=
+    ZFP_LDFLAGS=
+    ZFP_LIBS=
+    AC_SUBST(ZFP_CPPFLAGS)
+    AC_SUBST(ZFP_LIBS)
+    AC_SUBST(ZFP_LDFLAGS)
+fi
+
 
 AC_LANG(C)
 
@@ -233,23 +316,28 @@ dnl ADIOSREADLIB_* for codes using libadiosread.a, libadiosreadf.a
 dnl ADIOSREADLIB_SEQ_* for codes using libadiosread_nompi.a
 dnl adios_config will contain flags for users' code linking based on these flags
 dnl EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
-ADIOSLIB_EXTRA_CPPFLAGS="${MACRODEFFLAG}_FILE_OFFSET_BITS=64 ${MACRODEFFLAG}_LARGEFILE_SOURCE ${MACRODEFFLAG}_LARGEFILE64_SOURCE ${MACRODEFFLAG}_GNU_SOURCE"
-ADIOSLIB_CPPFLAGS="${MXML_CPPFLAGS}"
+ADIOSLIB_EXTRA_CPPFLAGS="${MACRODEFFLAG}_FILE_OFFSET_BITS=64 ${MACRODEFFLAG}_LARGEFILE_SOURCE ${MACRODEFFLAG}_LARGEFILE64_SOURCE ${MACRODEFFLAG}_GNU_SOURCE ${MXML_CPPFLAGS}"
+ADIOSLIB_EXTRA_LDFLAGS="${MXML_BUILD_LDFLAGS}"
+if test -z "${HAVE_ZFP_TRUE}"; then
+    ADIOSLIB_EXTRA_CPPFLAGS="${ADIOSLIB_EXTRA_CPPFLAGS} ${MACRODEFFLAG}ZFP ${ZFP_CPPFLAGS}"
+    ADIOSLIB_EXTRA_LDFLAGS="${ADIOSLIB_EXTRA_LDFLAGS} ${ZFP_BUILD_LDFLAGS}"
+fi
+ADIOSLIB_CPPFLAGS=
 ADIOSLIB_CFLAGS=
 ADIOSLIB_LDFLAGS="${MXML_LDFLAGS}"
 ADIOSLIB_LDADD="${MXML_LIBS}"
-ADIOSLIB_SEQ_CPPFLAGS="${MACRODEFFLAG}_NOMPI ${MXML_CPPFLAGS}"
+ADIOSLIB_SEQ_CPPFLAGS="${MACRODEFFLAG}_NOMPI"
 ADIOSLIB_SEQ_CFLAGS=
 ADIOSLIB_SEQ_LDFLAGS="${MXML_LDFLAGS}"
 ADIOSLIB_SEQ_LDADD="${MXML_LIBS}"
 ADIOSLIB_INT_CPPFLAGS="${MACRODEFFLAG}_NOMPI"
 ADIOSLIB_INT_CFLAGS=
-ADIOSLIB_INT_LDFLAGS=
-ADIOSLIB_INT_LDADD=
 if test "x$enable_write" != "xno"; then
-    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} ${MXML_CPPFLAGS}"
     ADIOSLIB_INT_LDFLAGS="${MXML_LDFLAGS}"
     ADIOSLIB_INT_LDADD="${MXML_LIBS}"
+else
+    ADIOSLIB_INT_LDFLAGS=
+    ADIOSLIB_INT_LDADD=
 fi
 ADIOSREADLIB_CPPFLAGS=
 ADIOSREADLIB_CFLAGS=
@@ -318,12 +406,12 @@ if test -z "${HAVE_NSSI_TRUE}"; then
     ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${NSSI_CFLAGS}"
     ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${NSSI_LDFLAGS}"
     ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${NSSI_LIBS}"
-    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${MXML_CPPFLAGS} ${NSSI_CPPFLAGS}"
-    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${MXML_CPPFLAGS} ${NSSI_CFLAGS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${NSSI_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${NSSI_CFLAGS}"
     ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${MXML_LDFLAGS} ${NSSI_LDFLAGS}"
-    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${MXML_LIBS} ${NSSI_LIBS}"
-    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${MXML_CPPFLAGS} ${NSSI_CPPFLAGS}"
-    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${MXML_CPPFLAGS} ${NSSI_CFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${NSSI_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${NSSI_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${NSSI_CFLAGS}"
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${MXML_LDFLAGS} ${NSSI_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${MXML_LIBS} ${NSSI_LIBS}"
 fi
@@ -595,6 +683,18 @@ if test -z "${HAVE_SZIP_TRUE}"; then
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${SZIP_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${SZIP_LIBS}"
 fi
+if test -z "${HAVE_ZFP_TRUE}"; then
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${ZFP_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${ZFP_LIBS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${ZFP_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${ZFP_LIBS}"
+    ADIOSLIB_INT_LDFLAGS="${ADIOSLIB_INT_LDFLAGS} ${ZFP_LDFLAGS}"
+    ADIOSLIB_INT_LDADD="${ADIOSLIB_INT_LDADD} ${ZFP_LIBS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${ZFP_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${ZFP_LIBS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${ZFP_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${ZFP_LIBS}"
+fi
 if test -z "${HAVE_ISOBAR_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DISOBAR ${ISOBAR_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${ISOBAR_CFLAGS}"
@@ -668,29 +768,6 @@ if test -z "${HAVE_ALACRITY_TRUE}"; then
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${ALACRITY_LIBS}"
 fi
 
-if test -z "${HAVE_RIDCOMPRESS_TRUE}"; then
-    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
-    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
-    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
-    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${RIDCOMPRESS_LIBS}"
-    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
-    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
-    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
-    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${RIDCOMPRESS_LIBS}"
-    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
-    ADIOSLIB_INT_CFLAGS="${ADIOSLIB_INT_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
-    ADIOSLIB_INT_LDFLAGS="${ADIOSLIB_INT_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
-    ADIOSLIB_INT_LDADD="${ADIOSLIB_INT_LDADD} ${RIDCOMPRESS_LIBS}"
-    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
-    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
-    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
-    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${RIDCOMPRESS_LIBS}"
-    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
-    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
-    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
-    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${RIDCOMPRESS_LIBS}"
-fi
-
 if test -z "${HAVE_FASTBIT_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DFASTBIT ${FASTBIT_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${FASTBIT_CFLAGS}"
@@ -712,29 +789,6 @@ if test -z "${HAVE_FASTBIT_TRUE}"; then
     ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${FASTBIT_CFLAGS}"
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${FASTBIT_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${FASTBIT_LIBS}"
-fi
-
-if test -z "${HAVE_NCSU_TIMER_TRUE}"; then
-    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DWITH_NCSU_TIMER ${TIMER_CPPFLAGS}"
-    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${TIMER_CFLAGS}"
-    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${TIMER_LDFLAGS}"
-    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${TIMER_LIBS}"
-    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} -DWITH_NCSU_TIMER ${TIMER_CPPFLAGS}"
-    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${TIMER_CFLAGS}"
-    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${TIMER_LDFLAGS}"
-    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${TIMER_LIBS}"
-    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} -DWITH_NCSU_TIMER ${TIMER_CPPFLAGS}"
-    ADIOSLIB_INT_CFLAGS="${ADIOSLIB_INT_CFLAGS} ${TIMER_CFLAGS}"
-    ADIOSLIB_INT_LDFLAGS="${ADIOSLIB_INT_LDFLAGS} ${TIMER_LDFLAGS}"
-    ADIOSLIB_INT_LDADD="${ADIOSLIB_INT_LDADD} ${TIMER_LIBS}"
-    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} -DWITH_NCSU_TIMER ${TIMER_CPPFLAGS}"
-    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${TIMER_CFLAGS}"
-    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${TIMER_LDFLAGS}"
-    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${TIMER_LIBS}"
-    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} -DWITH_NCSU_TIMER ${TIMER_CPPFLAGS}"
-    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${TIMER_CFLAGS}"
-    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${TIMER_LDFLAGS}"
-    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${TIMER_LIBS}"
 fi
 
 AM_CONDITIONAL([HAVE_ICEE], [test -z "${HAVE_FLEXPATH_TRUE}"])
@@ -763,6 +817,7 @@ AC_SUBST(ADIOSREADLIB_SEQ_CFLAGS)
 AC_SUBST(ADIOSREADLIB_SEQ_LDFLAGS)
 AC_SUBST(ADIOSREADLIB_SEQ_LDADD)
 AC_SUBST(ADIOSLIB_EXTRA_CPPFLAGS)
+AC_SUBST(ADIOSLIB_EXTRA_LDFLAGS)
 
 if test -z "${USE_PARALLEL_HDF5_FOR_UTILS_TRUE}"; then
         AC_DEFINE(USE_PARALLEL_HDF5_FOR_UTILS, 1, [Need to use MPI compiler for sequential HDF5 utils])
@@ -800,11 +855,10 @@ AC_SUBST(VERSION_MICRO)
 #fi
 #AC_DEFINE_UNQUOTED(VERSION_SVNREV, "${SVNVERSION}", [svn revision number])
 
-
-
-
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 src/zfp/Makefile
+                 src/mxml/Makefile
                  tests/Makefile
                  tests/test_src/Makefile
                  tests/C/Makefile
@@ -839,6 +893,7 @@ AC_CONFIG_FILES([Makefile
                  utils/skel/lib/skel_have_adios_timing.py
                  utils/adios_lint/Makefile
                  utils/gpp/Makefile
+                 utils/gpp/gpp.py
                  utils/bpdump/Makefile
                  utils/bp2h5/Makefile
                  utils/bp2ncd/Makefile
@@ -850,7 +905,7 @@ AC_CONFIG_FILES([Makefile
                  utils/adios_list_methods/Makefile
                  utils/bpmeta/Makefile
                  utils/bprecover/Makefile
-		 utils/fastbit/Makefile
+                 utils/fastbit/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
@@ -880,7 +935,10 @@ AC_CONFIG_FILES([Makefile
                  src/public/adios_version.h
                 ])
 
+
 AC_OUTPUT
+
+chmod +x utils/gpp/gpp.py
 
 echo
 echo "*********************************"
@@ -897,6 +955,11 @@ if test -z "${BUILD_FORTRAN_TRUE}"; then
 else
     echo "  - Build only the C libraries (no Fortran)";
 fi
+if test -z "${HAVE_MPI_TRUE}"; then
+    echo "  - Build both the parallel and sequential libraries";
+else
+    echo "  - Build only the sequential libraries (no MPI)";
+fi
 echo
 echo "  - General Compile FLAGS";
 echo "      - CC  = $CC";
@@ -909,11 +972,13 @@ echo "      - FCFLAGS  = $FCFLAGS";
 echo "      - LDLAGS   = $LDFLAGS";
 echo "      - LIBS     = $LIBS";
 echo
-echo "      - MPICC   = $MPICC";
-echo "      - MPICXX  = $MPICXX";
-echo "      - MPIFC   = $MPIFC";
-echo "      - MPILIBS = $MPILIBS";
-echo
+if test -z "${HAVE_MPI_TRUE}"; then
+    echo "      - MPICC   = $MPICC";
+    echo "      - MPICXX  = $MPICXX";
+    echo "      - MPIFC   = $MPIFC";
+    echo "      - MPILIBS = $MPILIBS";
+    echo
+fi
 
 if test "x$enable_research_transports" == "xyes"; then
     echo "  - Research Transports Included";
@@ -934,15 +999,18 @@ else
 fi
 
 
-if test -z "${HAVE_MXML_TRUE}"; then
-    echo "  - MXML";
-    echo "      - MXML_CFLAGS = $MXML_CFLAGS";
-    echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
-    echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
-    echo "      - MXML_LIBS = $MXML_LIBS";
-    echo
+if test -z "${BUILD_MXML_TRUE}" -a -z "${BUILD_WRITE_TRUE}"; then
+    echo "  - MXML is built with ADIOS";
 else
-    echo "  - No MXML"
+    if test -z "${HAVE_MXML_TRUE}"; then
+        echo "  - MXML";
+        echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
+        echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
+        echo "      - MXML_LIBS = $MXML_LIBS";
+        echo
+    else
+        echo "  - No MXML"
+    fi
 fi
 
 if test -z "${HAVE_LUSTRE_TRUE}"; then
@@ -1041,16 +1109,16 @@ dnl else
 dnl         echo "  - No Gengetopt"
 dnl fi
 
-if test "x${datatap}" != "xdisable"; then
-    echo "  - DataTap with interconnect: $datatap";
-    echo "      - DT_CFLAGS     = $DT_CFLAGS";
-    echo "      - DT_CPPFLAGS   = $DT_CPPFLAGS";
-    echo "      - DT_LDFLAGS    = $DT_LDFLAGS";
-    echo "      - DT_LIBS       = $DT_LIBS";
-    echo
-else
-    echo "  - No DataTap transport to build DATATAP transport method";
-fi
+#if test "x${datatap}" != "xdisable"; then
+#    echo "  - DataTap with interconnect: $datatap";
+#    echo "      - DT_CFLAGS     = $DT_CFLAGS";
+#    echo "      - DT_CPPFLAGS   = $DT_CPPFLAGS";
+#    echo "      - DT_LDFLAGS    = $DT_LDFLAGS";
+#    echo "      - DT_LIBS       = $DT_LIBS";
+#    echo
+#else
+#    echo "  - No DataTap transport to build DATATAP transport method";
+#fi
 
 if test -z "${HAVE_DATASPACES_TRUE}"; then
     echo "  - DATASPACES transport method";
@@ -1184,6 +1252,18 @@ else
     echo "  - No SZIP to build SZIP transform method"
 fi
 
+if test -z "${BUILD_ZFP_TRUE}"; then
+    echo "  - ZFP is built with ADIOS";
+elif test -z "${HAVE_ZFP_TRUE}"; then
+    echo "  - ZFP";
+    echo "      - ZFP_CPPFLAGS = $ZFP_CPPFLAGS";
+    echo "      - ZFP_LDFLAGS = $ZFP_LDFLAGS";
+    echo "      - ZFP_LIBS = $ZFP_LIBS";
+    echo
+else
+    echo "  - No ZFP to build ZFP transform method"
+fi
+
 if test -z "${HAVE_ISOBAR_TRUE}"; then
     echo "  - ISOBAR";
     echo "      - ISOBAR_CFLAGS = $ISOBAR_CFLAGS";
@@ -1228,29 +1308,6 @@ else
     echo "  - No ALACRITY to build ALACRITY transform & query methods"
 fi
 
-if test -z "${HAVE_RIDCOMPRESS_TRUE}"; then
-    echo "  - RIDCOMPRESS";
-    echo "      - RIDCOMPRESS_CFLAGS = $RIDCOMPRESS_CFLAGS";
-    echo "      - RIDCOMPRESS_CPPFLAGS = $RIDCOMPRESS_CPPFLAGS";
-    echo "      - RIDCOMPRESS_LDFLAGS = $RIDCOMPRESS_LDFLAGS";
-    echo "      - RIDCOMPRESS_LIBS = $RIDCOMPRESS_LIBS";
-    echo
-else
-    echo "  - No RIDCOMPRESS to build RIDCOMPRESS transform method"
-fi
-
-
-if test -z "${HAVE_NCSU_TIMER_TRUE}"; then
-    echo "  - NCSU timer lib";
-    echo "      - TIMER_CFLAGS = $TIMER_CFLAGS";
-    echo "      - TIMER_CPPFLAGS = $TIMER_CPPFLAGS";
-    echo "      - TIMER_LDFLAGS = $TIMER_LDFLAGS";
-    echo "      - TIMER_LIBS = $TIMER_LIBS";
-    echo
-else
-    echo "  - No NCSU timer lib"
-fi
-
 if test -z "${HAVE_BGQ_TRUE}"; then
     echo "  - BGQ METHOD is enabled";
 else
@@ -1259,3 +1316,4 @@ fi
 
 #echo "  - SVN version = ${SVNVERSION}"
 echo "  - Install path = ${prefix}"
+

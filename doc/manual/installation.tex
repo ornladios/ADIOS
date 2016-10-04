@@ -10,6 +10,8 @@ http://www.olcf.ornl.gov/center-projects/adios
 
 
 \section{Quick Installation}
+At the minimum, MPI C/C++ compilers and Python 2.x are needed to build ADIOS. 
+A Fortran90 compiler and mpif90 compilers are needed to build the Fortran libraries and examples.
 
 \subsection{Quick installation with Automake}
 
@@ -17,15 +19,24 @@ To get started with ADIOS, the following steps can be used to configure, build,
 test, and install the ADIOS library, header files, and support programs.
 
 \begin{lstlisting}
-cd trunk/
-./configure -prefix=<install-dir> --with-mxml=<mxml-location>
+cd adios-1.10
+mkdir build
+cd build
+../configure -prefix=<install-dir>
 make
 make install
 \end{lstlisting}
 
 Note: There is a runconf batch script in the trunk set up for our machines. Studying
 it can help you setting up the appropriate environment variables and configure
-options for your system.
+options for your system. Then instead of running ../configure, source runconf (so that
+the settings stay set in the environment). 
+\begin{lstlisting}
+cd build
+. ../runconf
+make
+\end{lstlisting}
+
 
 \subsubsection{Linux cluster}
 
@@ -42,8 +53,8 @@ export FC=pgf90
 export CFLAGS="-fPIC"
 
 ./configure --prefix = <location for ADIOS software installation>
-            --with-mxml=<location of mini-xml installation>
 \end{lstlisting}
+%            --with-mxml=<location of mini-xml installation>
 %            --with-hdf5=<location of HDF5 installation>
 %            --with-netcdf=<location of netCDF installation>
 
@@ -68,8 +79,8 @@ export CC=cc
 export CXX=CC
 export FC=ftn
 ./configure --prefix = <location for ADIOS software installation>
-            --with-mxml=<location of mini-xml installation>
 \end{lstlisting}
+%            --with-mxml=<location of mini-xml installation>
 %            --with-hdf5=<location of HDF5 installation>
 %            --with-netcdf=<location of netCDF installation>
 
@@ -115,9 +126,9 @@ need to be set. The required commands for ADIOS installation on Titan are as fol
 export CC=cc
 export CXX=CC
 export FC=ftn
-export MXML_DIR=<location of mini-xml installation>
 cmake <ADIOS_SOURCEDIR>
 \end{lstlisting}
+%export MXML_DIR=<location of mini-xml installation>
 %export SEQ_HDF5_DIR=<location of HDF5 installation>
 %export SEQ_NC_DIR=<location of NETCDF installation>
 
@@ -138,18 +149,20 @@ cmake <ADIOS_SOURCEDIR>
 
 
 \section{ADIOS Dependencies}
+At the minimum, MPI C/C++ compilers and Python 2.x are needed to build ADIOS. 
+A Fortran90 compiler and mpif90 compilers are needed to build the Fortran libraries and examples. 
+Everything else below is optional.
 
-\subsection{Mini-XML parser (required)}
+\subsection{Python 2.x or 3.x (required)}
 
-The Mini-XML library is used to parse XML configuration files. Mini-XML can be
-downloaded from \url{http://www.msweet.org/downloads.php?L+Z3}. ADIOS works with
-versions 2.5, 2.6, 2.7 and 2.9. Note that ADIOS does NOT work with version 2.8.
-If you don't have it already installed we suggest to use 
-\url{http://www.msweet.org/files/project3/mxml-2.9.tar.gz}.
+The XML processing utility \verb+utils/gpp/gpp.py+ is a code written in python using xml.dom.minidom.
+It is used to generate C or Fortran code from the XML configuration files that
+can be included in the application source code.  The configuration process will stop if a suitable python interpreter is not found. 
 
-\subsection{MPI and MPI-IO (required)}
+\subsection{MPI and MPI-IO (recommended, optional)}
 
-MPI and MPI-IO is required for ADIOS.
+MPI and MPI-IO is required for ADIOS to build the parallel library. 
+A sequential-only library can be built by configuring with the \verb+--without-mpi+ option.
 
 Currently, most large-scale scientific applications rely on the Message Passing
 Interface (MPI) library to implement communication among processes. For instance,
@@ -158,39 +171,24 @@ the rank of each processor in the same communication group, which needs to be re
 by the certain MPI APIs, is commonly used in defining the output files. MPI-IO
 can also be considered the most generic I/O library on large-scale platforms.
 
-\subsection{Python (required)}
-
-The XML processing utility \verb+utils/gpp/gpp.py+ is a code written in python using xml.dom.minidom.
-It is used to generate C or Fortran code from the XML configuration files that
-can be included in the application source code.  Examples and tests will not build
-without Python.
 
 \subsection{Fortran90 compiler (optional)}
 
 The Fortran~90 interface and example codes are compiled only if there is an f90
 compiler available. By default it is required but you can disable it with the option
-\verb+--disable-fortran+ (Automake) or \verb+export BUILD_FORTRAN=OFF+ (CMake).
+\verb+--disable-fortran+ (Automake) or
+\linebreak \verb+export BUILD_FORTRAN=OFF+ (CMake).
 
-\subsection{Serial NetCDF-3 (optional)}
 
-The bp2ncd converter utility to NetCDF format is built only if NetCDF~is available.
- Currently ADIOS uses the NetCDF-3 library. Use the option \verb+--with-netcdf=<path>+
-or ensure that the \verb+NETCDF_DIR+ environment variable is set before configuring ADIOS with Automake.
-While with CMake, the environment variables should be set before running cmake:
-\begin{lstlisting}
-export SEQ_NC_DIR=<path>
-\end{lstlisting}
+\subsection{Mini-XML parser (included now in ADIOS)}
 
-\subsection{Serial HDF5 (optional)}
+The Mini-XML library is used to parse XML configuration files. It is packaged now and built with the ADIOS library. 
+However, if one wants to build its own mxml library and link ADIOS applications with it, Mini-XML can be
+downloaded from \url{http://www.msweet.org/downloads.php?L+Z3}. ADIOS works with
+versions 2.5, 2.6, 2.7 and 2.9. Note that ADIOS does NOT work with version 2.8.
+We suggest to use 
+\url{http://www.msweet.org/files/project3/mxml-2.9.tar.gz}.
 
-The bp2h5 converter utility to HDF5 format is built only if a HDF5 library is available.
-Currently ADIOS uses the 1.6 version of the HDF5 API but it can be built and used
-with the 1.8.x version of the HDF5 library too. Use the option \verb+--with-hdf5=<path>+
-when configuring ADIOS with Automake or
-\begin{lstlisting}
-export SEQ_HDF5_DIR=<path>
-\end{lstlisting}
-\noindent with CMake.
 
 \subsection{Lustreapi (optional)}
 
@@ -375,10 +373,19 @@ as well as some guidance on choosing transforms in practice.
 \subsection{Query methods (optional)}
 \label{sec:installation-query-api}
 
-ADIOS has a Query API and currently it has one query engine for FastBit index. FastBit (\url{https://sdm.lbl.gov/fastbit}) can be downloaded from a public SVN repository:
+ADIOS has a Query API and it has three query engines (Minmax, FastBit and Alacrity), two of which depend on external libraries. 
+See Chapter~\ref{chapter:query_api} on how to use queries on ADIOS datasets. 
+
+\subsubsection{FastBit}
+FastBit (\url{https://sdm.lbl.gov/fastbit}) can be downloaded from a public SVN repository:
 
 \begin{lstlisting}[language={}]
-svn co https://codeforge.lbl.gov/anonscm/fastbit/trunk
+svn co https://code.lbl.gov/svn/fastbit/trunk
+    Note: username and password: anonsvn
+cd trunk
+./configure --with-pic -prefix=<fastbit installation directory>
+make
+make install
 \end{lstlisting}
 
 \noindent To enable the FastBit query method, configure ADIOS with the following flag:
@@ -387,12 +394,53 @@ svn co https://codeforge.lbl.gov/anonscm/fastbit/trunk
                       directory of fastbit
 \end{lstlisting}
 
+\subsubsection{Alacrity}
+Alacrity actually provides a transformation method to perform indexing while writing the data, and a query method for reading data. The Alacrity library can be downloaded from GitHub
+
+\begin{lstlisting}[language={}]
+git clone https://github.com/ornladios/ALACRITY-ADIOS.git
+cd ALACRITY-ADIOS
+./configure CFLAGS="-g -fPIC -fno-common -Wall" CXXFLAGS="-g -fPIC -fno-exceptions -fno-rtti" 
+    --prefix=<fastbit installation directory>
+make
+make install
+\end{lstlisting}
+
+\noindent To enable the Alacrity query method, configure ADIOS with the following flag:
+\begin{lstlisting}
+--with-alacrity=DIR    Where DIR is the installation
+                      directory of alacrity
+\end{lstlisting}
+
 
 
 
 \subsection{Read-only installation}
 
 If you just want the read API to be compiled for reading BP files, use the \verb+--disable-write+ option with Automake and \verb+export BUILD_WRITE=OFF+ with CMake.
+
+
+\subsection{Serial NetCDF-3 (optional)}
+
+The bp2ncd converter utility to NetCDF format is built only if NetCDF~is available.
+ Currently ADIOS uses the NetCDF-3 library. Use the option \verb+--with-netcdf=<path>+
+or ensure that the \verb+NETCDF_DIR+ environment variable is set before configuring ADIOS with Automake.
+While with CMake, the environment variables should be set before running cmake:
+\begin{lstlisting}
+export SEQ_NC_DIR=<path>
+\end{lstlisting}
+
+\subsection{Serial HDF5 (optional)}
+
+The bp2h5 converter utility to HDF5 format is built only if a HDF5 library is available.
+Currently ADIOS uses the 1.6 version of the HDF5 API but it can be built and used
+with the 1.8.x version of the HDF5 library too. Use the option \verb+--with-hdf5=<path>+
+when configuring ADIOS with Automake or
+\begin{lstlisting}
+export SEQ_HDF5_DIR=<path>
+\end{lstlisting}
+\noindent with CMake.
+
 
 \subsection{PHDF5 (optional)}
 
@@ -444,6 +492,8 @@ configure to build ADIOS and its support utilities:
 \begin{lstlisting}
 --help              print the usage of ./configure command}
 --with-tags[=TAGS]  include additional configurations [automatic]
+--with-pami=DIR      Location of IBM PAMI
+--with-dcmf=DIR      Location of IBM DCMF
 --with-mxml=DIR     Location of Mini-XML library
 --with-infiniband=DIR      Location of Infiniband
 --with-portals=DIR      Location of Portals (yes/no/path_to_portals)
@@ -476,6 +526,14 @@ configure to build ADIOS and its support utilities:
 --with-dimes-libdir=<location of dimes library>
 --with-flexpath=<location of the Chaos packages>
 --with-lustre=<location of Lustreapi library>
+--with-zlib=DIR      Location of ZLIB library
+--with-bzip2=DIR      Location of BZIP2 library
+--with-szip=DIR      Location of SZIP library
+--with-isobar=DIR      Location of ISOBAR library
+--with-aplod=DIR      Location of APLOD library
+--with-alacrity=DIR      Location of ALACRITY library
+--with-fastbit=DIR      Location of the FastBit library
+--with-bgq 	Whether to enable BGQ method or not on Bluegene/Q
 \end{lstlisting}
 
 %--with-installed      Don''t use local copies of CERCS packages
@@ -696,7 +754,7 @@ If you need a verbose output, type the following
 ctest -V
 \end{lstlisting}
 
-\subsection{Support for Numpy}
+\subsection{Support for Python/Numpy}
 \label{section-install-numpy}
 
 ADIOS also provides two Python/Numpy language bindings developed by Cython; One is a binding for serial ADIOS (default), which requires no MPI, and the other is a MPI-enabled binding (optional). Like Matlab, ADIOS Python/Numpy wrapper requires ADIOS built by the GNU C compiler with relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS. In addition, Python Numpy is required before building Adios Python/Numpy binding and MPI4Py is optional, if users want to build parallel python module.

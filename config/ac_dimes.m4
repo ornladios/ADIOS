@@ -32,6 +32,11 @@ if test "x$with_dimes" == "xno"; then
 
    AM_CONDITIONAL(HAVE_DIMES,false)
 
+elif test -z "${HAVE_MPI_FALSE}"; then
+
+   AC_MSG_NOTICE([    Dimes does not build without MPI])
+   AM_CONDITIONAL(HAVE_DIMES,false)
+
 else
 
     dnl allow args --with-dimes incdir and --with-dimes-libdir
@@ -78,6 +83,7 @@ else
             ac_dimes_ok=no
     fi
 
+    save_CC="$CC"
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
@@ -92,6 +98,7 @@ else
     fi
     LDFLAGS="$LDFLAGS $DIMES_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DIMES_CPPFLAGS"
+    CC="$MPICC"
     
     if test -z "${HAVE_DIMES_TRUE}"; then
             AC_CHECK_HEADERS(dimes_interface.h,
@@ -100,35 +107,27 @@ else
     fi
     
     if test -z "${HAVE_DIMES_TRUE}"; then
+        AC_MSG_CHECKING([if dimes code can be compiled and linked])
         # Check for the DataSpaces/DIMES library and headers
-        if test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
-            AC_TRY_LINK([#include "dimes_interface.h"],
+        dnl if test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
+	    dnl elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
+	    dnl elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
+	    dnl elif test "x${ac_pami_lib_ok}" == "xyes"; then
+           AC_TRY_LINK([#include "dimes_interface.h"],
                     [int err; dimes_put_sync_all();],
-                    [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
-                    [AM_CONDITIONAL(HAVE_DIMES,false)])
-	elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
-            AC_TRY_COMPILE([#include "dimes_interface.h"],
-                    [int err; dimes_put_sync_all();],
-                    [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
-                    [AM_CONDITIONAL(HAVE_DIMES,false)])
-	elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
-            AC_TRY_COMPILE([#include "dimes_interface.h"],
-                    [int err; dimes_put_sync_all();],
-                    [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
-                    [AM_CONDITIONAL(HAVE_DIMES,false)])
-	elif test "x${ac_pami_lib_ok}" == "xyes"; then
-            AC_TRY_COMPILE([#include "dimes_interface.h"],
-                    [int err; dimes_put_sync_all();],
-                    [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
-                    [AM_CONDITIONAL(HAVE_DIMES,false)])
-        else
-            AM_CONDITIONAL(HAVE_DIMES,false)
-        fi
+                    [AC_MSG_RESULT(yes)
+                     DIMES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AC_MSG_RESULT(no)
+                     AM_CONDITIONAL(HAVE_DIMES,false)])
+        dnl else
+            dnl AM_CONDITIONAL(HAVE_DIMES,false)
+        dnl fi
     fi
  
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
     CPPFLAGS="$save_CPPFLAGS"
+    CC="$save_CC"
     
     AC_SUBST(DIMES_LIBS)
     AC_SUBST(DIMES_LDFLAGS)

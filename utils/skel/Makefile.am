@@ -1,4 +1,9 @@
-SUBDIRS = etc src
+SUBDIRS = etc
+
+if HAVE_MPI
+    SUBDIRS += src
+endif
+
 
 dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py
 

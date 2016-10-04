@@ -102,7 +102,7 @@ int common_read_get_attr_byid (const ADIOS_FILE  * fp, int attrid, enum ADIOS_DA
                          int * size, void ** data); 
 
 const char * common_read_type_to_string (enum ADIOS_DATATYPES type);
-int common_read_type_size(enum ADIOS_DATATYPES type, void *data);
+int common_read_type_size(enum ADIOS_DATATYPES type, const void *data);
 
 
 int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist);
@@ -116,14 +116,6 @@ int common_read_is_var_timed (const ADIOS_FILE *fp, int varid);
 int common_read_get_dimension_order (ADIOS_FILE * fp);
 void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran);
 void common_read_print_fileinfo (const ADIOS_FILE *fp);
-
-// selections 
-ADIOS_SELECTION * common_read_selection_boundingbox (int ndim, const uint64_t *start, const uint64_t *count);
-ADIOS_SELECTION * common_read_selection_points (int ndim, uint64_t npoints, const uint64_t *points);
-ADIOS_SELECTION * common_read_selection_writeblock (int index);
-ADIOS_SELECTION * common_read_selection_auto (char *hints);
-void common_read_selection_delete (ADIOS_SELECTION *sel);
-
 
 
 #endif

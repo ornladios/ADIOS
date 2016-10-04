@@ -13,7 +13,6 @@ class AdiosTestCase(ut.TestCase):
 
         ad.init_noxml()
 
-        ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
         g = ad.declare_group("temperature", "", ad.FLAG.YES)
         ad.define_var(g, "NX", "", ad.DATATYPE.integer, "", "", "")
         ad.define_var(g, "size", "", ad.DATATYPE.integer, "", "", "")
@@ -28,10 +27,10 @@ class AdiosTestCase(ut.TestCase):
         fd = ad.open("temperature", self.temp.path, "w")
         self.NX = 10
         self.size = 2
-        groupsize =  4 + 4 + 8 * self.size * self.NX
-        t = np.array(range(self.NX * self.size), dtype=np.float64)
+        ##groupsize =  4 + 4 + 8 * self.size * self.NX
+        t = np.array(list(range(self.NX * self.size)), dtype=np.float64)
         self.tt = t.reshape((self.size, self.NX))
-        ad.set_group_size(fd, groupsize)
+        ##ad.set_group_size(fd, groupsize)
         ad.write_int(fd, "NX", self.NX)
         ad.write_int(fd, "size", self.size)
         ad.write(fd, "temperature", self.tt)
@@ -59,7 +58,7 @@ class AdiosTestCase(ut.TestCase):
                          sorted(['temperature/unit', 'temperature/desc']))
 
     def test_adios_attr(self):
-        self.assertEqual(self.f.attrs['temperature/desc'].value, self.msg)
+        self.assertEqual(self.f.attrs['temperature/desc'].value, self.msg.encode())
         self.assertEqual(self.f.attrs['temperature/desc'].dtype, np.dtype('S14'))
 
     def test_adios_file_getitem(self):
@@ -80,8 +79,10 @@ class AdiosTestCase(ut.TestCase):
     def test_adios_var_array(self):
         v = self.f['temperature']
         self.assertEqual(v.ndim, 2)
-        self.assertEqual(v.dims, (2L, 10L))
+        self.assertEqual(v.dims, (2, 10))
+        self.assertEqual(v.shape, (2, 10))
         self.assertEqual(v.nsteps, 1)
+        self.assertEqual(v.size, 20)
 
         val = v.read()
         self.assertEqual(val.dtype, np.dtype('float64'))
@@ -119,7 +120,7 @@ class AdiosTestCase(ut.TestCase):
 
     def test_adios_var_getattr(self):
         v = self.f['temperature']
-        self.assertEqual(v.attrs['unit'].value, self.unit)
+        self.assertEqual(v.attrs['unit'].value, self.unit.encode())
 
     def test_adios_var_read_points(self):
         v = self.f['temperature']
@@ -127,7 +128,6 @@ class AdiosTestCase(ut.TestCase):
         x2 = ((0,0),(0,1),)
         x3 = ((0,0),(0,1),(0,2),)
 
-        #import ipdb; ipdb.set_trace()
         self.assertEqual(len(v.read_points()), 0)
         self.assertTrue((v.read_points(x1) == self.tt[0,0:1]).all())
         self.assertTrue((v.read_points(x2) == self.tt[0,0:2]).all())
@@ -145,6 +145,23 @@ class AdiosTestCase(ut.TestCase):
         self.assertEqual(v[1,m].shape, (6,))
         self.assertTrue((v[:1,m] == self.tt[:1,m]).all())
         self.assertRaises(ValueError, v.__getitem__, Slicee()[3,m])
+
+    def test_adios_var_name_access(self):
+        v1 = self.f['temperature']
+        v2 = self.f.temperature
+        self.assertTrue((v1[...] == v2[...]).all())
+
+        v1 = self.f['NX']
+        v2 = self.f.NX
+        self.assertEqual(v1[...], v2[...])
+
+    def test_adios_open_and_close(self):
+        self.assertTrue(self.f.is_open())
+        self.assertTrue(self.f)
+
+        self.f.close()
+        self.assertFalse(self.f.is_open())
+        self.assertFalse(self.f)
 
 if __name__ == '__main__':
     ut.main()

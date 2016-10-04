@@ -52,7 +52,7 @@ int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t);
 int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t);
 
 const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data);
-int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);
+int bp_get_type_size (enum ADIOS_DATATYPES type, const void * var);
 int bp_get_dimension_generic(const struct adios_index_characteristic_dims_struct_v1 *dims,
                                     uint64_t *ldims, uint64_t *gdims, uint64_t *offsets);
 int bp_get_dimension_characteristics(struct adios_index_characteristic_struct_v1 *ch,

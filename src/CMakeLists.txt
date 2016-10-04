@@ -1,7 +1,31 @@
+
+set(EXTRA_OBJECTS "")  # added to libraries that include read+write
+set(EXTRA_READ_OBJECTS "") # added to read-only libraries
+# First build the mxml library in src/mxml before setting include directories for src/
+# Those source files must find PROJECT_SOURCE_DIR/src/mxml/config.h first, then PROJECT_BIN/DIR/config.h
+if (BUILD_MXML)
+  add_subdirectory(mxml)
+  set(MXML_BUILDDIR "mxml/mxml-2.9")
+  set(MXML_LIB=libmxml_a)
+  set(EXTRA_OBJECTS ${EXTRA_OBJECTS} $<TARGET_OBJECTS:mxml>)
+endif(BUILD_MXML)
+
+# Build the zfp library in src/zfp 
+if (BUILD_ZFP)
+  add_subdirectory(zfp)
+  set(ZFP_BUILDDIR "zfp/zfp-0.5.0")
+  set(ZFP_LIB=libzfp_a)
+  include_directories(${ZFP_INCLUDE_DIR})
+  set(EXTRA_OBJECTS ${EXTRA_OBJECTS} $<TARGET_OBJECTS:zfp>)
+  set(EXTRA_READ_OBJECTS ${EXTRA_READ_OBJECTS} $<TARGET_OBJECTS:zfp>)
+endif(BUILD_ZFP)
+
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/core ${PROJECT_SOURCE_DIR}/src/core/transforms)
 include_directories(${PROJECT_BINARY_DIR}/src ${PROJECT_BINARY_DIR}/src/public)
+include_directories(${MXML_INCLUDE_DIR})
 link_directories(${PROJECT_BINARY_DIR}/src)
+
 
 if(HAVE_NSSI)
   add_executable(nssi-staging-server nssi/nssi_staging_server.cpp nssi/aggregation.cpp)
@@ -78,6 +102,7 @@ set (transforms_read_SOURCES ${transforms_read_HDRS}
                           transforms/adios_transform_bzip2_read.c
                           transforms/adios_transform_identity_read.c
                           transforms/adios_transform_zlib_read.c
+                          transforms/adios_transform_zfp_read.c
                           core/adios_selection_util.c 
                           core/transforms/plugindetect/detect_plugin_read_hook_decls.h
                           core/transforms/plugindetect/detect_plugin_read_hook_reg.h
@@ -96,6 +121,7 @@ set (transforms_write_SOURCES ${transforms_write_HDRS}
                            transforms/adios_transform_isobar_write.c
                            transforms/adios_transform_szip_write.c
                            transforms/adios_transform_zlib_write.c
+                           transforms/adios_transform_zfp_write.c
                            ${transforms_write_method_SOURCES})
 
 #######Query source files
@@ -105,6 +131,7 @@ set(query_common_HDRS query/common_query.h
 
 set(query_common_SOURCES ${query_common_HDRS}
                          query/common_query.c
+                         query/common_query_read.c
                          query/adios_query_hooks.c
                          query/query_utils.c)
 
@@ -150,6 +177,8 @@ if(BUILD_WRITE)
                      ${query_C_SOURCES}
                      core/util.c 
                      core/strutil.c 
+                     core/a2sel.c 
+                     core/adios_clock.c 
                      core/qhashtbl.c 
                      read/read_bp.c 
                      read/read_bp_staged.c 
@@ -192,6 +221,8 @@ if(BUILD_WRITE)
                      core/adios_logger.c 
                      core/util.c 
                      core/strutil.c 
+                     core/a2sel.c 
+                     core/adios_clock.c 
                      core/qhashtbl.c 
                      read/read_bp.c 
                      read/read_bp_staged.c 
@@ -225,6 +256,8 @@ if(BUILD_WRITE)
                        core/adios_logger.c 
                        core/util.c 
                        core/strutil.c 
+                       core/a2sel.c 
+                       core/adios_clock.c 
                        core/qhashtbl.c 
                        read/read_bp.c 
                        read/read_bp_staged.c 
@@ -371,8 +404,8 @@ if(BUILD_WRITE)
     endif(RESEARCH_TRANSPORTS)
 
 # add library adios and adios_nompi
-    add_library(adios STATIC ${libadios_a_SOURCES})
-    add_library(adios_nompi STATIC ${libadios_nompi_a_SOURCES})
+    add_library(adios STATIC ${libadios_a_SOURCES} ${EXTRA_OBJECTS})
+    add_library(adios_nompi STATIC ${libadios_nompi_a_SOURCES} ${EXTRA_OBJECTS})
     set_target_properties(adios PROPERTIES COMPILE_FLAGS "${libadios_a_CPPFLAGS} ${libadios_a_CFLAGS}")
     set_target_properties(adios_nompi PROPERTIES COMPILE_FLAGS "${libadios_nompi_a_CPPFLAGS} ${libadios_nompi_a_CFLAGS}")
 #   message(STATUS "${libadios_a_CPPFLAGS}")
@@ -447,10 +480,10 @@ if(BUILD_WRITE)
 #       install(FILES ${nodist_include_HEADERS} DESTINATION ${includedir})
         install(FILES ${PROJECT_BINARY_DIR}/src/adios_write_mod.mod ${PROJECT_BINARY_DIR}/src/adios_defs_mod.mod DESTINATION ${includedir})
         ##add library adiosf and adiosf_v1
-        add_library(adiosf STATIC ${libadiosf_a_SOURCES})
-        add_library(adiosf_v1 STATIC ${libadiosf_v1_a_SOURCES}) 
-        add_library(adiosf_nompi STATIC ${libadiosf_nompi_a_SOURCES})
-        add_library(adiosf_nompi_v1 STATIC ${libadiosf_nompi_v1_a_SOURCES})
+        add_library(adiosf STATIC ${libadiosf_a_SOURCES} ${EXTRA_OBJECTS})
+        add_library(adiosf_v1 STATIC ${libadiosf_v1_a_SOURCES} ${EXTRA_OBJECTS}) 
+        add_library(adiosf_nompi STATIC ${libadiosf_nompi_a_SOURCES} ${EXTRA_OBJECTS})
+        add_library(adiosf_nompi_v1 STATIC ${libadiosf_nompi_v1_a_SOURCES} ${EXTRA_OBJECTS})
         set_target_properties(adiosf PROPERTIES COMPILE_FLAGS "${libadiosf_a_CPPFLAGS} ${libadiosf_a_CFLAGS}")
         set_target_properties(adiosf_v1 PROPERTIES COMPILE_FLAGS "${libadiosf_v1_a_CPPFLAGS} ${libadiosf_v1_a_CFLAGS}")
         set_target_properties(adiosf_nompi PROPERTIES COMPILE_FLAGS "${libadiosf_nompi_a_CPPFLAGS} ${libadiosf_nompi_a_CFLAGS}")
@@ -497,6 +530,8 @@ set(libadiosread_a_SOURCES core/adios_bp_v1.c
                       core/adios_logger.c 
                       core/util.c 
                       core/strutil.c 
+                      core/a2sel.c
+                      core/adios_clock.c 
                       core/qhashtbl.c 
                       read/read_bp.c 
                       read/read_bp_staged.c 
@@ -542,7 +577,7 @@ set(libadiosread_a_CPPFLAGS "${libadiosread_a_CPPFLAGS} ${ADIOSLIB_EXTRA_CPPFLAG
 install(FILES ${include_HEADERS} DESTINATION ${includedir})
 # install generated header file adios_version.h
 install(FILES ${PROJECT_BINARY_DIR}/src/public/adios_version.h DESTINATION ${includedir})
-add_library(adiosread STATIC ${libadiosread_a_SOURCES})
+add_library(adiosread STATIC ${libadiosread_a_SOURCES} ${EXTRA_READ_OBJECTS})
 set_target_properties(adiosread PROPERTIES COMPILE_FLAGS "${libadiosread_a_CPPFLAGS} ${libadiosread_a_CFLAGS}")
 
 #start libadiosreadf.a libadiosreadf_v1.a
@@ -563,6 +598,8 @@ if(BUILD_FORTRAN)
                       core/adios_logger.c 
                       core/util.c 
                       core/strutil.c 
+                      core/a2sel.c
+                      core/adios_clock.c 
                       core/qhashtbl.c 
                       read/read_bp.c 
                       read/read_bp_staged.c 
@@ -651,12 +688,12 @@ if(BUILD_FORTRAN)
     #include_directories(${nodist_include_HEADERS})
 #  install(FILES ${nodist_include_HEADERS} DESTINATION ${includedir})
     install(FILES ${PROJECT_BINARY_DIR}/src/adios_read_mod.mod DESTINATION ${includedir})
-    add_library(adiosreadf ${libadiosreadf_a_SOURCES})
+    add_library(adiosreadf ${libadiosreadf_a_SOURCES} ${EXTRA_READ_OBJECTS})
     set_target_properties(adiosreadf PROPERTIES COMPILE_FLAGS "${libadiosreadf_a_CPPFLAGS} ${libadiosreadf_a_CFLAGS}")
   
 #  message(STATUS "${nodist_include_HEADERS}")
 #  message(STATUS "${libadiosreadf_v1_a_SOURCES}")
-    add_library(adiosreadf_v1 ${libadiosreadf_v1_a_SOURCES})
+    add_library(adiosreadf_v1 ${libadiosreadf_v1_a_SOURCES} ${EXTRA_READ_OBJECTS})
     set_target_properties(adiosreadf_v1 PROPERTIES COMPILE_FLAGS "${libadiosreadf_v1_a_CPPFLAGS} ${libadiosreadf_v1_a_CFLAGS}")
 
 endif(BUILD_FORTRAN)
@@ -685,6 +722,8 @@ set(libadiosread_nompi_a_SOURCES core/mpidummy.c
 #                      core/adios_transport_hooks.c 
                       core/util.c 
                       core/strutil.c 
+                      core/a2sel.c
+                      core/adios_clock.c 
                       core/qhashtbl.c 
                       read/read_bp.c)
 
@@ -723,7 +762,7 @@ endif(HAVE_NSSI)
 set(libadiosread_nompi_a_CPPFLAGS "${libadiosread_nompi_a_CPPFLAGS} ${MACRODEFFLAG}_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSREADLIB_CPPFLAGS}")
 
 #add library adiosread_nompi
-add_library(adiosread_nompi ${libadiosread_nompi_a_SOURCES})
+add_library(adiosread_nompi ${libadiosread_nompi_a_SOURCES} ${EXTRA_READ_OBJECTS})
 set_target_properties(adiosread_nompi PROPERTIES COMPILE_FLAGS "${libadiosread_nompi_a_CPPFLAGS} ${libadiosread_nompi_a_CFLAGS}")
 
 
@@ -746,6 +785,8 @@ if(BUILD_FORTRAN)
                           core/adios_read_hooks.c 
                           core/util.c 
                           core/strutil.c 
+                          core/a2sel.c
+                          core/adios_clock.c 
                           core/qhashtbl.c 
                           read/read_bp.c)
     if(HAVE_DATASPACES)
@@ -785,10 +826,10 @@ if(BUILD_FORTRAN)
     set(libadiosreadf_nompi_v1_a_CFLAGS "${libadiosreadf_nompi_a_CFLAGS}")
 
 #add library adiosreadf_nompi and adiosreadf_nompi_v1
-    add_library(adiosreadf_nompi ${libadiosreadf_nompi_a_SOURCES})
+    add_library(adiosreadf_nompi ${libadiosreadf_nompi_a_SOURCES} ${EXTRA_READ_OBJECTS})
     set_target_properties(adiosreadf_nompi  PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${libadiosreadf_nompi_a_CFLAGS}")
 
-    add_library(adiosreadf_nompi_v1 ${libadiosreadf_nompi_v1_a_SOURCES})
+    add_library(adiosreadf_nompi_v1 ${libadiosreadf_nompi_v1_a_SOURCES} ${EXTRA_READ_OBJECTS})
     set_target_properties(adiosreadf_nompi_v1 PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_v1_a_CPPFLAGS} ${libadiosreadf_nompi_v1_a_CFLAGS}")
 
 endif(BUILD_FORTRAN)
@@ -809,6 +850,8 @@ set(libadios_internal_nompi_a_SOURCES core/mpidummy.c
                                     core/adios_timing.c 
                                     core/util.c 
                                     core/strutil.c 
+                                    core/a2sel.c
+                                    core/adios_clock.c 
                                     core/qhashtbl.c 
                                     core/futils.c 
                                     core/adios_transport_hooks.c)
@@ -820,7 +863,7 @@ endif(BUILD_WRITE)
 
 set(libadios_internal_nompi_a_CPPFLAGS "${MACRODEFFLAG}_INTERNAL ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_INT_CPPFLAGS} ${ADIOSLIB_CPPFLAGS}")
 
-add_library(adios_internal_nompi ${libadios_internal_nompi_a_SOURCES})
+add_library(adios_internal_nompi ${libadios_internal_nompi_a_SOURCES} ${EXTRA_OBJECTS})
 set_target_properties(adios_internal_nompi PROPERTIES COMPILE_FLAGS "${libadios_internal_nompi_a_CPPFLAGS}")
 
 add_subdirectory(core)

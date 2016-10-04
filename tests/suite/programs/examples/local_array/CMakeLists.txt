@@ -15,7 +15,7 @@ endif()
 target_link_libraries(local_array_write_C adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
 add_custom_command(
 	OUTPUT gwrite_arrays.ch
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/local_array/local_array_C.xml
+	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/local_array/local_array_C.xml
 	DEPENDS local_array_C.xml
 	)
 

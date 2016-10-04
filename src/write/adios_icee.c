@@ -39,6 +39,8 @@
 #include "core/buffer.h"
 #include "core/util.h"
 #include "core/adios_logger.h"
+#include "core/adios_clock.h"
+
 
 #ifdef HAVE_ICEE
 
@@ -253,17 +255,7 @@ worker_thread(void *arg)
                 (void) pthread_cond_wait(&pool->pool_workcv,
                                          &pool->pool_mutex);
             } else {
-#ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
-                clock_serv_t cclock;
-                mach_timespec_t mts;
-                host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-                clock_get_time(cclock, &mts);
-                mach_port_deallocate(mach_task_self(), cclock);
-                ts.tv_sec = mts.tv_sec;
-                ts.tv_nsec = mts.tv_nsec;
-#else
-                (void) clock_gettime(CLOCK_REALTIME, &ts);
-#endif
+                adios_clock_gettime (CLOCK_REALTIME, &ts);
                 ts.tv_sec += pool->pool_linger;
                 if (pool->pool_linger == 0 ||
                     pthread_cond_timedwait(&pool->pool_workcv,

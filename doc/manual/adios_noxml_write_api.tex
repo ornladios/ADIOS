@@ -63,6 +63,7 @@ call adios_init_noxml (comm, ierr)
 \end{lstlisting}
 
 \subsection{adios\_set\_max\_buffer\_size}
+\label{section-noxml-maxbuffersize}
 This routine sets a maximum on the buffer size used by ADIOS to buffer data in one adios\_open()...adios\_close() operation.
 If multiple operations are going on at the same time, each buffer will be limited independently.
 
@@ -115,7 +116,7 @@ attribute is detailed in Chapter \ref{chapter-xml}.
 int adios_declare_group (int64_t * id, 
                          const char * name,
                          const char * time_index,
-                         enum ADIOS_FLAG stats)
+                         enum ADIOS_STATISTICS_FLAG stats)
 \end{lstlisting}
 
 Input: 
@@ -127,11 +128,11 @@ Input:
 attribute, an empty string (\verb+""+) should be passed
 
 \item stats - a flag indicating whether or not to generate ADIOS statistics during writing, 
-such as min/max/standard deviation. The value of \textit{stats} can be either 
-\verb+adios_flag_yes+ or \verb+adios_flag_no+. If stats is set to \verb+adios_flag_yes+, 
-ADIOS internally calculates and outputs statistics for each processor automatically. 
+such as min, max, average and standard deviation. The value of \textit{stats} can be either 
+\verb+adios_stat_no+,  \verb+adios_stat_default+, or \verb+adios_stat_full+. If stats is set to \verb+adios_stat_default+, 
+ADIOS internally calculates and outputs min and max for each processor automatically. If it is set to full, additional statistics are calculated including partially calculated data for average and standard deviation, which are completed at read time. 
 The downside of turning stats on is that it consumes more CPU and memory during writing 
-and the metadata will be larger. 
+and the metadata will be larger. Min and max should be turned on to enable the MINMAX query method to work on the dataset (see Chapter~\ref{chapter:query_api}). 
 \end{itemize}
 
 Output: 
@@ -290,7 +291,7 @@ int adios_define_attribute_byvalue (int64_t group,
                                     const char * path,
                                     enum ADIOS_DATATYPES type,
                                     int nelems,
-                                    void * values)
+                                    const void * values)
 \end{lstlisting}
 
 Input:
@@ -321,18 +322,19 @@ Fortran example:
 Note that string attributes will loose the trailing space characters in the output. 
 
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
-    integer, dimension(5)   :: someints = (/ 5,4,3,2,1 /)
-    real*8, dimension(5)    :: somedoubles = (/ 5.55555, 4.4444, 3.333, 2.22, 1.1 /)
-    character(len=5), dimension(3) :: three_strings = (/ "X    ", "Yy   ", "ZzZ  " /)
+integer, dimension(5)   :: someints = (/ 5,4,3,2,1 /)
+real*8, dimension(5)    :: somedoubles = (/ 5.55555, 4.4444, 3.333, 2.22, 1.1 /)
+character(len=5), dimension(3) :: three_strings = &
+            (/ "X    ", "Yy   ", "ZzZ  " /)
 
-    call adios_define_attribute_byvalue (m_adios_group, &
-            "single_string","", 1, "A single string attribute", adios_err)
-    call adios_define_attribute_byvalue (m_adios_group, &
-            "three_strings","", 3, three_strings, adios_err)
-    call adios_define_attribute_byvalue (m_adios_group, &
-            "single_double","", 1, somedoubles, adios_err)
-    call adios_define_attribute_byvalue (m_adios_group, &
-            "five_ints",    "", 5, someints, adios_err)
+call adios_define_attribute_byvalue (m_adios_group, &
+       "single_string","", 1, "A single string attribute", adios_err)
+call adios_define_attribute_byvalue (m_adios_group, &
+        "three_strings","", 3, three_strings, adios_err)
+call adios_define_attribute_byvalue (m_adios_group, &
+        "single_double","", 1, somedoubles, adios_err)
+call adios_define_attribute_byvalue (m_adios_group, &
+        "five_ints",    "", 5, someints, adios_err)
 \end{lstlisting}
 
 

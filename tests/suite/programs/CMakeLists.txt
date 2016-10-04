@@ -64,7 +64,7 @@ if(BUILD_FORTRAN)
     include_directories(${PROJECT_BINARY_DIR}/src)
     add_custom_command(
 	OUTPUT gwrite_posix_method.fh
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/posix_method.xml
+	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/posix_method.xml
 	DEPENDS posix_method.xml
 	)
   endif(BUILD_WRITE)

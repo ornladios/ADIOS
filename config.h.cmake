@@ -43,6 +43,9 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #cmakedefine HAVE_CLOCK_GETTIME 1
 
+/* Define to 1 if you have the `clock_get_time' function. */
+#cmakedefine HAVE_CLOCK_GET_TIME 1
+
 /* Define if you have CRAY_PMI. */
 #cmakedefine HAVE_CRAY_PMI 1
 
@@ -250,6 +253,10 @@
 
 /*  to 1 if you have the `strncpy' function. */
 #cmakedefine HAVE_STRNCPY 1
+#cmakedefine HAVE_STRDUP 1
+#cmakedefine HAVE_SNPRINTF 1
+#cmakedefine HAVE_VSNPRINTF 1
+#cmakedefine HAVE_LONG_LONG 1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #cmakedefine HAVE_SYS_STAT_H 1

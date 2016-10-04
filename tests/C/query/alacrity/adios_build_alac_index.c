@@ -22,7 +22,7 @@
 #include <inttypes.h>
 #include <mxml.h>
 #include <sys/stat.h>
-#include "core/strutil.h"
+#include "core/strutil.h" 
 
 //#define GET_ATTR(n,attr,var,en)
 #define GET_ATTR2(n,attr,var,en)                                 \

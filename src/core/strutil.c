@@ -155,7 +155,7 @@ void a2s_tokenize_dimensions (const char * str, char *** tokens, int * count)
         *tokens = (char **) malloc (sizeof (char **) * *count);
         for (i = 0; i < *count; i++)
         {
-            (*tokens) [i] = strdup (dims[i]);
+            (*tokens) [i] = dims[i];
         }
     }
 
@@ -173,21 +173,27 @@ void a2s_cleanup_dimensions (char ** tokens, int count)
         free (tokens);
 }
 
-void trim_spaces (char * str)
+char * a2s_trim_spaces (const char * str)
 {
-    char * t = str, * p = NULL;
-    while (*t != '\0')
+    char * result = strdup (str);
+    char * r = result;
+    while (*str != '\0')
     {
-        if (*t == ' ')
+        if (*str == ' ')
         {
-            p = t + 1;
-            strcpy (t, p);
+            str++;
         }
         else
-            t++;
+        {
+            *r = *str;
+            r++;
+            str++;
+        }
     }
-
+    *r = '\0';
+    return result;
 }
+
 
 /*******************************************************
    Processing parameter lists

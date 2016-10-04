@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <inttypes.h>
 #include <assert.h>
 #include <limits.h>
 #include <sys/time.h>
@@ -130,7 +131,7 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
         *wrote_to_shared_buffer = 1;
         if (!shared_buffer_reserve(fd, output_size))
         {
-            log_error("Out of memory allocating %llu bytes for %s for isobar transform\n", output_size, var->name);
+            log_error("Out of memory allocating %" PRIu64 " bytes for %s for isobar transform\n", output_size, var->name);
             return 0;
         }
 
@@ -143,7 +144,7 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
         output_buff = malloc(output_size);
         if (!output_buff)
         {
-            log_error("Out of memory allocating %llu bytes for %s for isobar transform\n", output_size, var->name);
+            log_error("Out of memory allocating %" PRIu64 " bytes for %s for isobar transform\n", output_size, var->name);
             return 0;
         }
     }

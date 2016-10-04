@@ -1,6 +1,12 @@
 import numpy as np
 import itertools
 
+import sys
+if sys.version_info < (3,):
+    integer_types = (int, long,)
+else:
+    integer_types = (int,)
+
 def select(shape, args):
     """
     Return either SimpleSelection or FancySelection
@@ -133,7 +139,7 @@ class FancySelection(Selection):
             if isinstance(arg, slice):
                 arg = (arg,)
                 pass
-            elif isinstance(arg, (int, long, float)):
+            elif isinstance(arg, (integer_types, float)):
                 x,y,z = _translate_int(int(arg), length)
                 arg = (slice(x, x+y, z),)
                 s = True
@@ -162,7 +168,7 @@ class FancySelection(Selection):
         dims = []
         t0 = (0,) * self.ndim
         for t1 in itertools.product(*[range(len(x)) for x in slicelist]):
-            diff = map(lambda a,b: a == b, t0, t1)
+            diff = list(map(lambda a,b: a == b, t0, t1))
             idx = 0
             try:
                 idx = diff.index(False)

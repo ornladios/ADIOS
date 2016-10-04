@@ -51,7 +51,7 @@ int main(int argc, char ** argv){
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
-	SET_ERROR_IF_ZERO(adios_init(adios_opts.xml_adios_init_filename, comm), err_count);
+	SET_ERROR_IF_NOT_ZERO(adios_init(adios_opts.xml_adios_init_filename, comm), err_count);
 	RET_IF_ERROR(err_count, rank);
 
 	// init the array that I will transport

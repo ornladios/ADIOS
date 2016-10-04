@@ -23,9 +23,9 @@ ac_with_mxml=no
 dnl By default assume mxml is installed in system location
 AC_ARG_WITH(mxml,
         [  --with-mxml=DIR      Location of Mini-XML library],
-        [:])
+        [:],[with_mxml=no])
 
-dnl If --without-mxml was given give an error
+dnl If --without-mxml or nothing given, then return
 if test "x$with_mxml" == "xno"; then
 
     AM_CONDITIONAL(HAVE_MXML,false)
@@ -78,7 +78,7 @@ if test "x$ac_with_mxml" == "xyes"; then
     if test -z "$MXML_LIBS"; then
         MXML_LIBS="-lmxml"
     fi
-    LIBS="$LIBS ${MXML_LIBS}"
+    LIBS="${MXML_LIBS} ${LIBS}"
 
 
     AC_CHECK_HEADERS(mxml.h,
@@ -110,7 +110,7 @@ if test "x$ac_with_mxml" == "xyes"; then
             dnl Check for the Mini-XML library and headers
             AC_REQUIRE([ACX_PTHREAD])
             LDFLAGS="$LDFLAGS $PTHREAD_LDFLAGS"
-            LIBS="$LIBS $PTHREAD_LIBS"
+            LIBS="${MXML_LIBS} ${PTHREAD_LIBS} ${save_LIBS}"
             AC_MSG_CHECKING([if mxml code can be linked using pthreads])
             AC_TRY_LINK([#include "mxml.h"],
             [mxml_node_t * n; 

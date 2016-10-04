@@ -33,7 +33,8 @@ contents:
 
 >>> f = ad.file('adios_test.bp')
 >>> f
-AdiosFile (path='adios_test.bp', nvars=3, var=['NX', 'temperature', 'size'], nattrs=1, attr=['/temperature/description'], current_step=0, last_step=0, file_size=1549)
+AdiosFile (path='adios_test.bp', nvars=3, var=['NX', 'temperature', 'size'],
+nattrs=1, attr=['/temperature/description'], current_step=0, last_step=0, file_size=878)
 
 Now let's read a scalar variable, 'NX'. We can access each variable by
 using Python's dictionary-style interface:
@@ -41,18 +42,36 @@ using Python's dictionary-style interface:
 >>> v = f['NX']
 >>> v
 AdiosVar (varid=0, type=dtype('int32'), ndim=0, dims=(), nsteps=1)
+
+
+.. note:: The Adios python wrapper provides convenience to access variables
+          as a class member, such as, f.NX, unless the name contains
+          a separator ('/') in the middle.
+
+Now v contains only meta data information. To read data from the disk,
+execute the following command:
+
 >>> v.read()
-array(10, dtype=int32)
+10
 
 Equivalently, we can use Numpy-style interface:
 
->>> f['NX'][...]
-array(10, dtype=int32)
+>>> v[...]
 
+We can combine them all together:
+
+>>> f['NX'][...]
+
+In short, the following commands have the same effect:
+
+>>> f['NX'][...]
+>>> f['NX'].read()
+>>> f.NX[...]
+>>> f.NX.read()
 
 Then, let's read a multi-dimensional array, 'temperature'.
 
->>> f['temperature'][:]
+>>> f['temperature'][...]
 array([[  0.,   1.,   2.,   3.,   4.,   5.,   6.,   7.,   8.,   9.],
        [ 10.,  11.,  12.,  13.,  14.,  15.,  16.,  17.,  18.,  19.]])
 
@@ -64,23 +83,36 @@ array([[  0.,   1.,   2.,   3.,   4.],
 
 We can use the most of the NumPy's slice syntax.
 
+Attribute
+---------
+
 Attribute reading is similar:
 
 >>> at = f.attr['/temperature/description']
 >>> at
-AdiosAttr (name='/temperature/description', type=dtype('S43'))
+AdiosAttr (name='/temperature/description', dtype=dtype('S42'),
+value=array("Global array written from 'size' processes", dtype='|S42'))
 >>> at.value
-array(["Global array written from 'size' processes"],
-      dtype='|S43')
+"Global array written from 'size' processes"
 
-Unless attribute's name is not conflict with any variable name in the
-file, which is totally fine with Adios, we can access through the
-dictionary-style:
+Unless attribute's name is conflict with any variable name in the
+file, we can access attributes through the dictionary-style:
 
 >>> f['/temperature/description'].value
 
 .. note:: While variables are read by "read" function or slice
           interface, attributes are accessed through "value" property.
+
+
+The Adios Python reorganizes the attributes in a tree structure based on the prefix of the name.
+For example, the following commands have the same effect:
+
+>>> v = f['temperature']
+>>> v['description'].value
+
+By using the class member notation, the following command is also same:
+
+>>> v.description.value
 
 Writing data
 ------------
@@ -108,11 +140,9 @@ First, we load necessary modules and prepare our Numpy data to save:
 
 I.e., we have two scalar variables (NX and size) and one 2-D array (tt).
 
-Then, we initialize Adios and specify a buffer size (10MB) which Adios
-can work with:
+Then, we initialize Adios:
 
 >>> ad.init_noxml()
->>> ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
 
 Then, we give a file name to create and specify a group with Adios method:
 

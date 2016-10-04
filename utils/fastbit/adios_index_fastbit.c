@@ -796,17 +796,17 @@ int main (int argc, char** argv)
   gIdxFileName = fastbit_adios_util_getFastbitIndexFileName(argv[1]);
   unlink(gIdxFileName);
 
-      adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 500); // +5MB for extra room in buffer
+      //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 500); // +5MB for extra room in buffer
       adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_flag_yes);
       adios_select_method (gAdios_group, "MPI", "", "");
 
       adios_open (&gAdios_write_file, gGroupNameFastbitIdx, gIdxFileName, "w", MPI_COMM_WORLD);
 
 #ifdef MULTI_BLOCK
-      int testid = adios_define_var (gAdios_group, "pack", "", adios_integer , 0, 0, 0);
+      int64_t testid = adios_define_var (gAdios_group, "pack", "", adios_integer , 0, 0, 0);
 #endif
 #ifdef BOX
-      int testid = adios_define_var (gAdios_group, "elements", "", adios_integer , 0, 0, 0);
+      int64_t testid = adios_define_var (gAdios_group, "elements", "", adios_integer , 0, 0, 0);
 #endif
       //uint64_t estimatedbytes = (nb+nk+no)*adios_type_size(adios_double, NULL);
       int jobCounter = getJobCounter(f);

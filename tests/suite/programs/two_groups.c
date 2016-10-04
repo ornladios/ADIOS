@@ -169,7 +169,7 @@ int read_file ()
     ADIOS_SELECTION *sel0;
     ADIOS_FILE * f;
     ADIOS_VARINFO * vi;
-    int err=0,i;
+    int err=0;
 
     uint64_t start[3] = {0,0,0};
     uint64_t count[3] = {1,1,1};
@@ -198,9 +198,9 @@ int read_file ()
     //adios_schedule_read (f, sel0, "c0",  0, 1, &rc);
     adios_perform_reads (f, 1);
 
-    CHECK_SCALAR (a0,  ra,  0, i)
-    CHECK_SCALAR (b0,  rb,  1, i)
-    //CHECK_SCALAR (c0,  rc,  2, i)
+    CHECK_SCALAR (a0,  ra,  0, 0)
+    CHECK_SCALAR (b0,  rb,  1, 0)
+    //CHECK_SCALAR (c0,  rc,  2, 0)
 
 
 endread:
@@ -218,7 +218,7 @@ int read_by_group ()
     ADIOS_SELECTION *sel0;
     ADIOS_FILE * f;
     ADIOS_VARINFO * vi;
-    int err=0,i;
+    int err=0;
 
     uint64_t start[3] = {0,0,0};
     uint64_t count[3] = {1,1,1};
@@ -252,8 +252,8 @@ int read_by_group ()
     //adios_schedule_read (f, sel0, "c0",  0, 1, &rc);
     adios_perform_reads (f, 1);
 
-    CHECK_SCALAR (a0,  ra,  0, i)
-    //CHECK_SCALAR (c0,  rc,  2, i)
+    CHECK_SCALAR (a0,  ra,  0, 0)
+    //CHECK_SCALAR (c0,  rc,  2, 0)
 
 
     log ("  Limit view to second group only\n");
@@ -271,7 +271,7 @@ int read_by_group ()
     adios_schedule_read (f, sel0, "b0",  0, 1, &rb);
     adios_perform_reads (f, 1);
 
-    CHECK_SCALAR (b0,  rb,  1, i)
+    CHECK_SCALAR (b0,  rb,  1, 0)
 
 endread:
 

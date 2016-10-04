@@ -13,7 +13,6 @@ class AdiosTestCase(ut.TestCase):
 
         ad.init_noxml()
 
-        ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
         g = ad.declare_group("temperature", "", ad.FLAG.YES)
         ad.define_var(g, "NX", "", ad.DATATYPE.integer, "", "", "")
         ad.define_var(g, "size", "", ad.DATATYPE.integer, "", "", "")
@@ -30,10 +29,10 @@ class AdiosTestCase(ut.TestCase):
         fd = ad.open("temperature", self.temp.path, "w")
         self.NX = 10
         self.size = 2
-        groupsize =  4 + 4 + 8 * self.size * self.NX + 4
-        t = np.array(range(self.NX * self.size), dtype=np.float64)
+        ##groupsize =  4 + 4 + 8 * self.size * self.NX + 4
+        t = np.array(list(range(self.NX * self.size)), dtype=np.float64)
         self.tt = t.reshape((self.size, self.NX))
-        ad.set_group_size(fd, groupsize)
+        ##ad.set_group_size(fd, groupsize)
         ad.write_int(fd, "NX", self.NX)
         ad.write_int(fd, "size", self.size)
         ad.write(fd, "temperature", self.tt)
@@ -62,7 +61,7 @@ class AdiosTestCase(ut.TestCase):
                         sorted(['temperature/unit', 'temperature/desc', 'desc', '/subgroup/subsubgroup/otherattr']))
 
     def test_adios_attr(self):
-        self.assertEqual(self.f.attrs['desc'].value, self.msg)
+        self.assertEqual(self.f.attrs['desc'].value, self.msg.encode())
         self.assertEqual(self.f.attrs['desc'].dtype, np.dtype('S14'))
 
     def test_adios_file_getitem(self):
@@ -83,7 +82,7 @@ class AdiosTestCase(ut.TestCase):
     def test_adios_var_array(self):
         v = self.f['temperature']
         self.assertEqual(v.ndim, 2)
-        self.assertEqual(v.dims, (2L, 10L))
+        self.assertEqual(v.dims, (2, 10))
         self.assertEqual(v.nsteps, 1)
 
         val = v.read()
@@ -113,18 +112,19 @@ class AdiosTestCase(ut.TestCase):
 
     def test_adios_var_attr(self):
         v = self.f['temperature']
-        self.assertEqual(v.attrs.keys(), ['unit', 'desc'])
-        self.assertEqual(v.attrs['desc'].value, 'description')
-        self.assertEqual(v.attrs['unit'].value, 'C')
+        self.assertEqual(list(v.attrs.keys()).sort(), ['unit', 'desc'].sort())
+        self.assertEqual(v.attrs['desc'].value, 'description'.encode())
+        self.assertEqual(v.attrs['unit'].value, 'C'.encode())
 
     def test_adios_group(self):
-        self.assertRaises(KeyError, self.f.__getitem__, Slicee()['/subgroup'])
+        # No error anymore (as of May 27, 2016)
+        #self.assertRaises(KeyError, self.f.__getitem__, Slicee()['/subgroup'])
 
         g = self.f['/subgroup/subsubgroup']
-        self.assertEqual(g.vars.keys(), ['othervar'])
-        self.assertEqual(g.attrs.keys(), ['otherattr'])
+        self.assertEqual(list(g.vars.keys()), ['othervar'])
+        self.assertEqual(list(g.attrs.keys()), ['otherattr'])
         self.assertEqual(g['othervar'][...], 99)
-        self.assertEqual(g['otherattr'][...], 'another')
+        self.assertEqual(g['otherattr'][...], 'another'.encode())
 
 if __name__ == '__main__':
     ut.main()

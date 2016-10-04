@@ -34,7 +34,8 @@
 #include "core/transforms/adios_transforms_reqgroup.h"
 #include "core/common_read.h"
 #include "core/adios_subvolume.h"
-#include "core/util.h"
+//#include "core/util.h"
+#include "core/a2sel.h"
 #include "public/adios_selection.h"
 
 // An adios_transform_read_request corresponds to a variable read request
@@ -164,7 +165,7 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_seg
     ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb;
 
     // NOTE: We use the absolute PG index, along with the is_absolute_index flag below
-    sel = common_read_selection_writeblock(pg_reqgroup->blockidx);
+    sel = a2sel_writeblock(pg_reqgroup->blockidx);
 
     wb = &sel->u.block;
     wb->is_absolute_index = 1;
@@ -201,7 +202,7 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_seg
 adios_transform_raw_read_request * adios_transform_raw_read_request_new_whole_pg(const adios_transform_pg_read_request *pg_reqgroup, void *data) {
 #ifdef RAW_READS_USE_WRITEBLOCK
     // Use absolute time index, but not sub-PG read
-    ADIOS_SELECTION *sel = common_read_selection_writeblock(pg_reqgroup->blockidx);
+    ADIOS_SELECTION *sel = a2sel_writeblock(pg_reqgroup->blockidx);
     sel->u.block.is_absolute_index = 1;
     return adios_transform_raw_read_request_new(sel, data);
 #else
@@ -236,7 +237,7 @@ void adios_transform_raw_read_request_free(adios_transform_raw_read_request **su
     assert(!subreq->next); // Not a perfect check, but will catch many requests that are still linked
 
     // Free malloc'd resources
-    common_read_selection_delete(subreq->raw_sel);
+    a2sel_free(subreq->raw_sel);
     MYFREE(subreq->data);
     MYFREE(subreq->transform_internal);
 
@@ -280,7 +281,7 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
     new_pg_reqgroup->transform_metadata = transform_metadata;
     new_pg_reqgroup->transform_metadata_len = transform_metadata_len;
 
-    ADIOS_SELECTION *wbsel = common_read_selection_writeblock(blockidx);
+    ADIOS_SELECTION *wbsel = a2sel_writeblock(blockidx);
     wbsel->u.block.is_absolute_index = 1;
     new_pg_reqgroup->pg_writeblock_sel = wbsel;
 
@@ -323,11 +324,11 @@ void adios_transform_pg_read_request_free(adios_transform_pg_read_request **pg_r
 
     // Free malloc'd resources
     if (pg_reqgroup->pg_intersection_sel)
-        common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_intersection_sel);
+        a2sel_free((ADIOS_SELECTION*)pg_reqgroup->pg_intersection_sel);
     if (pg_reqgroup->pg_bounds_sel)
-        common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_bounds_sel);
+        a2sel_free((ADIOS_SELECTION*)pg_reqgroup->pg_bounds_sel);
     if (pg_reqgroup->pg_writeblock_sel)
-    	common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_writeblock_sel);
+    	a2sel_free((ADIOS_SELECTION*)pg_reqgroup->pg_writeblock_sel);
     MYFREE(pg_reqgroup->transform_internal);
 
     // Clear all data to 0's for safety
@@ -357,7 +358,7 @@ adios_transform_read_request * adios_transform_read_request_new(
 
     new_reqgroup->from_steps = from_steps;
     new_reqgroup->nsteps = nsteps;
-    new_reqgroup->orig_sel = copy_selection(sel);
+    new_reqgroup->orig_sel = a2sel_copy(sel);
     new_reqgroup->read_param = param;
     new_reqgroup->orig_data = data;
     new_reqgroup->swap_endianness = swap_endianness;
@@ -431,7 +432,7 @@ void adios_transform_read_request_free(adios_transform_read_request **reqgroup_p
     if (reqgroup->lent_varchunk_data)
         MYFREE(reqgroup->lent_varchunk_data);
 
-    common_read_selection_delete((ADIOS_SELECTION*)reqgroup->orig_sel); // Remove const
+    a2sel_free((ADIOS_SELECTION*)reqgroup->orig_sel); // Remove const
 
     // DON'T FREE varinfo/transinfo, since they are stored in the infocache
     // common_read_free_transinfo(reqgroup->raw_varinfo, (ADIOS_TRANSINFO*)reqgroup->transinfo); // Remove const

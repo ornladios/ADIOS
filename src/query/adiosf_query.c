@@ -6,7 +6,8 @@
 
 #define __INCLUDED_FROM_FORTRAN_API__
 #include "public/adios_read_v2.h"
-#include "common_query.h"
+#include "public/adios_error.h"
+#include "query/common_query.h"
 #include "core/futils.h"
 
 
@@ -18,6 +19,7 @@ extern "C"  /* prevent C++ name mangling */
   #include "FC.h"
 #endif
 
+extern int adios_errno;
 
 
 int FC_FUNC_(adios_query_is_method_available_f2c,ADIOS_QUERY_IS_METHOD_AVAILABLE_F2C) (int *method)
@@ -89,18 +91,44 @@ void FC_FUNC_(adios_query_evaluate,ADIOS_QUERY_EVALUATE) (
         int      * err
         )
 {
-    ADIOS_SELECTION * result;
-    *err = common_query_evaluate( (ADIOS_QUERY*)*q, 
+    ADIOS_QUERY_RESULT * result;
+    result = common_query_evaluate( (ADIOS_QUERY*)*q, 
                                   (ADIOS_SELECTION*) *sel_outputboundary,
                                   *timestep, 
-                                  *batchsize, 
-                                  &result);
+                                  *batchsize);
+    *err = result->status;
     if (!*err) {
         *sel_result = (int64_t)result;
     } else {
         *sel_result = 0;
     }
 }
+
+
+void FC_FUNC_(adios_query_read_boundingbox,ADIOS_QUERY_READ_BOUNDINGBOX) (
+        int64_t *f,
+        int64_t *q,
+        char *varname,
+        int *timestep,
+        int *nselections,
+        int64_t *selections,
+        int64_t *bb,
+        void *data,
+        int *err,
+        int varname_size
+   )
+{
+    char * buf1 = 0;
+    buf1 = futils_fstr_to_cstr (varname, varname_size);
+
+    if (buf1 != 0) {
+        *err = common_query_read_boundingbox ((ADIOS_FILE*)*f, (ADIOS_QUERY*)*q,
+                buf1, *timestep, *nselections, (ADIOS_SELECTION *)*selections, (ADIOS_SELECTION *)*bb, data);
+    } else {
+        *err = adios_errno;
+    }
+}
+
 
 void FC_FUNC_(adios_query_free,ADIOS_QUERY_FREE) (int64_t* q)
 {

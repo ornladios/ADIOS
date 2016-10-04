@@ -121,7 +121,7 @@ int main (int argc, char ** argv)
 
     if (iconnect) 
     {
-        adios_declare_group (&m_adios_group, "connect", "iter", adios_flag_yes);
+        adios_declare_group (&m_adios_group, "connect", "iter", adios_stat_default);
         adios_select_method (m_adios_group, "DATASPACES", "verbose=4", "");
         adios_define_var (m_adios_group, "ldim1", "", adios_integer, 0, 0, 0);
         adios_define_var (m_adios_group, "gdim1", "", adios_integer, 0, 0, 0);

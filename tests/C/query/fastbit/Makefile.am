@@ -3,9 +3,11 @@ AM_CPPFLAGS = $(all_includes)
 # ${ADIOSREADLIB_CPPFLAGS} has all the flags like -DFASTBIT -DALACRITY
 # as well as related includes, so it is needed here
 # 
-AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_srcdir)/src/ -I$(top_srcdir)/src/public/ $(MXML_CPPFLAGS)
+AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_srcdir)/src/ -I$(top_srcdir)/src/public/ 
 
 AUTOMAKE_OPTIONS = no-dependencies
+
+EXTRA_DIST = query.xml
 
 noinst_PROGRAMS = 
 
@@ -15,8 +17,9 @@ if HAVE_FASTBIT
 noinst_PROGRAMS += fastbit_tests
 
 fastbit_tests_SOURCES = fastbit_tests.c
-fastbit_tests_CPPFLAGS = ${MACRODEFFLAG}_NOMPI $(AM_CPPFLAGS)
-fastbit_tests_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_SEQ_LDADD) ${MXML_LIBS}
-fastbit_tests_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS) ${MXML_LDFLAGS}
+fastbit_tests_CPPFLAGS = $(AM_CPPFLAGS) ${ADIOSLIB_SEQ_CPPFLAGS} $(ADIOSLIB_EXTRA_CPPFLAGS)
+fastbit_tests_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD) 
+fastbit_tests_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
+
 
 endif # HAVE_FASTBIT

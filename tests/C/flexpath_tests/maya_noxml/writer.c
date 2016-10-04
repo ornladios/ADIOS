@@ -67,7 +67,7 @@ int main(int argc, char ** argv){
 	int64_t	adios_grp = 0;
 
 	// now declare a group
-	adios_declare_group(&adios_grp, "carpet_checkpoint", "", adios_flag_no);
+	adios_declare_group(&adios_grp, "carpet_checkpoint", "", adios_stat_default);
 
 	uint64_t adios_groupsize = 0;
 

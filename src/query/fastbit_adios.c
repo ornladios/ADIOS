@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 #include "core/common_read.h"
 #include "core/adios_logger.h"
+#include "core/adios_clock.h"
+#include "core/a2sel.h"
 #include <iapi.h>
 
 #include "fastbit_adios.h"
@@ -89,9 +92,9 @@ extern void casestudyLogger_frame_print()
 extern void casestudyLogger_ends(const char* ref)
 {
   unsigned long endMillis = fastbit_adios_getCurrentTimeMillis();
-  unsigned long diffmillis = endMillis - _startMillis;
 
 #ifdef TIMESTUDY
+  unsigned long diffmillis = endMillis - _startMillis;
   unsigned long diffsec = diffmillis/1000;
   if (diffsec > 60) {
     unsigned long diffmin = diffsec/60;
@@ -106,9 +109,9 @@ extern void casestudyLogger_ends(const char* ref)
 extern void casestudyLogger_getRealtime(struct timespec* spec)
 {
 #ifdef CLOCK_MONOTONIC
-  clock_gettime(CLOCK_MONOTONIC, spec);
+  adios_clock_gettime(CLOCK_MONOTONIC, spec);
 #else
-  clock_gettime(CLOCK_REALTIME, spec);
+  adios_clock_gettime(CLOCK_REALTIME, spec);
 #endif
 }
 
@@ -118,7 +121,6 @@ extern void casestudyLogger_setPrefix(const char* prefix)
 
   unsigned long currMillis = fastbit_adios_getCurrentTimeMillis();
   unsigned long diffMillis = currMillis-_startMillis;
-  unsigned long diffsec = diffMillis/1000;
 
   unsigned long ministepMillis = currMillis - _milestoneMillis;
   if (_milestoneMillis == 0) {
@@ -127,6 +129,7 @@ extern void casestudyLogger_setPrefix(const char* prefix)
     
 
 #ifdef TIMESTUDY
+  unsigned long diffsec = diffMillis/1000;
   if (diffsec > 60) {
     unsigned long diffmin = diffsec/60;
     diffsec = diffsec - diffmin*60;
@@ -268,17 +271,7 @@ extern void casestudyLogger_bms_writeout(struct timespec* start,
 //
 long fastbit_adios_getCurrentTimeMillis() 
 {
-  time_t          s;  // Seconds
-  struct timespec spec;
-
-#ifdef CLOCK_MONOTONIC
-  clock_gettime(CLOCK_MONOTONIC, &spec);
-#else
-  clock_gettime(CLOCK_REALTIME, &spec);
-#endif
-  s  = spec.tv_sec;
-  long ms = round(spec.tv_nsec/1.0e6) + s*1000; // Convert nanoseconds to milliseconds
-  return ms;
+  return adios_gettime_ms();
 }
 
 
@@ -456,7 +449,6 @@ FastBitDataType fastbit_adios_util_getFastbitDataType(enum ADIOS_DATATYPES type)
     case adios_double:
       return FastBitDataTypeDouble;
       break;
-
     case adios_long_double:
     //sprintf (s, "%Lg", ((long double *) data)[idx]);
     case adios_complex:
@@ -521,7 +513,7 @@ uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int timestep, int rel
   for (j=0; j<v->ndim; j++) 
     {  
       blockSize *= v->blockinfo[k].count[j];
-      log_debug("%llu:%llu ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
+      log_debug("%" PRIu64 ":%" PRIu64 " ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
     }
   
   log_debug("]\n");
@@ -565,11 +557,11 @@ static const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int
       break;
       
     case adios_long:
-      sprintf (s, "%lld", ((int64_t *) data)[idx]);
+      sprintf (s, "%" PRId64, ((int64_t *) data)[idx]);
       break;
       
     case adios_unsigned_long:
-      sprintf (s, "%llu", ((uint64_t *) data)[idx]);
+      sprintf (s, "%" PRIu64, ((uint64_t *) data)[idx]);
       break;
       
     case adios_real:
@@ -597,6 +589,9 @@ static const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int
       sprintf (s, "(%lg, %lg)",
 	       ((double *) data)[2*idx], ((double *) data)[2*idx+1]);
       break;
+      //default:
+      // unable to handle
+      //break;
     }
 
   return s;
@@ -662,8 +657,8 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   uint64_t count_key[] = {keyV->dims[0]};
   uint64_t count_offset[] = {offsetV->dims[0]};
 
-  ADIOS_SELECTION* keySel = common_read_selection_boundingbox(keyV->ndim, start, count_key);
-  ADIOS_SELECTION* offsetSel = common_read_selection_boundingbox(offsetV->ndim, start, count_offset);
+  ADIOS_SELECTION* keySel = a2sel_boundingbox(keyV->ndim, start, count_key);
+  ADIOS_SELECTION* offsetSel = a2sel_boundingbox(offsetV->ndim, start, count_offset);
 
   // idx file has one timestep
   common_read_schedule_read(idxFile, keySel, keyVarName, 0, 1, NULL, *keys);
@@ -674,13 +669,13 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   *nk = keyV->dims[0];
   *no = offsetV->dims[0];
 
-  log_debug(" /key/offset data: length=%lld/%lld\n", *nk, *no);
+  log_debug(" /key/offset data: length=%" PRIu64 "/%" PRIu64 "\n", *nk, *no);
   
   //printData(*bms, bmsV->type, *nb);
-  common_read_selection_delete(keySel);
+  a2sel_free(keySel);
   common_read_free_varinfo(keyV);
 
-  common_read_selection_delete(offsetSel);
+  a2sel_free(offsetSel);
   common_read_free_varinfo(offsetV);
 
   return 0;
@@ -725,9 +720,10 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   uint64_t count_key[] = {keyV->dims[0]};
   uint64_t count_offset[] = {offsetV->dims[0]};
 
-  ADIOS_SELECTION* bmsSel = common_read_selection_boundingbox(bmsV->ndim, start, count_bms);
-  ADIOS_SELECTION* keySel = common_read_selection_boundingbox(keyV->ndim, start, count_key);
-  ADIOS_SELECTION* offsetSel = common_read_selection_boundingbox(offsetV->ndim, start, count_offset);
+  ADIOS_SELECTION* bmsSel = a2sel_boundingbox(bmsV->ndim, start, count_bms);
+  ADIOS_SELECTION* keySel = a2sel_boundingbox(keyV->ndim, start, count_key);
+  ADIOS_SELECTION* offsetSel = a2sel_boundingbox(offsetV->ndim, start, count_offset);
+
 
   // idx file has one timestep
   common_read_schedule_read(idxFile, bmsSel, bmsVarName, 0, 1, NULL, *bms);
@@ -740,16 +736,16 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   *no = offsetV->dims[0];
   *nb = bmsV->dims[0];
 
-  log_debug(" bms/key/offset data: length=%lld/%lld/%lld\n", *nb, *nk, *no);
+  log_debug(" bms/key/offset data: length=%" PRIu64 "/%" PRIu64 "/%" PRIu64 "\n", *nb, *nk, *no);
   
   //printData(*bms, bmsV->type, *nb);
-  common_read_selection_delete(bmsSel);
+  a2sel_free(bmsSel);
   common_read_free_varinfo(bmsV);
 
-  common_read_selection_delete(keySel);
+  a2sel_free(keySel);
   common_read_free_varinfo(keyV);
 
-  common_read_selection_delete(offsetSel);
+  a2sel_free(offsetSel);
   common_read_free_varinfo(offsetV);
 
   return 0;
@@ -769,7 +765,7 @@ or is lined as
   if (max > size) {
     max = size;
   }
-  log_debug("  \tfirst %d data out of %lld:[", max, size);
+  log_debug("  \tfirst %d data out of %" PRIu64 ":[", max, size);
   for (i=0; i<max; i++) {
     log_debug("%s ", value_to_string(type, data, i));
   }

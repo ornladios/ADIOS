@@ -1607,6 +1607,7 @@ void adios_mpi_finalize (int mype, struct adios_method_struct * method)
         MPI_Info_free (&md->info);
     }
     adios_free_index_v1 (md->index);
+    adios_buffer_struct_clear (&md->b);
 }
 
 void adios_mpi_end_iteration (struct adios_method_struct * method)

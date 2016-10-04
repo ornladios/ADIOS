@@ -343,7 +343,7 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
             nsteps    = (int) count[vi->ndim];
         }
 
-        ADIOS_SELECTION * sel = common_read_selection_boundingbox (vi->ndim, start, count);
+        ADIOS_SELECTION * sel = a2sel_boundingbox (vi->ndim, start, count);
 
         common_read_schedule_read (afp, sel, varstr, from_step, nsteps, NULL /* NCSU ALACRITY-ADIOS */, data);
         int ret = common_read_perform_reads (afp, 1);
@@ -358,7 +358,7 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
         }
 
         common_read_free_varinfo(vi);
-        common_read_selection_delete(sel);
+        a2sel_free(sel);
         free(varstr);
     } else {
         *read_bytes = adios_errno;
@@ -432,7 +432,7 @@ void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
             }
         }
 
-        ADIOS_SELECTION * sel = common_read_selection_writeblock (idx_in_step);
+        ADIOS_SELECTION * sel = a2sel_writeblock (idx_in_step);
 
         common_read_schedule_read_byid (afp, sel, vi->varid, step, 1, NULL /* NCSU ALACRITY-ADIOS */, data);
         int ret = common_read_perform_reads (afp, 1);
@@ -446,7 +446,7 @@ void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
         }
 
         common_read_free_varinfo(vi);
-        common_read_selection_delete(sel);
+        a2sel_free(sel);
         free(varstr);
 
     } else {

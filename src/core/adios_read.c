@@ -11,6 +11,8 @@
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
 #include "core/common_read.h"
+#include "core/a2sel.h"
+#include "core/adios_selection_util.h"
 #define BYTE_ALIGN 8
 
 
@@ -190,7 +192,7 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type)
     return common_read_type_to_string (type);
 }
 
-int adios_type_size(enum ADIOS_DATATYPES type, void *data)
+int adios_type_size(enum ADIOS_DATATYPES type, const void *data)
 {
     return common_read_type_size(type, data);
 }
@@ -213,27 +215,31 @@ void adios_print_fileinfo (ADIOS_FILE *fp)
 
 ADIOS_SELECTION * adios_selection_boundingbox (int ndim, const uint64_t *start, const uint64_t *count)
 {
-    return common_read_selection_boundingbox (ndim, start, count);
+    return a2sel_boundingbox (ndim, start, count);
 }
 
 ADIOS_SELECTION * adios_selection_points (int ndim, uint64_t npoints, const uint64_t *points)
 {
-    return common_read_selection_points (ndim, npoints, points);
+    return a2sel_points (ndim, npoints, points, NULL, 0);
 }
 
 ADIOS_SELECTION * adios_selection_writeblock (int index)
 {
-    return common_read_selection_writeblock (index);
+    return a2sel_writeblock (index);
 }
 
 ADIOS_SELECTION * adios_selection_auto (char *hints)
 {
-    return common_read_selection_auto (hints);
+    return a2sel_auto (hints);
 }
 
 void adios_selection_delete (ADIOS_SELECTION *sel)
 {
-    common_read_selection_delete (sel);
+    a2sel_free (sel);
 }
 
+ADIOS_SELECTION * adios_selection_points_1DtoND (ADIOS_SELECTION * pointsinbox1D, int global)
+{
+    return a2sel_points_1DtoND (pointsinbox1D, global);
+}
 

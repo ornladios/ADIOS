@@ -140,14 +140,14 @@ void adios_pin_timestep(uint32_t ts) {
 
 /////////////////
 //Yuan: check for number of ts to be buffered from XML  
-static int get_ts_buffering(char *parameters)
+static uint64_t get_ts_buffering(char *parameters)
 {
     char *temp_string, *p_count;
-    uint64_t bts=0;
+    int64_t bts=0;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
+    a2s_trim_spaces (temp_string);
 
     //get the buffer size from XML in bytes
     if ( (p_count = strstr (temp_string, "ts_buffersize")) )
@@ -165,7 +165,7 @@ static int get_ts_buffering(char *parameters)
         bts=0;
     }
 
-    return bts;
+    return (uint64_t) bts;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -182,7 +182,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
 
     int64_t group_id = 0;
     struct adios_file_struct * fd = (struct adios_file_struct *)
-                                      malloc (sizeof (struct adios_file_struct));
+                                              malloc (sizeof (struct adios_file_struct));
     struct adios_group_struct * g = 0;
     struct adios_method_list_struct * methods = 0;
     enum ADIOS_METHOD_MODE mode;
@@ -253,22 +253,23 @@ int common_adios_open (int64_t * fd_p, const char * group_name
         else
             MPI_Comm_dup(comm, &fd->comm);
     }
-    else
-        //printf("skip file name and group assignment\n");
+    /*else
+        printf("skip file name and group assignment\n");
+    */
 
 
 #if 1
+
         /* Time index magic done here */
         if (mode == adios_mode_write)
         {
             /* Traditionally, time=1 at the first step, and for subsequent file
-       creations, time increases. Although, each file contains one step,
-       the time index indicates that they are in a series.
+           creations, time increases. Although, each file contains one step,
+           the time index indicates that they are in a series.
              */
-
-            //printf("time_index=%lu group_tindex=%lu\n", g->time_index, fd->group->time_index);
             g->time_index++;
         }
+
     /* FIXME: the time_index is updated in the actual method in case of append/update
    so this code below is useless */
 #  if 0 
@@ -365,15 +366,14 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             gettimeofday(&tp, NULL);
             sprintf(epoch, "%d", (int) tp.tv_sec);
 
-            /* Yuan: norbert's fix of growing attr size
-            int def_adios_init_attrs = 1;
-            // if we append/update, define these attributes only at the first step
-            if (fd->mode != adios_mode_write && fd->group->time_index > 1)
-                def_adios_init_attrs = 0;
-
-            if (def_adios_init_attrs) {
+            /* FIXME: this code works fine, it does not duplicate the attribute,
+               but the index will still contain all copies and the read will see
+               only the first one. Thus updating an attribute does not work
+               in practice.
              */
-            if (fd->group->time_index == 1) {
+
+            if (fd->group->time_index == 1)
+            {
                 log_debug ("Define ADIOS extra attributes, "
                         "time = %d, rank = %d, epoch = %s subfile=%d\n",
                         fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
@@ -389,11 +389,6 @@ int common_adios_open (int64_t * fd_p, const char * group_name
                 fd->group->attrid_update_epoch = fd->group->member_count;
 
             }
-            /* FIXME: this code works fine, it does not duplicate the attribute,
-               but the index will still contain all copies and the read will see
-               only the first one. Thus updating an attribute does not work
-               in practice.
-             */
             else
             {
                 // update attribute of update time (define would duplicate it)
@@ -1531,7 +1526,7 @@ int common_adios_close (int64_t fd_p)
     timer_stop ("adios_open_to_close");
     //    printf ("Timers, ");
     //    printf ("%d, ", fd->group->process_id);
-    //    printf ("%d, ", fd->group- >time_index);
+    //    printf ("%d, ", fd->group->time_index);
     //    printf ("%lf, ", timer_get_total_interval ("adios_open" ));
     //    printf ("%lf, ", timer_get_total_interval ("adios_group_size"));
     //    printf ("%lf, ", timer_get_total_interval ("adios_transform" ));

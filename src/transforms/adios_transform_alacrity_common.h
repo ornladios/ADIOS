@@ -13,7 +13,7 @@
 #include <public/adios_error.h>
 //#include <assert.h>
 
-#include <memstream.h> // From ALACRITY, helps with (de)serialization of metadata
+#include <alacrity-memstream.h> // From ALACRITY, helps with (de)serialization of metadata
 
 typedef struct {
 	// Loaded from transform metadata buffer

@@ -1011,29 +1011,39 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
     ADIOS_TRANSINFO *ti;
 
     int retval = err_no_error;
-    // If the blockinfo is already loaded, don't load it again
-    if (!varinfo->blockinfo) {
-        // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
-        // If we're in logical view mode, and if this variable is transformed, use the transformed blockinfo
-        if (internals->data_view == LOGICAL_DATA_VIEW) {
-            ti = common_read_inq_transinfo(fp, varinfo);
-            if (ti && ti->transform_type != adios_transform_none) {
-                retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
-                if (retval != err_no_error)
-                    return retval;
-
-                patch_varinfo_with_transform_blockinfo(varinfo, ti);
-            }
-            common_read_free_transinfo(varinfo, ti);
-        }
-
-        // If we haven't set the blockinfo yet, either we're in physical view
-        // mode, or the variable isn't transformed. Either way, use the normal
-        // blockinfo
-        if (!varinfo->blockinfo) {
-            retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
+    // If the blockinfo has already been created
+    if (varinfo->blockinfo) {
+        if (fp->is_streaming) {
+            // free it and start again - because it may change in streaming
+            common_read_free_blockinfo (&varinfo->blockinfo, varinfo->sum_nblocks);
+            varinfo->blockinfo = NULL;
+        } else {
+            // return without modification
+            return retval;
         }
     }
+
+    // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
+    // If we're in logical view mode, and if this variable is transformed, use the transformed blockinfo
+    if (internals->data_view == LOGICAL_DATA_VIEW) {
+        ti = common_read_inq_transinfo(fp, varinfo);
+        if (ti && ti->transform_type != adios_transform_none) {
+            retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
+            if (retval != err_no_error)
+                return retval;
+
+            patch_varinfo_with_transform_blockinfo(varinfo, ti);
+        }
+        common_read_free_transinfo(varinfo, ti);
+    }
+
+    // If we haven't set the blockinfo yet, either we're in physical view
+    // mode, or the variable isn't transformed. Either way, use the normal
+    // blockinfo
+    if (!varinfo->blockinfo) {
+        retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
+    }
+
     return retval;
 }
 
@@ -1148,6 +1158,7 @@ void common_read_free_varinfo (ADIOS_VARINFO *vp)
         if (vp->value)   MYFREE(vp->value);
         if (vp->nblocks) MYFREE(vp->nblocks);
         if (vp->meshinfo) MYFREE(vp->meshinfo);
+        if (vp->attr_ids) MYFREE(vp->attr_ids);
         free(vp);
     }
 }
@@ -3714,8 +3725,7 @@ void common_read_free_chunk (ADIOS_VARCHUNK *chunk)
      */
      if (chunk) {
         if (chunk->sel) {
-            free_selection(chunk->sel);
-            //free(chunk->sel);
+            a2sel_free(chunk->sel);
             chunk->sel = NULL;
         }
         free(chunk);
@@ -3808,7 +3818,7 @@ const char * common_read_type_to_string (enum ADIOS_DATATYPES type)
 }
 
 
-int common_read_type_size(enum ADIOS_DATATYPES type, void *data)
+int common_read_type_size(enum ADIOS_DATATYPES type, const void *data)
 {
     return bp_get_type_size(type, data);
 }
@@ -3956,68 +3966,5 @@ void common_read_print_fileinfo (const ADIOS_FILE *fp)
 }
 
 
-/**    SELECTIONS   **/
-ADIOS_SELECTION * common_read_selection_boundingbox (int ndim, const uint64_t *start, const uint64_t *count)
-{
-    adios_errno = err_no_error;
-    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
-    if (sel) {
-        sel->type = ADIOS_SELECTION_BOUNDINGBOX;
-        sel->u.bb.ndim = ndim;
-        sel->u.bb.start = (uint64_t *)start;
-        sel->u.bb.count = (uint64_t *)count;
-    } else {
-        adios_error(err_no_memory, "Cannot allocate memory for bounding box selection\n");
-    }
-    return sel;
-}
 
 
-ADIOS_SELECTION * common_read_selection_points (int ndim, uint64_t npoints, const uint64_t *points)
-{
-    adios_errno = err_no_error;
-    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
-    if (sel) {
-        sel->type = ADIOS_SELECTION_POINTS;
-        sel->u.points.ndim = ndim;
-        sel->u.points.npoints = npoints;
-        sel->u.points.points = (uint64_t *) points;
-    } else {
-        adios_error(err_no_memory, "Cannot allocate memory for points selection\n");
-    }
-    return sel;
-}
-
-ADIOS_SELECTION * common_read_selection_writeblock (int index)
-{
-    adios_errno = err_no_error;
-    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
-    if (sel) {
-        sel->type = ADIOS_SELECTION_WRITEBLOCK;
-        sel->u.block.index = index;
-        // NCSU ALACRITY-ADIOS: Set the writeblock selection to be a full-PG selection by default
-        sel->u.block.is_absolute_index = 0;
-        sel->u.block.is_sub_pg_selection = 0;
-    } else {
-        adios_error(err_no_memory, "Cannot allocate memory for writeblock selection\n");
-    }
-    return sel;
-}
-
-ADIOS_SELECTION * common_read_selection_auto (char *hints)
-{
-    adios_errno = err_no_error;
-    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
-    if (sel) {
-        sel->type = ADIOS_SELECTION_AUTO;
-        sel->u.autosel.hints = hints;
-    } else {
-        adios_error(err_no_memory, "Cannot allocate memory for auto selection\n");
-    }
-    return sel;
-}
-
-void common_read_selection_delete (ADIOS_SELECTION *sel)
-{
-    free(sel);
-}

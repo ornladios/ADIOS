@@ -61,43 +61,16 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f)
     for (timestep = queryInfo->fromStep; timestep < queryInfo->fromStep + queryInfo->numSteps; timestep ++) {
         fprintf(stderr,"querying on timestep %d \n", timestep );
 
-        ADIOS_SELECTION* currBatch = NULL;
-        while ( adios_query_evaluate(queryInfo->query, queryInfo->outputSelection, timestep, queryInfo->batchSize, &currBatch)) {
-
-            assert(currBatch->type ==ADIOS_SELECTION_POINTS);
-            const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
-            fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints);
-
-            printPoints(retrievedPts, timestep);
-
-            int elmSize = adios_type_size(tempVar->type, NULL);
-            void *data = malloc(retrievedPts->npoints * elmSize);
-
-            // check returned temp data
-            adios_schedule_read_byid(f, currBatch, tempVar->varid, timestep , 1, data);
-            adios_schedule_read (f, currBatch, queryInfo->varName, timestep , 1, data);
-            adios_perform_reads(f, 1);
-
-            fprintf(stderr,"Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
-            if (tempVar->type == adios_double) {
-                for (i = 0; i < retrievedPts->npoints; i++) {
-                    fprintf(stderr,"%.6f\t", ((double*)data)[i]);
-                }
-                fprintf(stderr,"\n");
-            }
-            else if (tempVar->type == adios_real) {
-                for (i = 0; i < retrievedPts->npoints; i++) {
-                    fprintf(stderr,"%.6f\t", ((float*)data)[i]);
-                }
-                fprintf(stderr,"\n");
-            }
-
-
-            free(data);
-            adios_selection_delete(currBatch);
-            currBatch = NULL;
-
-        }
+        ADIOS_QUERY_RESULT *queryResult  = NULL;
+        do {
+        	if ( queryResult != NULL) {
+        		free(queryResult);
+        		queryResult = NULL;
+        	}
+        	queryResult = adios_query_evaluate(queryInfo->query, queryInfo->outputSelection, timestep, queryInfo->batchSize);
+        	// since it returns offsets, rather than coordinates, I dont know how to retrieve data based on offsets
+            fprintf(stderr,"Total data retrieved:%"PRIu64"\n", queryResult ->npoints );
+        }while ( queryResult->status == ADIOS_QUERY_HAS_MORE_RESULTS );
 
     }
 

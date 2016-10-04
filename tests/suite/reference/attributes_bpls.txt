@@ -12,7 +12,7 @@ File info:
   integer  rank                          scalar = 0
   double   mean                          scalar = 4.5
   string   date                          scalar = "Nov, 2009"
-  double   temperature                   {5, 10} = 0 / 49 / 24.5 / 14.4309
+  double   temperature                   {5, 10} = 0 / 49 / null  / null 
   integer  temperature/number of levels  attr   = 1
   string   temperature/description       attr   = "Global array written from 'size' processes"
   double   temperature/mean value        attr   = 4.5

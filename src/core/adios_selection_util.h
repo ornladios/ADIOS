@@ -38,6 +38,7 @@ ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLO
                                                   int timestep,
                                                   const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO *transinfo);
 
-ADIOS_SELECTION * adios_selection_intersect_local(const ADIOS_SELECTION *s1, const ADIOS_SELECTION *s2, int timestep, const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO *transinfo);
+ADIOS_SELECTION * adios_selection_intersect_local(const ADIOS_SELECTION *s1, const ADIOS_SELECTION *s2, int timestep,
+                                                  const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO *transinfo);
 
 #endif /* ADIOS_SELECTION_UTIL_H_ */

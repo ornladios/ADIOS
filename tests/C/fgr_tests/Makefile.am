@@ -9,7 +9,7 @@ posix_fgr_SOURCES = posix_fgr.c
 posix_fgr_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
 posix_fgr_CFLAGS = $(ADIOSLIB_CFLAGS)
 posix_fgr_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-posix_fgr_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
+posix_fgr_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
 CLEANFILES = posix_fgr.bp
 CC=$(MPICC)

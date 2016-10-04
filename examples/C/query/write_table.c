@@ -28,6 +28,7 @@
 #include <string.h>
 #include "adios.h"
 #include "adios_types.h"
+#include "adios_query.h" // to ask about availability of ALACRITY
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -46,7 +47,7 @@
 const int NX = 10;
 const int NY = 7;
 
-int32_t A[10][7] = { 
+float A[10][7] = {
 /*   id, Elem,   P,   KE,   x,  y,  z */
     {0,   0,     97,  15,   8,  0,  7},
     {1,   0,     96,  16,   5, -1,  7},
@@ -94,11 +95,18 @@ int main (int argc, char ** argv)
 	adios_init_noxml (comm);
 	adios_set_max_buffer_size (1);
 
-	adios_declare_group (&g, "table", "", adios_flag_yes);
+	adios_declare_group (&g, "table", "", adios_stat_default);
 	adios_select_method (g, "POSIX", "", "");
 
 	sprintf (dimstr, "%d,%d", NX, NY);
-	adios_define_var (g, "A" ,"", adios_integer, dimstr, dimstr, "0,0");
+	int64_t varA = adios_define_var (g, "A" ,"", adios_real, dimstr, dimstr, "0,0");
+
+	adios_read_init_method(ADIOS_READ_METHOD_BP,0,"");
+    if (adios_query_is_method_available (ADIOS_QUERY_METHOD_ALACRITY)) {
+        adios_set_transform (varA, "alacrity");
+        printf ("Turned on ALACRITY transformation for table A\n");
+    }
+
 	sprintf (dimstr, "%d,%d", n_of_elements, Elements_length);
 	adios_define_var (g, "Elements" ,"", adios_byte, dimstr, dimstr, "0,0");
 	sprintf (dimstr, "%d,%d", NY, Columns_length);

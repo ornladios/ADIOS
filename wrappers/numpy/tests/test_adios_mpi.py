@@ -16,7 +16,7 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 ## Writing
-print "\n>>> Writing ... (rank = %d)\n" % rank
+print("\n>>> Writing ... (rank = %d)\n" % rank)
 
 config = "config_mpi.xml"
 if len(sys.argv) > 1:
@@ -27,7 +27,7 @@ fd = ad.open("temperature", "adios_test_mpi.bp", "w", comm)
 
 NX = 10
 groupsize =  4 + 4 + 4 + 8 * 1 * NX
-t = np.array(range(NX), dtype=np.float64) + rank*NX
+t = np.array(list(range(NX)), dtype=np.float64) + rank*NX
 ad.set_group_size(fd, groupsize)
 ad.write_int(fd, "NX", NX)
 ad.write_int(fd, "rank", rank)
@@ -39,7 +39,7 @@ ad.finalize()
 
 ## Reading
 if rank == 0:
-    print "\n>>> Reading ...\n"
+    print("\n>>> Reading ...\n")
 
     f = ad.file("adios_test_mpi.bp", comm=MPI.COMM_SELF)
     f.printself()
@@ -48,17 +48,17 @@ if rank == 0:
     v.printself()
 
     val = v.read()
-    print val
+    print(val)
     assert (int(np.sum(val)) == (size*NX-1)*(size*NX)/2)
     f.close()
 
-print "\n>>> Done.\n"
+print("\n>>> Done.\n")
 
 ## Testing
 if rank == 0:
-    print "\n>>> Test utility functions ...\n"
+    print("\n>>> Test utility functions ...\n")
 
-    print "bpls:\n", ad.bpls('adios_test_mpi.bp')
-    print "readvar:\n", ad.readvar("adios_test_mpi.bp", "temperature")
+    print("bpls:\n", ad.bpls('adios_test_mpi.bp'))
+    print("readvar:\n", ad.readvar("adios_test_mpi.bp", "temperature"))
 
-    print "\n>>> Done.\n"
+    print("\n>>> Done.\n")
