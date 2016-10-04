@@ -77,9 +77,9 @@ int common_adios_finalize (int mype)
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_finalize_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_finalize_fn
+        )
         {
             adios_transports [m->method->m].adios_finalize_fn (mype, m->method);
         }
@@ -96,12 +96,12 @@ int common_adios_finalize (int mype)
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
-                                 ,uint64_t buffer_size)
+                                  ,uint64_t buffer_size)
 {
     adios_errno = err_no_error;
     log_warn ("adios_allocate_buffer is not supported anymore. "
-              "Use adios_set_max_buffer_size(size_in_MB) to set the maximum allowed "
-              "buffer size for each adios_open()...adios_close() operation.\n");
+            "Use adios_set_max_buffer_size(size_in_MB) to set the maximum allowed "
+            "buffer size for each adios_open()...adios_close() operation.\n");
     //adios_buffer_size_requested_set (buffer_size * 1024 * 1024);
     //adios_buffer_alloc_when_set (adios_buffer_alloc_when);
     //adios_set_buffer_size ();
@@ -112,15 +112,15 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
 // Drew: used for experiments
 static uint32_t pinned_timestep = 0;
 void adios_pin_timestep(uint32_t ts) {
-  pinned_timestep = ts;
+    pinned_timestep = ts;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
 
 int common_adios_open (int64_t * fd_p, const char * group_name
-                ,const char * name, const char * file_mode, MPI_Comm comm
-               )
+                       ,const char * name, const char * file_mode, MPI_Comm comm
+)
 {
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_open_to_close");
@@ -129,7 +129,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
 
     int64_t group_id = 0;
     struct adios_file_struct * fd = (struct adios_file_struct *)
-                                  malloc (sizeof (struct adios_file_struct));
+                                          malloc (sizeof (struct adios_file_struct));
     struct adios_group_struct * g = 0;
     struct adios_method_list_struct * methods = 0;
     enum ADIOS_METHOD_MODE mode;
@@ -140,8 +140,8 @@ int common_adios_open (int64_t * fd_p, const char * group_name
     g = (struct adios_group_struct *) group_id;
     if (!g) {
         adios_error(err_invalid_group, 
-                "adios_open: try to open file %s with undefined group: %s\n", 
-                name, group_name);
+                    "adios_open: try to open file %s with undefined group: %s\n",
+                    name, group_name);
         *fd_p = 0;
         return adios_errno;
     }
@@ -160,8 +160,8 @@ int common_adios_open (int64_t * fd_p, const char * group_name
                 else
                 {
                     adios_error(err_invalid_file_mode,
-                        "adios_open: unknown file mode: %s, supported r,w,a,u\n",
-                        file_mode);
+                                "adios_open: unknown file mode: %s, supported r,w,a,u\n",
+                                file_mode);
 
                     *fd_p = 0;
 
@@ -187,7 +187,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
         /* Traditionally, time=1 at the first step, and for subsequent file
            creations, time increases. Although, each file contains one step,
            the time index indicates that they are in a series.
-        */
+         */
         g->time_index++;
     }
     /* FIXME: the time_index is updated in the actual method in case of append/update
@@ -202,7 +202,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
         /* Update from Append differs only in the time index. All methods had
            code for Append, now for Update we decrease the counter by one,
            for all methods. (But do not go below 1).
-        */
+         */
         g->time_index--;
     }
 #  endif
@@ -223,12 +223,12 @@ int common_adios_open (int64_t * fd_p, const char * group_name
     while (methods)
     {
         if (   methods->method->m != ADIOS_METHOD_UNKNOWN
-            && methods->method->m != ADIOS_METHOD_NULL
-            && adios_transports [methods->method->m].adios_open_fn
-           )
+                && methods->method->m != ADIOS_METHOD_NULL
+                && adios_transports [methods->method->m].adios_open_fn
+        )
         {
             adios_transports [methods->method->m].adios_open_fn
-                                                 (fd, methods->method, fd->comm);
+            (fd, methods->method, fd->comm);
         }
 
         methods = methods->next;
@@ -312,10 +312,10 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             if (   methods->method->m != ADIOS_METHOD_UNKNOWN
                     && methods->method->m != ADIOS_METHOD_NULL
                     && adios_transports [methods->method->m].adios_should_buffer_fn
-               )
+            )
             {
                 bufstrat = adios_transports [methods->method->m].
-                                            adios_should_buffer_fn (fd, methods->method);
+                        adios_should_buffer_fn (fd, methods->method);
             }
 
             if (bufstrat != no_buffering) {
@@ -391,7 +391,7 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
     {
         *total_size = 0;
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_stop ("adios_group_size");
+        timer_stop ("adios_group_size");
 #endif
         return err_no_error;
     }
@@ -429,9 +429,9 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
         if (adios_databuffer_resize (fd, *total_size))
         {
             log_warn ("Cannot reallocate data buffer to %" PRIu64 " bytes "
-                    "for group %s in adios_group_size(). Continue buffering "
-                    "with buffer size %" PRIu64 " MB\n",
-                    *total_size, fd->group->name, fd->buffer_size/1048576L);
+                      "for group %s in adios_group_size(). Continue buffering "
+                      "with buffer size %" PRIu64 " MB\n",
+                      *total_size, fd->group->name, fd->buffer_size/1048576L);
         }
     }
 
@@ -582,7 +582,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
                     if (   m->method->m != ADIOS_METHOD_UNKNOWN
                             && m->method->m != ADIOS_METHOD_NULL
                             && adios_transports [m->method->m].adios_buffer_overflow_fn
-                       )
+                    )
                     {
                         adios_transports [m->method->m].adios_buffer_overflow_fn (fd, m->method);
                     }
@@ -598,9 +598,9 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
                         if (adios_databuffer_resize (fd, vsize+1024))
                         {
                             adios_error (err_no_memory, "adios_write(): buffer cannot accommodate variable %s/%s "
-                                    "with its storage size of %" PRIu64 " bytes at all. "
-                                    "No more variables will be written.\n", v->path, v->name, vsize);
-                                    //"This variable won't be written.\n", v->path, v->name, vsize);
+                                         "with its storage size of %" PRIu64 " bytes at all. "
+                                         "No more variables will be written.\n", v->path, v->name, vsize);
+                            //"This variable won't be written.\n", v->path, v->name, vsize);
                             fd->bufstate = buffering_stopped;
                             /* FIXME: This stops all writing, not just this variable! */
                             /* FIXME: so maybe we should give the method a chance to write this variable directly? */
@@ -646,7 +646,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     else // Else, do a transform
     {
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_start ("adios_transform");
+        timer_start ("adios_transform");
 #endif
         int success = common_adios_write_transform_helper(fd, v);
         if (success) {
@@ -657,7 +657,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             // FIXME: Reverse the transform metadata and write raw data as usual
         }
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_stop ("adios_transform");
+        timer_stop ("adios_transform");
 #endif
     }
 
@@ -670,10 +670,10 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             if (   m->method->m != ADIOS_METHOD_UNKNOWN
                     && m->method->m != ADIOS_METHOD_NULL
                     && adios_transports [m->method->m].adios_write_fn
-               )
+            )
             {
                 adios_transports [m->method->m].adios_write_fn
-                    (fd, v, var, m->method);
+                (fd, v, var, m->method);
             }
 
             m = m->next;
@@ -698,7 +698,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             free(v->adata);
         }
         v->data = v->adata = 0; // throw away pointers to user data in case of arrays to avoid trying
-                                // to free them in possible forthcoming adios_write() of the same variable
+        // to free them in possible forthcoming adios_write() of the same variable
     }
 
     if (!adios_errno) {
@@ -801,9 +801,9 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_get_write_buffer (int64_t fd_p, const char * name
-                           ,uint64_t * size
-                           ,void ** buffer
-                           )
+                                   ,uint64_t * size
+                                   ,void ** buffer
+)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     adios_errno = err_no_error;
@@ -837,12 +837,12 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
     while (m)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_get_write_buffer_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_get_write_buffer_fn
+        )
         {
             adios_transports [m->method->m].adios_get_write_buffer_fn
-                                (fd, v, size, buffer, m->method);
+            (fd, v, size, buffer, m->method);
             m = 0;
         }
         else
@@ -855,8 +855,8 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
 ///////////////////////////////////////////////////////////////////////////////
 
 int common_adios_read (int64_t fd_p, const char * name, void * buffer
-               ,uint64_t buffer_size
-               )
+                       ,uint64_t buffer_size
+)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     adios_errno = err_no_error;
@@ -892,17 +892,17 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
         while (m)
         {
             if (   m->method->m != ADIOS_METHOD_UNKNOWN
-                && m->method->m != ADIOS_METHOD_NULL
-                && adios_transports [m->method->m].adios_read_fn
-               )
+                    && m->method->m != ADIOS_METHOD_NULL
+                    && adios_transports [m->method->m].adios_read_fn
+            )
             {
                 adios_transports [m->method->m].adios_read_fn
-                                     (fd, v, buffer, buffer_size, m->method);
+                (fd, v, buffer, buffer_size, m->method);
                 m = 0;
             }
             else
                 m = m->next;
-    }
+        }
     }
     else
     {
@@ -971,8 +971,8 @@ int common_adios_set_path (int64_t fd_p, const char * path)
 // The variable is not replaced with the new path in the hash table here, so
 // it is still found using the old path!
 int common_adios_set_path_var (int64_t fd_p, const char * path
-                       ,const char * name
-                       )
+                               ,const char * name
+)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     adios_errno = err_no_error;
@@ -1030,12 +1030,12 @@ int common_adios_end_iteration ()
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_end_iteration_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_end_iteration_fn
+        )
         {
             adios_transports [m->method->m].adios_end_iteration_fn
-                                                (m->method);
+            (m->method);
         }
     }
 
@@ -1052,12 +1052,12 @@ int common_adios_start_calculation ()
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_start_calculation_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_start_calculation_fn
+        )
         {
             adios_transports [m->method->m].adios_start_calculation_fn
-                                                  (m->method);
+            (m->method);
         }
     }
 
@@ -1074,12 +1074,12 @@ int common_adios_stop_calculation ()
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_stop_calculation_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_stop_calculation_fn
+        )
         {
             adios_transports [m->method->m].adios_stop_calculation_fn
-                                                   (m->method);
+            (m->method);
         }
     }
 
@@ -1107,8 +1107,8 @@ int common_adios_close (int64_t fd_p)
     {
         // nothing to do so just return
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_stop ("adios_close");
-    timer_stop ("adios_open_to_close");
+        timer_stop ("adios_close");
+        timer_stop ("adios_open_to_close");
 #endif
         return 0;
     }
@@ -1181,12 +1181,12 @@ int common_adios_close (int64_t fd_p)
     for (;m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_close_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_close_fn
+        )
         {
             adios_transports [m->method->m].adios_close_fn
-                                 (fd, m->method);
+            (fd, m->method);
         }
     }
 
@@ -1221,7 +1221,7 @@ int common_adios_close (int64_t fd_p)
     int name_len = strlen (fd->name);
     int fn_len = name_len + strlen (extension) + 1;
     char* fn = (char*) malloc (sizeof (char) * fn_len);
-    
+
     sprintf (fn, "%s%s", fd->name, extension);
 
     adios_timing_write_xml_common (fd_p, fn);
@@ -1242,15 +1242,15 @@ int common_adios_close (int64_t fd_p)
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_close");
     timer_stop ("adios_open_to_close");
-//    printf ("Timers, ");
-//    printf ("%d, ", fd->group->process_id);
-//    printf ("%d, ", fd->group->time_index);
-//    printf ("%lf, ", timer_get_total_interval ("adios_open" ));
-//    printf ("%lf, ", timer_get_total_interval ("adios_group_size"));
-//    printf ("%lf, ", timer_get_total_interval ("adios_transform" ));
-//    printf ("%lf, ", timer_get_total_interval ("adios_write" ));
-//    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
-//    timer_reset_timers ();
+    //    printf ("Timers, ");
+    //    printf ("%d, ", fd->group->process_id);
+    //    printf ("%d, ", fd->group->time_index);
+    //    printf ("%lf, ", timer_get_total_interval ("adios_open" ));
+    //    printf ("%lf, ", timer_get_total_interval ("adios_group_size"));
+    //    printf ("%lf, ", timer_get_total_interval ("adios_transform" ));
+    //    printf ("%lf, ", timer_get_total_interval ("adios_write" ));
+    //    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
+    //    timer_reset_timers ();
 
     printf("[TIMERS] Proc: %d Time: %d ", fd->group->process_id, fd->group->time_index);
     int i;
