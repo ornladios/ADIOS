@@ -53,6 +53,7 @@ dist_template_DATA=\
         etc/templates/replay.tmpl \
         etc/templates/replay_yaml.tmpl \
         etc/templates/source_write_c.tmpl \
+        etc/templates/source_write_c_xml.tmpl \
         etc/templates/source_write_fortran.tmpl \
         etc/templates/submit_nautilus.tmpl \
         etc/templates/submit_sith.tmpl \

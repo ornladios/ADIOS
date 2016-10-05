@@ -9,9 +9,9 @@ import skel_bpy
 import skel_settings
 
 
-def generate_c (outfile, config, params, test):
+def generate_c (outfile, config, params, test, args):
     if test.get_type() == 'write':
-        generate_c_write (outfile, config, params, test)
+        generate_c_write (outfile, config, params, test, args)
     elif test.get_type() == 'read_all':
         generate_c_read_all (outfile, config, params, test)
 
@@ -22,13 +22,39 @@ def generate_fortran (outfile, config, params, test):
     elif test.get_type() == 'read_all':
         generate_c_read_all (outfile, config, params, test)
 
-def generate_c_write (outfile, config, params, test):
+def generate_c_write (outfile, config, params, test, args):
     
     outfile = outfile.replace ('.c', '_write.c')
     measure = test.get_measure()
 
     #print 'opening ' + outfile
     c_file = open (outfile, 'w')
+
+    filetype = ".c"
+    template_file_name = "~/.skel/templates/source_write_c_xml.tmpl"
+
+    # Determine outfile name
+    extension = '_skel' 
+    outfilename = args.project + extension + filetype
+
+    c_file = open (outfilename, 'w')
+
+
+    # Now for the Cheetah magic:
+    from Cheetah.Template import Template
+    template_file = open (os.path.expanduser(template_file_name), 'r')
+    t = Template(file=template_file)
+
+    t.config = config
+    t.params = params
+    t.project = args.project
+    t.noxml = args.noxml
+    c_file.write (str(t) )
+
+
+
+
+def end_of_old_gen_c_write():
 
     # Look at all of the groups, Generate the code when we find the requested group
     # The loop is left over from a previous iteration, it could very well be removed.
@@ -744,7 +770,7 @@ def create_source_from_xml (args, config):
             extension = '_skel_' + test.get_group_name()
             outfilename = args.project + extension + filetype
 
-            generate (outfilename, config, params, test)
+            generate (outfilename, config, params, test, args)
 
 
 
