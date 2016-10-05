@@ -72,6 +72,9 @@ AC_SEARCH_LIBS([nanosleep], [rt])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([nanosleep gettimeofday clock_gettime clock_get_time strncpy strerror])
 
+AC_CHECK_HEADERS([time.h])
+AC_CHECK_TYPES([clockid_t], [], [], [[#include <time.h>]])
+
 AC_C_STRINGIZE
 dnl generates HAVE_STRINGIZE
 AC_FUNC_STRTOLD
