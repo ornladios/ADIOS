@@ -100,7 +100,7 @@ else
     dnl else
     dnl     LIBS="$LIBS -ldspaces -ldscommon -ldart"
     dnl fi
-    LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    LIBS="-ldspaces -ldscommon -ldart $LIBS"
     LDFLAGS="$LDFLAGS $DATASPACES_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DATASPACES_CPPFLAGS"
     CC="$MPICC"
