@@ -2940,12 +2940,13 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
             // NCSU ALACRITY-ADIOS - Clear the transform metadata
             adios_transform_clear_transform_characteristic(&root->characteristics[i].transform);
 
-            /*if (root->characteristics [i].value) {
+            if (root->characteristics [i].value) {
                 if (root->type == adios_string_array)
-                    free_string_array (root->characteristics [i].value, root->nelems);
+                    a2s_free_string_array (root->characteristics [i].value, root->nelems);
                 else
                     free (root->characteristics [i].value);
-            }*/
+                root->characteristics [i].value = NULL;
+            }
         }
 
         if (root->characteristics)
@@ -3741,7 +3742,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             a_index->nelems = a->nelems;
             a_index->characteristics_count = 1;
             a_index->characteristics_allocated = 1;
-            //uint64_t size = a_index->nelems * adios_get_type_size (a->type, a->value);
+            uint64_t size = a_index->nelems * adios_get_type_size (a->type, a->value);
 
             // pg_file_offsets [pgid] is now the last PG's start offset, which is the base
             // offset for attributes
@@ -3760,24 +3761,41 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             adios_transform_init_transform_characteristic(&a_index->characteristics[0].transform);
             //a_index->characteristics[0].transform_type = adios_transform_none;
 
-            a_index->characteristics [0].value = a->value;
+
             /* Do not copy the attributes to index, since they don't change */
-            /*
+            /* a_index->characteristics [0].value = a->value;*/
+            /* Actually, let's copy, so we can free all attribute indices, both these ones created from attributes and
+             * those that get read in from file or other processors and merged into the index. The latter ones are
+             * always allocated, not linked to an existing attribute's value.
+             */
+
             if (a->value)
             {
-                if (a->type == adios_string) 
-                    size++;
-                a_index->characteristics [0].value = malloc (size);
-                if (a->type == adios_string) 
-                    ((char *) (a_index->characteristics [0].value)) [size] = 0;
-                memcpy (a_index->characteristics [0].value, a->value, size);
+                if (a->type == adios_string_array)
+                {
+                    char ** sa = (char**) malloc (a->nelems*sizeof(char*));
+                    a_index->characteristics [0].value = sa;
+                    int i;
+                    for (i=0; i<a->nelems; i++) {
+                        sa[i] = strdup (  ((char**)a->value)[i]);
+                    }
+                }
+                else
+                {
+                    if (a->type == adios_string)
+                        size++;
+                    a_index->characteristics [0].value = malloc (size);
+                    if (a->type == adios_string)
+                        ((char *) (a_index->characteristics [0].value)) [size] = 0;
+                    memcpy (a_index->characteristics [0].value, a->value, size);
+                }
 
             }
             else
             {
                 a_index->characteristics [0].value = 0;
             }
-            */
+
 
             if (a_index->nelems > 1) {
                 // for array attributes, save nelems as a dimension characteristic
