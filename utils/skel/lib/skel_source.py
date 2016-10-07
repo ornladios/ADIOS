@@ -18,7 +18,7 @@ def generate_c (outfile, config, params, test, args):
 
 def generate_fortran (outfile, config, params, test):
     if test.get_type() == 'write':
-        generate_fortran_write (outfile, config, params, test)
+        generate_fortran_write (outfile, config, params, test, args)
     elif test.get_type() == 'read_all':
         generate_c_read_all (outfile, config, params, test)
 
@@ -267,12 +267,33 @@ def end_of_old_gen_c_write():
     # end: generate_c_write
 
 
-def generate_fortran_write (outfile, config, params, test):
+def generate_fortran_write (outfile, config, params, test, args):
 
     outfile = outfile.replace ('.f90', '_write.f90')
     measure = test.get_measure()
 
+    template_file_name = "~/.skel/templates/source_write_fortran_xml.tmpl"
+
     f_file = open (outfile, 'w')
+
+
+#Todo: merge this
+    # Now for the Cheetah magic:
+    from Cheetah.Template import Template
+    template_file = open (os.path.expanduser(template_file_name), 'r')
+    t = Template(file=template_file)
+
+    t.config = config
+    t.params = params
+    t.project = args.project
+    t.noxml = args.noxml
+    f_file.write (str(t) )
+
+
+
+
+
+def end_of_old_fortran_write():
 
     # Look at all of the groups, Generate the code when we find the requested group
     # The loop is left over from a previous iteration, it could very well be removed.

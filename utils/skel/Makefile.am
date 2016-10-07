@@ -55,6 +55,7 @@ dist_template_DATA=\
         etc/templates/source_write_c.tmpl \
         etc/templates/source_write_c_xml.tmpl \
         etc/templates/source_write_fortran.tmpl \
+        etc/templates/source_write_fortran_xml.tmpl \
         etc/templates/submit_nautilus.tmpl \
         etc/templates/submit_sith.tmpl \
         etc/templates/xml.tmpl
