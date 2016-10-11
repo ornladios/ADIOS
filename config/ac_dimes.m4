@@ -91,10 +91,8 @@ else
         dnl LIBS="$LIBS -ldart2 -lspaces"
 	echo "DIMES currently NOT supported for Cray Portals!"
 	AM_CONDITIONAL(HAVE_DIMES, false)
-    elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
-        LIBS="$LIBS -ldspaces -ldscommon -ldart"
     else
-        LIBS="$LIBS -ldspaces -ldscommon -ldart"
+        LIBS="-ldspaces -ldscommon -ldart $LIBS"
     fi
     LDFLAGS="$LDFLAGS $DIMES_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DIMES_CPPFLAGS"
