@@ -1,0 +1,5 @@
+ADIOS Java wrapper
+-----------------
+
+This directory contains the codes for the ADIOS java wrapper,
+developed with SWIG.
