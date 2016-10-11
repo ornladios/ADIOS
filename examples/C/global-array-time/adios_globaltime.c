@@ -48,7 +48,7 @@ int main (int argc, char ** argv)
         	#include "gwrite_restart.ch"
         	adios_close (adios_handle);
 		MPI_Barrier (comm);
-                //if (rank==0) printf("Timestep %d written\n", it+1);
+                if (rank==0) printf("Timestep %d written\n", it+1);
  	}
 	MPI_Barrier (comm);
         //if (rank==0) printf("Finalize adios\n");

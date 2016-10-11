@@ -19,7 +19,10 @@
         type="string"/>
   </adios-group>
 
+  <method group="restart" method="MPI_AGGREGATE">num_aggregators=1;num_ost=1</method>
+  <!--
   <method group="restart" method="MPI"/>
+  -->
 
   <buffer max-size-MB="1"/>
 
