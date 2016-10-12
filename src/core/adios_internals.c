@@ -1380,6 +1380,7 @@ int adios_common_declare_group (int64_t * id, const char * name
 
     //Yuan: added for time steps buffering
     g->do_ts_aggr=0;
+    g->ts_fd = NULL;
     g->ts_buffsize=0;
     g->max_ts=1;
     g->ts_to_buffer=1;

@@ -51,7 +51,6 @@ extern int adios_errno;
 //static int do_ts_aggr=0;
 //static int ts_to_buffer=1; 
 //static int max_ts=1; 
-int64_t ts_fh=0; 
 static int64_t *pg_offsets;
 
 ////////////////////////
@@ -82,17 +81,21 @@ int common_adios_init_noxml (MPI_Comm comm)
 int common_adios_finalize (int mype)
 {
     struct adios_method_list_struct * m;
+    struct adios_group_list_struct * g;
 
-    //Yuan: there may be time steps left in the buffer needs to be dumped out
-    //before finalize
-    if(ts_fh!=0) {
-        //printf("time buffering enabled and data left... close file\n");
-        struct adios_file_struct * fd = (struct adios_file_struct *) ts_fh;
-        fd->group->do_ts_aggr=0; //turn off ts buffering
-        fd->group->ts_to_buffer=0; //reset the counter
-        fd->current_pg=fd->pgs_written;
-        fd->group->built_index=1;
-        common_adios_close (ts_fh); // close file
+    //Yuan: there may be time steps left in the time aggregated buffer, which
+    // needs to be dumped out before finalize
+    for (g = adios_get_groups(); g; g = g->next)
+    {
+        if(g->group->ts_fd != NULL) {
+            //printf("time buffering enabled and data left... close file\n");
+            struct adios_file_struct * fd = (struct adios_file_struct *) ts_fh;
+            g->group->do_ts_aggr=0; //turn off ts buffering
+            g->group->ts_to_buffer=0; //reset the counter
+            g->current_pg=fd->pgs_written;
+            g->group->built_index=1;
+            common_adios_close ((int64_t)(g->group->ts_fd)); // close file
+        }
     }
 
     adios_errno = err_no_error;

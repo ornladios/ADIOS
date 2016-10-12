@@ -172,6 +172,7 @@ struct adios_group_struct
     uint64_t tv_size; // the additional data size used by timing variables
 #endif
     int do_ts_aggr; //Yuan: introduced for time steps buffering
+    struct adios_file_struct *ts_fd; // save and keep open the file struct during time aggr.
     uint64_t ts_buffsize; //Yuan: introduced for time steps buffering
     int ts_to_buffer; //current time steps
     int max_ts; //maximum time steps to buffer 
