@@ -19,9 +19,9 @@
         type="string"/>
   </adios-group>
 
-  <method group="restart" method="MPI_AGGREGATE">num_aggregators=1;num_ost=1</method>
+  <method group="restart" method="MPI">ts_buffersize=32000;verbose=4</method>
   <!--
-  <method group="restart" method="MPI"/>
+  <method group="restart" method="MPI_AGGREGATE">num_aggregators=1;num_ost=1</method>
   -->
 
   <buffer max-size-MB="1"/>

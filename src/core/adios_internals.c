@@ -3599,7 +3599,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
         g_item->process_id = g->process_id;
         g_item->time_index_name = (g->time_index_name ? strdup (g->time_index_name) : 0L);
         g_item->time_index = g->time_index;
-        g_item->is_time_aggregated = (fd->group->do_ts_aggr ? 1 : 0);
+        g_item->is_time_aggregated = TimeAggregated(fd->group);
         
         //printf("adios_build_index_v1 g->time_index=%d, start_in_file=%llu\n", g->time_index, pg->pg_start_in_file);
         g_item->offset_in_file = pg->pg_start_in_file;
@@ -3611,7 +3611,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
         //Yuan: if time buffering is on, all the offsets are relative to the
         //current buffer, they will be updated in the end after
         //pg_start_in_file is established correctly
-        if(fd->group->do_ts_aggr==1)
+        if (TimeAggregated(fd->group))
             pg->pg_start_in_file=0;
 
         //printf("after clearing... adios_build_index_v1 g->time_index=%d, start_in_file=%llu\n", g->time_index, pg->pg_start_in_file);

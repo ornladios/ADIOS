@@ -222,16 +222,13 @@ int common_adios_open (int64_t * fd_p, const char * group_name
         //   printf("skip file init... bytes_written=%llu file_handle_addr=%llu\n", fd->bytes_written, fd);
         //  printf("open: fd->pgs_written->pg_start_in_file=%lld, fd->current_pg->pg_start_in_file=%lld\n", fd->pgs_written->pg_start_in_file, fd->current_pg->pg_start_in_file);
         //Yuan: buffering time steps doesn't need to init file open every time
-        //printf("skip file name and group assignment\n");
-
+        log_debug("TimeAggr: skip file name and group assignment\n");
     }
     else {
 
-        //  printf("new open... file struct init\n");
+        log_debug("TimeAggr: new open... file struct init\n");
         fd = (struct adios_file_struct *) malloc (sizeof (struct adios_file_struct));
         adios_file_struct_init (fd);
-
-        //   printf("new open... file init\n");
         fd->name = strdup (name);
         fd->subfile_index = -1; // subfile index is by default -1
         fd->group = g;
@@ -314,7 +311,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             //this point
             if (methods->method->parameters) { 
                 g->ts_buffsize=get_ts_buffering(methods->method->parameters);
-                SetTimeAggregation (g, (g->ts_buffsize > 0), mode);
+                SetTimeAggregation (g, (g->ts_buffsize > 0));
 
                 /*
                 if(g->max_ts>0) {
@@ -479,17 +476,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             //allocate the buffer
             if (NotTimeAggregated(g) || TimeAggregationJustBegan(g))
             {
-                if (!adios_databuffer_resize (fd, bufsize)) 
-                {
-                    fd->bufstate = buffering_ongoing;
-
-                    // write the process group header
-                    adios_write_open_process_group_header_v1 (fd);
-
-                    // setup for writing vars
-                    adios_write_open_vars_v1 (fd);
-                }
-                else
+                if (adios_databuffer_resize (fd, bufsize))
                 {
                     fd->bufstate = buffering_stopped;
                     adios_error (err_no_memory, 
@@ -499,6 +486,14 @@ int common_adios_open (int64_t * fd_p, const char * group_name
                     return adios_errno;
                 }
             }
+            fd->bufstate = buffering_ongoing;
+
+            // write the process group header
+            adios_write_open_process_group_header_v1 (fd);
+
+            // setup for writing vars
+            adios_write_open_vars_v1 (fd);
+
         }
 
         //printf("end of adios_open fd->offset=%llu bytes_written=%llu\n", fd->offset, fd->bytes_written);

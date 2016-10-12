@@ -180,11 +180,9 @@ struct adios_group_struct
     int built_index; // FIXME: 0 or 1, if index has been built, do not build it during close()  
 };
 
-static inline void SetTimeAggregation (struct adios_group_struct * g, int flag, enum ADIOS_METHOD_MODE mode)
+static inline void SetTimeAggregation (struct adios_group_struct * g, int flag)
 {
-    g->do_ts_aggr = (flag != 0 &&
-                    (mode == adios_mode_append || mode == adios_mode_update)
-                    );
+    g->do_ts_aggr = (flag != 0);
 }
 
 
