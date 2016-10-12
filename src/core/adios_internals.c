@@ -40,9 +40,6 @@
 struct adios_method_list_struct * adios_methods = 0;
 struct adios_group_list_struct * adios_groups = 0;
 
-//Yuan:for ts buffering
-extern uint64_t ts_fh; //declared in common_adios
-
 void adios_file_struct_init (struct adios_file_struct * fd)
 {
     fd->name = NULL;
@@ -2677,6 +2674,11 @@ void adios_merge_index_v1 (
 {
     // this will just add it on to the end and all should work fine
     index_append_process_group_v1 (main_index, new_pg_root);
+    if (new_pg_root->is_time_aggregated)
+    {
+        // variable characteristics need to be sorted if time steps are buffered
+        needs_sorting = 1;
+    }
 
     // need to do vars attrs one at a time to merge them properly
     struct adios_index_var_struct_v1 * v = new_vars_root;
@@ -2689,10 +2691,6 @@ void adios_merge_index_v1 (
         v_temp = v->next;
         v->next = 0;
         log_debug ("merge index var %s/%s\n", v->var_path, v->var_name);
-        //Yuan: variable characteristics needs to be sorted if time steps
-        //are buffered 
-        if(ts_fh!=0)
-            needs_sorting=1;
 
         index_append_var_v1 (main_index, v, needs_sorting);
         v = v_temp;
@@ -3601,6 +3599,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
         g_item->process_id = g->process_id;
         g_item->time_index_name = (g->time_index_name ? strdup (g->time_index_name) : 0L);
         g_item->time_index = g->time_index;
+        g_item->is_time_aggregated = (fd->group->do_ts_aggr ? 1 : 0);
         
         //printf("adios_build_index_v1 g->time_index=%d, start_in_file=%llu\n", g->time_index, pg->pg_start_in_file);
         g_item->offset_in_file = pg->pg_start_in_file;

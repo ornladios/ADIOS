@@ -180,6 +180,45 @@ struct adios_group_struct
     int built_index; // FIXME: 0 or 1, if index has been built, do not build it during close()  
 };
 
+static inline void SetTimeAggregation (struct adios_group_struct * g, int flag, enum ADIOS_METHOD_MODE mode)
+{
+    g->do_ts_aggr = (flag != 0 &&
+                    (mode == adios_mode_append || mode == adios_mode_update)
+                    );
+}
+
+
+static inline int TimeAggregated (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr != 0);
+}
+
+static inline int NotTimeAggregated (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr == 0);
+}
+
+static inline int TimeAggregationJustBegan (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr
+            && g->ts_fd == NULL
+            //&& g->ts_to_buffer == g->max_ts
+            );
+}
+
+static inline int TimeAggregationInProgress (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr
+            && g->ts_fd != NULL
+            //&& g->ts_to_buffer < g->max_ts
+            );
+}
+
+static inline int TimeAggregationLastStep (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr  && g->ts_to_buffer == 0);
+}
+
 struct adios_group_list_struct
 {
     struct adios_group_struct * group;
