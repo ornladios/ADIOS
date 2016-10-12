@@ -47,8 +47,10 @@ def generate_c_write (outfile, config, params, test, args):
 
     t.config = config
     t.params = params
+    t.test = test
     t.project = args.project
     t.noxml = args.noxml
+
     c_file.write (str(t) )
 
 
