@@ -995,7 +995,7 @@ void * adios_mpi_amr_do_reopen_thread (void * param)
                 max_time_index = p->time_index;
             p = p->next;
         }
-        fd->group->time_index = ++max_time_index;
+        fd->group->time_index = max_time_index;
 
         adios_init_buffer_read_vars_index (&md->b);
         MPI_File_seek (md->fh, md->b.vars_index_offset, MPI_SEEK_SET);

@@ -241,49 +241,6 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             MPI_Comm_dup(comm, &fd->comm);
     }
 
-
-
-#if 1
-
-        /* Time index magic done here */
-        if (mode == adios_mode_write)
-        {
-            /* Traditionally, time=1 at the first step, and for subsequent file
-           creations, time increases. Although, each file contains one step,
-           the time index indicates that they are in a series.
-             */
-            g->time_index++;
-        }
-
-    /* FIXME: the time_index is updated in the actual method in case of append/update
-   so this code below is useless */
-#  if 0 
-        else if (mode == adios_mode_append)
-        {
-            g->time_index++;
-        }
-        else if (mode == adios_mode_update && g->time_index > 0)
-        {
-            /* Update from Append differs only in the time index. All methods had
-       code for Append, now for Update we decrease the counter by one,
-       for all methods. (But do not go below 1).
-             */
-            g->time_index--;
-        }
-#  endif
-    /* time starts from 1 not from 0 (traditionally; now no one cares */
-    if (g->time_index == 0)
-        g->time_index = 1;
-#else
-    /* old way pre-1.4*/
-    if (mode != adios_mode_read)
-        g->time_index++;
-#endif
-
-    // Drew: for experiments
-    if (pinned_timestep > 0)
-        g->time_index = pinned_timestep;
-
     methods = g->methods;
 
     //Yuan: if time aggregation is turned on, only open() at the first time step
@@ -337,6 +294,28 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             fd_p = 0L;
         }
     }
+
+
+    /* Time index
+     * It increases in write/append mode, it does not change in update/read mode.
+     * This piece should be after calling the method's open function, which sets
+     * the time index from the existing file in case of append/update. */
+    if (mode == adios_mode_write || mode == adios_mode_append)
+    {
+        /* Traditionally, time=1 at the first step, and for subsequent file
+           creations, time increases. Although, each file contains one step,
+           the time index indicates that they are in a series.
+         */
+        g->time_index++;
+    }
+    /* time starts from 1 not from 0 in the BP design although it does not have any meaning */
+    if (g->time_index == 0)
+        g->time_index = 1;
+
+    // Drew: for experiments
+    if (pinned_timestep > 0)
+        g->time_index = pinned_timestep;
+
 
 
     if ( !adios_errno && fd->mode != adios_mode_read )
