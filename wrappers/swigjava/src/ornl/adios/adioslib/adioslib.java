@@ -255,4 +255,12 @@ public class adioslib implements adioslibConstants {
     adioslibJNI.adios_print_fileinfo(ADIOS_FILE.getCPtr(fp), fp);
   }
 
+  public static int readvar_double(ADIOS_FILE fh, int varid, long[] start, long[] count, double[] double_arr) {
+    return adioslibJNI.readvar_double(ADIOS_FILE.getCPtr(fh), fh, varid, start, count, double_arr);
+  }
+
+  public static int readvar_int(ADIOS_FILE fh, int varid, long[] start, long[] count, int[] int_arr) {
+    return adioslibJNI.readvar_int(ADIOS_FILE.getCPtr(fh), fh, varid, start, count, int_arr);
+  }
+
 }

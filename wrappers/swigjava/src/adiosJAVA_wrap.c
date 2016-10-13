@@ -785,6 +785,71 @@ SWIGINTERN uint64_t _ADIOS_VARINFO_getDims(struct _ADIOS_VARINFO *self,int i){
     return self->dims[i];
   }
 
+#define JCALL0(func, jenv) (*jenv)->func(jenv)
+#define JCALL1(func, jenv, ar1) (*jenv)->func(jenv, ar1)
+#define JCALL2(func, jenv, ar1, ar2) (*jenv)->func(jenv, ar1, ar2)
+#define JCALL3(func, jenv, ar1, ar2, ar3) (*jenv)->func(jenv, ar1, ar2, ar3)
+#define JCALL4(func, jenv, ar1, ar2, ar3, ar4) (*jenv)->func(jenv, ar1, ar2, ar3, ar4)
+
+
+int readvar_double(ADIOS_FILE *fh, int varid, const unsigned long start[], const unsigned long count[], void* double_arr) {
+  int result, i;
+  ADIOS_VARINFO * v;
+  ADIOS_SELECTION * sel;
+
+  v = adios_inq_var_byid (fh, varid);
+
+  printf("=== readvar_val ===\n");
+  printf("fh: %p\n", fh);
+  printf("varid: %d\n", varid);
+  printf("start: ");
+  for (i=0; i<v->ndim; i++)
+    printf("%lu ", start[i]);
+  printf("\n");
+  printf("count: ");
+  for (i=0; i<v->ndim; i++)
+    printf("%lu ", count[i]);
+  printf("\n");
+
+  sel = adios_selection_boundingbox (v->ndim, (const uint64_t *)start, (const uint64_t *)count);
+  result = adios_schedule_read_byid (fh, sel, varid, 0, 1, double_arr);
+  adios_perform_reads (fh, 1);
+
+  adios_selection_delete (sel);
+  adios_free_varinfo (v);
+  return result;
+}
+
+
+int readvar_int(ADIOS_FILE *fh, int varid, const unsigned long start[], const unsigned long count[], void* int_arr) {
+  int result, i;
+  ADIOS_VARINFO * v;
+  ADIOS_SELECTION * sel;
+
+  v = adios_inq_var_byid (fh, varid);
+
+  printf("=== readvar_val ===\n");
+  printf("fh: %p\n", fh);
+  printf("varid: %d\n", varid);
+  printf("start: ");
+  for (i=0; i<v->ndim; i++)
+    printf("%lu ", start[i]);
+  printf("\n");
+  printf("count: ");
+  for (i=0; i<v->ndim; i++)
+    printf("%lu ", count[i]);
+  printf("\n");
+
+  sel = adios_selection_boundingbox (v->ndim, (const uint64_t *)start, (const uint64_t *)count);
+  result = adios_schedule_read_byid (fh, sel, varid, 0, 1, int_arr);
+  adios_perform_reads (fh, 1);
+
+  adios_selection_delete (sel);
+  adios_free_varinfo (v);
+  return result;
+}
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -4795,6 +4860,74 @@ SWIGEXPORT void JNICALL Java_ornl_adios_adioslib_adioslibJNI_adios_1print_1filei
   (void)jarg1_;
   arg1 = *(ADIOS_FILE **)&jarg1; 
   adios_print_fileinfo(arg1);
+}
+
+
+SWIGEXPORT jint JNICALL Java_ornl_adios_adioslib_adioslibJNI_readvar_1double(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jlongArray jarg3, jlongArray jarg4, jdoubleArray jarg5) {
+  jint jresult = 0 ;
+  ADIOS_FILE *arg1 = (ADIOS_FILE *) 0 ;
+  int arg2 ;
+  unsigned long *arg3 ;
+  unsigned long *arg4 ;
+  void *arg5 = (void *) 0 ;
+  jlong *jarr3 ;
+  jlong *jarr4 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(ADIOS_FILE **)&jarg1; 
+  arg2 = (int)jarg2; 
+  if (!SWIG_JavaArrayInUlong(jenv, &jarr3, (unsigned long **)&arg3, jarg3)) return 0; 
+  if (!SWIG_JavaArrayInUlong(jenv, &jarr4, (unsigned long **)&arg4, jarg4)) return 0; 
+  {
+    arg5 = (*jenv)->GetDoubleArrayElements(jenv, jarg5, 0);
+  }
+  result = (int)readvar_double(arg1,arg2,(unsigned long const (*))arg3,(unsigned long const (*))arg4,arg5);
+  jresult = (jint)result; 
+  SWIG_JavaArrayArgoutUlong(jenv, jarr3, (unsigned long *)arg3, jarg3); 
+  SWIG_JavaArrayArgoutUlong(jenv, jarr4, (unsigned long *)arg4, jarg4); 
+  free(arg3); 
+  free(arg4); 
+  {
+    (*jenv)->ReleaseDoubleArrayElements(jenv, jarg5, arg5, 0);
+  }
+  return jresult;
+}
+
+
+SWIGEXPORT jint JNICALL Java_ornl_adios_adioslib_adioslibJNI_readvar_1int(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jint jarg2, jlongArray jarg3, jlongArray jarg4, jintArray jarg5) {
+  jint jresult = 0 ;
+  ADIOS_FILE *arg1 = (ADIOS_FILE *) 0 ;
+  int arg2 ;
+  unsigned long *arg3 ;
+  unsigned long *arg4 ;
+  void *arg5 = (void *) 0 ;
+  jlong *jarr3 ;
+  jlong *jarr4 ;
+  int result;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(ADIOS_FILE **)&jarg1; 
+  arg2 = (int)jarg2; 
+  if (!SWIG_JavaArrayInUlong(jenv, &jarr3, (unsigned long **)&arg3, jarg3)) return 0; 
+  if (!SWIG_JavaArrayInUlong(jenv, &jarr4, (unsigned long **)&arg4, jarg4)) return 0; 
+  {
+    arg5 = (*jenv)->GetIntArrayElements(jenv, jarg5, 0);
+  }
+  result = (int)readvar_int(arg1,arg2,(unsigned long const (*))arg3,(unsigned long const (*))arg4,arg5);
+  jresult = (jint)result; 
+  SWIG_JavaArrayArgoutUlong(jenv, jarr3, (unsigned long *)arg3, jarg3); 
+  SWIG_JavaArrayArgoutUlong(jenv, jarr4, (unsigned long *)arg4, jarg4); 
+  free(arg3); 
+  free(arg4); 
+  {
+    (*jenv)->ReleaseIntArrayElements(jenv, jarg5, arg5, 0);
+  }
+  return jresult;
 }
 
 

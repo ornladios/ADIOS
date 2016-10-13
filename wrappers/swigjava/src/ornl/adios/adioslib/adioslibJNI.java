@@ -268,4 +268,6 @@ public class adioslibJNI {
   public final static native int adios_get_grouplist(long jarg1, ADIOS_FILE jarg1_, long jarg2);
   public final static native int adios_group_view(long jarg1, ADIOS_FILE jarg1_, int jarg2);
   public final static native void adios_print_fileinfo(long jarg1, ADIOS_FILE jarg1_);
+  public final static native int readvar_double(long jarg1, ADIOS_FILE jarg1_, int jarg2, long[] jarg3, long[] jarg4, double[] jarg5);
+  public final static native int readvar_int(long jarg1, ADIOS_FILE jarg1_, int jarg2, long[] jarg3, long[] jarg4, int[] jarg5);
 }

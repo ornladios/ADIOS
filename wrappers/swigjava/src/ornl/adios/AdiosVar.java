@@ -76,4 +76,15 @@ public class AdiosVar {
 	public int getGlobal() {
 		return v.getGlobal();
 	}
+
+	public int getValue(double[] out) {
+		// adioslib.read_test(f, getVarid(), out);
+		long[] start = { 0, 0 };
+		long[] count = { 2, 10 };
+		return adioslib.readvar_double(f, 3, start, count, out);
+	}
+	
+	public int read(Object value) {
+		return 0;
+	}
 }

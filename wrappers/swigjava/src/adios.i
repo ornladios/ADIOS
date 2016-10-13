@@ -44,3 +44,5 @@
 %include "mpidummy.h"
 %include "adios_types.h"
 %include "adios_read_v2.h"
+
+%include "m_adios_read.i"
