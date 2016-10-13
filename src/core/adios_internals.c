@@ -2674,7 +2674,7 @@ void adios_merge_index_v1 (
 {
     // this will just add it on to the end and all should work fine
     index_append_process_group_v1 (main_index, new_pg_root);
-    if (new_pg_root->is_time_aggregated)
+    if (main_index->pg_root->is_time_aggregated || new_pg_root->is_time_aggregated)
     {
         // variable characteristics need to be sorted if time steps are buffered
         needs_sorting = 1;
