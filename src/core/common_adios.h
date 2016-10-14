@@ -62,6 +62,6 @@ int common_adios_start_calculation (void);
 
 int common_adios_stop_calculation (void);
 
-int common_adios_close (int64_t fd_p);
+int common_adios_close (struct adios_file_struct * fd );
 
 #endif

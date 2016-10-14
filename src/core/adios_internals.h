@@ -177,7 +177,8 @@ struct adios_group_struct
     int ts_to_buffer; //current time steps
     int max_ts; //maximum time steps to buffer 
     struct adios_index_struct_v1 * index; //the indexes for current written PGs 
-    int built_index; // FIXME: 0 or 1, if index has been built, do not build it during close()  
+    int built_index; // FIXME: 0 or 1, if index has been built, do not build it during close()
+    int do_ts_finalize; // 1 if we need close during finalize, otherwise always 0
 };
 
 static inline void SetTimeAggregation (struct adios_group_struct * g, int flag)
@@ -211,11 +212,26 @@ static inline int TimeAggregationInProgress (struct adios_group_struct * g)
             //&& g->ts_to_buffer < g->max_ts
             );
 }
+// TimeAggregationAggregationInProgress => TimeAggregated AND NOT TimeAggreationJustBegan
+// TimeAggregationAggregationJustBegan  => TimeAggregated AND NOT TimeAggreationInProgress
 
 static inline int TimeAggregationLastStep (struct adios_group_struct * g)
 {
     return (g->do_ts_aggr  && g->ts_to_buffer == 0);
 }
+// TimeAggregationAggregationLastStep => TimeAggregated AND TimeAggreationInProgress
+
+static inline void SetTimeAggregationFinalizeMode (struct adios_group_struct * g)
+{
+    g->do_ts_aggr = 0;
+    g->do_ts_finalize = 1;
+}
+
+static inline int TimeAggregationFinalizeMode (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr == 0 && g->do_ts_finalize != 0);
+}
+// TimeAggregationAggregationFinalizeMode => NOT TimeAggregated !!!
 
 struct adios_group_list_struct
 {

@@ -1383,6 +1383,7 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->ts_to_buffer=1;
     g->index=NULL;
     g->built_index=0;
+    g->do_ts_finalize=0;
 
     *id = (int64_t) g;
 
@@ -3531,51 +3532,51 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
 
 //    printf("%d: ============build index, pg_start_in_file=%llu\n",fd->group->process_id, pg->pg_start_in_file);
     
-    //Yuan: if index has been built, update the offsets 
-    if(fd->group->built_index==1) {
-        //printf("index already buit, use it and move on\n");
-        index->pg_root=g->index->pg_root; 
-        index->pg_tail=g->index->pg_tail; 
-        index->vars_root=g->index->vars_root; 
-        index->vars_tail=g->index->vars_tail; 
-        index->attrs_root=g->index->attrs_root; 
-        index->attrs_tail=g->index->attrs_tail; 
-        index->hashtbl_vars=g->index->hashtbl_vars; 
-        index->hashtbl_attrs=g->index->hashtbl_attrs; 
-
-        struct adios_index_process_group_struct_v1 *g_item=index->pg_root;
-        
-        int cnt=0;
+    /* Yuan: if index has been built during time-aggregation,
+     * update the offsets and append the already built time-aggregation index
+     * (fd->group->index) to the 'index' that comes from the method and
+     * which may contain the indices from previous steps from a file (in append mode)
+     */
+    if (fd->group->built_index==1) {
+        //printf("index already built in time-aggregation, merge it in and move on\n");
+        struct adios_index_process_group_struct_v1 *g_item = g->index->pg_root;
         while (g_item) {
             g_item->offset_in_file += pg->pg_start_in_file;
-            //printf("pg offset = %llu\n", g_item->offset_in_file);
-            //if(g_item->next!=NULL)
-                //printf("one more pg\n");
-
-            struct adios_index_var_struct_v1 * v_index = index->vars_root;
-            while (v_index) {
-                    //printf("old var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset); 
-                    v_index->characteristics [cnt].offset +=
-                        pg->pg_start_in_file;
-                    v_index->characteristics [cnt].payload_offset +=
-                        pg->pg_start_in_file;
-                    //printf("var time index=%d\n",v_index->characteristics[cnt].time_index); 
-                    //printf("var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset); 
-
-                v_index = v_index->next;
-            }
-
-
-            struct adios_index_attribute_struct_v1 * a = index->attrs_root;
-            while (a)
-            {
-                a->characteristics [cnt].offset += pg->pg_start_in_file;
-//                printf("attr time index=%d offset=%llu\n", a->characteristics[cnt].time_index, a->characteristics [cnt].offset); 
-                a=a->next;
-            }
-
-            cnt++;
             g_item= g_item->next;
+        }
+        // append whole PG list at once
+        index_append_process_group_v1 (index, g->index->pg_root);
+
+        struct adios_index_var_struct_v1 * v_index = g->index->vars_root;
+        struct adios_index_var_struct_v1 * v_next;
+        while (v_index) {
+            int i;
+            for (i=0; i < v_index->characteristics_count; i++)
+            {
+                //printf("old var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset);
+                v_index->characteristics [i].offset +=  pg->pg_start_in_file;
+                v_index->characteristics [i].payload_offset += pg->pg_start_in_file;
+                //printf("var time index=%d\n",v_index->characteristics[cnt].time_index);
+                //printf("var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset);
+            }
+            v_next = v_index->next;
+            v_index->next = NULL;
+            index_append_var_v1 (index, v_index, 0);
+            v_index = v_next;
+        }
+
+
+        struct adios_index_attribute_struct_v1 * a_index = g->index->attrs_root;
+        struct adios_index_attribute_struct_v1 * a_next;
+        while (a_index)
+        {
+            a_index->characteristics [0].offset += pg->pg_start_in_file;
+            a_index->characteristics [0].payload_offset += pg->pg_start_in_file;
+            //                printf("attr time index=%d offset=%llu\n", a->characteristics[cnt].time_index, a->characteristics [cnt].offset);
+            a_next = a_index->next;
+            a_index->next = NULL; // separate head from tail, to insert a single attribute here
+            index_append_attribute_v1(&index->attrs_root, a_index);
+            a_index = a_next;
         }
 
         fd->group->built_index=0;

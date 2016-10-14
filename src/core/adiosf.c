@@ -477,7 +477,8 @@ void FC_FUNC_(adios_stop_calculation, ADIOS_STOP_CALCULATION) (int * err)
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_close, ADIOS_CLOSE) (int64_t * fd_p, int * err)
 {
-    *err = common_adios_close (*fd_p);
+    struct adios_file_struct * fd = (struct adios_file_struct *) *fd_p;
+    *err = common_adios_close (fd);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
