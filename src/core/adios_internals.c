@@ -3538,7 +3538,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
      * which may contain the indices from previous steps from a file (in append mode)
      */
     if (fd->group->built_index==1) {
-        //printf("index already built in time-aggregation, merge it in and move on\n");
+        log_debug("TimeAggr: index already built in time-aggregation, merge it in and move on\n");
         struct adios_index_process_group_struct_v1 *g_item = g->index->pg_root;
         while (g_item) {
             g_item->offset_in_file += pg->pg_start_in_file;
@@ -3582,6 +3582,8 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
         fd->group->built_index=0;
         return;
     }
+
+    log_debug("TimeAggr: build index now and merge it in\n");
 
     while (pg)
     {

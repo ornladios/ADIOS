@@ -1329,6 +1329,10 @@ int common_adios_close (struct adios_file_struct * fd)
         // time steps we can buffer given the buffer size
         if( fd->group->ts_to_buffer > 0 && fd->group->ts_buffsize > 0) {
             fd->group->max_ts = fd->group->ts_buffsize/fd->bytes_written;
+            // max_ts may be different on different processes, we need to use the minimum on all processes
+            int min_max_ts;
+            MPI_Allreduce(&fd->group->max_ts, &min_max_ts, 1, MPI_INT, MPI_MIN, fd->comm);
+            fd->group->max_ts = min_max_ts;
             fd->group->ts_to_buffer = fd->group->max_ts-1; // we already have one in our hand
             //    printf("ts_buffsize=%llu bytes_writen=%llu\n", fd->group->ts_buffsize, fd->bytes_written);
             //    printf("max_ts=%d ts_to_buffer=%d\n", fd->group->max_ts, fd->group->ts_to_buffer);
