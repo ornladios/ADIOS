@@ -30,7 +30,7 @@ int main (int argc, char ** argv)
 
     adios_init ("adios_globaltime.xml", comm);
     strcpy (filename, "adios_globaltime.bp");
-    for (it = 1; it <= 2; it++) {
+    for (it = 1; it <= 13; it++) {
 
         for (i = 0; i < NX; i++)
             t[i] = it*100.0 + rank*NX + i;
@@ -44,6 +44,7 @@ int main (int argc, char ** argv)
             adios_open (&adios_handle, "restart", filename, "a", comm);
 
 #       include "gwrite_restart.ch"
+
         adios_close (adios_handle);
         MPI_Barrier (comm);
         if (rank==0) printf("Timestep %d written\n", it);
