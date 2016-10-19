@@ -157,6 +157,7 @@ static uint64_t get_ts_buffering(char *parameters, const struct adios_group_stru
         }
         p = p->next;
     }
+    a2s_free_name_value_pairs (p);
 
     if (bts < 0) {
         fprintf (stderr, "The buffer size for time step buffering can not be <0.\n");
