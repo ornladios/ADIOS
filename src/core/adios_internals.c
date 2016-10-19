@@ -3780,13 +3780,13 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                         sa[i] = strdup (  ((char**)a->value)[i]);
                     }
                 }
+                else  if (a->type == adios_string)
+                {
+                    a_index->characteristics [0].value = strdup(a->value);
+                }
                 else
                 {
-                    if (a->type == adios_string)
-                        size++;
                     a_index->characteristics [0].value = malloc (size);
-                    if (a->type == adios_string)
-                        ((char *) (a_index->characteristics [0].value)) [size] = 0;
                     memcpy (a_index->characteristics [0].value, a->value, size);
                 }
 
