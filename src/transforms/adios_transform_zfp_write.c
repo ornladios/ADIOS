@@ -117,7 +117,8 @@ static void get_dims(const struct adios_dimension_struct* d, struct zfp_buffer* 
 
 	for (i=0; i<zbuff->ndims; i++)
 	{
-		zdim = (uint) *( (uint64_t*) (ddim->dimension.var->data) ); 
+		//zdim = (uint) *( (uint64_t*) (ddim->dimension.var->data) );
+		zdim = (uint) adios_get_dim_value(&ddim->dimension);
 		if (fd->group->adios_host_language_fortran == adios_flag_yes) ii = zbuff->ndims - 1 - i;
 		else ii = i;
 		zbuff->dims[ii] = zdim;
