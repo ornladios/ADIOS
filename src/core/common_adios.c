@@ -140,24 +140,22 @@ void adios_pin_timestep(uint32_t ts) {
 
 /////////////////
 //Yuan: check for number of ts to be buffered from XML  
-static uint64_t get_ts_buffering(char *parameters)
+static uint64_t get_ts_buffering(char *parameters, const struct adios_group_struct *g)
 {
-    char *temp_string, *p_count;
     int64_t bts=0;
+    struct PairStruct *p = a2s_text_to_name_value_pairs(parameters);
 
-    temp_string = (char *) malloc (strlen (parameters) + 1);
-    strcpy (temp_string, parameters);
-    a2s_trim_spaces (temp_string);
-
-    //get the buffer size from XML in bytes
-    if ( (p_count = strstr (temp_string, "ts_buffersize")) )
-    {
-        char * p = strchr (p_count, '=');
-        char * q = strtok (p, ",");
-        if (!q)
-            bts = atoi (q + 1);
-        else
-            bts = atoi (p + 1);
+    while (p) {
+        if ( !strcasecmp (p->name, "ts_buffersize") )
+        {
+            //get the buffer size from XML in bytes
+            errno = 0;
+            bts = strtoll(p->value, NULL, 10);
+             if (bts < 0 || errno != 0) {
+                 log_error ("Invalid 'ts_buffersize' parameter given to the group '%s'\n", p->value);
+             }
+        }
+        p = p->next;
     }
 
     if (bts < 0) {
@@ -273,7 +271,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             //following the assumption that only one method will be defined at
             //this point
             if (methods->method->parameters) { 
-                g->ts_buffsize=get_ts_buffering(methods->method->parameters);
+                g->ts_buffsize=get_ts_buffering(methods->method->parameters, g);
                 SetTimeAggregation (g, (g->ts_buffsize > 0));
 
                 /*
