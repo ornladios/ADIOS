@@ -90,6 +90,9 @@ int common_adios_finalize (int mype)
             g->group->built_index=1;
             SetTimeAggregationFinalizeMode(g->group);
             common_adios_close (g->group->ts_fd); // close file
+            if (g->group->index)
+                adios_free_index_v1 (g->group->index);
+            g->group->index = NULL;
             g->group->ts_fd = NULL;
             SetTimeAggregation(g->group, 0); //turn off ts buffering
         }
@@ -143,8 +146,8 @@ void adios_pin_timestep(uint32_t ts) {
 static uint64_t get_ts_buffering(char *parameters, const struct adios_group_struct *g)
 {
     int64_t bts=0;
-    struct PairStruct *p = a2s_text_to_name_value_pairs(parameters);
-
+    struct PairStruct *pairs = a2s_text_to_name_value_pairs(parameters);
+    struct PairStruct *p = pairs;
     while (p) {
         if ( !strcasecmp (p->name, "ts_buffersize") )
         {
@@ -157,7 +160,7 @@ static uint64_t get_ts_buffering(char *parameters, const struct adios_group_stru
         }
         p = p->next;
     }
-    a2s_free_name_value_pairs (p);
+    a2s_free_name_value_pairs (pairs);
 
     if (bts < 0) {
         fprintf (stderr, "The buffer size for time step buffering can not be <0.\n");
@@ -1474,8 +1477,8 @@ int common_adios_close (struct adios_file_struct * fd)
             //Yuan: reset the ts counter when the last ts is in
             //printf("reset ts_to_buffer\n");
             fd->group->ts_to_buffer = fd->group->max_ts;
-            free (fd);
             fd->group->ts_fd = NULL;
+            free (fd);
         }
         else
         {
