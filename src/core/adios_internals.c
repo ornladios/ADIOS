@@ -2675,6 +2675,11 @@ void adios_merge_index_v1 (
 {
     // this will just add it on to the end and all should work fine
     index_append_process_group_v1 (main_index, new_pg_root);
+    log_debug("merge index on rank %u with sorting %s pg_root time aggregated %s  new pg_root time aggregated %s\n",
+              main_index->pg_root->process_id,
+              (needs_sorting ? "ON" : "OFF"),
+              (main_index->pg_root->is_time_aggregated ? "YES" : "NO"),
+              (new_pg_root->is_time_aggregated ? "YES" : "NO"));
     if (main_index->pg_root->is_time_aggregated || new_pg_root->is_time_aggregated)
     {
         // variable characteristics need to be sorted if time steps are buffered
@@ -3542,7 +3547,21 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
         struct adios_index_process_group_struct_v1 *g_item = g->index->pg_root;
         while (g_item) {
             g_item->offset_in_file += pg->pg_start_in_file;
+            g_item->is_time_aggregated = TimeAggregated(g); // yes
             g_item= g_item->next;
+        }
+        /* When we later merge indexes, it may still be the case that both index and new index
+         * indicates no time aggregation. e.g. index is from parsing index from file at append,
+         * while new index is coming from other processes. Both index is created by parse_index
+         * which does not have info on time aggregation.
+         * We fix this issue here by updating the main index.
+         */
+        if (index && index->pg_root) {
+            struct adios_index_process_group_struct_v1 *pg = index->pg_root;
+            while (pg) {
+                pg->is_time_aggregated |= TimeAggregated(g);
+                pg = pg->next;
+            }
         }
         // append whole PG list at once
         index_append_process_group_v1 (index, g->index->pg_root);
