@@ -43,48 +43,57 @@ MPI_Comm_size (MPI_COMM_WORLD, &skel_mpi_size);
 int64_t adios_handle;
 uint64_t skel_total_size;
 
-// Scalar declarations
 <%
 declarations = set()
 for v in filter (lambda x : x.is_scalar(), g.get_vars() ):
-    #TODO: expand this call here...
     declarations.add (adios.cFormatter.get_declaration (v, self.params.get_group (g.get_name() ) ) )
 
 %>
-#for $d in declarations
-$d
+// Scalar declarations
+#for $d in declarations 
+#slurp
+$d #slurp
 #end for
 
-// Array declarations
 
-double * double_xyz;
-double_xyz = (double*) malloc (ndx*ndy*ndz * sizeof (double) );
-for (skel_i = 0; skel_i < ndx*ndy*ndz; skel_i++) 
-    double_xyz[skel_i] = (double) skel_mpi_rank;
-double_xyz = (double*) malloc (ndx*ndy*ndz * sizeof (double) );
-for (skel_i = 0; skel_i < ndx*ndy*ndz; skel_i++) 
-    double_xyz[skel_i] = (double) skel_mpi_rank;
-double_xyz = (double*) malloc (ndx*ndy*ndz * sizeof (double) );
-for (skel_i = 0; skel_i < ndx*ndy*ndz; skel_i++) 
-    double_xyz[skel_i] = (double) skel_mpi_rank;
-double_xyz = (double*) malloc (ndx*ndy*ndz * sizeof (double) );
-for (skel_i = 0; skel_i < ndx*ndy*ndz; skel_i++) 
-    double_xyz[skel_i] = (double) skel_mpi_rank;
-double_xyz = (double*) malloc (ndx*ndy*ndz * sizeof (double) );
-for (skel_i = 0; skel_i < ndx*ndy*ndz; skel_i++) 
-    double_xyz[skel_i] = (double) skel_mpi_rank;
-double_xyz = (double*) malloc (ndx*ndy*ndz * sizeof (double) );
-for (skel_i = 0; skel_i < ndx*ndy*ndz; skel_i++) 
-    double_xyz[skel_i] = (double) skel_mpi_rank;
-double_xyz = (double*) malloc (ndx*ndy*ndz * sizeof (double) );
-for (skel_i = 0; skel_i < ndx*ndy*ndz; skel_i++) 
-    double_xyz[skel_i] = (double) skel_mpi_rank;
-double_xyz = (double*) malloc (ndx*ndy*ndz * sizeof (double) );
-for (skel_i = 0; skel_i < ndx*ndy*ndz; skel_i++) 
-    double_xyz[skel_i] = (double) skel_mpi_rank;
-double_xyz = (double*) malloc (ndx*ndy*ndz * sizeof (double) );
-for (skel_i = 0; skel_i < ndx*ndy*ndz; skel_i++) 
-    double_xyz[skel_i] = (double) skel_mpi_rank;
+<%
+initializations = set()
+for v in filter (lambda x : x.is_scalar(), g.get_vars() ):
+    initializations.add (adios.cFormatter.get_initialization (v, self.params.get_group (g.get_name() ) ) )
+
+%>
+//Initializations:
+#for $i in initializations
+#slurp
+$i #slurp
+#end for
+
+
+<%
+declarations = set()
+for v in filter (lambda x : not x.is_scalar(), g.get_vars() ):
+    declarations.add (adios.cFormatter.get_declaration (v, self.params.get_group (g.get_name() ) ) )
+
+%>
+// Array declarations
+#for $d in declarations
+#slurp
+$d #slurp
+#end for
+
+
+<%
+initializations = set()
+for v in filter (lambda x : not x.is_scalar(), g.get_vars() ):
+    initializations.add (adios.cFormatter.get_initialization (v, self.params.get_group (g.get_name() ) ) )
+
+%>
+// Initializations
+#for $i in initializations
+#slurp
+$i #slurp
+#end for
+
 
 for (skel_i = 0; skel_i < 1; skel_i++){
 
