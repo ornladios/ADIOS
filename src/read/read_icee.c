@@ -317,14 +317,13 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
     double deltat = MPI_Wtime() - lfp->timestamp;
     if (strcmp(lfp->fname, "_icee_.probe") == 0)
     {
-        sum_deltat += deltat;
         cnt_deltat++;
-        log_debug("deltat: %g (sum: %g, count: %d)\n", deltat, sum_deltat, cnt_deltat);
+        if (cnt_deltat > 1) // discard the first deltat 
+        {
+            sum_deltat += deltat;
+            log_debug("deltat: %g (sum: %g, count: %d)\n", deltat, sum_deltat, cnt_deltat);
+        }
         return 1;
-    }
-    else
-    {
-        deltat = deltat - sum_deltat/(cnt_deltat-1);
     }
 
     if (use_read_probe)
@@ -333,12 +332,12 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
         icee_varinfo_rec_ptr_t vp = lfp->varinfo;
         while (vp != NULL)
         {
-            //printf("varname, varlen = %s, %lld\n", vp->varname, vp->varlen);
             dsize += vp->varlen;
             vp = vp->next;
         }
-        log_debug("received, throughput = %g (MB), %g (MB/sec)\n",
-                  (double)dsize/1024/1024, (double)dsize/deltat/1024/1024);
+        double adjustedt = deltat - sum_deltat/(cnt_deltat-2);
+        log_debug("received, deltat, adjusted, throughput = %g (MB), %g (sec), %g (sec), %g (MB/sec)\n",
+                  (double)dsize/1024/1024, deltat, adjustedt, (double)dsize/adjustedt/1024/1024);
     }
 
     icee_varinfo_rec_ptr_t eventvp = event->varinfo;
