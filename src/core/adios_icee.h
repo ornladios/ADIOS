@@ -54,6 +54,7 @@ typedef struct icee_fileinfo_rec {
     int timestep;
     struct icee_varinfo_rec * varinfo;
     struct icee_fileinfo_rec * next;
+    double timestamp;
 } icee_fileinfo_rec_t, *icee_fileinfo_rec_ptr_t;
 
 static FMField icee_fileinfo_field_list[] =
@@ -67,6 +68,7 @@ static FMField icee_fileinfo_field_list[] =
     {"timestep", "integer", sizeof(int), FMOffset(icee_fileinfo_rec_ptr_t, timestep)},
     {"varinfo", "*icee_varinfo", sizeof(struct icee_varinfo_rec ), FMOffset(icee_fileinfo_rec_ptr_t, varinfo)},
     {"next", "*icee_fileinfo", sizeof(struct icee_fileinfo_rec ), FMOffset(icee_fileinfo_rec_ptr_t, next)},
+    {"timestamp", "float", sizeof(double), FMOffset(icee_fileinfo_rec_ptr_t, timestamp)},
     {NULL, NULL, 0, 0}
 };
 
