@@ -321,8 +321,8 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
         if (cnt_deltat > 1) // discard the first deltat 
         {
             sum_deltat += deltat;
-            log_debug("deltat: %g (sum: %g, count: %d)\n", deltat, sum_deltat, cnt_deltat);
         }
+        log_debug("deltat: %g (sum: %g, count: %d)\n", deltat, sum_deltat, cnt_deltat);
         return 1;
     }
 
@@ -335,9 +335,21 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
             dsize += vp->varlen;
             vp = vp->next;
         }
-        double adjustedt = deltat - sum_deltat/(cnt_deltat-2);
+        double adjustedt = deltat - sum_deltat/(cnt_deltat-1);
         log_debug("received, deltat, adjusted, throughput = %g (MB), %g (sec), %g (sec), %g (MB/sec)\n",
                   (double)dsize/1024/1024, deltat, adjustedt, (double)dsize/adjustedt/1024/1024);
+        
+
+        {
+            icee_varinfo_rec_ptr_t vp = NULL;
+            vp = icee_varinfo_search_byname(lfp->varinfo, "__icee_deltat__");
+
+            if (vp != NULL)
+            {
+                *((double*)vp->data) = adjustedt;
+            }
+        }
+
     }
 
     icee_varinfo_rec_ptr_t eventvp = event->varinfo;

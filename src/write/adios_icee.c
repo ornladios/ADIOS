@@ -585,32 +585,31 @@ on_icee_passivecheckin_request (CManager cm, CMConnection conn, icee_passivechec
 void
 send_probe (int nprobe)
 {
-    icee_fileinfo_rec_ptr_t _fp;
-    MYCALLOC(_fp, 1, sizeof(icee_fileinfo_rec_t));
-    
-    _fp->fname = "_icee_.probe";
-    _fp->varinfo = NULL;
-    _fp->next = NULL;
+    icee_fileinfo_rec_ptr_t f;    
+    MYCALLOC(f, 1, sizeof(icee_fileinfo_rec_t));
+
+    f->fname = "_icee_.probe";
+    f->next = NULL;
 
     int i;
     for (i=0; i<nprobe; i++)
     {
-        _fp->timestamp = MPI_Wtime();
+        f->timestamp = MPI_Wtime();
         
         if (!is_cm_passive)
-            EVsubmit(icee_write_source, _fp, NULL);
+            EVsubmit(icee_write_source, f, NULL);
         else
         {
             CMFormat fm = CMlookup_format(icee_write_cm, icee_fileinfo_format_list);
             int i;
             for (i=0; i<n_client; i++)
-                if (CMwrite(icee_write_cm_conn[i], fm, (void*)_fp) != 1)
+                if (CMwrite(icee_write_cm_conn[i], fm, (void*)f) != 1)
                     log_error ("Sending fileinfo failed\n");
         }
         usleep(0.1*1E7);
     }
 
-    free(_fp);
+    free(f);
 }
 
 // Initializes icee write local data structures
@@ -1051,7 +1050,36 @@ extern void
 adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *method)
 {
     log_debug ("%s\n", __FUNCTION__);
-    fp->timestamp = MPI_Wtime();
+    double timestamp = MPI_Wtime();
+    fp->timestamp = timestamp;
+
+    if (use_probe)
+    {
+        icee_varinfo_rec_ptr_t v;
+        MYCALLOC(v, 1, sizeof(icee_varinfo_rec_t));
+        
+        v->varname = strdup("__icee_deltat__");
+        v->varid = ++fp->nvars;
+        v->type = adios_double;
+        v->typesize = sizeof(double);
+        v->varlen = sizeof(double);
+        v->data = (char*) &timestamp;
+        v->next = NULL;
+
+        icee_varinfo_rec_ptr_t vp = fp->varinfo;
+        if (vp == NULL)
+        {
+            fp->varinfo = v;
+        }
+        else
+        {
+            while (vp->next != NULL)
+            {
+                vp = vp->next;
+            }
+            vp->next = v;
+        }
+    }
 
     if( fd == NULL || method == NULL) {
         perror("open: Bad input parameters\n");
