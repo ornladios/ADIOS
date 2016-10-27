@@ -72,14 +72,39 @@ int common_adios_init_noxml (MPI_Comm comm)
 int common_adios_finalize (int mype)
 {
     struct adios_method_list_struct * m;
+    struct adios_group_list_struct * g;
+
+    //Yuan: there may be time steps left in the time aggregated buffer, which
+    // needs to be dumped out before finalize
+    for (g = adios_get_groups(); g; g = g->next)
+    {
+        if (TimeAggregationInProgress(g->group)) {
+            //printf("time buffering enabled and data left... close file\n");
+            /* At this point the buffer of the last step has been closed and
+             * the index has been built but it was not yet passed on to the
+             * method's close function.
+             * do_ts_finalize signals this special case to common_adios_close()
+             */
+            g->group->ts_to_buffer=0; //reset the counter
+            g->group->ts_fd->current_pg=g->group->ts_fd->pgs_written;
+            g->group->built_index=1;
+            SetTimeAggregationFinalizeMode(g->group);
+            common_adios_close (g->group->ts_fd); // close file
+            if (g->group->index)
+                adios_free_index_v1 (g->group->index);
+            g->group->index = NULL;
+            g->group->ts_fd = NULL;
+            SetTimeAggregation(g->group, 0); //turn off ts buffering
+        }
+    }
 
     adios_errno = err_no_error;
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_finalize_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_finalize_fn
+        )
         {
             adios_transports [m->method->m].adios_finalize_fn (mype, m->method);
         }
@@ -96,12 +121,12 @@ int common_adios_finalize (int mype)
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
-                                 ,uint64_t buffer_size)
+                                  ,uint64_t buffer_size)
 {
     adios_errno = err_no_error;
     log_warn ("adios_allocate_buffer is not supported anymore. "
-              "Use adios_set_max_buffer_size(size_in_MB) to set the maximum allowed "
-              "buffer size for each adios_open()...adios_close() operation.\n");
+            "Use adios_set_max_buffer_size(size_in_MB) to set the maximum allowed "
+            "buffer size for each adios_open()...adios_close() operation.\n");
     //adios_buffer_size_requested_set (buffer_size * 1024 * 1024);
     //adios_buffer_alloc_when_set (adios_buffer_alloc_when);
     //adios_set_buffer_size ();
@@ -112,15 +137,44 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
 // Drew: used for experiments
 static uint32_t pinned_timestep = 0;
 void adios_pin_timestep(uint32_t ts) {
-  pinned_timestep = ts;
+    pinned_timestep = ts;
+}
+
+
+/////////////////
+//Yuan: check for number of ts to be buffered from XML  
+static uint64_t get_ts_buffering(char *parameters, const struct adios_group_struct *g)
+{
+    int64_t bts=0;
+    struct PairStruct *pairs = a2s_text_to_name_value_pairs(parameters);
+    struct PairStruct *p = pairs;
+    while (p) {
+        if ( !strcasecmp (p->name, "ts_buffersize") )
+        {
+            //get the buffer size from XML in bytes
+            errno = 0;
+            bts = strtoll(p->value, NULL, 10);
+             if (bts < 0 || errno != 0) {
+                 log_error ("Invalid 'ts_buffersize' parameter given to the group '%s'\n", p->value);
+             }
+        }
+        p = p->next;
+    }
+    a2s_free_name_value_pairs (pairs);
+
+    if (bts < 0) {
+        fprintf (stderr, "The buffer size for time step buffering can not be <0.\n");
+        bts=0;
+    }
+
+    return (uint64_t) bts;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
 
-int common_adios_open (int64_t * fd_p, const char * group_name
-                ,const char * name, const char * file_mode, MPI_Comm comm
-               )
+struct adios_file_struct * common_adios_open (
+        const char * group_name, const char * name, const char * file_mode, MPI_Comm comm)
 {
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_open_to_close");
@@ -128,22 +182,21 @@ int common_adios_open (int64_t * fd_p, const char * group_name
 #endif
 
     int64_t group_id = 0;
-    struct adios_file_struct * fd = (struct adios_file_struct *)
-                                  malloc (sizeof (struct adios_file_struct));
-    struct adios_group_struct * g = 0;
-    struct adios_method_list_struct * methods = 0;
+    struct adios_group_struct * g = NULL;
+    struct adios_method_list_struct * methods = NULL;
+    struct adios_file_struct * fd = NULL;
     enum ADIOS_METHOD_MODE mode;
 
+    //printf("beginning of file open... bytes_written=%llu\n", fd->bytes_written);
+
     adios_errno = err_no_error;
-    adios_file_struct_init (fd);
     adios_common_get_group (&group_id, group_name);
     g = (struct adios_group_struct *) group_id;
     if (!g) {
         adios_error(err_invalid_group, 
-                "adios_open: try to open file %s with undefined group: %s\n", 
-                name, group_name);
-        *fd_p = 0;
-        return adios_errno;
+                    "adios_open: try to open file %s with undefined group: %s\n",
+                    name, group_name);
+        return NULL;
     }
 
     if (!strcasecmp (file_mode, "r"))
@@ -160,88 +213,110 @@ int common_adios_open (int64_t * fd_p, const char * group_name
                 else
                 {
                     adios_error(err_invalid_file_mode,
-                        "adios_open: unknown file mode: %s, supported r,w,a,u\n",
-                        file_mode);
-
-                    *fd_p = 0;
-
-                    return adios_errno;
+                                "adios_open: unknown file mode: %s, supported r,w,a,u\n",
+                                file_mode);
+                    return NULL;
                 }
 
-    fd->name = strdup (name);
-    fd->subfile_index = -1; // subfile index is by default -1
-    fd->group = g;
-    fd->mode = mode;
-    if (comm == MPI_COMM_NULL)
-        fd->comm = MPI_COMM_NULL;
-    else if (comm == MPI_COMM_SELF)
-        fd->comm = MPI_COMM_SELF;
+    //printf("ts_to buffer=%d max_tx=%d\n", g->ts_to_buffer, g->max_ts);
+    //Yuan: buffering time steps doesn't need to init file open every time
+    if (TimeAggregationInProgress(g)) {
+        fd = g->ts_fd; //continue writing to the previous file
+        //   printf("skip file init... bytes_written=%llu file_handle_addr=%llu\n", fd->bytes_written, fd);
+        //  printf("open: fd->pgs_written->pg_start_in_file=%lld, fd->current_pg->pg_start_in_file=%lld\n", fd->pgs_written->pg_start_in_file, fd->current_pg->pg_start_in_file);
+        //Yuan: buffering time steps doesn't need to init file open every time
+        log_debug("TimeAggr: skip file name and group assignment\n");
+    }
+    else {
+
+        log_debug("TimeAggr: new open... file struct init\n");
+        fd = (struct adios_file_struct *) malloc (sizeof (struct adios_file_struct));
+        adios_file_struct_init (fd);
+        fd->name = strdup (name);
+        fd->subfile_index = -1; // subfile index is by default -1
+        fd->group = g;
+        fd->mode = mode;
+        if (comm == MPI_COMM_NULL)
+            fd->comm = MPI_COMM_NULL;
+        else if (comm == MPI_COMM_SELF)
+            fd->comm = MPI_COMM_SELF;
+        else
+            MPI_Comm_dup(comm, &fd->comm);
+    }
+
+    methods = g->methods;
+
+    //Yuan: if time aggregation is turned on, only open() at the first time step
+    if (TimeAggregationInProgress(g))
+    {
+        //printf("time buffering.... skip open\n");
+        //printf("open: fd->offset=%llu, group_offset=%llu\n", fd->offset, g->group_offset);
+    }
     else
-        MPI_Comm_dup(comm, &fd->comm);
+    {
+        while (methods)
+        {
+            if (   methods->method->m != ADIOS_METHOD_UNKNOWN
+                    && methods->method->m != ADIOS_METHOD_NULL
+                    && adios_transports [methods->method->m].adios_open_fn
+            )
+            {
+                adios_transports [methods->method->m].adios_open_fn
+                (fd, methods->method, fd->comm);
+            }
+
+            //Yuan: check if need to buffer time steps
+            //following the assumption that only one method will be defined at
+            //this point
+            if (methods->method->parameters) { 
+                g->ts_buffsize=get_ts_buffering(methods->method->parameters, g);
+                SetTimeAggregation (g, (g->ts_buffsize > 0));
+
+                /*
+                if(g->max_ts>0) {
+                    g->do_ts_aggr=1;
+                    g->ts_to_buffer=g->max_ts;
+                }
+                else {
+                    g->do_ts_aggr=0;
+                    g->ts_to_buffer=0;
+                }*/
+                //printf("open: do_ts_aggr=%d  max_ts=%d ts_to_buffer=%d\n", g->do_ts_aggr, g->max_ts, g->ts_to_buffer);
+            }
+
+            methods = methods->next;
+        }
+
+        if (adios_errno)
+        {
+            if (NotTimeAggregated(g) || TimeAggregationJustBegan(g))
+                free (fd);
+        }
+
+    }
 
 
-#if 1
-    /* Time index magic done here */
-    if (mode == adios_mode_write)
+    /* Time index
+     * It increases in write/append mode, it does not change in update/read mode.
+     * This piece should be after calling the method's open function, which sets
+     * the time index from the existing file in case of append/update. */
+    if (mode == adios_mode_write || mode == adios_mode_append)
     {
         /* Traditionally, time=1 at the first step, and for subsequent file
            creations, time increases. Although, each file contains one step,
            the time index indicates that they are in a series.
-        */
+         */
         g->time_index++;
     }
-    /* FIXME: the time_index is updated in the actual method in case of append/update
-       so this code below is useless */
-#  if 0 
-    else if (mode == adios_mode_append)
-    {
-        g->time_index++;
-    }
-    else if (mode == adios_mode_update && g->time_index > 0)
-    {
-        /* Update from Append differs only in the time index. All methods had
-           code for Append, now for Update we decrease the counter by one,
-           for all methods. (But do not go below 1).
-        */
-        g->time_index--;
-    }
-#  endif
-    /* time starts from 1 not from 0 (traditionally; now no one cares */
+    /* time starts from 1 not from 0 in the BP design although it does not have any meaning */
     if (g->time_index == 0)
         g->time_index = 1;
-#else
-    /* old way pre-1.4*/
-    if (mode != adios_mode_read)
-        g->time_index++;
-#endif
 
     // Drew: for experiments
     if (pinned_timestep > 0)
         g->time_index = pinned_timestep;
 
-    methods = g->methods;
-    while (methods)
-    {
-        if (   methods->method->m != ADIOS_METHOD_UNKNOWN
-            && methods->method->m != ADIOS_METHOD_NULL
-            && adios_transports [methods->method->m].adios_open_fn
-           )
-        {
-            adios_transports [methods->method->m].adios_open_fn
-                                                 (fd, methods->method, fd->comm);
-        }
 
-        methods = methods->next;
-    }
-
-    if (!adios_errno) 
-    {
-        *fd_p = (int64_t) fd;
-    } else 
-    {
-        free (fd_p);
-        fd_p = 0L;
-    }
 
     if ( !adios_errno && fd->mode != adios_mode_read )
     {
@@ -253,37 +328,34 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             gettimeofday(&tp, NULL);
             sprintf(epoch, "%d", (int) tp.tv_sec);
 
-            int def_adios_init_attrs = 1;
-            // if we append/update, define these attributes only at the first step
-            if (fd->mode != adios_mode_write && fd->group->time_index > 1)
-                def_adios_init_attrs = 0;
-
-            if (def_adios_init_attrs) {
-                log_debug ("Define ADIOS extra attributes, "
-                        "time = %d, rank = %d, epoch = %s subfile=%d\n",
-                        fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
-
-                adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH,
-                        adios_string, VERSION, NULL);
-
-                adios_common_define_attribute ((int64_t)fd->group, "create_time_epoch", ADIOS_ATTR_PATH,
-                        adios_integer, epoch, NULL);
-                adios_common_define_attribute ((int64_t)fd->group, "update_time_epoch", ADIOS_ATTR_PATH,
-                        adios_integer, epoch, NULL);
-                // id of last attribute is fd->group->member_count
-                fd->group->attrid_update_epoch = fd->group->member_count;
-
-            }
             /* FIXME: this code works fine, it does not duplicate the attribute,
                but the index will still contain all copies and the read will see
                only the first one. Thus updating an attribute does not work
                in practice.
              */
+
+            if (fd->group->time_index == 1)
+            {
+                log_debug ("Define ADIOS extra attributes, "
+                        "time = %d, rank = %d, epoch = %s subfile=%d\n",
+                        fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
+
+                adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH,
+                                               adios_string, VERSION, NULL);
+
+                adios_common_define_attribute ((int64_t)fd->group, "create_time_epoch", ADIOS_ATTR_PATH,
+                                               adios_integer, epoch, NULL);
+                adios_common_define_attribute ((int64_t)fd->group, "update_time_epoch", ADIOS_ATTR_PATH,
+                                               adios_integer, epoch, NULL);
+                // id of last attribute is fd->group->member_count
+                fd->group->attrid_update_epoch = fd->group->member_count;
+
+            }
             else
             {
                 // update attribute of update time (define would duplicate it)
                 struct adios_attribute_struct * attr = adios_find_attribute_by_id
-                    (fd->group->attributes, fd->group->attrid_update_epoch);
+                        (fd->group->attributes, fd->group->attrid_update_epoch);
                 if (attr) {
                     log_debug ("Update ADIOS extra attribute name=%s, "
                             "time = %d, rank = %d, epoch = %s, subfile=%d\n",
@@ -296,10 +368,30 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             }
         }
 
+        //Yuan: FIXME only evaluate the list when opening file; otherwise
+        //simply add PG  
         /* Add first PG to the group */
-        assert (!fd->pgs_written);
-        assert (!fd->current_pg);
+        if (NotTimeAggregated(g) || TimeAggregationJustBegan(g))
+        {
+            assert (!fd->pgs_written); //Yuan: the start of the PG list
+            assert (!fd->current_pg); // the last of the PG list
+        }
+        //printf("rank %d: fd->bytes-written=%llu\n",fd->group->process_id, fd->bytes_written);
         add_new_pg_written (fd);
+        //keep a record of the PG offsets. Assume every
+        //process writes the same amount of data 
+        if(TimeAggregated(g))
+            fd->current_pg->pg_start_in_file=fd->bytes_written;
+
+
+
+#if 0
+        //printf("add new pg\n");
+        //Yuan: record the first PG for the output offset later  
+        if(fd->mode == adios_mode_write && g->do_ts_aggr==1 &&
+                g->ts_to_buffer==g->max_ts)
+            fd->first_pg_written=fd->current_pg;
+#endif
 
 
 #ifdef ADIOS_TIMERS
@@ -309,80 +401,103 @@ int common_adios_open (int64_t * fd_p, const char * group_name
 
         /* Now ask the methods if anyone wants common-layer BP formatted buffering */
         methods = g->methods;
-        while (methods)
+
+        if (NotTimeAggregated(g) || TimeAggregationJustBegan(g))
         {
-            enum BUFFERING_STRATEGY bufstrat = no_buffering;
-            if (   methods->method->m != ADIOS_METHOD_UNKNOWN
-                    && methods->method->m != ADIOS_METHOD_NULL
-                    && adios_transports [methods->method->m].adios_should_buffer_fn
-               )
+            while (methods)
             {
-                bufstrat = adios_transports [methods->method->m].
-                                            adios_should_buffer_fn (fd, methods->method);
-            }
+                enum BUFFERING_STRATEGY bufstrat = no_buffering;
+                if (   methods->method->m != ADIOS_METHOD_UNKNOWN
+                        && methods->method->m != ADIOS_METHOD_NULL
+                        && adios_transports [methods->method->m].adios_should_buffer_fn
+                )
+                {
+                    bufstrat = adios_transports [methods->method->m].
+                            adios_should_buffer_fn (fd, methods->method);
+                }
 
-            if (bufstrat != no_buffering) {
-                fd->shared_buffer = adios_flag_yes;
-                fd->bufstrat = bufstrat;
-                /* FIXME: last method determines the value of buffering strategy here. This whole
-                   buffer overflow thing does not work if there are multiple methods called 
-                   and they want something else (stop vs continue vs continue with new PG
-                 */
-            }
+                if (bufstrat != no_buffering) {
+                    fd->shared_buffer = adios_flag_yes;
+                    fd->bufstrat = bufstrat;
+                    /* FIXME: last method determines the value of buffering strategy here. This whole
+                       buffer overflow thing does not work if there are multiple methods called 
+                       and they want something else (stop vs continue vs continue with new PG
+                     */
+                }
 
-            methods = methods->next;
+                methods = methods->next;
+            }
         }
-
 
         if (fd->bufstrat != no_buffering)
         {
             /* Allocate BP buffer with remembered size or max size or default size */
             uint64_t bufsize;
-            if (g->last_buffer_size > 0)
-                bufsize = g->last_buffer_size;
-            else
-                bufsize = adios_databuffer_get_extension_size (fd);
 
-            if (!adios_databuffer_resize (fd, bufsize)) 
-            {
-                fd->bufstate = buffering_ongoing;
-
-                // write the process group header
-                adios_write_open_process_group_header_v1 (fd);
-
-                // setup for writing vars
-                adios_write_open_vars_v1 (fd);
+            if (NotTimeAggregated(g)) {
+                if (g->last_buffer_size > 0)
+                    bufsize = g->last_buffer_size;
+                else
+                    bufsize = adios_databuffer_get_extension_size (fd);
+            } else {
+                //Yuan: set the buffer at the first time step to be buffered
+                //Yuan: ts buffering doesn't need buffer extension, only one
+                            //time allocation at the first time step
+                if (TimeAggregationJustBegan(g)) {
+                    adios_databuffer_set_max_size(g->ts_buffsize);
+                    bufsize=g->ts_buffsize;
+                }
             }
-            else
+
+            //printf("==open bufsize=%llu\n", bufsize);
+
+            //Yuan: when ts buffering is on, only the first step needs to
+            //allocate the buffer
+            if (NotTimeAggregated(g) || TimeAggregationJustBegan(g))
             {
-                fd->bufstate = buffering_stopped;
-                adios_error (err_no_memory, 
-                             "Cannot allocate %" PRIu64 " bytes for buffered output "
-                             "of group %s in adios_open(). Output will fail.\n", 
-                             fd->buffer_size, g->name);
-                return adios_errno;
+                if (adios_databuffer_resize (fd, bufsize))
+                {
+                    fd->bufstate = buffering_stopped;
+                    adios_error (err_no_memory, 
+                                 "Cannot allocate %" PRIu64 " bytes for buffered output "
+                                 "of group %s in adios_open(). Output will fail.\n", 
+                                 fd->buffer_size, g->name);
+                    free(fd);
+                    return NULL;
+                }
             }
+            fd->bufstate = buffering_ongoing;
+
+            // write the process group header
+            adios_write_open_process_group_header_v1 (fd);
+
+            // setup for writing vars
+            adios_write_open_vars_v1 (fd);
+
         }
+
+        //printf("end of adios_open fd->offset=%llu bytes_written=%llu\n", fd->offset, fd->bytes_written);
 
     }
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_open");
 #endif
-    return adios_errno;
+    return fd;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_size)
+int common_adios_group_size (struct adios_file_struct * fd, uint64_t data_size, uint64_t * total_size)
 {
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_group_size");
 #endif
+    //printf("enter adios_group_size datasize= %llu\n", data_size);
 
     adios_errno = err_no_error;
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
@@ -394,7 +509,7 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
     {
         *total_size = 0;
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_stop ("adios_group_size");
+        timer_stop ("adios_group_size");
 #endif
         return err_no_error;
     }
@@ -408,6 +523,7 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
 #ifdef ADIOS_TIMERS
     data_size += fd->group->tv_size;
 #endif
+
 
     uint64_t overhead = adios_calc_overhead_v1 (fd);
     *total_size = data_size + overhead;
@@ -432,9 +548,9 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
         if (adios_databuffer_resize (fd, *total_size))
         {
             log_warn ("Cannot reallocate data buffer to %" PRIu64 " bytes "
-                    "for group %s in adios_group_size(). Continue buffering "
-                    "with buffer size %" PRIu64 " MB\n",
-                    *total_size, fd->group->name, fd->buffer_size/1048576L);
+                      "for group %s in adios_group_size(). Continue buffering "
+                      "with buffer size %" PRIu64 " MB\n",
+                      *total_size, fd->group->name, fd->buffer_size/1048576L);
         }
     }
 
@@ -552,6 +668,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     // as we can't do this after the data is transformed
     adios_generate_var_characteristics_v1 (fd, v);
 
+
     uint64_t vsize = 0;
     if (fd->bufstate == buffering_ongoing)
     {
@@ -561,6 +678,8 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
 
         if (fd->buffer_size < fd->offset + vsize)
         {
+            //    printf("adios_write fd->offset=%llu for variable= %s buffer_size=%llu\n", fd->offset, v->name, fd->buffer_size);
+            //            printf("max_ts=%d ts_to_buffer=%d\n", fd->group->max_ts, fd->group->ts_to_buffer);
             /* Trouble: this variable does not fit into the current buffer */
             // First, try to realloc the buffer 
             uint64_t extrasize = adios_databuffer_get_extension_size (fd);
@@ -585,7 +704,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
                     if (   m->method->m != ADIOS_METHOD_UNKNOWN
                             && m->method->m != ADIOS_METHOD_NULL
                             && adios_transports [m->method->m].adios_buffer_overflow_fn
-                       )
+                    )
                     {
                         adios_transports [m->method->m].adios_buffer_overflow_fn (fd, m->method);
                     }
@@ -601,9 +720,9 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
                         if (adios_databuffer_resize (fd, vsize+1024))
                         {
                             adios_error (err_no_memory, "adios_write(): buffer cannot accommodate variable %s/%s "
-                                    "with its storage size of %" PRIu64 " bytes at all. "
-                                    "No more variables will be written.\n", v->path, v->name, vsize);
-                                    //"This variable won't be written.\n", v->path, v->name, vsize);
+                                         "with its storage size of %" PRIu64 " bytes at all. "
+                                         "No more variables will be written.\n", v->path, v->name, vsize);
+                            //"This variable won't be written.\n", v->path, v->name, vsize);
                             fd->bufstate = buffering_stopped;
                             /* FIXME: This stops all writing, not just this variable! */
                             /* FIXME: so maybe we should give the method a chance to write this variable directly? */
@@ -649,7 +768,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     else // Else, do a transform
     {
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_start ("adios_transform");
+        timer_start ("adios_transform");
 #endif
         int success = common_adios_write_transform_helper(fd, v);
         if (success) {
@@ -660,7 +779,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             // FIXME: Reverse the transform metadata and write raw data as usual
         }
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_stop ("adios_transform");
+        timer_stop ("adios_transform");
 #endif
     }
 
@@ -673,10 +792,10 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             if (   m->method->m != ADIOS_METHOD_UNKNOWN
                     && m->method->m != ADIOS_METHOD_NULL
                     && adios_transports [m->method->m].adios_write_fn
-               )
+            )
             {
                 adios_transports [m->method->m].adios_write_fn
-                    (fd, v, var, m->method);
+                (fd, v, var, m->method);
             }
 
             m = m->next;
@@ -701,7 +820,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             free(v->adata);
         }
         v->data = v->adata = 0; // throw away pointers to user data in case of arrays to avoid trying
-                                // to free them in possible forthcoming adios_write() of the same variable
+        // to free them in possible forthcoming adios_write() of the same variable
     }
 
     if (!adios_errno) {
@@ -804,9 +923,9 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_get_write_buffer (int64_t fd_p, const char * name
-                           ,uint64_t * size
-                           ,void ** buffer
-                           )
+                                   ,uint64_t * size
+                                   ,void ** buffer
+)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     adios_errno = err_no_error;
@@ -840,12 +959,12 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
     while (m)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_get_write_buffer_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_get_write_buffer_fn
+        )
         {
             adios_transports [m->method->m].adios_get_write_buffer_fn
-                                (fd, v, size, buffer, m->method);
+            (fd, v, size, buffer, m->method);
             m = 0;
         }
         else
@@ -858,8 +977,8 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
 ///////////////////////////////////////////////////////////////////////////////
 
 int common_adios_read (int64_t fd_p, const char * name, void * buffer
-               ,uint64_t buffer_size
-               )
+                       ,uint64_t buffer_size
+)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     adios_errno = err_no_error;
@@ -895,17 +1014,17 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
         while (m)
         {
             if (   m->method->m != ADIOS_METHOD_UNKNOWN
-                && m->method->m != ADIOS_METHOD_NULL
-                && adios_transports [m->method->m].adios_read_fn
-               )
+                    && m->method->m != ADIOS_METHOD_NULL
+                    && adios_transports [m->method->m].adios_read_fn
+            )
             {
                 adios_transports [m->method->m].adios_read_fn
-                                     (fd, v, buffer, buffer_size, m->method);
+                (fd, v, buffer, buffer_size, m->method);
                 m = 0;
             }
             else
                 m = m->next;
-    }
+        }
     }
     else
     {
@@ -974,8 +1093,8 @@ int common_adios_set_path (int64_t fd_p, const char * path)
 // The variable is not replaced with the new path in the hash table here, so
 // it is still found using the old path!
 int common_adios_set_path_var (int64_t fd_p, const char * path
-                       ,const char * name
-                       )
+                               ,const char * name
+)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     adios_errno = err_no_error;
@@ -1033,12 +1152,12 @@ int common_adios_end_iteration ()
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_end_iteration_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_end_iteration_fn
+        )
         {
             adios_transports [m->method->m].adios_end_iteration_fn
-                                                (m->method);
+            (m->method);
         }
     }
 
@@ -1055,12 +1174,12 @@ int common_adios_start_calculation ()
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_start_calculation_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_start_calculation_fn
+        )
         {
             adios_transports [m->method->m].adios_start_calculation_fn
-                                                  (m->method);
+            (m->method);
         }
     }
 
@@ -1077,27 +1196,37 @@ int common_adios_stop_calculation ()
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_stop_calculation_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_stop_calculation_fn
+        )
         {
             adios_transports [m->method->m].adios_stop_calculation_fn
-                                                   (m->method);
+            (m->method);
         }
     }
 
     return adios_errno;
 }
 
+//Yuan:
+#if 0
+static void update_index_offsets(struct adios_index_struct_v1 * index,
+                                 uint64_t pg_size)
+{
+    struct adios_index_process_group_struct_v1 * pg = index->pg_tail;
+    pg->offset_in_file = pg->pg_start_in_file
+
+}
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
-int common_adios_close (int64_t fd_p)
+int common_adios_close (struct adios_file_struct * fd)
 {
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_close");
 #endif
     adios_errno = err_no_error;
 
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_close\n");
@@ -1110,8 +1239,8 @@ int common_adios_close (int64_t fd_p)
     {
         // nothing to do so just return
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_stop ("adios_close");
-    timer_stop ("adios_open_to_close");
+        timer_stop ("adios_close");
+        timer_stop ("adios_open_to_close");
 #endif
         return 0;
     }
@@ -1126,8 +1255,10 @@ int common_adios_close (int64_t fd_p)
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_var_struct * v = fd->group->vars;
 
-    if (fd->mode != adios_mode_read )
+    if (fd->mode != adios_mode_read && !TimeAggregationFinalizeMode(fd->group))
     {
+        //printf("=====common_adios_close offset=%llu %llu\n max_ts=%d ts_to_buffer=%d \n", fd->pgs_written->pg_start_in_file, fd->current_pg->pg_start_in_file, fd->group->max_ts, fd->group->ts_to_buffer);
+        //        fd->current_pg=fd->pgs_written;
         if (fd->bufstate == buffering_ongoing)
         {
             adios_write_close_vars_v1 (fd);
@@ -1153,7 +1284,14 @@ int common_adios_close (int64_t fd_p)
             {
                 /* Trouble, attributes just don't fit into the end of buffer */
                 // try to extend the buffer first
-                if (adios_databuffer_resize (fd, fd->buffer_size + asize))
+                log_debug("Need more space for attributes in close(). "
+                        "Current buffer usage=%" PRIu64 " Attributes need %" PRIu64 " bytes "
+                        "var_start offset=%" PRIu64 " and bytes_written=%" PRIu64
+                        "\n",
+                        fd->offset, asize, fd->vars_start, fd->bytes_written
+                        );
+
+                if (adios_databuffer_resize (fd, fd->offset + asize))
                 {
                     /* FIXME:  Well, drop them in this case */
                     log_error ("adios_close(): There is not enough buffer to write the attributes. "
@@ -1177,6 +1315,28 @@ int common_adios_close (int64_t fd_p)
         }
     }
 
+
+    if (TimeAggregationJustBegan(fd->group))
+    {
+        // first close in time aggregation: we need to figure out how many
+        // time steps we can buffer given the buffer size
+        if( fd->group->ts_to_buffer > 0 && fd->group->ts_buffsize > 0) {
+            fd->group->max_ts = fd->group->ts_buffsize/fd->bytes_written;
+            // max_ts may be different on different processes, we need to use the minimum of them
+            int min_max_ts;
+            MPI_Allreduce(&fd->group->max_ts, &min_max_ts, 1, MPI_INT, MPI_MIN, fd->comm);
+            fd->group->max_ts = min_max_ts;
+            fd->group->ts_to_buffer = fd->group->max_ts-1; // we already have one in our hand
+            //    printf("ts_buffsize=%llu bytes_writen=%llu\n", fd->group->ts_buffsize, fd->bytes_written);
+            //    printf("max_ts=%d ts_to_buffer=%d\n", fd->group->max_ts, fd->group->ts_to_buffer);
+        }
+        // if we can only have one step in the buffer, now TimeAggregationLastStep() holds.
+        // TimeAggregationJustBegan() still holds (fd->group->ts_fd == NULL).
+
+        fd->group->ts_fd = fd;
+        // TimeAggregationJustBegan() now moved into TimeAggregationInProgress()
+    }
+
     // in order to get the index assembled, we need to do it in the
     // transport once we have collected all of the pieces
 
@@ -1184,38 +1344,86 @@ int common_adios_close (int64_t fd_p)
     for (;m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_close_fn
-           )
+                && m->method->m != ADIOS_METHOD_NULL
+                && adios_transports [m->method->m].adios_close_fn
+        )
         {
-            adios_transports [m->method->m].adios_close_fn
-                                 (fd, m->method);
+
+            if (NotTimeAggregated(fd->group))
+            {
+                adios_transports [m->method->m].adios_close_fn
+                (fd, m->method);
+            }
+            else
+            {
+                //Yuan: last time step, build index, then move the PG pointer to the first pg 
+                // to build correct starting offset of this process
+                struct adios_index_struct_v1 * current_index;
+                current_index=adios_alloc_index_v1(1);
+                adios_build_index_v1 (fd, current_index);
+                //printf("current->index time=%d offset=%llu\n", current_index->vars_root->characteristics[0].time_index, current_index->vars_root->characteristics[0].offset);
+                if (fd->group->index == NULL)
+                {
+                    //first time step, we just built the index for the group
+                    fd->group->index = current_index;
+                }
+                else
+                {
+                    adios_merge_index_v1 (fd->group->index, current_index->pg_root,
+                                          current_index->vars_root, current_index->attrs_root, 1);
+                    adios_free_index_v1 (current_index);
+                }
+                //printf("fd->group->index time=%d offset=%llu\n", fd->group->index->vars_root->characteristics[1].time_index, fd->group->index->vars_root->characteristics[1].offset);
+
+                if (TimeAggregationLastStep(fd->group))
+                {
+                    fd->current_pg=fd->pgs_written;
+                    fd->group->built_index=1;
+                    //printf("bytes-writen=%llu time index=%lu\n", fd->bytes_written, fd->group->index->pg_root->time_index);
+
+                    adios_transports [m->method->m].adios_close_fn
+                    (fd, m->method);
+
+                    /* the method clears the full index data including the one built here.
+                     * we need to just free the container structure.
+                     */
+                    adios_free_index_v1 (fd->group->index);
+                    fd->group->index = NULL;
+                }
+            }
         }
     }
 
-    while (v)
+
+    //Yuan: only free the buffer if 1) we are not buffering time steps; 
+    //2) we have enough time steps buffered  
+    //printf("close: do_ts_aggr=%d  max_ts=%d ts_to_buffer=%d\n", fd->group->do_ts_aggr, fd->group->max_ts, fd->group->ts_to_buffer);
+    if (NotTimeAggregated(fd->group) || TimeAggregationLastStep(fd->group))
     {
-        v->write_offset = 0;
-        if (v->adata)
+        while (v)
         {
-            free (v->adata);
-            v->data = v->adata = 0;
+            v->write_offset = 0;
+            if (v->adata)
+            {
+                free (v->adata);
+                v->data = v->adata = 0;
+            }
+
+            v = v->next;
         }
 
-        v = v->next;
-    }
+        /* clean-up all copied variables with statistics and data in all PGs attached to this file */
+        adios_free_pglist (fd);
 
-    /* clean-up all copied variables with statistics and data in all PGs attached to this file */
-    adios_free_pglist (fd);
+        if (fd->name)
+        {
+            free (fd->name);
+            fd->name = 0;
+        }
 
-    if (fd->name)
-    {
-        free (fd->name);
-        fd->name = 0;
-    }
-
-    if (fd->comm != MPI_COMM_NULL && fd->comm != MPI_COMM_SELF) {
-        MPI_Comm_free (&fd->comm);
+        if (fd->comm != MPI_COMM_NULL && fd->comm != MPI_COMM_SELF) {
+            MPI_Comm_free (&fd->comm);
+        }
     }
 
 #ifdef ADIOS_TIMER_EVENTS
@@ -1224,36 +1432,82 @@ int common_adios_close (int64_t fd_p)
     int name_len = strlen (fd->name);
     int fn_len = name_len + strlen (extension) + 1;
     char* fn = (char*) malloc (sizeof (char) * fn_len);
-    
+
     sprintf (fn, "%s%s", fd->name, extension);
 
     adios_timing_write_xml_common (fd_p, fn);
 #endif
 
 
+    //Yuan: add time step aggregation logic
+    //ts aggregation will keep the buffer for next time steps
+    //only free the buffer when ts aggregation is not required, or it
+    //has reached the MAX_TS. 
+    //printf("close: bytes_written=%llu buffer_siz=%llu fd->group->last_buffer_size=%llu\n", fd->bytes_written, fd->buffer_size, fd->group->last_buffer_size);
     if (fd->bufstrat != no_buffering)
     {
         if (fd->group->last_buffer_size < fd->buffer_size) {
             // remember how much buffer we used for the next cycle
-            fd->group->last_buffer_size = fd->buffer_size;
+            // Yuan: with ts buffering, it will be the total amount of data
+            // written; however last_buffer_size isn't used anyways
+            if(TimeAggregated(fd->group))
+                fd->group->last_buffer_size = fd->buffer_size;
+            else
+                fd->group->last_buffer_size = fd->bytes_written;
         }
-        adios_databuffer_free (fd);
+        if (NotTimeAggregated(fd->group) || TimeAggregationLastStep(fd->group)) {
+            adios_databuffer_free (fd);
+            //printf("adios_databuffer_free\n");
+        }
     }
 
-    free (fd);
+    if (TimeAggregated(fd->group))
+    {
+        if (TimeAggregationLastStep(fd->group))
+        {
+            //Yuan: reset the ts counter when the last ts is in
+            //printf("reset ts_to_buffer\n");
+            fd->group->ts_to_buffer = fd->group->max_ts;
+            fd->group->ts_fd = NULL;
+            free (fd);
+        }
+        else
+        {
+            // fd->group->new_write_offset=fd->current_pg->pg_start_in_file+
+            fd->group->ts_to_buffer--;
+            // TimeAggregationInProgress() may have moved into
+            //   TimeAggregationInProgress && TimeAggregationLastStep (i.e. ts_to_buffer==0)
+            //printf("didn't free fd, continue buffering addr=%lld\n", fd_p);
+        }
+    }
+    else
+    {
+        free (fd);
+    }
 
+    //printf("close file==============\n");
+    /*
+    printf("close: do_ts_aggr=%d  max_ts=%d ts_to_buffer=%d\n",
+            fd->group->do_ts_aggr, fd->group->max_ts, fd->group->ts_to_buffer);
+
+    printf("close: fd->offset=%lld, group_offset=%lld\n", fd->offset,
+            fd->group->group_offset); 
+
+    printf("close: fd->pgs_written->pg_start_in_file=%lld, fd->current_pg->pg_start_in_file=%lld\n", 
+            fd->pgs_written->pg_start_in_file, fd->current_pg->pg_start_in_file);
+     */
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_close");
     timer_stop ("adios_open_to_close");
-//    printf ("Timers, ");
-//    printf ("%d, ", fd->group->process_id);
-//    printf ("%d, ", fd->group->time_index);
-//    printf ("%lf, ", timer_get_total_interval ("adios_open" ));
-//    printf ("%lf, ", timer_get_total_interval ("adios_group_size"));
-//    printf ("%lf, ", timer_get_total_interval ("adios_transform" ));
-//    printf ("%lf, ", timer_get_total_interval ("adios_write" ));
-//    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
-//    timer_reset_timers ();
+    //    printf ("Timers, ");
+    //    printf ("%d, ", fd->group->process_id);
+    //    printf ("%d, ", fd->group->time_index);
+    //    printf ("%lf, ", timer_get_total_interval ("adios_open" ));
+    //    printf ("%lf, ", timer_get_total_interval ("adios_group_size"));
+    //    printf ("%lf, ", timer_get_total_interval ("adios_transform" ));
+    //    printf ("%lf, ", timer_get_total_interval ("adios_write" ));
+    //    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
+    //    timer_reset_timers ();
 
     printf("[TIMERS] Proc: %d Time: %d ", fd->group->process_id, fd->group->time_index);
     int i;

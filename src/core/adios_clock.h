@@ -12,7 +12,7 @@ double adios_gettime_double();
 /* get current time in milliseconds as unsigned long */
 unsigned long adios_gettime_ms();
 
-#ifndef clockid_t
+#ifndef HAVE_CLOCKID_T
     typedef int clockid_t;
 #endif
 #ifndef CLOCK_REALTIME

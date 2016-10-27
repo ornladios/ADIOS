@@ -105,7 +105,10 @@ void FC_FUNC_(adios_open, ADIOS_OPEN)
     buf3 = futils_fstr_to_cstr (mode, mode_size);
 
     if (buf1 != 0 && buf2 != 0 && buf3 != 0) {
-        *err = common_adios_open (fd, buf1, buf2, buf3, c_comm);
+        struct adios_file_struct * f = common_adios_open (buf1, buf2, buf3, c_comm);
+        *err = adios_errno;
+        if (adios_errno == err_no_error)
+            *fd = (int64_t)f;
         free (buf1);
         free (buf2);
         free (buf3);
@@ -120,9 +123,14 @@ void FC_FUNC_(adios_group_size, ADIOS_GROUP_SIZE)
     ,int64_t * total_size, int * err
     )
 {
-    *err = common_adios_group_size (*fd_p, (uint64_t) *data_size
-                            ,(uint64_t *) total_size
-                            );
+    struct adios_file_struct * fd = (struct adios_file_struct *) *fd_p;
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
+        *err = adios_errno;
+        return;
+    }
+    *err = common_adios_group_size (fd, (uint64_t) *data_size, (uint64_t *) total_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -477,7 +485,8 @@ void FC_FUNC_(adios_stop_calculation, ADIOS_STOP_CALCULATION) (int * err)
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_close, ADIOS_CLOSE) (int64_t * fd_p, int * err)
 {
-    *err = common_adios_close (*fd_p);
+    struct adios_file_struct * fd = (struct adios_file_struct *) *fd_p;
+    *err = common_adios_close (fd);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

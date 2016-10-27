@@ -106,20 +106,22 @@ void adios_transform_zfp_transformed_size_growth(const struct adios_var_struct *
 
 
 /* Get the length of each dimension. ZFP needs to know this. */
-static void get_dims(const struct adios_dimension_struct* d, struct zfp_buffer* zbuff, struct adios_var_struct* var)
+static void get_dims(const struct adios_dimension_struct* d, struct zfp_buffer* zbuff, struct adios_var_struct* var, struct adios_file_struct *fd)
 {
-	int i;
+	uint zdim;
+	int i, ii;
+	struct adios_dimension_struct *ddim = (struct adios_dimension_struct *) d;
+
 	zbuff->ndims = (uint) count_dimensions(d);
 	zbuff->dims = malloc(zbuff->ndims*sizeof(uint));
+
 	for (i=0; i<zbuff->ndims; i++)
 	{
-		zbuff->dims[i] = (uint) adios_get_dimension_space_size(var, (struct adios_dimension_struct*) d);
-		d = d->next;
-	}
-
-	for (i=0; i<(zbuff->ndims-1); i++)
-	{
-		zbuff->dims[i] /= zbuff->dims[i+1];
+		zdim = (uint) adios_get_dim_value(&ddim->dimension);
+		if (fd->group->adios_host_language_fortran == adios_flag_yes) ii = zbuff->ndims - 1 - i;
+		else ii = i;
+		zbuff->dims[ii] = zdim;
+		ddim = ddim->next;
 	}
 
 	return;
@@ -150,7 +152,7 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 	/* dimensionality */
 	struct adios_dimension_struct* d = var->pre_transform_dimensions;
-	get_dims(d, zbuff, var);
+	get_dims(d, zbuff, var, fd);
 
 
 	/* make sure the user only gives the sensible number of key:values -- 1. */

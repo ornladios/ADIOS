@@ -83,7 +83,9 @@ int adios_open (int64_t * fd, const char * group_name, const char * name
                ,const char * mode, MPI_Comm comm
                )
 {
-    return common_adios_open (fd, group_name, name, mode, comm);
+    struct adios_file_struct * f = common_adios_open (group_name, name, mode, comm);
+    *fd = (int64_t)f;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -91,7 +93,13 @@ int adios_group_size (int64_t fd_p, uint64_t data_size
                      ,uint64_t * total_size
                      )
 {
-    return common_adios_group_size (fd_p, data_size, total_size);
+    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
+        return adios_errno;
+    }
+    return common_adios_group_size (fd, data_size, total_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -203,7 +211,7 @@ int adios_close (int64_t fd_p)
     }
     struct adios_var_struct * v = fd->group->vars;
 
-    retval = common_adios_close (fd_p);
+    retval = common_adios_close (fd);
 
     // Q.L. 10-2010. To fix a memory leak problem.
     while (v) {

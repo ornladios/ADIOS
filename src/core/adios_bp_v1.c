@@ -232,6 +232,7 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
         {
             *root = (struct adios_index_process_group_struct_v1 *)
                    malloc (sizeof(struct adios_index_process_group_struct_v1));
+            (*root)->is_time_aggregated = 0;
             (*root)->next = 0;
         }
         uint16_t length_of_name;

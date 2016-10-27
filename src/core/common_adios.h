@@ -32,11 +32,11 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
 
 // end user calls for each I/O operation
 // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
-int common_adios_open (int64_t * fd_p, const char * group_name, const char * name
-               ,const char * mode, MPI_Comm comm
+struct adios_file_struct *  common_adios_open (
+                const char * group_name, const char * name, const char * mode, MPI_Comm comm
                );
 
-int common_adios_group_size (int64_t fd_p, uint64_t data_size
+int common_adios_group_size (struct adios_file_struct *, uint64_t data_size
                      ,uint64_t * total_size
                      );
 
@@ -62,6 +62,6 @@ int common_adios_start_calculation (void);
 
 int common_adios_stop_calculation (void);
 
-int common_adios_close (int64_t fd_p);
+int common_adios_close (struct adios_file_struct * fd );
 
 #endif

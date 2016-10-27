@@ -1375,6 +1375,16 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->tv_size = 0;
 #endif
 
+    //Yuan: added for time steps buffering
+    g->do_ts_aggr=0;
+    g->ts_fd = NULL;
+    g->ts_buffsize=0;
+    g->max_ts=1;
+    g->ts_to_buffer=1;
+    g->index=NULL;
+    g->built_index=0;
+    g->do_ts_finalize=0;
+
     *id = (int64_t) g;
 
     adios_append_group (g);
@@ -1392,6 +1402,7 @@ struct adios_pg_struct * add_new_pg_written (struct adios_file_struct * fd)
         pg->vars_written = NULL;
         pg->vars_written_tail = NULL;
         pg->next = NULL;
+        pg->has_index=0; //Yuan: for ts buffering
         if (!fd->pgs_written) 
         {
             fd->pgs_written = pg;
@@ -2447,6 +2458,7 @@ void index_append_var_v1 (
     } else {
         // existing variable, add this item to its characteristics
         log_debug ("   Append to existing variable\n");
+        //printf("   Append to existing variable\n");
 
         /* NOTE: old append made sure the variable mathes
          *  name + path + group name + type
@@ -2470,6 +2482,7 @@ void index_append_var_v1 (
             log_debug ("  ----------- Append index with merging --------------\n");
             struct adios_index_characteristic_struct_v1 * c;
             int count = olditem->characteristics_count + item->characteristics_count;
+//            printf("new variable index has %d\n", count);
             c = malloc ( count * sizeof (struct adios_index_characteristic_struct_v1));
             if (!c)
             {
@@ -2535,6 +2548,7 @@ void index_append_var_v1 (
         } 
         else 
         {
+            //printf("else in mergeing var index\n");
             if (  olditem->characteristics_count
                     + item->characteristics_count
                     > olditem->characteristics_allocated
@@ -2661,6 +2675,16 @@ void adios_merge_index_v1 (
 {
     // this will just add it on to the end and all should work fine
     index_append_process_group_v1 (main_index, new_pg_root);
+    log_debug("merge index on rank %u with sorting %s pg_root time aggregated %s  new pg_root time aggregated %s\n",
+              main_index->pg_root->process_id,
+              (needs_sorting ? "ON" : "OFF"),
+              (main_index->pg_root->is_time_aggregated ? "YES" : "NO"),
+              (new_pg_root->is_time_aggregated ? "YES" : "NO"));
+    if (main_index->pg_root->is_time_aggregated || new_pg_root->is_time_aggregated)
+    {
+        // variable characteristics need to be sorted if time steps are buffered
+        needs_sorting = 1;
+    }
 
     // need to do vars attrs one at a time to merge them properly
     struct adios_index_var_struct_v1 * v = new_vars_root;
@@ -2673,6 +2697,7 @@ void adios_merge_index_v1 (
         v_temp = v->next;
         v->next = 0;
         log_debug ("merge index var %s/%s\n", v->var_path, v->var_name);
+
         index_append_var_v1 (main_index, v, needs_sorting);
         v = v_temp;
     }
@@ -2940,12 +2965,13 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
             // NCSU ALACRITY-ADIOS - Clear the transform metadata
             adios_transform_clear_transform_characteristic(&root->characteristics[i].transform);
 
-            /*if (root->characteristics [i].value) {
+            if (root->characteristics [i].value) {
                 if (root->type == adios_string_array)
-                    free_string_array (root->characteristics [i].value, root->nelems);
+                    a2s_free_string_array (root->characteristics [i].value, root->nelems);
                 else
                     free (root->characteristics [i].value);
-            }*/
+                root->characteristics [i].value = NULL;
+            }
         }
 
         if (root->characteristics)
@@ -3509,8 +3535,83 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
     struct adios_pg_struct * pg = fd->pgs_written;
     int pgid = 0;
 
+//    printf("%d: ============build index, pg_start_in_file=%llu\n",fd->group->process_id, pg->pg_start_in_file);
+    
+    /* Yuan: if index has been built during time-aggregation,
+     * update the offsets and append the already built time-aggregation index
+     * (fd->group->index) to the 'index' that comes from the method and
+     * which may contain the indices from previous steps from a file (in append mode)
+     */
+    if (fd->group->built_index==1) {
+        log_debug("TimeAggr: index already built in time-aggregation, merge it in and move on\n");
+        struct adios_index_process_group_struct_v1 *g_item = g->index->pg_root;
+        while (g_item) {
+            g_item->offset_in_file += pg->pg_start_in_file;
+            g_item->is_time_aggregated = TimeAggregated(g); // yes
+            g_item= g_item->next;
+        }
+        /* When we later merge indexes, it may still be the case that both index and new index
+         * indicates no time aggregation. e.g. index is from parsing index from file at append,
+         * while new index is coming from other processes. Both index is created by parse_index
+         * which does not have info on time aggregation.
+         * We fix this issue here by updating the main index.
+         */
+        if (index && index->pg_root) {
+            struct adios_index_process_group_struct_v1 *pg = index->pg_root;
+            while (pg) {
+                pg->is_time_aggregated |= TimeAggregated(g);
+                pg = pg->next;
+            }
+        }
+        // append whole PG list at once
+        index_append_process_group_v1 (index, g->index->pg_root);
+
+        struct adios_index_var_struct_v1 * v_index = g->index->vars_root;
+        struct adios_index_var_struct_v1 * v_next;
+        while (v_index) {
+            int i;
+            for (i=0; i < v_index->characteristics_count; i++)
+            {
+                //printf("old var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset);
+                v_index->characteristics [i].offset +=  pg->pg_start_in_file;
+                v_index->characteristics [i].payload_offset += pg->pg_start_in_file;
+                //printf("var time index=%d\n",v_index->characteristics[cnt].time_index);
+                //printf("var offset = %llu  payload_offset=%llu\n", v_index->characteristics [cnt].offset, v_index->characteristics[cnt].payload_offset);
+            }
+            v_next = v_index->next;
+            v_index->next = NULL;
+            index_append_var_v1 (index, v_index, 0);
+            v_index = v_next;
+        }
+
+
+        struct adios_index_attribute_struct_v1 * a_index = g->index->attrs_root;
+        struct adios_index_attribute_struct_v1 * a_next;
+        while (a_index)
+        {
+            a_index->characteristics [0].offset += pg->pg_start_in_file;
+            a_index->characteristics [0].payload_offset += pg->pg_start_in_file;
+            //                printf("attr time index=%d offset=%llu\n", a->characteristics[cnt].time_index, a->characteristics [cnt].offset);
+            a_next = a_index->next;
+            a_index->next = NULL; // separate head from tail, to insert a single attribute here
+            index_append_attribute_v1(&index->attrs_root, a_index);
+            a_index = a_next;
+        }
+
+        fd->group->built_index=0;
+        return;
+    }
+
+    log_debug("TimeAggr: build index now and merge it in\n");
+
     while (pg)
     {
+        if(pg->has_index==1) {
+            pg=pg->next;
+            continue; 
+        }
+
+
         /* Create a PG entry in index */
         struct adios_index_process_group_struct_v1 * g_item;
         g_item = (struct adios_index_process_group_struct_v1 *)
@@ -3520,16 +3621,28 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
         g_item->process_id = g->process_id;
         g_item->time_index_name = (g->time_index_name ? strdup (g->time_index_name) : 0L);
         g_item->time_index = g->time_index;
+        g_item->is_time_aggregated = TimeAggregated(fd->group);
+        
+        //printf("adios_build_index_v1 g->time_index=%d, start_in_file=%llu\n", g->time_index, pg->pg_start_in_file);
         g_item->offset_in_file = pg->pg_start_in_file;
         g_item->next = 0;
 
         // build the groups and vars index
         index_append_process_group_v1 (index, g_item);
 
+        //Yuan: if time buffering is on, all the offsets are relative to the
+        //current buffer, they will be updated in the end after
+        //pg_start_in_file is established correctly
+        if (TimeAggregated(fd->group))
+            pg->pg_start_in_file=0;
+
+        //printf("after clearing... adios_build_index_v1 g->time_index=%d, start_in_file=%llu\n", g->time_index, pg->pg_start_in_file);
+
         /* For each written variable, create a variable entry in the index */
         struct adios_var_struct * v = pg->vars_written;
         while (v)
         {
+            //printf("in the variable loop varname=%s pg->pg_start_in_file=%llu\n",v->name, pg->pg_start_in_file);
             // only add items that were written to the index
             assert (v->write_offset > 0); // v is vars_written, so yes it was written actually
             //if (v->write_offset != 0)
@@ -3547,7 +3660,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                 v_index->type = v->type;
                 v_index->characteristics_count = 1;
                 v_index->characteristics_allocated = 1;
+                //printf("var=%s v_offset=%llu start_in_file=%llu\n", v->name, v->write_offset, pg->pg_start_in_file); 
                 v_index->characteristics [0].offset = v->write_offset + pg->pg_start_in_file;
+                //printf("var=%s characteristic offset=%llu\n", v->name, v_index->characteristics [0].offset); 
                 // Find the old var in g->vars.
                 // We need this to calculate the correct payload_offset, because that
                 // holds the variable references in the dimensions, while v-> contains
@@ -3570,6 +3685,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                 adios_transform_init_transform_characteristic(&v_index->characteristics[0].transform);
                 //v_index->characteristics [0].transform_type = adios_transform_none;
 
+//                printf("offset=%llu payload_offset=%llu\n", v_index->characteristics [0].offset, v_index->characteristics [0].payload_offset);
                 uint64_t size = adios_get_type_size (v->type, v->data);
                 switch (v->type)
                 {
@@ -3717,6 +3833,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             v = v->next;
         }
 
+        pg->has_index=1;
         pg = pg->next;
         pgid++;
     }
@@ -3741,7 +3858,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             a_index->nelems = a->nelems;
             a_index->characteristics_count = 1;
             a_index->characteristics_allocated = 1;
-            //uint64_t size = a_index->nelems * adios_get_type_size (a->type, a->value);
+            uint64_t size = a_index->nelems * adios_get_type_size (a->type, a->value);
 
             // pg_file_offsets [pgid] is now the last PG's start offset, which is the base
             // offset for attributes
@@ -3760,24 +3877,41 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             adios_transform_init_transform_characteristic(&a_index->characteristics[0].transform);
             //a_index->characteristics[0].transform_type = adios_transform_none;
 
-            a_index->characteristics [0].value = a->value;
+
             /* Do not copy the attributes to index, since they don't change */
-            /*
+            /* a_index->characteristics [0].value = a->value;*/
+            /* Actually, let's copy, so we can free all attribute indices, both these ones created from attributes and
+             * those that get read in from file or other processors and merged into the index. The latter ones are
+             * always allocated, not linked to an existing attribute's value.
+             */
+
             if (a->value)
             {
-                if (a->type == adios_string) 
-                    size++;
-                a_index->characteristics [0].value = malloc (size);
-                if (a->type == adios_string) 
-                    ((char *) (a_index->characteristics [0].value)) [size] = 0;
-                memcpy (a_index->characteristics [0].value, a->value, size);
+                if (a->type == adios_string_array)
+                {
+                    char ** sa = (char**) malloc (a->nelems*sizeof(char*));
+                    a_index->characteristics [0].value = sa;
+                    int i;
+                    for (i=0; i<a->nelems; i++) {
+                        sa[i] = strdup (  ((char**)a->value)[i]);
+                    }
+                }
+                else  if (a->type == adios_string)
+                {
+                    a_index->characteristics [0].value = strdup(a->value);
+                }
+                else
+                {
+                    a_index->characteristics [0].value = malloc (size);
+                    memcpy (a_index->characteristics [0].value, a->value, size);
+                }
 
             }
             else
             {
                 a_index->characteristics [0].value = 0;
             }
-            */
+
 
             if (a_index->nelems > 1) {
                 // for array attributes, save nelems as a dimension characteristic
@@ -3805,6 +3939,12 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
 
         a = a->next;
     }
+
+    //Yuan: at the end of close, save current index
+   // if(fd->group->do_ts_aggr==1 && fd->group->ts_to_buffer>1) { 
+   //     printf("store the index\n");
+   //     fd->group->index=index; 
+   // }
 }
 
 int adios_write_index_v1 (char ** buffer
@@ -3889,6 +4029,7 @@ int adios_write_index_v1 (char ** buffer
         index_size += len;
         group_size += len;
 
+        //printf("write index time=%lu\n", pg_root->time_index);
         buffer_write (buffer, buffer_size, buffer_offset
                 ,&pg_root->time_index, 4
                 );
@@ -3971,6 +4112,7 @@ int adios_write_index_v1 (char ** buffer
         index_size += 8;
         var_size += 8;
 
+        //printf("name=%s vars_root->characteristics_count=%d\n",vars_root->var_name, vars_root->characteristics_count);
         for (i = 0; i < vars_root->characteristics_count; i++)
         {
             uint64_t size;

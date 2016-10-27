@@ -39,7 +39,7 @@ extern struct adios_transport_struct * adios_transports; // in adios_internals.c
 
 struct adios_staging_data_struct
 {
-    int64_t fh; // handle returned by selected method's adios_open() function
+    struct adios_file_struct * stagedf; // handle returned by selected method's adios_open() function
     int rank;   // dataspaces rank or MPI rank if MPI is available
     int size;
 #if HAVE_MPI
@@ -227,8 +227,7 @@ int adios_staging_open (struct adios_file_struct * fd,
             else if (fd->mode == adios_mode_update)
                 file_mode[0] = 'u';
 
-            common_adios_open (&md->fh, md->group->name, fd->name,
-                               file_mode, md->group_comm);
+            md->stagedf = common_adios_open (md->group->name, fd->name, file_mode, md->group_comm);
             break;
         }
 
@@ -537,7 +536,6 @@ void adios_staging_close (struct adios_file_struct * fd
             }
 
             // everyone writes the BP buffer as their variable now
-            struct adios_file_struct * stagedf = (struct adios_file_struct *) md->fh;
             char ldim[32], gdim[32], offset[32];
             sprintf (ldim,   "%"PRIu64, fd->bytes_written);
             sprintf (gdim,   "%"PRIu64, md->pg_global_size);
@@ -545,7 +543,7 @@ void adios_staging_close (struct adios_file_struct * fd
 
             int64_t var = adios_common_define_var ((int64_t)md->group, "pg", "", adios_unsigned_byte,
                                                ldim, gdim, offset);
-            common_adios_write_byid (stagedf, (struct adios_var_struct *)var, fd->buffer);
+            common_adios_write_byid (md->stagedf, (struct adios_var_struct *)var, fd->buffer);
 
 
             /* Rank 0 writes the index */
@@ -559,7 +557,7 @@ void adios_staging_close (struct adios_file_struct * fd
                 sprintf (gdim,   "%"PRIu64, buffer_offset);
                 int64_t idx = adios_common_define_var ((int64_t)md->group, "index", "",
                                                        adios_unsigned_byte, ldim, gdim, "0");
-                common_adios_write_byid (stagedf, (struct adios_var_struct *)idx, buffer);
+                common_adios_write_byid (md->stagedf, (struct adios_var_struct *)idx, buffer);
                 free (buffer);
             }
             break;
@@ -573,8 +571,8 @@ void adios_staging_close (struct adios_file_struct * fd
         }
     }
 
-    common_adios_close(md->fh);
-    md->fh = 0;
+    common_adios_close(md->stagedf);
+    md->stagedf = NULL;
     md->group_comm = MPI_COMM_NULL;
 
     adios_clear_index_v1 (md->index);

@@ -21,6 +21,9 @@
 extern "C" {
 #endif
 
+/* This dummy MPI only supports functions what is included in both the parallel and
+ * sequential ADIOS library */
+
 typedef int MPI_Comm;
 typedef uint64_t MPI_Status;
 typedef int MPI_File;
@@ -28,6 +31,9 @@ typedef int MPI_Info;
 typedef int MPI_Datatype;  /* Store the byte size of a type in such vars */
 typedef uint64_t MPI_Offset;
 typedef int MPI_Fint;
+
+enum mpi_operation { MPI_MIN, MPI_SUM };
+typedef enum mpi_operation MPI_Op;
 
 #define MPI_SUCCESS                 0
 #define MPI_ERR_BUFFER              1      /* Invalid buffer pointer */
@@ -58,8 +64,6 @@ typedef int MPI_Fint;
 
 #define MPI_IN_PLACE                (void*)0
 
-#define MPI_SUM                     0
-
 #define MPI_MAX_PROCESSOR_NAME      32
 int MPI_Init(int *argc, char ***argv);
 int MPI_Finalize();
@@ -83,7 +87,8 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
 int MPI_Scatterv(void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
 
-
+int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
 
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, MPI_Info info, MPI_File *fh);
 int MPI_File_close(MPI_File *fh);

@@ -192,6 +192,28 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs,
   return ier ;
 }
 
+int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+{
+    int ier = MPI_SUCCESS;
+    size_t elemsize=0, nbytes=0;
+    if( !sendbuf || !recvbuf )        ier = MPI_ERR_BUFFER ;
+
+    switch( datatype )
+    {
+      case MPI_INT : elemsize = sizeof( int ) ;
+                     break;
+      default      : return MPI_ERR_TYPE ;
+    }
+    nbytes = elemsize * count ;
+
+    if( nbytes <= 0 ) ier = MPI_ERR_COUNT ;
+
+    if( ier == MPI_SUCCESS ) memcpy( recvbuf, sendbuf, nbytes );
+    else snprintf(mpierrmsg, ier, "could not allreduce data\n" );
+
+    return ier ;
+}
 
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, MPI_Info info, MPI_File *fh) 
 {

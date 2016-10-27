@@ -74,7 +74,7 @@ struct aggr_var_struct
 
 struct adios_MPI_data_struct
 {
-    int64_t fpr;
+    struct adios_file_struct *fp;
     MPI_File fh;
     MPI_Comm group_comm;
     int rank;
@@ -613,10 +613,8 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
 
 
 
-static int do_write (int64_t fd_p, const char * name, void * var)
+static int do_write (struct adios_file_struct * fd, const char * name, void * var)
 {
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
-
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_write\n");
@@ -734,18 +732,18 @@ static void output_vars(struct aggr_var_struct *vars, int varcnt, struct
     if(convert_file_mode(fd->mode, file_mode) == -1) //strange file mode
         return;
 
-    common_adios_open (&md->fpr, grp_name, fd->name, file_mode, md->group_comm);
-    common_adios_group_size (md->fpr, totalsize, &adios_size);
+    md->fp = common_adios_open (grp_name, fd->name, file_mode, md->group_comm);
+    common_adios_group_size (md->fp, totalsize, &adios_size);
 
     //move pointer to the first variable in the list
     vars=header;
     //write it out
     for(i=0;i<varcnt;i++) {
-        do_write(md->fpr, vars->name, vars->data);
+        do_write(md->fp, vars->name, vars->data);
         vars=vars->next;
     }
     //close the file
-    common_adios_close(md->fpr);
+    common_adios_close(md->fp);
 }
 
 

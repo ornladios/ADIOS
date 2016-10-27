@@ -54,7 +54,7 @@
 ///////////////////////////
 #include "core/globals.h"
 
-#define DUMP(fmt, ...) fprintf(stderr, ">>> "fmt"\n", ## __VA_ARGS__); 
+#define DUMP(fmt, ...) fprintf(stderr, ">>> "fmt"\n", ## __VA_ARGS__);
 
 #define MYMALLOC(var, size) {                       \
         var = malloc(size);                         \
@@ -82,6 +82,7 @@ EVsource (*source)[ICEE_MAX_PARALLEL];
 static int n_client = 0;
 static int max_client = 1;
 static int is_cm_passive = 0;
+static int use_probe = 0;
 
 static icee_fileinfo_rec_ptr_t fp = NULL;
 static int reverse_dim = 0;
@@ -516,11 +517,11 @@ icee_contactinfo_handler(CManager cm, void *vevent, void *client_data, attr_list
     log_debug ("%s\n", __FUNCTION__);
 
     icee_contactinfo_rec_ptr_t event = vevent;
-    if (adios_verbose_level > 5) 
+    if (adios_verbose_level > 5)
         icee_contactinfo_print(event);
 
     icee_contactinfo_rec_ptr_t prev = NULL;
-    int num_parallel = 0;    
+    int num_parallel = 0;
     while (event != NULL)
     {
         icee_contactinfo_rec_t *c = malloc(sizeof(icee_contactinfo_rec_t));
@@ -546,10 +547,10 @@ icee_contactinfo_handler(CManager cm, void *vevent, void *client_data, attr_list
     return 1;
 }
 
-void *dosubmit(icee_fileinfo_rec_t *fp)  
+void *dosubmit(icee_fileinfo_rec_t *fp)
 {
-    if (adios_verbose_level > 5) 
-        DUMP("threadid is %lu, submitting %d(%s)", 
+    if (adios_verbose_level > 5)
+        DUMP("threadid is %lu, submitting %d(%s)",
              (unsigned long)pthread_self(), fp->varinfo->varid, fp->varinfo->varname);
 
     int i;
@@ -559,18 +560,18 @@ void *dosubmit(icee_fileinfo_rec_t *fp)
         EVsubmit(source[i][k], fp, NULL);
     }
 
-    
+
     icee_varinfo_rec_ptr_t vp = fp->varinfo;
     free(vp->varname);
     free(vp->gdims);
     free(vp->ldims);
     free(vp->offsets);
     free(fp);
-    
-    return NULL;  
-}  
 
-void 
+    return NULL;
+}
+
+void
 on_icee_passivecheckin_request (CManager cm, CMConnection conn, icee_passivecheckin_rec_t *m)
 {
     log_debug("%s\n", __FUNCTION__);
@@ -581,9 +582,40 @@ on_icee_passivecheckin_request (CManager cm, CMConnection conn, icee_passivechec
     return;
 }
 
+void
+send_probe (int nprobe)
+{
+    icee_fileinfo_rec_ptr_t _fp;
+    MYCALLOC(_fp, 1, sizeof(icee_fileinfo_rec_t));
+    
+    _fp->fname = "_icee_.probe";
+    _fp->varinfo = NULL;
+    _fp->next = NULL;
+
+    int i;
+    for (i=0; i<nprobe; i++)
+    {
+        _fp->timestamp = MPI_Wtime();
+        
+        if (!is_cm_passive)
+            EVsubmit(icee_write_source, _fp, NULL);
+        else
+        {
+            CMFormat fm = CMlookup_format(icee_write_cm, icee_fileinfo_format_list);
+            int i;
+            for (i=0; i<n_client; i++)
+                if (CMwrite(icee_write_cm_conn[i], fm, (void*)_fp) != 1)
+                    log_error ("Sending fileinfo failed\n");
+        }
+        usleep(0.1*1E7);
+    }
+
+    free(_fp);
+}
+
 // Initializes icee write local data structures
-extern void 
-adios_icee_init(const PairStruct *params, struct adios_method_struct *method) 
+extern void
+adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
 {
     log_debug ("%s\n", __FUNCTION__);
 
@@ -595,7 +627,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
     int rank;
     MPI_Comm_rank(method->init_comm, &rank);
     log_debug ("rank : %d\n", rank);
-    
+
 
     const PairStruct * p = params;
 
@@ -622,7 +654,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
 
             char* token = strtok(p->value, ",");
             int len = 0;
-            while (token) 
+            while (token)
             {
                 plist[len] = token;
 
@@ -681,6 +713,10 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         {
             is_cm_passive = atoi(p->value);
         }
+        else if (!strcasecmp (p->name, "use_probe"))
+        {
+            use_probe = atoi(p->value);
+        }
 
         p = p->next;
     }
@@ -697,10 +733,10 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         // Init parallel
         if (icee_num_parallel > 1)
         {
-            pthread_attr_t attr;  
-            pthread_attr_init(&attr);  
-            pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);  
-            icee_pool = thr_pool_create(icee_num_parallel,icee_num_parallel,10,NULL);  
+            pthread_attr_t attr;
+            pthread_attr_init(&attr);
+            pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
+            icee_pool = thr_pool_create(icee_num_parallel,icee_num_parallel,10,NULL);
         }
 
         EVstone stone, remote_stone;
@@ -719,7 +755,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
 
             CMlisten_specific(wpcm, attr);
             DUMP("Passive mode at port %d.", cm_passive_port);
-            
+
             CMFormat fm = CMregister_format(wpcm, icee_passivecheckin_format_list);
             CMregister_handler(fm, icee_passivecheckin_request_handler, on_icee_passivecheckin_request);
 
@@ -735,57 +771,57 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             goto done;
         }
 #endif
-        
+
         contact_list = create_attr_list();
         switch (icee_transport)
         {
         case ENET:
-            add_string_attr(contact_list, 
-                            attr_atom_from_string("CM_TRANSPORT"), 
+            add_string_attr(contact_list,
+                            attr_atom_from_string("CM_TRANSPORT"),
                             "enet");
-            add_int_attr(contact_list, 
-                         attr_atom_from_string("CM_ENET_PORT"), 
+            add_int_attr(contact_list,
+                         attr_atom_from_string("CM_ENET_PORT"),
                          cm_port);
-            add_string_attr(contact_list, 
-                            attr_atom_from_string("CM_ENET_HOST"), 
+            add_string_attr(contact_list,
+                            attr_atom_from_string("CM_ENET_HOST"),
                             cm_host);
             break;
         case NNTI:
-            add_string_attr(contact_list, 
-                            attr_atom_from_string("CM_TRANSPORT"), 
+            add_string_attr(contact_list,
+                            attr_atom_from_string("CM_TRANSPORT"),
                             "nnti");
-            add_int_attr(contact_list, 
-                         attr_atom_from_string("NNTI_PORT"), 
+            add_int_attr(contact_list,
+                         attr_atom_from_string("NNTI_PORT"),
                          cm_port);
-            add_string_attr(contact_list, 
-                            attr_atom_from_string("CM_NNTI_TRANSPORT"), 
+            add_string_attr(contact_list,
+                            attr_atom_from_string("CM_NNTI_TRANSPORT"),
                             "ib");
-            add_string_attr(contact_list, 
-                            attr_atom_from_string("IP_HOST"), 
+            add_string_attr(contact_list,
+                            attr_atom_from_string("IP_HOST"),
                             cm_host);
             break;
         case IB:
-            add_string_attr(contact_list, 
-                            attr_atom_from_string("CM_TRANSPORT"), 
+            add_string_attr(contact_list,
+                            attr_atom_from_string("CM_TRANSPORT"),
                             "ib");
-            add_int_attr(contact_list, 
-                         attr_atom_from_string("IP_PORT"), 
+            add_int_attr(contact_list,
+                         attr_atom_from_string("IP_PORT"),
                          cm_port);
-            add_string_attr(contact_list, 
-                            attr_atom_from_string("IP_HOST"), 
+            add_string_attr(contact_list,
+                            attr_atom_from_string("IP_HOST"),
                             cm_host);
             break;
         default:
-            add_int_attr(contact_list, 
-                         attr_atom_from_string("IP_PORT"), 
+            add_int_attr(contact_list,
+                         attr_atom_from_string("IP_PORT"),
                          cm_port);
-            add_string_attr(contact_list, 
-                            attr_atom_from_string("IP_HOST"), 
+            add_string_attr(contact_list,
+                            attr_atom_from_string("IP_HOST"),
                             cm_host);
             break;
         }
 
-        if (CMlisten_specific(icee_write_cm, contact_list) == 0) 
+        if (CMlisten_specific(icee_write_cm, contact_list) == 0)
         {
             fprintf(stderr, "error: unable to initialize connection manager.\n");
             exit(-1);
@@ -805,7 +841,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         EVassoc_terminal_action(icee_write_cm, stone, icee_contactinfo_format_list, icee_contactinfo_handler, NULL);
 
         MYCALLOC(remote_info, max_client, sizeof(icee_remoteinfo_rec_t));
-        
+
         if (is_cm_passive == 1)
         {
             CMFormat fm;
@@ -843,7 +879,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
                 contact_list = attr_list_from_string(cinfo->contact_string);
 
                 EVaction evaction;
-                evaction = EVassoc_bridge_action(icee_write_cm, stone, 
+                evaction = EVassoc_bridge_action(icee_write_cm, stone,
                                                  contact_list, remote_stone);
                 if (evaction == -1)
                 {
@@ -880,7 +916,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
                     stone = EValloc_stone(cm[i][k]);
                     remote_stone = cinfo->stone_id;
                     contact_list = attr_list_from_string(cinfo->contact_string);
-                    
+
                     EVassoc_bridge_action(cm[i][k], stone, contact_list, remote_stone);
                     source[i][k] = EVcreate_submit_handle(cm[i][k], stone, icee_fileinfo_format_list);
 
@@ -892,14 +928,17 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         }
     done:
         adios_icee_initialized = 1;
+
+        if (use_probe)
+            send_probe(10);
     }
 }
 
-extern int 
-adios_icee_open(struct adios_file_struct *fd, 
-                struct adios_method_struct *method, 
-                MPI_Comm comm) 
-{    
+extern int
+adios_icee_open(struct adios_file_struct *fd,
+                struct adios_method_struct *method,
+                MPI_Comm comm)
+{
     log_debug ("%s\n", __FUNCTION__);
 
     if( fd == NULL || method == NULL) {
@@ -909,7 +948,7 @@ adios_icee_open(struct adios_file_struct *fd,
 
     if (fp == NULL)
         MYCALLOC(fp, 1, sizeof(icee_fileinfo_rec_t));
-    
+
     fp->fname = fd->name;
     MPI_Comm_size(comm, &(fp->comm_size));
     MPI_Comm_rank(comm, &(fp->comm_rank));
@@ -921,10 +960,10 @@ adios_icee_open(struct adios_file_struct *fd,
 //  writes data to multiqueue
 extern void
 adios_icee_write(
-    struct adios_file_struct *fd, 
-    struct adios_var_struct *f, 
-    const void *data, 
-    struct adios_method_struct *method) 
+    struct adios_file_struct *fd,
+    struct adios_var_struct *f,
+    const void *data,
+    struct adios_method_struct *method)
 {
     log_debug ("%s\n", __FUNCTION__);
 
@@ -959,7 +998,7 @@ adios_icee_write(
 
     vp->varid = f->id;
     vp->type = f->type;
-    vp->typesize = adios_get_type_size(f->type, ""); 
+    vp->typesize = adios_get_type_size(f->type, "");
 
     vp->ndims = count_dimensions(f->dimensions);
 
@@ -969,9 +1008,9 @@ adios_icee_write(
         vp->gdims = calloc(vp->ndims, sizeof(uint64_t));
         vp->ldims = calloc(vp->ndims, sizeof(uint64_t));
         vp->offsets = calloc(vp->ndims, sizeof(uint64_t));
-        
+
         struct adios_dimension_struct *d = f->dimensions;
-        // Default: Fortran. 
+        // Default: Fortran.
         if (reverse_dim)
         {
             int i;
@@ -980,9 +1019,9 @@ adios_icee_write(
                 vp->gdims[i] = adios_get_dim_value(&d->global_dimension);
                 vp->ldims[i] = adios_get_dim_value(&d->dimension);
                 vp->offsets[i] = adios_get_dim_value(&d->local_offset);
-                
+
                 vp->varlen *= vp->ldims[i];
-                
+
                 d = d->next;
             }
         }
@@ -994,24 +1033,25 @@ adios_icee_write(
                 vp->gdims[i] = adios_get_dim_value(&d->global_dimension);
                 vp->ldims[i] = adios_get_dim_value(&d->dimension);
                 vp->offsets[i] = adios_get_dim_value(&d->local_offset);
-                
+
                 vp->varlen *= vp->ldims[i];
-                
+
                 d = d->next;
             }
         }
     }
-    
+
     vp->data = (char*)f->data;
     if (adios_verbose_level > 5) icee_varinfo_print(vp);
 
     fp->nvars++;
 }
 
-extern void 
-adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *method) 
+extern void
+adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *method)
 {
     log_debug ("%s\n", __FUNCTION__);
+    fp->timestamp = MPI_Wtime();
 
     if( fd == NULL || method == NULL) {
         perror("open: Bad input parameters\n");
@@ -1068,10 +1108,10 @@ adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *metho
             free(vp->gdims);
             free(vp->ldims);
             free(vp->offsets);
-            
+
             icee_varinfo_rec_ptr_t prev = vp;
             vp = vp->next;
-            
+
             free(prev);
         }
     }
@@ -1082,8 +1122,8 @@ done:
 }
 
 // wait until all open files have finished sending data to shutdown
-extern void 
-adios_icee_finalize(int mype, struct adios_method_struct *method) 
+extern void
+adios_icee_finalize(int mype, struct adios_method_struct *method)
 {
     log_debug ("%s\n", __FUNCTION__);
 
@@ -1097,7 +1137,7 @@ adios_icee_finalize(int mype, struct adios_method_struct *method)
             for (i=0; i<max_client; i++)
                 for (k=0; k<remote_info[i].num_parallel; k++)
                     CManager_close(cm[i][k]);
-            
+
             free(cm);
             free(source);
         }
@@ -1106,89 +1146,88 @@ adios_icee_finalize(int mype, struct adios_method_struct *method)
 }
 
 // provides unknown functionality
-extern enum BUFFERING_STRATEGY 
-adios_icee_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) 
+extern enum BUFFERING_STRATEGY
+adios_icee_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method)
 {
     return no_buffering;
 }
 
-extern void 
+extern void
 adios_icee_buffer_overflow (struct adios_file_struct * fd,
                             struct adios_method_struct * method)
 {
 }
 
 // provides unknown functionality
-extern void 
-adios_icee_end_iteration(struct adios_method_struct *method) 
+extern void
+adios_icee_end_iteration(struct adios_method_struct *method)
 {
 }
 
 // provides unknown functionality
-extern void 
-adios_icee_start_calculation(struct adios_method_struct *method) 
+extern void
+adios_icee_start_calculation(struct adios_method_struct *method)
 {
 }
 
 // provides unknown functionality
-extern void 
-adios_icee_stop_calculation(struct adios_method_struct *method) 
+extern void
+adios_icee_stop_calculation(struct adios_method_struct *method)
 {
 }
 
 // provides unknown functionality
-extern void 
-adios_icee_get_write_buffer(struct adios_file_struct *fd, 
-                            struct adios_var_struct *v, 
-                            uint64_t *size, 
-                            void **buffer, 
-                            struct adios_method_struct *method) 
+extern void
+adios_icee_get_write_buffer(struct adios_file_struct *fd,
+                            struct adios_var_struct *v,
+                            uint64_t *size,
+                            void **buffer,
+                            struct adios_method_struct *method)
 {
 }
 
 // should not be called from write, reason for inclusion here unknown
-void 
-adios_icee_read(struct adios_file_struct *fd, 
-                struct adios_var_struct *f, 
-                void *buffer, 
-                uint64_t buffer_size, 
-                struct adios_method_struct *method) 
+void
+adios_icee_read(struct adios_file_struct *fd,
+                struct adios_var_struct *f,
+                void *buffer,
+                uint64_t buffer_size,
+                struct adios_method_struct *method)
 {
 }
 
 #else // print empty version of all functions (if HAVE_ICEE == 0)
 
-void 
-adios_icee_read(struct adios_file_struct *fd, 
-                struct adios_var_struct *f, 
-                void *buffer, 
-                struct adios_method_struct *method) 
+void
+adios_icee_read(struct adios_file_struct *fd,
+                struct adios_var_struct *f,
+                void *buffer,
+                struct adios_method_struct *method)
 {
 }
 
-extern void 
-adios_icee_get_write_buffer(struct adios_file_struct *fd, 
-                            struct adios_var_struct *f, 
-                            unsigned long long *size, 
-                            void **buffer, 
-                            struct adios_method_struct *method) 
+extern void
+adios_icee_get_write_buffer(struct adios_file_struct *fd,
+                            struct adios_var_struct *f,
+                            unsigned long long *size,
+                            void **buffer,
+                            struct adios_method_struct *method)
 {
 }
 
-extern void 
-adios_icee_stop_calculation(struct adios_method_struct *method) 
+extern void
+adios_icee_stop_calculation(struct adios_method_struct *method)
 {
 }
 
-extern void 
-adios_icee_start_calculation(struct adios_method_struct *method) 
+extern void
+adios_icee_start_calculation(struct adios_method_struct *method)
 {
 }
 
-extern void 
-adios_icee_end_iteration(struct adios_method_struct *method) 
+extern void
+adios_icee_end_iteration(struct adios_method_struct *method)
 {
 }
 
 #endif
-

@@ -75,9 +75,15 @@ do
 done
 shift $(($OPTIND - 1))
 
-# get source path
-SRCDIR=`dirname $0`
+# get source path 
+pushd `dirname $0` >/dev/null
+#SRCDIR=`dirname $0`
+SRCDIR=$PWD
 TRUNKDISTANCE=../..
+pushd $TRUNKDISTANCE >/dev/null
+BUILDTRUNKDIR=$PWD
+popd >/dev/null
+popd >/dev/null
 
 if [ "${SRCDIR:0:1}" != "/" ]; then
     echo "WARNING: Jobs on some systems do not have access to any directory but to "
@@ -88,7 +94,7 @@ if [ "${SRCDIR:0:1}" != "/" ]; then
 fi
 
 # check if Fortran codes were built
-if [ -f $SRCDIR/$TRUNKDISTANCE/src/libadiosf.a ]; then
+if [ -f $BUILDTRUNKDIR/src/libadiosf.a ]; then
     HAVE_FORTRAN=yes
 else
     echo "WARNING: Fortran binaries are not built, so test will not use them"
@@ -97,7 +103,8 @@ fi
 
 # Print info before running tests
 echo "Settings:"
-echo "  Test source directory:  $SRCDIR"
+echo "  Test script directory:  $SRCDIR"
+echo "  Test source trunk dir:  $BUILDTRUNKDIR"
 echo "  Run command:            $MPIRUN"
 echo "  Run command np option:  $NP_MPIRUN"
 echo "  Max. processes to use:  $MAXPROCS"
@@ -140,7 +147,7 @@ for TESTSCRIPT in $TESTS; do
     pushd work.$TEST >/dev/null
     if [ "${SRCDIR:0:1}" == "/" ]; then
         TESTSRCDIR=$SRCDIR       
-        TRUNKDIR=$SRCDIR/$TRUNKDISTANCE
+        TRUNKDIR=$BUILDTRUNKDIR
     else
         # we are one level deeper now
         TESTSRCDIR=../$SRCDIR

@@ -171,7 +171,67 @@ struct adios_group_struct
     struct adios_timing_struct * prev_timing_obj;
     uint64_t tv_size; // the additional data size used by timing variables
 #endif
+    int do_ts_aggr; //Yuan: introduced for time steps buffering
+    struct adios_file_struct *ts_fd; // save and keep open the file struct during time aggr.
+    uint64_t ts_buffsize; //Yuan: introduced for time steps buffering
+    int ts_to_buffer; //current time steps
+    int max_ts; //maximum time steps to buffer 
+    struct adios_index_struct_v1 * index; //the indexes for current written PGs 
+    int built_index; // FIXME: 0 or 1, if index has been built, do not build it during close()
+    int do_ts_finalize; // 1 if we need close during finalize, otherwise always 0
 };
+
+static inline void SetTimeAggregation (struct adios_group_struct * g, int flag)
+{
+    g->do_ts_aggr = (flag != 0);
+}
+
+
+static inline int TimeAggregated (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr != 0);
+}
+
+static inline int NotTimeAggregated (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr == 0);
+}
+
+static inline int TimeAggregationJustBegan (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr
+            && g->ts_fd == NULL
+            //&& g->ts_to_buffer == g->max_ts
+            );
+}
+
+static inline int TimeAggregationInProgress (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr
+            && g->ts_fd != NULL
+            //&& g->ts_to_buffer < g->max_ts
+            );
+}
+// TimeAggregationAggregationInProgress => TimeAggregated AND NOT TimeAggreationJustBegan
+// TimeAggregationAggregationJustBegan  => TimeAggregated AND NOT TimeAggreationInProgress
+
+static inline int TimeAggregationLastStep (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr  && g->ts_to_buffer == 0);
+}
+// TimeAggregationAggregationLastStep => TimeAggregated AND TimeAggreationInProgress
+
+static inline void SetTimeAggregationFinalizeMode (struct adios_group_struct * g)
+{
+    g->do_ts_aggr = 0;
+    g->do_ts_finalize = 1;
+}
+
+static inline int TimeAggregationFinalizeMode (struct adios_group_struct * g)
+{
+    return (g->do_ts_aggr == 0 && g->do_ts_finalize != 0);
+}
+// TimeAggregationAggregationFinalizeMode => NOT TimeAggregated !!!
 
 struct adios_group_list_struct
 {
@@ -187,6 +247,7 @@ struct adios_group_list_struct
 struct adios_pg_struct
 {
     uint64_t pg_start_in_file; //  where this pg start in file, handled by methods!
+    uint64_t has_index; // Yuan: 0 or 1, if the index has been built for this PG 
     struct adios_var_struct * vars_written;
     struct adios_var_struct * vars_written_tail; // last variable in 'vars_written'
     struct adios_pg_struct  * next;
@@ -205,6 +266,7 @@ struct adios_file_struct
 
     struct adios_pg_struct * pgs_written;
     struct adios_pg_struct * current_pg; // points to last PG in the list, which is being created in buffer
+    struct adios_pg_struct * first_pg_written; // Yuan: points to first PG in the list
 
     char * allocated_bufptr;  // actual allocated buffer before alignment
     char * buffer;          // buffer we use for building the output (aligned, made from allocated_bufptr)

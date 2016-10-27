@@ -683,9 +683,6 @@ int adios_mpi_open (struct adios_file_struct * fd
                             max_time_index = p->time_index;
                         p = p->next;
                     }
-                    if (fd->mode == adios_mode_append) {
-                        ++max_time_index;
-                    }
                     fd->group->time_index = max_time_index;
                     MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
                               ,md->group_comm
