@@ -295,7 +295,6 @@ struct adios_file_struct * common_adios_open (
 
     }
 
-
     /* Time index
      * It increases in write/append mode, it does not change in update/read mode.
      * This piece should be after calling the method's open function, which sets
