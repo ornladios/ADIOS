@@ -1,6 +1,6 @@
 /*
-  read_icee.c       
-  Goal: to create evpath io connection layer in conjunction with 
+  read_icee.c
+  Goal: to create evpath io connection layer in conjunction with
   write/adios_icee.c
 */
 // system libraries
@@ -74,12 +74,12 @@
 ///////////////////////////
 #include "core/globals.h"
 
-#define DUMP(fmt, ...) fprintf(stderr, ">>> "fmt"\n", ## __VA_ARGS__); 
+#define DUMP(fmt, ...) fprintf(stderr, ">>> "fmt"\n", ## __VA_ARGS__);
 
 
 /* Data Structure
    + fileinfo 1.1 - fileinfo 1.2 - ...
-   |    + var 1.1      + var 1.2 
+   |    + var 1.1      + var 1.2
    |    + var 2.1      + var 2.2
    |    + ...          + ...
    + fileinfo 2.1 - fileinfo 2.2 - ...
@@ -101,7 +101,7 @@ icee_llist_create(void* item)
     icee_llist_ptr_t node = malloc(sizeof(icee_llist_t));
     node->item = item;
     node->next = NULL;
-    
+
     return node;
 }
 
@@ -109,16 +109,16 @@ icee_llist_ptr_t
 icee_llist_append(const icee_llist_ptr_t root, void* item)
 {
     assert(root != NULL);
-        
+
     icee_llist_ptr_t p = root;
-    
+
     while (p->next != NULL)
         p = p->next;
 
     icee_llist_ptr_t node = malloc(sizeof(icee_llist_t));
     node->item = item;
     node->next = NULL;
-    
+
     p->next = node;
 
     return node;
@@ -128,7 +128,7 @@ icee_llist_ptr_t
 icee_llist_search(const icee_llist_ptr_t root, int (*fp)(const void*, const void*), const void* arg)
 {
     icee_llist_ptr_t p = root;
-    
+
     while (p != NULL)
     {
         if ((*fp)(p->item, arg)) break;
@@ -142,7 +142,7 @@ void
 icee_llist_map(const icee_llist_ptr_t root, void (*fp)(const void*))
 {
     icee_llist_ptr_t p = root;
-    
+
     while (p != NULL)
     {
         (*fp)(p->item);
@@ -165,18 +165,18 @@ pthread_mutex_t fileinfo_lock;
 void icee_fileinfo_append(const icee_fileinfo_rec_ptr_t root, icee_fileinfo_rec_ptr_t fp)
 {
     assert(root != NULL);
-    
+
     icee_fileinfo_rec_ptr_t p = root;
 
     while ((p->timestep != fp->timestep) && (p->next != NULL))
     {
-        p = p->next; 
+        p = p->next;
     }
 
     if (p->timestep == fp->timestep)
     {
         icee_varinfo_rec_ptr_t v = p->varinfo;
-        
+
         while (v->next != NULL)
             v = v->next;
 
@@ -227,7 +227,7 @@ void icee_fileinfo_free(icee_fileinfo_rec_ptr_t fp)
     }
 
     free(fp);
-    fp = NULL;    
+    fp = NULL;
 }
 
 icee_varinfo_rec_ptr_t
@@ -259,7 +259,7 @@ void icee_varinfo_copy(icee_varinfo_rec_ptr_t dest, const icee_varinfo_rec_ptr_t
     memcpy(dest->gdims, src->gdims, dimsize);
     memcpy(dest->ldims, src->ldims, dimsize);
     memcpy(dest->offsets, src->offsets, dimsize);
-    
+
     dest->data = malloc(src->varlen);
     memcpy(dest->data, src->data, src->varlen);
 
@@ -300,6 +300,10 @@ void icee_sel_bb_print(const ADIOS_SELECTION *sel)
     }
 }
 
+static double sum_deltat = 0;
+static int    cnt_deltat = 0;
+static int    use_read_probe = 0;
+
 static int
 icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
@@ -309,6 +313,32 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
     icee_fileinfo_rec_ptr_t lfp = malloc(sizeof(icee_fileinfo_rec_t));
     icee_fileinfo_copy(lfp, event);
     lfp->merge_count = 1;
+    
+    double deltat = MPI_Wtime() - lfp->timestamp;
+    if (strcmp(lfp->fname, "_icee_.probe") == 0)
+    {
+        cnt_deltat++;
+        if (cnt_deltat > 1) // discard the first deltat 
+        {
+            sum_deltat += deltat;
+            log_debug("deltat: %g (sum: %g, count: %d)\n", deltat, sum_deltat, cnt_deltat);
+        }
+        return 1;
+    }
+
+    if (use_read_probe)
+    {
+        uint64_t dsize = 0;
+        icee_varinfo_rec_ptr_t vp = lfp->varinfo;
+        while (vp != NULL)
+        {
+            dsize += vp->varlen;
+            vp = vp->next;
+        }
+        double adjustedt = deltat - sum_deltat/(cnt_deltat-2);
+        log_debug("received, deltat, adjusted, throughput = %g (MB), %g (sec), %g (sec), %g (MB/sec)\n",
+                  (double)dsize/1024/1024, deltat, adjustedt, (double)dsize/adjustedt/1024/1024);
+    }
 
     icee_varinfo_rec_ptr_t eventvp = event->varinfo;
     icee_varinfo_rec_ptr_t *lvpp = &lfp->varinfo;
@@ -318,7 +348,7 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
         *lvpp = malloc(sizeof(icee_varinfo_rec_t));
         icee_varinfo_copy(*lvpp, eventvp);
         if (adios_verbose_level > 5) DUMP("id,name = %d,%s", (*lvpp)->varid, (*lvpp)->varname);
-        
+
         lvpp = &(*lvpp)->next;
         eventvp = eventvp->next;
     }
@@ -382,8 +412,8 @@ typedef struct {
     icee_matrix_t* mat;
 } icee_matrix_view_t;
 
-void 
-mat_init (icee_matrix_t *m, 
+void
+mat_init (icee_matrix_t *m,
           int typesize,
           int ndims,
           const uint64_t *dims,
@@ -405,7 +435,7 @@ mat_init (icee_matrix_t *m,
     m->data = data;
 }
 
-void 
+void
 view_init (icee_matrix_view_t *v,
            icee_matrix_t *m,
            const int64_t *vdims,
@@ -429,7 +459,7 @@ void
 view_copy (icee_matrix_view_t *dest, icee_matrix_view_t *src)
 {
     assert(dest->mat->ndims == src->mat->ndims);
-    
+
     int i;
     for (i=0; i<dest->mat->ndims; i++)
         assert(dest->vdims[i] == src->vdims[i]);
@@ -440,13 +470,13 @@ view_copy (icee_matrix_view_t *dest, icee_matrix_view_t *src)
         int s, d;
         d = dest->offsets[0] * dest->mat->accumdims[0];
         s = src->offsets[0] * src->mat->accumdims[0];
-        memcpy(dest->mat->data + d * dest->mat->typesize, 
-               src->mat->data + s * dest->mat->typesize, 
+        memcpy(dest->mat->data + d * dest->mat->typesize,
+               src->mat->data + s * dest->mat->typesize,
                dest->vdims[0] * dest->mat->accumdims[0] * dest->mat->typesize);
 
         return;
     }
-    
+
     // Non-contiguous merging
     switch (dest->mat->ndims)
     {
@@ -455,8 +485,8 @@ view_copy (icee_matrix_view_t *dest, icee_matrix_view_t *src)
         int s, d;
         d = dest->offsets[0];
         s = src->offsets[0];
-        memcpy(dest->mat->data + d * dest->mat->typesize, 
-               src->mat->data + s * dest->mat->typesize, 
+        memcpy(dest->mat->data + d * dest->mat->typesize,
+               src->mat->data + s * dest->mat->typesize,
                dest->vdims[0] * dest->mat->typesize);
         break;
     }
@@ -465,12 +495,12 @@ view_copy (icee_matrix_view_t *dest, icee_matrix_view_t *src)
         int i, s, d;
         for (i=0; i<dest->vdims[0]; i++)
         {
-            d = (i + dest->offsets[0]) * dest->mat->accumdims[0] 
+            d = (i + dest->offsets[0]) * dest->mat->accumdims[0]
                 + dest->offsets[1];
-            s = (i + src->offsets[0]) * src->mat->accumdims[0] 
+            s = (i + src->offsets[0]) * src->mat->accumdims[0]
                 + src->offsets[1];
-            memcpy(dest->mat->data + d * dest->mat->typesize, 
-                   src->mat->data + s * dest->mat->typesize, 
+            memcpy(dest->mat->data + d * dest->mat->typesize,
+                   src->mat->data + s * dest->mat->typesize,
                    dest->vdims[1] * dest->mat->typesize);
         }
         break;
@@ -482,14 +512,14 @@ view_copy (icee_matrix_view_t *dest, icee_matrix_view_t *src)
         {
             for (j=0; j<dest->vdims[1]; j++)
             {
-                d = (i + dest->offsets[0]) * dest->mat->accumdims[0] 
+                d = (i + dest->offsets[0]) * dest->mat->accumdims[0]
                     + (j + dest->offsets[1]) * dest->mat->accumdims[1]
                     + dest->offsets[2];
-                s = (i + src->offsets[0]) * src->mat->accumdims[0] 
-                    + (j + src->offsets[1]) * src->mat->accumdims[1] 
+                s = (i + src->offsets[0]) * src->mat->accumdims[0]
+                    + (j + src->offsets[1]) * src->mat->accumdims[1]
                     + src->offsets[2];
-                memcpy(dest->mat->data + d * dest->mat->typesize, 
-                       src->mat->data + s * dest->mat->typesize, 
+                memcpy(dest->mat->data + d * dest->mat->typesize,
+                       src->mat->data + s * dest->mat->typesize,
                        dest->vdims[2] * dest->mat->typesize);
             }
         }
@@ -503,58 +533,58 @@ view_copy (icee_matrix_view_t *dest, icee_matrix_view_t *src)
     }
 }
 
-void 
-set_contact_list (attr_list contact_list, 
-                  const icee_transport_t icee_transport, 
+void
+set_contact_list (attr_list contact_list,
+                  const icee_transport_t icee_transport,
                   char *host, int port)
 {
     switch (icee_transport)
     {
     case ENET:
-        add_string_attr(contact_list, 
-                        attr_atom_from_string("CM_TRANSPORT"), 
+        add_string_attr(contact_list,
+                        attr_atom_from_string("CM_TRANSPORT"),
                         "enet");
-        add_string_attr(contact_list, 
-                        attr_atom_from_string("CM_ENET_HOST"), 
+        add_string_attr(contact_list,
+                        attr_atom_from_string("CM_ENET_HOST"),
                         host);
-        add_int_attr(contact_list, 
-                     attr_atom_from_string("CM_ENET_PORT"), 
+        add_int_attr(contact_list,
+                     attr_atom_from_string("CM_ENET_PORT"),
                      port);
         break;
     case NNTI:
-        add_string_attr(contact_list, 
-                        attr_atom_from_string("CM_TRANSPORT"), 
+        add_string_attr(contact_list,
+                        attr_atom_from_string("CM_TRANSPORT"),
                         "nnti");
-        add_string_attr(contact_list, 
-                        attr_atom_from_string("IP_HOST"), 
+        add_string_attr(contact_list,
+                        attr_atom_from_string("IP_HOST"),
                         host);
-        add_int_attr(contact_list, 
-                     attr_atom_from_string("NNTI_PORT"), 
+        add_int_attr(contact_list,
+                     attr_atom_from_string("NNTI_PORT"),
                      port);
-        add_string_attr(contact_list, 
-                        attr_atom_from_string("CM_NNTI_TRANSPORT"), 
+        add_string_attr(contact_list,
+                        attr_atom_from_string("CM_NNTI_TRANSPORT"),
                         "ib");
         break;
     case IB:
-        add_string_attr(contact_list, 
-                        attr_atom_from_string("CM_TRANSPORT"), 
+        add_string_attr(contact_list,
+                        attr_atom_from_string("CM_TRANSPORT"),
                         "ib");
-        add_string_attr(contact_list, 
-                        attr_atom_from_string("IP_HOST"), 
+        add_string_attr(contact_list,
+                        attr_atom_from_string("IP_HOST"),
                         host);
-        add_int_attr(contact_list, 
-                     attr_atom_from_string("IP_PORT"), 
+        add_int_attr(contact_list,
+                     attr_atom_from_string("IP_PORT"),
                      port);
         break;
     default:
-        add_string_attr(contact_list, 
-                        attr_atom_from_string("IP_HOST"), 
+        add_string_attr(contact_list,
+                        attr_atom_from_string("IP_HOST"),
                         host);
-        add_int_attr(contact_list, 
-                     attr_atom_from_string("IP_PORT"), 
+        add_int_attr(contact_list,
+                     attr_atom_from_string("IP_PORT"),
                      port);
         break;
-            
+
     }
 }
 
@@ -562,7 +592,7 @@ set_contact_list (attr_list contact_list,
 
 int
 adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
-{   
+{
     log_debug ("%s\n", __FUNCTION__);
 
     int cm_port = 59997;
@@ -657,6 +687,10 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             use_native_contact = atoi(p->value);
         }
+        else if (!strcasecmp (p->name, "use_probe"))
+        {
+            use_read_probe = atoi(p->value);
+        }
 
         p = p->next;
     }
@@ -719,7 +753,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
             p = malloc(sizeof(icee_contactinfo_rec_t));
             attr_list contact_list;
-            
+
             contact_list = create_attr_list();
             set_contact_list(contact_list, icee_transport_init, host, port);
             p->contact_string = attr_list_to_string(contact_list);
@@ -754,7 +788,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
             p = malloc(sizeof(icee_contactinfo_rec_t));
             attr_list contact_list;
-            
+
             p->stone_id = remote_stone;
             p->contact_string = strdup(string_list);
             p->next = NULL;
@@ -782,7 +816,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
       log_info ("cm_host : %s\n", cm_host);
       log_info ("cm_port : %d\n", cm_port);
 
-      for (i = 0; i < num_remote_server; i++) 
+      for (i = 0; i < num_remote_server; i++)
       {
       log_info ("remote_list : %s:%d\n", remote_server[i].client_host, remote_server[i].client_port);
       }
@@ -826,7 +860,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
                     sleep(2);
                     conn = CMinitiate_conn(pcm[i], contact_list);
-                    
+
                     if (n > 5) break;
                     n++;
                 }
@@ -834,7 +868,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 if (conn == NULL)
                 {
                     log_error ("Initializing passive connection failed (%d)\n", i);
-                    
+
                 }
 
                 CMFormat fm_checkin, fm_fileinfo;
@@ -875,12 +909,12 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
             if (CMlisten_specific(icee_read_cm[i], contact[i]) == 0)
                 printf("Error: unable to initialize connection manager[%d].\n", i);
-            
-            if (!CMfork_comm_thread(icee_read_cm[i])) 
+
+            if (!CMfork_comm_thread(icee_read_cm[i]))
                 printf("Fork of communication thread[%d] failed.\n", i);
 
             stone[i] = EValloc_stone(icee_read_cm[i]);
-            if (adios_verbose_level > 5) 
+            if (adios_verbose_level > 5)
             {
                 log_debug("Reader contact: \"%d:%s\"\n", stone[i], attr_list_to_string(CMget_contact_list(icee_read_cm[i])));
                 dump_attr_list(CMget_contact_list(icee_read_cm[i]));
@@ -894,27 +928,27 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 contact_list = CMget_contact_list(icee_read_cm[i]);
             else
                 contact_list = contact[i];
-                
+
             contact_msg[i].contact_string = attr_list_to_string(contact_list);
             contact_msg[i].next = NULL;
 
             if (i>0)
                 contact_msg[i-1].next = &contact_msg[i];
         }
-        
+
         EVstone split_stone;
         EVaction split_action;
 
         split_stone = EValloc_stone(icee_read_cm[0]);
         split_action = EVassoc_split_action(icee_read_cm[0], split_stone, NULL);
         icee_contactinfo_rec_t *prev;
-        for (i = 0; i < num_remote_server; i++) 
+        for (i = 0; i < num_remote_server; i++)
         {
             attr_list contact_list;
             EVstone remote_stone, output_stone;
             output_stone = EValloc_stone(icee_read_cm[0]);
             icee_contactinfo_rec_t *p = (i == 0)? remote_contact : prev->next;
-            
+
             remote_stone = p->stone_id;
             contact_list = attr_list_from_string(p->contact_string);
 
@@ -926,10 +960,10 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             {
                 log_error ("Connection failed (%d). Try again ...\n", i);
                 dump_attr_list(contact_list);
-                
+
                 sleep(2);
                 action = EVassoc_bridge_action(icee_read_cm[0], output_stone, contact_list, remote_stone);
-                
+
                 if (n > 5) break;
                 n++;
             }
@@ -944,9 +978,9 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         }
 
         source = EVcreate_submit_handle(icee_read_cm[0], split_stone, icee_contactinfo_format_list);
-        
+
         //if (adios_verbose_level > 5) icee_contactinfo_print(contact_msg);
-        
+
         EVsubmit(source, contact_msg, NULL);
 
     done:
@@ -975,10 +1009,10 @@ adios_read_icee_open(const char * fname,
 
     icee_llist_ptr_t head = NULL;
 
-    float waited_sec = 0.0;    
+    float waited_sec = 0.0;
     while (waited_sec <= timeout_sec)
     {
-        head = icee_llist_search(icee_filelist, icee_fileinfo_checkname, 
+        head = icee_llist_search(icee_filelist, icee_fileinfo_checkname,
                                  (const void*) fname);
         if (head != NULL)
             break;
@@ -986,19 +1020,19 @@ adios_read_icee_open(const char * fname,
         usleep(0.1*1E6);
         waited_sec += 0.1;
     }
-    
+
     if (head == NULL)
     {
         log_error ("No data yet\n");
         return NULL;
     }
-    
+
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t)head->item;
-    
+
     while (fp->merge_count != fp->nchunks)
     {
         log_debug("Waiting the rest of blocks (%d/%d)\n", fp->merge_count, fp->nchunks);
-        
+
         usleep(0.1*1E6);
     }
 
@@ -1009,7 +1043,7 @@ adios_read_icee_open(const char * fname,
 #if 0
     int hashsize = 10;
     qhashtbl_t *tbl = qhashtbl(hashsize);
-    
+
     icee_varinfo_rec_ptr_t vp = fp->varinfo;
     while (vp != NULL)
     {
@@ -1070,12 +1104,12 @@ adios_read_icee_open(const char * fname,
 
     adiosfile->version = -1;
     adiosfile->file_size = 0;
-    adios_errno = err_no_error;        
+    adios_errno = err_no_error;
 
     return adiosfile;
 }
 
-int 
+int
 adios_read_icee_finalize_method ()
 {
     log_debug("%s\n", __FUNCTION__);
@@ -1084,7 +1118,7 @@ adios_read_icee_finalize_method ()
     {
         int i;
         if (is_read_cm_passive == 1)
-            for (i = 0; i < num_remote_server; i++) 
+            for (i = 0; i < num_remote_server; i++)
                 CManager_close(pcm[i]);
         else
             for (i=0; i<icee_read_num_parallel; i++)
@@ -1096,14 +1130,14 @@ adios_read_icee_finalize_method ()
     return 0;
 }
 
-void 
-adios_read_icee_release_step(ADIOS_FILE *adiosfile) 
+void
+adios_read_icee_release_step(ADIOS_FILE *adiosfile)
 {
     log_debug("%s\n", __FUNCTION__);
 }
 
-int 
-adios_read_icee_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) 
+int
+adios_read_icee_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec)
 {
     log_debug("%s\n", __FUNCTION__);
     adios_errno = 0;
@@ -1122,11 +1156,11 @@ adios_read_icee_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec)
         usleep(0.1*1E6);
         waited_sec += 0.1;
     }
-    
+
     if (next != NULL)
     {
         icee_llist_ptr_t head = NULL;
-        head = icee_llist_search(icee_filelist, icee_fileinfo_checkname, 
+        head = icee_llist_search(icee_filelist, icee_fileinfo_checkname,
                                  (const void*) fp->fname);
         assert(head != NULL);
 
@@ -1136,13 +1170,13 @@ adios_read_icee_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec)
         icee_fileinfo_free(fp);
     }
     else
-        adios_error (err_step_notready, 
+        adios_error (err_step_notready,
                      "No more data yet\n");
 
     return adios_errno;
 }
 
-int 
+int
 adios_read_icee_close(ADIOS_FILE * fp)
 {
     log_debug("%s\n", __FUNCTION__);
@@ -1151,21 +1185,21 @@ adios_read_icee_close(ADIOS_FILE * fp)
 }
 
 ADIOS_FILE *
-adios_read_icee_fopen(const char *fname, MPI_Comm comm) 
+adios_read_icee_fopen(const char *fname, MPI_Comm comm)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
     return NULL;
 }
 
-int 
-adios_read_icee_is_var_timed(const ADIOS_FILE* fp, int varid) 
-{  
+int
+adios_read_icee_is_var_timed(const ADIOS_FILE* fp, int varid)
+{
     log_error("No support yet: %s\n", __FUNCTION__);
-    return 0; 
+    return 0;
 }
 
-void 
-adios_read_icee_get_groupinfo(const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group) 
+void
+adios_read_icee_get_groupinfo(const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group)
 {
     log_debug("%s\n", __FUNCTION__);
 
@@ -1177,15 +1211,15 @@ adios_read_icee_get_groupinfo(const ADIOS_FILE *fp, int *ngroups, char ***group_
         *group_namelist = (char **) malloc (sizeof (char*));
         *group_namelist[0] = strdup ("noname");
     }
-    
+
     return;
 }
 
-int 
-adios_read_icee_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk) 
-{ 
+int
+adios_read_icee_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk)
+{
     log_error("No support yet: %s\n", __FUNCTION__);
-    return 0; 
+    return 0;
 }
 
 int adios_read_icee_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
@@ -1199,7 +1233,7 @@ adios_read_icee_inq_var_blockinfo(const ADIOS_FILE* fp,
                                   ADIOS_VARINFO* varinfo)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
-    return 0; 
+    return 0;
 }
 
 int
@@ -1209,18 +1243,18 @@ adios_read_icee_inq_var_stat(const ADIOS_FILE* fp,
                              int per_block_stat)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
-    return 0; 
+    return 0;
 }
 
 
-int 
+int
 adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                                    const ADIOS_SELECTION *sel,
                                    int varid,
                                    int from_steps,
                                    int nsteps,
                                    void *data)
-{   
+{
     int i;
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
     log_debug("%s (%d:%s)\n", __FUNCTION__, varid, fp->fname);
@@ -1230,11 +1264,11 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     {
         adios_error (err_invalid_timestep,
                      "Only one step can be read from a stream at a time. "
-                     "You requested % steps in adios_schedule_read()\n", 
+                     "You requested % steps in adios_schedule_read()\n",
                      nsteps);
         return err_invalid_timestep;
     }
-    
+
     icee_varinfo_rec_ptr_t vp = NULL;
     vp = icee_varinfo_search_byname(fp->varinfo, adiosfile->var_namelist[varid]);
     if (adios_verbose_level > 5) icee_varinfo_print(vp);
@@ -1248,7 +1282,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     while (fp->merge_count != fp->nchunks)
     {
         log_debug("Waiting the rest of blocks (%d/%d)\n", fp->merge_count, fp->nchunks);
-        
+
         usleep(0.1*1E6);
     }
 
@@ -1292,7 +1326,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                 int i;
 
                 if (adios_verbose_level > 5) icee_varinfo_print(vp);
-                    
+
                 mat_init(&m_sel, vp->typesize, vp->ndims, sel->u.bb.count, data);
                 mat_init(&m_var, vp->typesize, vp->ndims, vp->ldims, vp->data);
 
@@ -1301,11 +1335,11 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 
                 for (i=0; i<vp->ndims; i++)
                 {
-                    count[i] = 
+                    count[i] =
                         MYMIN(sel->u.bb.start[i]+sel->u.bb.count[i],
                               vp->offsets[i]+vp->ldims[i]) - start[i];
                 }
-                    
+
                 for (i=0; i<vp->ndims; i++)
                 {
                     if (count[i] <= 0)
@@ -1324,7 +1358,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                 view_init (&v_sel, &m_sel, count, s_offsets);
                 view_init (&v_var, &m_var, count, v_offsets);
                 view_copy (&v_sel, &v_var);
-                    
+
             next:
                 vp = icee_varinfo_search_byname(vp->next, adiosfile->var_namelist[varid]);
             }
@@ -1347,7 +1381,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     return adios_errno;
 }
 
-int 
+int
 adios_read_icee_schedule_read(const ADIOS_FILE *adiosfile,
                               const ADIOS_SELECTION * sel,
                               const char * varname,
@@ -1359,7 +1393,7 @@ adios_read_icee_schedule_read(const ADIOS_FILE *adiosfile,
     return 0;
 }
 
-int 
+int
 adios_read_icee_get_attr (int *gp, const char *attrname,
                           enum ADIOS_DATATYPES *type,
                           int *size, void **data)
@@ -1368,7 +1402,7 @@ adios_read_icee_get_attr (int *gp, const char *attrname,
     return 0;
 }
 
-int 
+int
 adios_read_icee_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
                                enum ADIOS_DATATYPES *type,
                                int *size, void **data)
@@ -1377,7 +1411,7 @@ adios_read_icee_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
     return 0;
 }
 
-ADIOS_VARINFO* 
+ADIOS_VARINFO*
 adios_read_icee_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
     log_debug("%s (%s)\n", __FUNCTION__, varname);
@@ -1385,7 +1419,7 @@ adios_read_icee_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
     return NULL;
 }
 
-ADIOS_VARINFO* 
+ADIOS_VARINFO*
 adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
 {
     log_debug("%s (%d)\n", __FUNCTION__, varid);
@@ -1394,7 +1428,7 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
     //assert((varid < fp->nvars) || (fp->nvars == 0));
 
     ADIOS_VARINFO *a = calloc(1, sizeof(ADIOS_VARINFO));
-    
+
     icee_varinfo_rec_ptr_t vp = NULL;
     vp = icee_varinfo_search_byname(fp->varinfo, adiosfile->var_namelist[varid]);
     //icee_varinfo_print(vp);
@@ -1405,7 +1439,7 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
         a->type = vp->type;
         a->ndim = vp->ndims;
         a->nsteps = 1;
-        
+
         if (vp->ndims == 0)
         {
             a->value = malloc(vp->typesize);
@@ -1417,13 +1451,13 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
             a->dims = malloc(dimsize);
             memcpy(a->dims, vp->gdims, dimsize);
             a->global = 1;
-            
+
             if (a->dims[0] == 0)
             {
                 a->global = 0;
                 memcpy(a->dims, vp->ldims, dimsize);
             }
-            
+
             a->value = NULL;
         }
     }
@@ -1431,7 +1465,7 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
     return a;
 }
 
-void 
+void
 adios_read_icee_free_varinfo (ADIOS_VARINFO *adiosvar)
 {
     log_debug("%s\n", __FUNCTION__);
@@ -1440,10 +1474,10 @@ adios_read_icee_free_varinfo (ADIOS_VARINFO *adiosvar)
 }
 
 
-ADIOS_TRANSINFO* 
-adios_read_icee_inq_var_transinfo(const ADIOS_FILE *gp, 
+ADIOS_TRANSINFO*
+adios_read_icee_inq_var_transinfo(const ADIOS_FILE *gp,
                                   const ADIOS_VARINFO *vi)
-{    
+{
     log_debug("%s\n", __FUNCTION__);
     ADIOS_TRANSINFO *trans = malloc(sizeof(ADIOS_TRANSINFO));
     memset(trans, 0, sizeof(ADIOS_TRANSINFO));
@@ -1452,9 +1486,9 @@ adios_read_icee_inq_var_transinfo(const ADIOS_FILE *gp,
 }
 
 
-int 
-adios_read_icee_inq_var_trans_blockinfo(const ADIOS_FILE *gp, 
-                                        const ADIOS_VARINFO *vi, 
+int
+adios_read_icee_inq_var_trans_blockinfo(const ADIOS_FILE *gp,
+                                        const ADIOS_VARINFO *vi,
                                         ADIOS_TRANSINFO *ti)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
@@ -1469,7 +1503,7 @@ adios_read_icee_get_dimension_order (const ADIOS_FILE *adiosfile)
 }
 
 void
-adios_read_icee_reset_dimension_order (const ADIOS_FILE *adiosfile, 
+adios_read_icee_reset_dimension_order (const ADIOS_FILE *adiosfile,
                                        int is_fortran)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
