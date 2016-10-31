@@ -1058,14 +1058,7 @@ adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *metho
         icee_varinfo_rec_ptr_t v;
         MYCALLOC(v, 1, sizeof(icee_varinfo_rec_t));
         
-        v->varname = strdup("__icee_deltat__");
-        v->varid = ++fp->nvars;
-        v->type = adios_double;
-        v->typesize = sizeof(double);
-        v->varlen = sizeof(double);
-        v->data = (char*) &timestamp;
-        v->next = NULL;
-
+        int max_varid = 0;
         icee_varinfo_rec_ptr_t vp = fp->varinfo;
         if (vp == NULL)
         {
@@ -1073,12 +1066,26 @@ adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *metho
         }
         else
         {
+            if (max_varid < vp->varid) 
+                max_varid = vp->varid + 1;
             while (vp->next != NULL)
             {
                 vp = vp->next;
+                if (max_varid < vp->varid) 
+                    max_varid = vp->varid + 1;
             }
             vp->next = v;
         }
+
+        fp->nvars++;
+        v->varname = strdup("__icee_deltat__");
+        v->varid = max_varid;
+        v->type = adios_double;
+        v->typesize = sizeof(double);
+        v->varlen = sizeof(double);
+        v->data = (char*) &timestamp;
+        v->next = NULL;
+
     }
 
     if( fd == NULL || method == NULL) {

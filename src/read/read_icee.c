@@ -326,7 +326,7 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
         return 1;
     }
 
-    if (use_read_probe)
+    if (cnt_deltat > 1)
     {
         uint64_t dsize = 0;
         icee_varinfo_rec_ptr_t vp = lfp->varinfo;
