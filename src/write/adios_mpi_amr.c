@@ -995,7 +995,7 @@ void * adios_mpi_amr_do_reopen_thread (void * param)
                 max_time_index = p->time_index;
             p = p->next;
         }
-        fd->group->time_index = ++max_time_index;
+        fd->group->time_index = max_time_index;
 
         adios_init_buffer_read_vars_index (&md->b);
         MPI_File_seek (md->fh, md->b.vars_index_offset, MPI_SEEK_SET);
@@ -1871,9 +1871,10 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                         adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
-                        adios_parse_attributes_index_v1 (&md->b
+                        // do not merge attributes from other processes from 1.4
+                        /*adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
-                                                        );
+                                                        );*/
                         if (md->g_merging_pgs)
                             new_pg_root = 0;
 
@@ -2005,9 +2006,10 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                             adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                             adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
-                            adios_parse_attributes_index_v1 (&md->b
+                            // do not merge attributes from other processes from 1.4
+                            /*adios_parse_attributes_index_v1 (&md->b
                                                             ,&new_attrs_root
-                                                            );
+                                                            );*/
 
                             // global index would become unsorted on main aggregator during merging 
                             // so sort timesteps if appending
@@ -2365,9 +2367,10 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                         adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
-                        adios_parse_attributes_index_v1 (&md->b
+                        // do not merge attributes from other processes from 1.4
+                        /*adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
-                                                        );
+                                                        );*/
                         if (md->g_merging_pgs)
                             new_pg_root = 0;
 
@@ -2528,9 +2531,10 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                         adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
-                        adios_parse_attributes_index_v1 (&md->b
+                        // do not merge attributes from other processes from 1.4
+                        /*adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
-                                                        );
+                                                        );*/
 
                         // global index would become unsorted on main aggregator during merging 
                         // so sort timesteps if appending

@@ -23,6 +23,7 @@ cp $SRCDIR/programs/examples/global_array_time/global_array_time_write_C .
 cp $SRCDIR/programs/examples/global_array_time/global_array_time_read_as_file_C .
 cp $SRCDIR/programs/examples/global_array_time/global_array_time_read_as_stream_C .
 cp $SRCDIR/programs/examples/global_array_time/global_array_time_C.xml .
+cp $SRCDIR/programs/examples/global_array_time/global_array_time_aggr_C.xml .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
@@ -41,6 +42,7 @@ diff -q c_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: global_array_time_write_C produced a file different from the reference."
     echo "Compare \"bpls -la $PWD/global_array_time_C.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
+    exit 1
 fi
 
 ###################################################
@@ -81,12 +83,50 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
+###################################################
+# run the time-aggregation test
 
+echo "Run C global_array_time_write_C with time-aggregation turned on in subdir time_aggr/"
+mkdir -p time_aggr
+pushd time_aggr >/dev/null
+ln -s ../global_array_time_aggr_C.xml global_array_time_C.xml
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ../global_array_time_write_C
+EX=$?
+if [ ! -f global_array_time_C.bp ]; then
+    echo "ERROR: global_array_time_write_C failed. No BP file is created. Exit code=$EX"
+    exit 1
+fi
+
+echo "Check output with bpls"
+$TRUNKDIR/utils/bpls/bpls -la global_array_time_C.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
+diff -q c_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
+if [ $? != 0 ]; then
+    echo "ERROR: global_array_time_write_C with time aggregation produced a file different from the reference."
+    echo "Compare \"bpls -la $PWD/global_array_time_C.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
+    exit 1
+fi
+
+echo "Check output with bpls even more. Dump data and compare to non-time-aggregated version"
+$TRUNKDIR/utils/bpls/bpls -la ../global_array_time_C.bp -D -d temperature -n 10 > c_bpls_non_aggr.txt
+$TRUNKDIR/utils/bpls/bpls -la    global_array_time_C.bp -D -d temperature -n 10 > c_bpls_aggr.txt
+diff -q c_bpls_non_aggr.txt c_bpls_aggr.txt
+if [ $? != 0 ]; then
+    echo "ERROR: global_array_time_write_C with time aggregation produced a file different from the file without time aggregation."
+    echo "Compare \"bpls -la $PWD/global_array_time_C.bp -D -d temperature -n 10\" "
+    echo "to      \"bpls -la $PWD/../global_array_time_C.bp -D -d temperature -n 10\" "
+    exit 1
+fi
+
+popd >/dev/null
+
+
+
+###################################################
+# run the Fortran tests too if available
 if [ $HAVE_FORTRAN != yes ]; then
     exit 0
 fi
-###################################################
-# run the Fortran tests too if available
+
 
 cp $SRCDIR/programs/examples/global_array_time/global_array_time_write_F .
 cp $SRCDIR/programs/examples/global_array_time/global_array_time_F.xml .

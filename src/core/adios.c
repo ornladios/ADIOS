@@ -203,7 +203,7 @@ int adios_close (int64_t fd_p)
     }
     struct adios_var_struct * v = fd->group->vars;
 
-    retval = common_adios_close (fd_p);
+    retval = common_adios_close (fd);
 
     // Q.L. 10-2010. To fix a memory leak problem.
     while (v) {

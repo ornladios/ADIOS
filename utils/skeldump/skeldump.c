@@ -562,7 +562,7 @@ int doList_group (ADIOS_FILE *fp)
 
         matches = matchesAMask(names[n]);
 
-        if (matches) {
+        if (matches && strncmp("/__adios__", names[n], 10)) { // Ignore timing vars
             nVarsMatched++;
             fprintf (outf, "  {\n");
 

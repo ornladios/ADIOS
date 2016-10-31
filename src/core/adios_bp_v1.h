@@ -85,6 +85,7 @@ struct adios_index_process_group_struct_v1
     char * time_index_name;
     uint32_t time_index;
     uint64_t offset_in_file;
+    int is_time_aggregated;
 
     struct adios_index_process_group_struct_v1 * next;
 };

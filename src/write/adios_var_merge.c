@@ -745,7 +745,8 @@ static void output_vars(struct aggr_var_struct *vars, int varcnt, struct
         vars=vars->next;
     }
     //close the file
-    common_adios_close(md->fpr);
+    struct adios_file_struct * mdf = (struct adios_file_struct *) md->fpr;
+    common_adios_close(mdf);
 }
 
 
