@@ -108,55 +108,16 @@ skel_open_timer += MPI_Wtime();
 // Time the writes
 skel_access_timer -= MPI_Wtime();
 
-// Set the adios group size
-adios_groupsize =
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     4 +
-                     8 * (ndx) * (ndy) * (ndz) +
-                     8 * (ndx) * (ndy) * (ndz) +
-                     8 * (ndx) * (ndy) * (ndz) +
-                     8 * (ndx) * (ndy) * (ndz) +
-                     8 * (ndx) * (ndy) * (ndz) +
-                     8 * (ndx) * (ndy) * (ndz) +
-                     8 * (ndx) * (ndy) * (ndz) +
-                     8 * (ndx) * (ndy) * (ndz) +
-                     8 * (ndx) * (ndy) * (ndz) ;
-adios_group_size (adios_handle, adios_groupsize, &skel_total_size);
 
 // Write each variable
-adios_write (adios_handle, "gndx", &gndx);
-adios_write (adios_handle, "gndy", &gndy);
-adios_write (adios_handle, "gndz", &gndz);
-adios_write (adios_handle, "nproc", &nproc);
-adios_write (adios_handle, "npx", &npx);
-adios_write (adios_handle, "npy", &npy);
-adios_write (adios_handle, "npz", &npz);
-adios_write (adios_handle, "offx", &offx);
-adios_write (adios_handle, "offy", &offy);
-adios_write (adios_handle, "offz", &offz);
-adios_write (adios_handle, "ndx", &ndx);
-adios_write (adios_handle, "ndy", &ndy);
-adios_write (adios_handle, "ndz", &ndz);
-adios_write (adios_handle, "var1", double_xyz);
-adios_write (adios_handle, "var2", double_xyz);
-adios_write (adios_handle, "var3", double_xyz);
-adios_write (adios_handle, "var4", double_xyz);
-adios_write (adios_handle, "var5", double_xyz);
-adios_write (adios_handle, "var6", double_xyz);
-adios_write (adios_handle, "var7", double_xyz);
-adios_write (adios_handle, "var8", double_xyz);
-adios_write (adios_handle, "var9", double_xyz);
+<%
+write_statements = []
+for v in g.get_vars():
+    write_statements.append (adios.cFormatter.get_write_line (v) ) %>
+#for $ws in $write_statements
+#slurp
+$ws #slurp
+#end for
 
 // Stop timing the writes
 skel_access_timer += MPI_Wtime();
@@ -179,7 +140,7 @@ MPI_Reduce (&skel_total_timer, &skel_total_total, 1, MPI_DOUBLE, MPI_MAX, 0, MPI
 if (skel_mpi_rank == 0) {
     fprintf (stdout, "\n");
     fprintf (stdout, "\n*************************");
-    fprintf (stdout, "\n   Groupsize: %lli", adios_groupsize);
+//    fprintf (stdout, "\n   Groupsize: %lli", adios_groupsize);
     fprintf (stdout, "\n  Open Time: %f", skel_total_open);
     fprintf (stdout, "\nAccess Time: %f", skel_total_access);
     fprintf (stdout, "\n Close Time: %f", skel_total_close);
