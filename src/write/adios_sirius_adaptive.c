@@ -929,127 +929,127 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     }
                 } 
 
-if (!strcmp (v->name, "dpot"))
-{
-    if (l == 0)
-    {
-                double * grad = malloc (nelems * 8);
-                assert (grad);
-
-                struct adios_var_struct * mesh = adios_find_var_by_name (fd->group, "mesh");
-
-                if (!mesh)
+                if (!strcmp (v->name, "dpot"))
                 {
-                    adios_error (err_invalid_varname, 
+                    if (l == 0)
+                    {
+                        double * grad = malloc (nelems * 8);
+                        assert (grad);
+
+                        struct adios_var_struct 
+                            * mesh = adios_find_var_by_name (fd->group, "mesh");
+
+                        if (!mesh)
+                        {
+                            adios_error (err_invalid_varname, 
                                  "Bad var name (ignored) in SIRIUS_ADAPTIVE"
                                  " adios_write(): %s\n", mesh->name);
-                    return 1;
-                }
+                            return 1;
+                        }
 
-                mesh_ndims = count_dimensions (mesh->dimensions);
-                mesh_nelems = get_var_dimensions (mesh, 
-                                                  mesh_ndims, 
-                                                  mesh_gdims, 
-                                                  mesh_ldims,  
-                                                  mesh_offsets
-                                                 );
+                        mesh_ndims = count_dimensions (mesh->dimensions);
+                        mesh_nelems = get_var_dimensions (mesh, 
+                                                          mesh_ndims, 
+                                                          mesh_gdims, 
+                                                          mesh_ldims,  
+                                                          mesh_offsets
+                                                         );
 
-                if (mesh_ldims[1] != 3)
-                {
-                    printf ("The mesh is incorrect!\n");
-                    return -1;
-                }
+                        if (mesh_ldims[1] != 3)
+                        {
+                            printf ("The mesh is incorrect!\n");
+                            return 1;
+                        }
 
-                struct adios_var_struct * R = adios_find_var_by_name (fd->group, "R");
+                        struct adios_var_struct * R = adios_find_var_by_name (fd->group, "R");
 
-                if (!R)
-                {
-                    adios_error (err_invalid_varname,
+                        if (!R)
+                        {
+                            adios_error (err_invalid_varname,
                                  "Bad var name (ignored) in SIRIUS_ADAPTIVE"
                                  " adios_write(): %s\n", R->name);
-                    return 1;
-                }
+                            return 1;
+                        }
 
-                struct adios_var_struct * Z = adios_find_var_by_name (fd->group, "Z");
+                        struct adios_var_struct * Z = adios_find_var_by_name (fd->group, "Z");
 
-                if (!Z)
-                {
-                    adios_error (err_invalid_varname,
+                        if (!Z)
+                        {
+                            adios_error (err_invalid_varname,
                                  "Bad var name (ignored) in SIRIUS_ADAPTIVE"
                                  " adios_write(): %s\n", Z->name);
-                    return 1;
-                }
+                            return 1;
+                        }
 
-                for (int m = 0; m < mesh_ldims[0]; m++)
-                {
-                    int n1 = * ((int *) mesh->data + m * 3);
-                    int n2 = * ((int *) mesh->data + m * 3 + 1);
-                    int n3 = * ((int *) mesh->data + m * 3 + 2);
+                        for (int m = 0; m < mesh_ldims[0]; m++)
+                        {
+                            int n1 = * ((int *) mesh->data + m * 3);
+                            int n2 = * ((int *) mesh->data + m * 3 + 1);
+                            int n3 = * ((int *) mesh->data + m * 3 + 2);
 
-                    double * field = data;
-                    double * r = R->data;
-                    double * z = Z->data;
-                    /* Gradient formular from Mark 
-                       grad u = u1 [y2-y3, x3-x2] + u2 [y3-y1, x1-x3] + u3 [y1-y2,x2-x1]
-                     */
+                            double * field = data;
+                            double * r = R->data;
+                            double * z = Z->data;
+                            /* Gradient formular from Mark 
+                               grad u = u1 [y2-y3, x3-x2] + u2 [y3-y1, x1-x3] + u3 [y1-y2,x2-x1]
+                             */
 
-                    double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
-                    double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
-                    double grad_mag = sqrt (grad_z * grad_z + grad_r * grad_r);
+                            double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
+                            double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
+                            double grad_mag = sqrt (grad_z * grad_z + grad_r * grad_r);
 
-                    grad[n1] = grad[n2] = grad[n3] = grad_mag;
+                            grad[n1] = grad[n2] = grad[n3] = grad_mag;
 
-                    //TODO: To add threshold stuff
-                    if (grad_mag > 0.2)
-                    {
-                        ntaggedCells++;
-                    }
-                }  // loop through the node connectivity array
+                            //TODO: To add threshold stuff
+                            if (grad_mag > 0.2)
+                            {
+                                ntaggedCells++;
+                            }
+                        }  // loop through the node connectivity array
 
-printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
-                newz = (double *) malloc (ntaggedCells * 3 * 8);
-                newr = (double *) malloc (ntaggedCells * 3 * 8);
-                newfield = (double *) malloc (ntaggedCells * 3 * 8);
-                newmesh = (int *) malloc (ntaggedCells * 3 * 4);
-                assert (newz && newr && newfield && newmesh);
+                        printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
+                        newz = (double *) malloc (ntaggedCells * 3 * 8);
+                        newr = (double *) malloc (ntaggedCells * 3 * 8);
+                        newfield = (double *) malloc (ntaggedCells * 3 * 8);
+                        newmesh = (int *) malloc (ntaggedCells * 3 * 4);
+                        assert (newz && newr && newfield && newmesh);
 
-                for (int m = 0; m < mesh_ldims[0]; m++)
-                {
-                    int n1 = * ((int *) mesh->data + m * 3);
-                    int n2 = * ((int *) mesh->data + m * 3 + 1);
-                    int n3 = * ((int *) mesh->data + m * 3 + 2);
+                        for (int m = 0; m < mesh_ldims[0]; m++)
+                        {
+                            int n1 = * ((int *) mesh->data + m * 3);
+                            int n2 = * ((int *) mesh->data + m * 3 + 1);
+                            int n3 = * ((int *) mesh->data + m * 3 + 2);
 
-                    double * field = data;
-                    double * r = R->data;
-                    double * z = Z->data;
+                            double * field = data;
+                            double * r = R->data;
+                            double * z = Z->data;
 
-                    double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
-                    double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
-                    double grad_mag = sqrt (grad_z * grad_z + grad_r * grad_r);
+                            double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
+                            double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
+                            double grad_mag = sqrt (grad_z * grad_z + grad_r * grad_r);
 
-                    grad[n1] = grad[n2] = grad[n3] = grad_mag;
+                            grad[n1] = grad[n2] = grad[n3] = grad_mag;
 
-                    //TODO: To add threshold stuff
-                    if (grad_mag > 0.2)
-                    {
-                        int tri1 = insert_node (newz, newr, newfield, &newsize,
+                            //TODO: To add threshold stuff
+                            if (grad_mag > 0.2)
+                            {
+                                int tri1 = insert_node (newz, newr, newfield, &newsize,
                                      z[n1], r[n1], field[n1]);
-                        int tri2 = insert_node (newz, newr, newfield, &newsize,
+                                int tri2 = insert_node (newz, newr, newfield, &newsize,
                                      z[n2], r[n2], field[n2]);
-                        int tri3 = insert_node (newz, newr, newfield, &newsize,
+                                int tri3 = insert_node (newz, newr, newfield, &newsize,
                                      z[n3], r[n3], field[n3]);
-                        newmesh[cell_cnt++] = tri1;
-                        newmesh[cell_cnt++] = tri2;
-                        newmesh[cell_cnt++] = tri3;
+                                newmesh[cell_cnt++] = tri1;
+                                newmesh[cell_cnt++] = tri2;
+                                newmesh[cell_cnt++] = tri3;
+                            }
+                        }  // loop through the node connectivity
                     }
-                }  // loop through the node connectivity
-    }
-    else if (l == 1)
-    {
-//        var->size = newsize * 8;
-    }
-}
-            }
+                    else if (l == 1)
+                    {
+                    }
+                }  // if dpot
+            } // if double
             else
             {
                 /* Not a double */
@@ -1150,8 +1150,11 @@ printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
 
         md->level[l].totalsize += var->size;
 
-        if ( (!strcmp (v->name, "R") || !strcmp (v->name, "Z") ) && l == 1)
+        if ( (!strcmp (v->name, "R") || !strcmp (v->name, "Z") 
+             || !strcmp (v->name, "mesh") || !strcmp (v->name, "dpot")) 
+           && l == 1)
         {
+            // do not write R and Z is level 1
         }
         else
         {
