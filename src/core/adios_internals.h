@@ -223,13 +223,14 @@ static inline int TimeAggregationLastStep (struct adios_group_struct * g)
 
 static inline void SetTimeAggregationFinalizeMode (struct adios_group_struct * g)
 {
-    g->do_ts_aggr = 0;
-    g->do_ts_finalize = 1;
+	g->ts_to_buffer = 0;    // => TimeAggregationLastStep
+    g->do_ts_finalize = 1;  // => TimeAggregationFinalizeMode
 }
 
+// TimeAggregationFinalizeMode => TimeAggregated AND TimeAggreationInProgress AND TimeAggregationLastStep
 static inline int TimeAggregationFinalizeMode (struct adios_group_struct * g)
 {
-    return (g->do_ts_aggr == 0 && g->do_ts_finalize != 0);
+    return (g->do_ts_finalize != 0);
 }
 // TimeAggregationAggregationFinalizeMode => NOT TimeAggregated !!!
 
