@@ -80,6 +80,8 @@ int main (int argc, char ** argv)
         adios_select_method (m_adios_group, "MPI", "", "");
         //adios_select_method (m_adios_group, "MPI_AGGREGATE", "num_ost=2;num_aggregators=2;aggregation_type=2;verbose=3", "");
 
+        adios_set_time_aggregation (m_adios_group, 32000, 0);
+
         adios_define_var (m_adios_group, "NX"
                      ,"", adios_integer
                      ,0, 0, 0);

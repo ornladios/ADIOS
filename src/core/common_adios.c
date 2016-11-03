@@ -136,35 +136,6 @@ void adios_pin_timestep(uint32_t ts) {
 }
 
 
-/////////////////
-//Time Aggregation: check for number of ts to be buffered from XML
-static uint64_t get_ts_buffering(char *parameters, const struct adios_group_struct *g)
-{
-    int64_t bts=0;
-    struct PairStruct *pairs = a2s_text_to_name_value_pairs(parameters);
-    struct PairStruct *p = pairs;
-    while (p) {
-        if ( !strcasecmp (p->name, "ts_buffersize") )
-        {
-            //get the buffer size from XML in bytes
-            errno = 0;
-            bts = strtoll(p->value, NULL, 10);
-             if (bts < 0 || errno != 0) {
-                 log_error ("Invalid 'ts_buffersize' parameter given to the group '%s'\n", p->value);
-             }
-        }
-        p = p->next;
-    }
-    a2s_free_name_value_pairs (pairs);
-
-    if (bts < 0) {
-        fprintf (stderr, "The buffer size for time step buffering can not be <0.\n");
-        bts=0;
-    }
-
-    return (uint64_t) bts;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
 
@@ -177,7 +148,6 @@ int common_adios_open (int64_t * fd_p, const char * group_name
     timer_start ("adios_open");
 #endif
 
-    int64_t group_id = 0;
     struct adios_group_struct * g = NULL;
     struct adios_method_list_struct * methods = NULL;
     struct adios_file_struct * fd = NULL;
@@ -186,8 +156,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
     //printf("beginning of file open... bytes_written=%llu\n", fd->bytes_written);
 
     adios_errno = err_no_error;
-    adios_common_get_group (&group_id, group_name);
-    g = (struct adios_group_struct *) group_id;
+    g = adios_common_get_group (group_name);
     if (!g) {
         adios_error(err_invalid_group, 
                     "adios_open: try to open file %s with undefined group: %s\n",
@@ -263,14 +232,6 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             {
                 adios_transports [methods->method->m].adios_open_fn
                 (fd, methods->method, fd->comm);
-            }
-
-            //Time Aggregation: check if need to buffer time steps
-            //following the assumption that only one method will be defined at
-            //this point
-            if (methods->method->parameters) { 
-                g->ts_buffsize=get_ts_buffering(methods->method->parameters, g);
-                SetTimeAggregation (g, (g->ts_buffsize > 0));
             }
 
             methods = methods->next;
@@ -1328,32 +1289,32 @@ int common_adios_close (struct adios_file_struct * fd)
             }
             else
             {
-            	if (!TimeAggregationFinalizeMode(fd->group))
-            	{
-            		// Time Aggregation: build index for current step and merge it in to
-            		// the aggregated index
-            		struct adios_index_struct_v1 * current_index;
-            		current_index=adios_alloc_index_v1(1);
-            		adios_build_index_v1 (fd, current_index);
-            		//printf("current->index time=%d offset=%llu\n", current_index->vars_root->characteristics[0].time_index, current_index->vars_root->characteristics[0].offset);
-            		if (fd->group->index == NULL)
-            		{
-            			//first time step, we just built the index for the group
-            			fd->group->index = current_index;
-            		}
-            		else
-            		{
-            			adios_merge_index_v1 (fd->group->index, current_index->pg_root,
-            					current_index->vars_root, current_index->attrs_root, 1);
-            			adios_free_index_v1 (current_index);
-            		}
-            		//printf("fd->group->index time=%d offset=%llu\n", fd->group->index->vars_root->characteristics[1].time_index, fd->group->index->vars_root->characteristics[1].offset);
-            	}
+                if (!TimeAggregationFinalizeMode(fd->group))
+                {
+                    // Time Aggregation: build index for current step and merge it in to
+                    // the aggregated index
+                    struct adios_index_struct_v1 * current_index;
+                    current_index=adios_alloc_index_v1(1);
+                    adios_build_index_v1 (fd, current_index);
+                    //printf("current->index time=%d offset=%llu\n", current_index->vars_root->characteristics[0].time_index, current_index->vars_root->characteristics[0].offset);
+                    if (fd->group->index == NULL)
+                    {
+                        //first time step, we just built the index for the group
+                        fd->group->index = current_index;
+                    }
+                    else
+                    {
+                        adios_merge_index_v1 (fd->group->index, current_index->pg_root,
+                                current_index->vars_root, current_index->attrs_root, 1);
+                        adios_free_index_v1 (current_index);
+                    }
+                    //printf("fd->group->index time=%d offset=%llu\n", fd->group->index->vars_root->characteristics[1].time_index, fd->group->index->vars_root->characteristics[1].offset);
+                }
 
                 if (TimeAggregationLastStep(fd->group))
                 {
-                	// in last step, move the PG pointer to the first pg
-                	// to build correct starting offset of this process for all aggregated steps
+                    // in last step, move the PG pointer to the first pg
+                    // to build correct starting offset of this process for all aggregated steps
                     fd->current_pg=fd->pgs_written;
                     fd->group->built_index=1;
                     //printf("bytes-writen=%llu time index=%lu\n", fd->bytes_written, fd->group->index->pg_root->time_index);

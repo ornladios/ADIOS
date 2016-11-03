@@ -530,6 +530,26 @@ void FC_FUNC_(adios_declare_group, ADIOS_DECLARE_GROUP)
     *err = adios_errno;
 }
 
+int FC_FUNC_(adios_set_time_aggregation, ADIOS_SET_TIME_AGGREGATION)
+        (int64_t * group_id, int64_t * buffersize, int64_t * sync_group_id, int * err)
+{
+    adios_errno = err_no_error;
+    if (*group_id == 0) {
+        adios_error (err_invalid_group, "adios_set_time_aggregation() called with 0 argument\n");
+    }
+    else
+    {
+        struct adios_group_struct * g = (struct adios_group_struct *) *group_id;
+        struct adios_group_struct * sg = NULL;
+        if (*sync_group_id != 0)
+            sg = (struct adios_group_struct *) *sync_group_id;
+        uint64_t bufsize = (uint64_t) *buffersize;
+
+        adios_common_set_time_aggregation(g, bufsize, sg);
+    }
+    *err = adios_errno;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_define_var is in adios_internals.c
 // declare a single var as an entry in a group

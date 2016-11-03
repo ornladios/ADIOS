@@ -223,7 +223,7 @@ static inline int TimeAggregationLastStep (struct adios_group_struct * g)
 
 static inline void SetTimeAggregationFinalizeMode (struct adios_group_struct * g)
 {
-	g->ts_to_buffer = 0;    // => TimeAggregationLastStep
+    g->ts_to_buffer = 0;    // => TimeAggregationLastStep
     g->do_ts_finalize = 1;  // => TimeAggregationFinalizeMode
 }
 
@@ -557,7 +557,12 @@ int adios_common_declare_group (int64_t * id, const char * name
                                ,const char * coordination_var
                                ,const char * time_index_name
                                ,enum ADIOS_STATISTICS_FLAG stats
-                               );
+);
+
+int adios_common_set_time_aggregation(struct adios_group_struct * group,
+                                      uint64_t buffersize,
+                                      struct adios_group_struct * syncgroup
+);
 
 int64_t adios_common_define_var (int64_t group_id, const char * name
                                 ,const char * path, enum ADIOS_DATATYPES type
@@ -577,7 +582,7 @@ int adios_common_define_var_characteristics  (struct adios_group_struct * g
                                               ,const char * bin_count
                                              );
 
-void adios_common_get_group (int64_t * group_id, const char * name);
+struct adios_group_struct * adios_common_get_group (const char * name);
 int adios_common_delete_attrdefs (struct adios_group_struct * g);
 int adios_common_delete_vardefs (struct adios_group_struct * g);
 void adios_common_free_groupstruct (struct adios_group_struct * g);

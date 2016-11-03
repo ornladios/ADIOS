@@ -288,6 +288,27 @@ int adios_free_group (int64_t id)
     return adios_errno;
 }
 
+
+
+int adios_set_time_aggregation(int64_t groupid,
+                               uint64_t buffersize,
+                               int64_t syncgroupid
+                              )
+{
+    adios_errno = err_no_error;
+    if (groupid == 0) {
+        adios_error (err_invalid_group, "adios_set_time_aggregation() called with 0 argument\n");
+    }
+    struct adios_group_struct * g = (struct adios_group_struct *) groupid;
+    struct adios_group_struct * sg = NULL;
+    if (syncgroupid != 0)
+        sg = (struct adios_group_struct *) syncgroupid;
+
+    adios_common_set_time_aggregation(g, buffersize, sg);
+    return adios_errno;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // adios_common_define_var is in adios_internals.c

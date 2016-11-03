@@ -39,6 +39,7 @@ program adios_global
 
     call adios_declare_group (m_adios_group, "restart", "iter", ADIOS_STAT_DEFAULT, adios_err)
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
+    call adios_set_time_aggregation (m_adios_group, 32000_8, 0_8, adios_err);
 
     ! This example doesn't use varid during writing.
     ! So we simply put 'varid' everywhere.
