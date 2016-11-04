@@ -80,7 +80,7 @@ adios_end_iteration, adios_start_calculation, adios_stop_calculation,
 % Write API (Non-XML)
 adios_init_noxml, adios_declare_group, adios_free_group, adios_define_var,
 adios_define_attribute, adios_define_attribute_byvalue, adios_set_max_buffer_size, adios_select_method,
-adios_get_write_buffer,
+adios_get_write_buffer, adios_set_time_aggregation,
 % Read API (1.4)
 adios_read_init_method, adios_read_finalize_method,
 adios_read_open_file, adios_read_open, adios_read_close,
@@ -173,6 +173,8 @@ upquote=true,
 \input{xml_format}
 
 \input{transport_methods}
+
+\input{time_aggregation}
 
 \input{transform_plugins}
 
