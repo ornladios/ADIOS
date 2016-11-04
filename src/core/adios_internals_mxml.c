@@ -2094,7 +2094,7 @@ static int parseTimeAggregation (mxml_node_t * node, int rank)
 
     struct adios_group_struct *sg = NULL;
     if (syncgroup) {
-        sg = adios_common_get_group (group);
+        sg = adios_common_get_group (syncgroup);
         if (!sg)
         {
             log_warn ("config.xml: Didn't find sync group %s for time-aggregation of group %s\n",
@@ -2106,7 +2106,7 @@ static int parseTimeAggregation (mxml_node_t * node, int rank)
     {
         if (sg) {
             log_info ("Set time aggregation for group '%s' with buffer size %" PRIu64 " bytes and "
-                    "synchronizing flushes with group '%s\n",
+                    "synchronizing flushes with group '%s'\n",
                     group, bufsize, syncgroup);
         } else {
             log_info ("Set time aggregation for group '%s' with buffer size %" PRIu64 " bytes\n",

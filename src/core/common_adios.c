@@ -86,8 +86,8 @@ int common_adios_finalize (int mype)
              * method's close function.
              * do_ts_finalize signals this special case to common_adios_close()
              */
-            SetTimeAggregationFinalizeMode(g->group);
-            // => TimeAggregationFinalizeMode => TimeAggregationLastStep
+            SetTimeAggregationFlush(g->group, 1);
+            // => TimeAggregationIsFlushing => TimeAggregationLastStep
             common_adios_close (g->group->ts_fd); // close file
             SetTimeAggregation(g->group, 0); //turn off ts buffering
         }
@@ -1188,7 +1188,7 @@ int common_adios_close (struct adios_file_struct * fd)
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_var_struct * v = fd->group->vars;
 
-    if (fd->mode != adios_mode_read && !TimeAggregationFinalizeMode(fd->group))
+    if (fd->mode != adios_mode_read && !TimeAggregationIsFlushing(fd->group))
     {
         //printf("=====common_adios_close offset=%llu %llu\n max_ts=%d ts_to_buffer=%d \n", fd->pgs_written->pg_start_in_file, fd->current_pg->pg_start_in_file, fd->group->max_ts, fd->group->ts_to_buffer);
         //        fd->current_pg=fd->pgs_written;
@@ -1289,7 +1289,7 @@ int common_adios_close (struct adios_file_struct * fd)
             }
             else
             {
-                if (!TimeAggregationFinalizeMode(fd->group))
+                if (!TimeAggregationIsFlushing(fd->group))
                 {
                     // Time Aggregation: build index for current step and merge it in to
                     // the aggregated index
@@ -1329,6 +1329,30 @@ int common_adios_close (struct adios_file_struct * fd)
                     fd->group->index = NULL;
                 }
             }
+        }
+    }
+
+
+    /* Synced groups for time-aggregation.
+     * Force close on those groups that are time-aggregated and are synced with this group
+     */
+    if (NotTimeAggregated(fd->group) || TimeAggregationLastStep(fd->group))
+    {
+        if (TimeAggregationIsaSyncGroup(fd->group))
+        {
+            struct adios_group_struct * syncedgroup = TimeAggregationGetSyncedGroup(fd->group);
+            int rank;
+            MPI_Comm_rank(fd->comm, &rank);
+            if (rank == 0) {
+                log_info ("Sync flush group '%s' because we just wrote group '%s'. "
+                        "Synced group size is currently %" PRIu64 " bytes holding %d steps\n",
+                        syncedgroup->name, fd->group->name, syncedgroup->ts_fd->bytes_written,
+                        syncedgroup->max_ts-syncedgroup->ts_to_buffer);
+            }
+            SetTimeAggregationFlush(syncedgroup, 1);
+            // => TimeAggregationIsFlushing => TimeAggregationLastStep
+            common_adios_close (syncedgroup->ts_fd); // close file for sync'd group
+            SetTimeAggregationFlush(syncedgroup, 0);
         }
     }
 
@@ -1457,6 +1481,7 @@ int common_adios_close (struct adios_file_struct * fd)
 
     //timer_reset_timers ();
 #endif
+
 
     return adios_errno;
 }

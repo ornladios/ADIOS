@@ -178,7 +178,9 @@ struct adios_group_struct
     int max_ts; //maximum time steps to buffer 
     struct adios_index_struct_v1 * index; //the indexes for current written PGs 
     int built_index; // FIXME: 0 or 1, if index has been built, do not build it during close()
-    int do_ts_finalize; // 1 if we need close during finalize, otherwise always 0
+    int do_ts_flush; // 1 if we need close during finalize/group-sync, otherwise always 0
+    int sync_ts_with_me; // 1 if this group forces time-aggregated groups to be flushed
+    struct adios_group_struct *synced_group;
 };
 
 static inline void SetTimeAggregation (struct adios_group_struct * g, int flag)
@@ -221,18 +223,33 @@ static inline int TimeAggregationLastStep (struct adios_group_struct * g)
 }
 // TimeAggregationAggregationLastStep => TimeAggregated AND TimeAggreationInProgress
 
-static inline void SetTimeAggregationFinalizeMode (struct adios_group_struct * g)
+static inline void SetTimeAggregationFlush (struct adios_group_struct * g, int do_flush)
 {
-    g->ts_to_buffer = 0;    // => TimeAggregationLastStep
-    g->do_ts_finalize = 1;  // => TimeAggregationFinalizeMode
+    g->ts_to_buffer = 0;               // => TimeAggregationLastStep
+    g->do_ts_flush = (do_flush != 0);  // => TimeAggregationIsFlushing
 }
 
-// TimeAggregationFinalizeMode => TimeAggregated AND TimeAggreationInProgress AND TimeAggregationLastStep
-static inline int TimeAggregationFinalizeMode (struct adios_group_struct * g)
+// TimeAggregationIsFlushing => TimeAggregated AND TimeAggreationInProgress AND TimeAggregationLastStep
+static inline int TimeAggregationIsFlushing (struct adios_group_struct * g)
 {
-    return (g->do_ts_finalize != 0);
+    return (g->do_ts_flush != 0);
 }
-// TimeAggregationAggregationFinalizeMode => NOT TimeAggregated !!!
+
+static inline void SetTimeAggregationSyncGroup (struct adios_group_struct * g, struct adios_group_struct * synced_group)
+{
+    g->sync_ts_with_me = 1; // => TimeAggregationIsaSyncGroup
+    g->synced_group = synced_group;
+}
+
+static inline int TimeAggregationIsaSyncGroup (struct adios_group_struct * g)
+{
+    return (g->sync_ts_with_me != 0);
+}
+
+static inline struct adios_group_struct * TimeAggregationGetSyncedGroup (struct adios_group_struct * g)
+{
+    return g->synced_group;
+}
 
 struct adios_group_list_struct
 {

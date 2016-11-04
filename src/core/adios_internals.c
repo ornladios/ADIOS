@@ -1383,7 +1383,9 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->ts_to_buffer=1;
     g->index=NULL;
     g->built_index=0;
-    g->do_ts_finalize=0;
+    g->do_ts_flush=0;
+    g->sync_ts_with_me=0;
+    g->synced_group=NULL;
 
     *id = (int64_t) g;
 
@@ -1398,7 +1400,6 @@ int adios_common_set_time_aggregation(struct adios_group_struct * group,
                                       struct adios_group_struct * syncgroup
 )
 {
-
     if (buffersize > 0) {
         SetTimeAggregation(group, 1);
         log_debug ("Time aggregation set for group '%s' with buffer size %" PRIu64 " bytes\n",
@@ -1411,11 +1412,11 @@ int adios_common_set_time_aggregation(struct adios_group_struct * group,
                 group->name, buffersize);
     }
     group->ts_buffsize = buffersize;
-
     if (syncgroup)
     {
         log_debug ("Group '%s' will be forced to flush whenever group '%s' is written\n",
                 group->name, syncgroup->name);
+        SetTimeAggregationSyncGroup(syncgroup, group);
     }
     // FIXME: add sync group
 
