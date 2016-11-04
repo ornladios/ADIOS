@@ -1341,18 +1341,21 @@ int common_adios_close (struct adios_file_struct * fd)
         if (TimeAggregationIsaSyncGroup(fd->group))
         {
             struct adios_group_struct * syncedgroup = TimeAggregationGetSyncedGroup(fd->group);
-            int rank;
-            MPI_Comm_rank(fd->comm, &rank);
-            if (rank == 0) {
-                log_info ("Sync flush group '%s' because we just wrote group '%s'. "
-                        "Synced group size is currently %" PRIu64 " bytes holding %d steps\n",
-                        syncedgroup->name, fd->group->name, syncedgroup->ts_fd->bytes_written,
-                        syncedgroup->max_ts-syncedgroup->ts_to_buffer);
+            if (syncedgroup->ts_fd != NULL)
+            {
+                int rank;
+                MPI_Comm_rank(fd->comm, &rank);
+                if (rank == 0) {
+                    log_info ("Sync flush group '%s' because we just wrote group '%s'. "
+                            "Synced group size is currently %" PRIu64 " bytes holding %d steps\n",
+                            syncedgroup->name, fd->group->name, syncedgroup->ts_fd->bytes_written,
+                            syncedgroup->max_ts-syncedgroup->ts_to_buffer);
+                }
+                SetTimeAggregationFlush(syncedgroup, 1);
+                // => TimeAggregationIsFlushing => TimeAggregationLastStep
+                common_adios_close (syncedgroup->ts_fd); // close file for sync'd group
+                SetTimeAggregationFlush(syncedgroup, 0);
             }
-            SetTimeAggregationFlush(syncedgroup, 1);
-            // => TimeAggregationIsFlushing => TimeAggregationLastStep
-            common_adios_close (syncedgroup->ts_fd); // close file for sync'd group
-            SetTimeAggregationFlush(syncedgroup, 0);
         }
     }
 
