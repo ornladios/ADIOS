@@ -20,7 +20,6 @@ int rank, size;
 
 void write_diag (int step, double * p)
 {
-    uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
     if (rank==0) printf("Timestep %d write diagnostics\n", step);
 
@@ -39,7 +38,6 @@ void write_diag (int step, double * p)
 
 void write_checkpoint (int step, double * p, double *t)
 {
-    uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
     if (rank==0) printf("Checkpointing at step %d\n", step);
     adios_open (&adios_handle, "checkpoint", ckptfilename, "w", comm);
@@ -59,11 +57,6 @@ int main (int argc, char ** argv)
     int         i, it;
     double      t[NX];
     double      p[NY];
-
-    /* ADIOS variables declarations for matching gwrite_temperature.ch */
-    uint64_t    adios_groupsize, adios_totalsize;
-    int64_t     adios_handle;
-
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
