@@ -11,4 +11,4 @@ add_subdirectory(flexpath_arrays)
 add_subdirectory(transforms)
 add_subdirectory(query)
 add_subdirectory(icee_arrays)
-#SUBDIRS=scalars arrays attributes manual global-array global-array-time read_all stat schema
+add_subdirectory(time_aggregation)
