@@ -211,6 +211,23 @@ int adios_staging_open (struct adios_file_struct * fd,
                                                 method->iterations);
         md->group = (struct adios_group_struct *) g;
         /* The function above calls the selected method's adios_init() function */
+
+        /* Flexpath needs to have the group's variables defined by the time of open,
+         * so we need to define them here, instead postponing it to adios_close()
+         */
+        adios_common_define_var ((int64_t)md->group, "pg_ldim", "", adios_long, 0, 0, 0);
+        adios_common_define_var ((int64_t)md->group, "pg_gdim", "", adios_long, 0, 0, 0);
+        adios_common_define_var ((int64_t)md->group, "pg_offs", "", adios_long, 0, 0, 0);
+
+        adios_common_define_var ((int64_t)md->group, "pg", "", adios_byte,
+                                           "pg_ldim", "pg_gdim", "pg_offs");
+
+        adios_common_define_var ((int64_t)md->group, "index_size", "", adios_long, 0, 0, 0);
+
+        adios_common_define_var ((int64_t)md->group, "index", "", adios_byte,
+                                           "index_size", "index_size", "0");
+
+
         md->method_initialized = 1;
         free (gname);
     }
@@ -536,6 +553,7 @@ void adios_staging_close (struct adios_file_struct * fd
             }
 
             // everyone writes the BP buffer as their variable now
+            /*
             char ldim[32], gdim[32], offset[32];
             sprintf (ldim,   "%"PRIu64, fd->bytes_written);
             sprintf (gdim,   "%"PRIu64, md->pg_global_size);
@@ -545,6 +563,18 @@ void adios_staging_close (struct adios_file_struct * fd
                                                ldim, gdim, offset);
             common_adios_write_byid (md->stagedf, (struct adios_var_struct *)var, fd->buffer);
 
+             */
+            struct adios_var_struct *v;
+            v = adios_find_var_by_name (md->group, "pg_ldim");
+            common_adios_write_byid (md->stagedf, v, &fd->bytes_written);
+            v = adios_find_var_by_name (md->group, "pg_gdim");
+            common_adios_write_byid (md->stagedf, v, &md->pg_global_size);
+            v = adios_find_var_by_name (md->group, "pg_offs");
+            common_adios_write_byid (md->stagedf, v, &fd->current_pg->pg_start_in_file) ;
+
+            v = adios_find_var_by_name (md->group, "pg");
+            common_adios_write_byid (md->stagedf, v, fd->buffer);
+
 
             /* Rank 0 writes the index */
             if (md->rank == 0)
@@ -553,11 +583,17 @@ void adios_staging_close (struct adios_file_struct * fd
                                      ,md->b.pg_index_offset, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
+                /*
                 sprintf (ldim,   "%"PRIu64, buffer_offset);
                 sprintf (gdim,   "%"PRIu64, buffer_offset);
                 int64_t idx = adios_common_define_var ((int64_t)md->group, "index", "",
                                                        adios_unsigned_byte, ldim, gdim, "0");
                 common_adios_write_byid (md->stagedf, (struct adios_var_struct *)idx, buffer);
+                */
+                v = adios_find_var_by_name (md->group, "index_size");
+                common_adios_write_byid (md->stagedf, v, &buffer_offset);
+                v = adios_find_var_by_name (md->group, "index");
+                common_adios_write_byid (md->stagedf, v, buffer);
                 free (buffer);
             }
             break;
