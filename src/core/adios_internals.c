@@ -1383,11 +1383,42 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->ts_to_buffer=1;
     g->index=NULL;
     g->built_index=0;
-    g->do_ts_finalize=0;
+    g->do_ts_flush=0;
+    g->sync_ts_with_me=0;
+    g->synced_group=NULL;
 
     *id = (int64_t) g;
 
     adios_append_group (g);
+
+    return 1;
+}
+
+
+int adios_common_set_time_aggregation(struct adios_group_struct * group,
+                                      uint64_t buffersize,
+                                      struct adios_group_struct * syncgroup
+)
+{
+    if (buffersize > 0) {
+        SetTimeAggregation(group, 1);
+        log_debug ("Time aggregation set for group '%s' with buffer size %" PRIu64 " bytes\n",
+                group->name, buffersize);
+    }
+    else
+    {
+        SetTimeAggregation(group, 0); // zero size turns off time-aggregation
+        log_debug ("Time aggregation turned off for group '%s' because buffer size is set to %" PRIu64 " bytes\n",
+                group->name, buffersize);
+    }
+    group->ts_buffsize = buffersize;
+    if (syncgroup)
+    {
+        log_debug ("Group '%s' will be forced to flush whenever group '%s' is written\n",
+                group->name, syncgroup->name);
+        SetTimeAggregationSyncGroup(syncgroup, group);
+    }
+    // FIXME: add sync group
 
     return 1;
 }
@@ -1994,27 +2025,19 @@ int adios_common_set_transform (int64_t var_id, const char *transform_type_str)
 }
 
 
-void adios_common_get_group (int64_t * group_id, const char * name)
+struct adios_group_struct * adios_common_get_group (const char * name)
 {
     struct adios_group_list_struct * g = adios_get_groups ();
-
-    *group_id = 0;
-
     while (g)
     {
         if (!strcasecmp (g->group->name, name))
         {
-            *group_id = (int64_t) g->group;
-
-            return;
+            return g->group;
         }
-
         g = g->next;
     }
-
-    adios_error (err_invalid_group,
-            "adios-group '%s' not found in configuration file\n",
-            name);
+    adios_error (err_invalid_group, "adios group '%s' does not exist\n", name);
+    return NULL;
 }
 
 // *****************************************************************************

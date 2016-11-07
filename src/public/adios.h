@@ -104,6 +104,13 @@ int adios_declare_group (int64_t * id,
 // To free a ADIOS group
 int adios_free_group (int64_t id);
 
+// To set time aggregation of a group output in a certain buffer size but
+// flush whenever the synced group is being output
+int adios_set_time_aggregation(int64_t groupid,
+                               uint64_t buffersize,
+                               int64_t syncgroupid
+                              );
+
 // To select a I/O method for a ADIOS group
 int adios_select_method (int64_t group, 
                          const char * method,

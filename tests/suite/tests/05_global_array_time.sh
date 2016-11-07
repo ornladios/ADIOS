@@ -86,36 +86,45 @@ fi
 ###################################################
 # run the time-aggregation test
 
-echo "Run C global_array_time_write_C with time-aggregation turned on in subdir time_aggr/"
+echo "Run C global_array_time_write_C with time-aggregation turned on in subdir time_aggr/ with various buffer sizes:"
 mkdir -p time_aggr
 pushd time_aggr >/dev/null
-ln -s ../global_array_time_aggr_C.xml global_array_time_C.xml
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ../global_array_time_write_C
-EX=$?
-if [ ! -f global_array_time_C.bp ]; then
-    echo "ERROR: global_array_time_write_C failed. No BP file is created. Exit code=$EX"
-    exit 1
-fi
-
-echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la global_array_time_C.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
-diff -q c_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
-if [ $? != 0 ]; then
-    echo "ERROR: global_array_time_write_C with time aggregation produced a file different from the reference."
-    echo "Compare \"bpls -la $PWD/global_array_time_C.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
-    exit 1
-fi
-
-echo "Check output with bpls even more. Dump data and compare to non-time-aggregated version"
 $TRUNKDIR/utils/bpls/bpls -la ../global_array_time_C.bp -D -d temperature -n 10 > c_bpls_non_aggr.txt
-$TRUNKDIR/utils/bpls/bpls -la    global_array_time_C.bp -D -d temperature -n 10 > c_bpls_aggr.txt
-diff -q c_bpls_non_aggr.txt c_bpls_aggr.txt
-if [ $? != 0 ]; then
-    echo "ERROR: global_array_time_write_C with time aggregation produced a file different from the file without time aggregation."
-    echo "Compare \"bpls -la $PWD/global_array_time_C.bp -D -d temperature -n 10\" "
-    echo "to      \"bpls -la $PWD/../global_array_time_C.bp -D -d temperature -n 10\" "
-    exit 1
-fi
+
+for BUFSIZE in 3000 300000 10000 1000 0 ; do
+            
+    echo "  Run time-aggregation with buffer size = $BUFSIZE"
+    cat ../global_array_time_aggr_C.xml | sed -e "s/buffer-size=[0-9]*/buffer-size=$BUFSIZE/" > global_array_time_C.xml
+    $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ../global_array_time_write_C
+    EX=$?
+    if [ ! -f global_array_time_C.bp ]; then
+        echo "ERROR: global_array_time_write_C failed. No BP file is created. Exit code=$EX"
+        exit 1
+    fi
+
+    mv global_array_time_C.xml global_array_time_C_$BUFSIZE.xml
+    mv global_array_time_C.bp  global_array_time_C_$BUFSIZE.bp
+
+    echo "    Check output with bpls"
+    $TRUNKDIR/utils/bpls/bpls -la global_array_time_C_$BUFSIZE.bp | grep -v -e endianness -e 'file size' > c_bpls_$BUFSIZE.txt
+    diff -q c_bpls_$BUFSIZE.txt $SRCDIR/reference/global_array_time_bpls.txt
+    if [ $? != 0 ]; then
+        echo "ERROR: global_array_time_write_C with time aggregation with buffer size $BUFSIZE produced a file different from the reference."
+        echo "Compare \"bpls -la $PWD/global_array_time_C_$BUFSIZE.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
+        exit 1
+    fi
+
+    echo "    Check output with bpls even more. Dump data and compare to non-time-aggregated version"
+    $TRUNKDIR/utils/bpls/bpls -la    global_array_time_C_$BUFSIZE.bp -D -d temperature -n 10 > c_bpls_aggr_$BUFSIZE.txt
+    diff -q c_bpls_non_aggr.txt c_bpls_aggr_$BUFSIZE.txt
+    if [ $? != 0 ]; then
+        echo "ERROR: global_array_time_write_C with time aggregation with buffer size $BUFSIZE produced a file different from the file without time aggregation."
+        echo "Compare \"bpls -la $PWD/global_array_time_C.bp -D -d temperature -n 10\" "
+        echo "to      \"bpls -la $PWD/../global_array_time_C_$BUFSIZE.bp -D -d temperature -n 10\" "
+        exit 1
+    fi
+done
+
 
 popd >/dev/null
 

@@ -178,7 +178,9 @@ struct adios_group_struct
     int max_ts; //maximum time steps to buffer 
     struct adios_index_struct_v1 * index; //the indexes for current written PGs 
     int built_index; // FIXME: 0 or 1, if index has been built, do not build it during close()
-    int do_ts_finalize; // 1 if we need close during finalize, otherwise always 0
+    int do_ts_flush; // 1 if we need close during finalize/group-sync, otherwise always 0
+    int sync_ts_with_me; // 1 if this group forces time-aggregated groups to be flushed
+    struct adios_group_struct *synced_group;
 };
 
 static inline void SetTimeAggregation (struct adios_group_struct * g, int flag)
@@ -221,17 +223,33 @@ static inline int TimeAggregationLastStep (struct adios_group_struct * g)
 }
 // TimeAggregationAggregationLastStep => TimeAggregated AND TimeAggreationInProgress
 
-static inline void SetTimeAggregationFinalizeMode (struct adios_group_struct * g)
+static inline void SetTimeAggregationFlush (struct adios_group_struct * g, int do_flush)
 {
-    g->do_ts_aggr = 0;
-    g->do_ts_finalize = 1;
+    g->ts_to_buffer = 0;               // => TimeAggregationLastStep
+    g->do_ts_flush = (do_flush != 0);  // => TimeAggregationIsFlushing
 }
 
-static inline int TimeAggregationFinalizeMode (struct adios_group_struct * g)
+// TimeAggregationIsFlushing => TimeAggregated AND TimeAggreationInProgress AND TimeAggregationLastStep
+static inline int TimeAggregationIsFlushing (struct adios_group_struct * g)
 {
-    return (g->do_ts_aggr == 0 && g->do_ts_finalize != 0);
+    return (g->do_ts_flush != 0);
 }
-// TimeAggregationAggregationFinalizeMode => NOT TimeAggregated !!!
+
+static inline void SetTimeAggregationSyncGroup (struct adios_group_struct * g, struct adios_group_struct * synced_group)
+{
+    g->sync_ts_with_me = 1; // => TimeAggregationIsaSyncGroup
+    g->synced_group = synced_group;
+}
+
+static inline int TimeAggregationIsaSyncGroup (struct adios_group_struct * g)
+{
+    return (g->sync_ts_with_me != 0);
+}
+
+static inline struct adios_group_struct * TimeAggregationGetSyncedGroup (struct adios_group_struct * g)
+{
+    return g->synced_group;
+}
 
 struct adios_group_list_struct
 {
@@ -556,7 +574,12 @@ int adios_common_declare_group (int64_t * id, const char * name
                                ,const char * coordination_var
                                ,const char * time_index_name
                                ,enum ADIOS_STATISTICS_FLAG stats
-                               );
+);
+
+int adios_common_set_time_aggregation(struct adios_group_struct * group,
+                                      uint64_t buffersize,
+                                      struct adios_group_struct * syncgroup
+);
 
 int64_t adios_common_define_var (int64_t group_id, const char * name
                                 ,const char * path, enum ADIOS_DATATYPES type
@@ -576,7 +599,7 @@ int adios_common_define_var_characteristics  (struct adios_group_struct * g
                                               ,const char * bin_count
                                              );
 
-void adios_common_get_group (int64_t * group_id, const char * name);
+struct adios_group_struct * adios_common_get_group (const char * name);
 int adios_common_delete_attrdefs (struct adios_group_struct * g);
 int adios_common_delete_vardefs (struct adios_group_struct * g);
 void adios_common_free_groupstruct (struct adios_group_struct * g);

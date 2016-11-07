@@ -19,7 +19,8 @@
         type="string"/>
   </adios-group>
 
-  <method group="restart" method="MPI">ts_buffersize=3000</method>
+  <method group="restart" method="MPI"/>
+  <time-aggregation group="restart" buffer-size=3000/>
 
   <buffer max-size-MB="5"/>
 

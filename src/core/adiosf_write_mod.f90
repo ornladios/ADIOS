@@ -113,6 +113,14 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
+        subroutine adios_set_time_aggregation (group_id, buffersize, sync_group_id, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            integer*8,      intent(in)  :: buffersize
+            integer*8,      intent(in)  :: sync_group_id
+            integer,        intent(out) :: err
+        end subroutine
+
         subroutine adios_define_var (group_id, varname, path, vartype, dimensions, global_dimensions, local_offsets, id)
             implicit none
             integer*8,      intent(in)  :: group_id
@@ -645,7 +653,7 @@ module adios_write_mod
     end interface
 
 
-    contains
+contains
 
     !
     ! ADIOS_WRITE generic interface
@@ -653,1035 +661,1035 @@ module adios_write_mod
     ! Usage: call adios_write (fd, varname, data, err)
     !
     !
-        !
-        ! scalars
-        !
-
-        ! INTEGER*1 scalar
-        subroutine adios_write_int1_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*2 scalar
-        subroutine adios_write_int2_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*4 scalar
-        subroutine adios_write_int4_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4,      intent(in) :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*8 scalar
-        subroutine adios_write_int8_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*4 scalar
-        subroutine adios_write_real4_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,         intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*8 scalar
-        subroutine adios_write_real8_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,         intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) scalar
-        subroutine adios_write_complex8_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,        intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX scalar
-        subroutine adios_write_complex16_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,     intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! CHARACTER scalar (Same as 1D?)
-        !subroutine adios_write_char_d0 (fd, varname, data, err)
-        !    implicit none
-        !    integer*8,      intent(in)  :: fd
-        !    character(*),   intent(in)  :: varname
-        !    character(*),   intent(inout) :: data
-        !    integer,        intent(in)  :: err
-        !
-        !    call adios_write_f2c (fd, varname, data, err)
-        !end subroutine
-
-        ! LOGICAL*1 scalar
-        subroutine adios_write_logical1_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*2 scalar
-        subroutine adios_write_logical2_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*4 scalar
-        subroutine adios_write_logical4_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*8 scalar
-        subroutine adios_write_logical8_d0 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-
-        !
-        ! 1D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_int1_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_int2_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_int4_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_int8_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_real4_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_real8_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_complex8_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_complex16_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_char_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),   intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_logical1_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_logical2_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_logical4_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_logical8_d1 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        !
-        ! 2D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_int1_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_int2_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_int4_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_int8_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_real4_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_real8_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_complex8_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_complex16_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_char_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_logical1_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_logical2_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_logical4_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_logical8_d2 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        !
-        ! 3D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_int1_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_int2_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_int4_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_int8_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_real4_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_real8_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_complex8_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_complex16_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_char_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(:,:),  intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_logical1_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_logical2_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_logical4_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_logical8_d3 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        !
-        ! 4D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_int1_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_int2_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_int4_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_int8_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_real4_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_real8_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_complex8_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_complex16_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_char_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_logical1_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_logical2_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_logical4_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_logical8_d4 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        !
-        ! 5D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_int1_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_int2_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_int4_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_int8_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_real4_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_real8_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_complex8_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_complex16_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_char_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:,:),intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_logical1_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_logical2_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_logical4_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_logical8_d5 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        !
-        ! 6D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_int1_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_int2_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_int4_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_int8_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_real4_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_real8_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_complex8_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_complex16_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_char_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:,:,:),intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_logical1_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_logical2_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_logical4_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_logical8_d6 (fd, varname, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_f2c (fd, varname, data, err)
-        end subroutine
+    !
+    ! scalars
+    !
+
+    ! INTEGER*1 scalar
+    subroutine adios_write_int1_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*2 scalar
+    subroutine adios_write_int2_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*4 scalar
+    subroutine adios_write_int4_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4,      intent(in) :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*8 scalar
+    subroutine adios_write_int8_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*4 scalar
+    subroutine adios_write_real4_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,         intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*8 scalar
+    subroutine adios_write_real8_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,         intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) scalar
+    subroutine adios_write_complex8_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,        intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX scalar
+    subroutine adios_write_complex16_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,     intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! CHARACTER scalar (Same as 1D?)
+    !subroutine adios_write_char_d0 (fd, varname, data, err)
+    !    implicit none
+    !    integer*8,      intent(in)  :: fd
+    !    character(*),   intent(in)  :: varname
+    !    character(*),   intent(inout) :: data
+    !    integer,        intent(in)  :: err
+    !
+    !    call adios_write_f2c (fd, varname, data, err)
+    !end subroutine
+
+    ! LOGICAL*1 scalar
+    subroutine adios_write_logical1_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*2 scalar
+    subroutine adios_write_logical2_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*4 scalar
+    subroutine adios_write_logical4_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*8 scalar
+    subroutine adios_write_logical8_d0 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+
+    !
+    ! 1D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_int1_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_int2_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_int4_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_int8_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_real4_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(*), intent(out) :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_real8_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_complex8_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_complex16_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_char_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),   intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_logical1_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_logical2_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_logical4_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_logical8_d1 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    !
+    ! 2D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_int1_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_int2_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_int4_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_int8_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_real4_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_real8_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_complex8_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_complex16_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_char_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_logical1_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_logical2_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_logical4_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_logical8_d2 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    !
+    ! 3D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_int1_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_int2_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_int4_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_int8_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_real4_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_real8_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_complex8_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_complex16_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_char_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(:,:),  intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_logical1_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_logical2_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_logical4_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_logical8_d3 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    !
+    ! 4D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_int1_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_int2_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_int4_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_int8_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_real4_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_real8_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_complex8_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_complex16_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_char_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_logical1_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_logical2_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_logical4_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_logical8_d4 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    !
+    ! 5D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_int1_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_int2_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_int4_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_int8_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_real4_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_real8_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_complex8_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_complex16_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_char_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(:,:,:,:),intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_logical1_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_logical2_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_logical4_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_logical8_d5 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    !
+    ! 6D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_int1_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_int2_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_int4_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_int8_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_real4_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_real8_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_complex8_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_complex16_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_char_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(:,:,:,:,:),intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_logical1_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_logical2_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_logical4_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_logical8_d6 (fd, varname, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_f2c (fd, varname, data, err)
+    end subroutine
 
     ! end of ADIOS_WRITE functions
 
@@ -1693,1035 +1701,1035 @@ module adios_write_mod
     ! Usage: call adios_write_byid (fd, varid, data, err)
     !
     !
-        !
-        ! scalars
-        !
-
-        ! INTEGER*1 scalar
-        subroutine adios_write_byid_int1_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*1,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*2 scalar
-        subroutine adios_write_byid_int2_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*2,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*4 scalar
-        subroutine adios_write_byid_int4_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*4,      intent(in) :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*8 scalar
-        subroutine adios_write_byid_int8_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*8,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*4 scalar
-        subroutine adios_write_byid_real4_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*4,         intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*8 scalar
-        subroutine adios_write_byid_real8_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*8,         intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) scalar
-        subroutine adios_write_byid_complex8_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex,        intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX scalar
-        subroutine adios_write_byid_complex16_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex*16,     intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! CHARACTER scalar (Same as 1D?)
-        !subroutine adios_write_byid_char_d0 (fd, varid, data, err)
-        !    implicit none
-        !    integer*8,      intent(in)  :: fd
-        !    integer*8,      intent(in)  :: varid
-        !    character(*),   intent(inout) :: data
-        !    integer,        intent(in)  :: err
-        !
-        !    call adios_write_byid_f2c (fd, varid, data, err)
-        !end subroutine
-
-        ! LOGICAL*1 scalar
-        subroutine adios_write_byid_logical1_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*1,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*2 scalar
-        subroutine adios_write_byid_logical2_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*2,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*4 scalar
-        subroutine adios_write_byid_logical4_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*4,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*8 scalar
-        subroutine adios_write_byid_logical8_d0 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*8,      intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-
-        !
-        ! 1D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_byid_int1_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*1, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_byid_int2_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*2, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_byid_int4_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*4, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_byid_int8_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*8, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_byid_real4_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*4,    dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_byid_real8_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*8,   dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_byid_complex8_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex,   dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_byid_complex16_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex*16,dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_byid_char_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            character(*),   intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_byid_logical1_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*1, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_byid_logical2_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*2, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_byid_logical4_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*4, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_byid_logical8_d1 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*8, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        !
-        ! 2D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_byid_int1_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*1, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_byid_int2_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*2, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_byid_int4_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*4, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_byid_int8_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*8, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_byid_real4_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*4,    dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_byid_real8_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*8,   dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_byid_complex8_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex,   dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_byid_complex16_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex*16,dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_byid_char_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            character(*),dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_byid_logical1_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*1, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_byid_logical2_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*2, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_byid_logical4_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*4, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_byid_logical8_d2 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*8, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        !
-        ! 3D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_byid_int1_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*1, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_byid_int2_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*2, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_byid_int4_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*4, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_byid_int8_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*8, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_byid_real4_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*4,    dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_byid_real8_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*8,   dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_byid_complex8_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex,   dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_byid_complex16_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex*16,dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_byid_char_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            character(*),dimension(:,:),  intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_byid_logical1_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*1, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_byid_logical2_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*2, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_byid_logical4_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*4, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_byid_logical8_d3 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*8, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        !
-        ! 4D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_byid_int1_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*1, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_byid_int2_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*2, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_byid_int4_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*4, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_byid_int8_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*8, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_byid_real4_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*4,    dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_byid_real8_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*8,   dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_byid_complex8_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex,   dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_byid_complex16_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex*16,dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_byid_char_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            character(*),dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_byid_logical1_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*1, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_byid_logical2_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*2, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_byid_logical4_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*4, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_byid_logical8_d4 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*8, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        !
-        ! 5D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_byid_int1_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*1, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_byid_int2_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*2, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_byid_int4_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*4, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_byid_int8_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*8, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_byid_real4_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*4,    dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_byid_real8_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*8,   dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_byid_complex8_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex,   dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_byid_complex16_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex*16,dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_byid_char_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            character(*),dimension(:,:,:,:),intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_byid_logical1_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*1, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_byid_logical2_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*2, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_byid_logical4_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*4, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_byid_logical8_d5 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*8, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        !
-        ! 6D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_write_byid_int1_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*1, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_write_byid_int2_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*2, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_write_byid_int4_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*4, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_write_byid_int8_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            integer*8, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_write_byid_real4_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*4,    dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_write_byid_real8_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            real*8,   dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_write_byid_complex8_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex,   dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_write_byid_complex16_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            complex*16,dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_write_byid_char_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            character(*),dimension(:,:,:,:,:),intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_write_byid_logical1_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*1, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_write_byid_logical2_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*2, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_write_byid_logical4_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*4, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_write_byid_logical8_d6 (fd, varid, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            integer*8,      intent(in)  :: varid
-            logical*8, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err
-
-            call adios_write_byid_f2c (fd, varid, data, err)
-        end subroutine
+    !
+    ! scalars
+    !
+
+    ! INTEGER*1 scalar
+    subroutine adios_write_byid_int1_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*1,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*2 scalar
+    subroutine adios_write_byid_int2_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*2,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*4 scalar
+    subroutine adios_write_byid_int4_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*4,      intent(in) :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*8 scalar
+    subroutine adios_write_byid_int8_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*8,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*4 scalar
+    subroutine adios_write_byid_real4_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*4,         intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*8 scalar
+    subroutine adios_write_byid_real8_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*8,         intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) scalar
+    subroutine adios_write_byid_complex8_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex,        intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX scalar
+    subroutine adios_write_byid_complex16_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex*16,     intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! CHARACTER scalar (Same as 1D?)
+    !subroutine adios_write_byid_char_d0 (fd, varid, data, err)
+    !    implicit none
+    !    integer*8,      intent(in)  :: fd
+    !    integer*8,      intent(in)  :: varid
+    !    character(*),   intent(inout) :: data
+    !    integer,        intent(in)  :: err
+    !
+    !    call adios_write_byid_f2c (fd, varid, data, err)
+    !end subroutine
+
+    ! LOGICAL*1 scalar
+    subroutine adios_write_byid_logical1_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*1,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*2 scalar
+    subroutine adios_write_byid_logical2_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*2,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*4 scalar
+    subroutine adios_write_byid_logical4_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*4,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*8 scalar
+    subroutine adios_write_byid_logical8_d0 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*8,      intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+
+    !
+    ! 1D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_byid_int1_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*1, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_byid_int2_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*2, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_byid_int4_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*4, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_byid_int8_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*8, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_byid_real4_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*4,    dimension(*), intent(out) :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_byid_real8_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*8,   dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_byid_complex8_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex,   dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_byid_complex16_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex*16,dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_byid_char_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        character(*),   intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_byid_logical1_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*1, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_byid_logical2_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*2, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_byid_logical4_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*4, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_byid_logical8_d1 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*8, dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    !
+    ! 2D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_byid_int1_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*1, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_byid_int2_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*2, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_byid_int4_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*4, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_byid_int8_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*8, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_byid_real4_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*4,    dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_byid_real8_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*8,   dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_byid_complex8_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex,   dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_byid_complex16_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex*16,dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_byid_char_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        character(*),dimension(*), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_byid_logical1_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*1, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_byid_logical2_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*2, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_byid_logical4_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*4, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_byid_logical8_d2 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*8, dimension(:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    !
+    ! 3D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_byid_int1_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*1, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_byid_int2_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*2, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_byid_int4_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*4, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_byid_int8_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*8, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_byid_real4_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*4,    dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_byid_real8_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*8,   dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_byid_complex8_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex,   dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_byid_complex16_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex*16,dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_byid_char_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        character(*),dimension(:,:),  intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_byid_logical1_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*1, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_byid_logical2_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*2, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_byid_logical4_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*4, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_byid_logical8_d3 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*8, dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    !
+    ! 4D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_byid_int1_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*1, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_byid_int2_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*2, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_byid_int4_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*4, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_byid_int8_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*8, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_byid_real4_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*4,    dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_byid_real8_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*8,   dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_byid_complex8_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex,   dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_byid_complex16_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex*16,dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_byid_char_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        character(*),dimension(:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_byid_logical1_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*1, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_byid_logical2_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*2, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_byid_logical4_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*4, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_byid_logical8_d4 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*8, dimension(:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    !
+    ! 5D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_byid_int1_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*1, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_byid_int2_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*2, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_byid_int4_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*4, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_byid_int8_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*8, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_byid_real4_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*4,    dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_byid_real8_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*8,   dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_byid_complex8_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex,   dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_byid_complex16_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex*16,dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_byid_char_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        character(*),dimension(:,:,:,:),intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_byid_logical1_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*1, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_byid_logical2_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*2, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_byid_logical4_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*4, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_byid_logical8_d5 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*8, dimension(:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    !
+    ! 6D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_write_byid_int1_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*1, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_write_byid_int2_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*2, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_write_byid_int4_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*4, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_write_byid_int8_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        integer*8, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_write_byid_real4_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*4,    dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_write_byid_real8_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        real*8,   dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_write_byid_complex8_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex,   dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_write_byid_complex16_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        complex*16,dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_write_byid_char_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        character(*),dimension(:,:,:,:,:),intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_write_byid_logical1_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*1, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_write_byid_logical2_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*2, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_write_byid_logical4_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*4, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_write_byid_logical8_d6 (fd, varid, data, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        integer*8,      intent(in)  :: varid
+        logical*8, dimension(:,:,:,:,:,:), intent(in)  :: data
+        integer,        intent(in)  :: err
+
+        call adios_write_byid_f2c (fd, varid, data, err)
+    end subroutine
 
     ! end of ADIOS_WRITE functions
 
@@ -2735,1126 +2743,1126 @@ module adios_write_mod
     ! Usage: call adios_read (fd, varname, buffer, buffer_size, err)
     !
     !
-        !
-        ! scalar data
-        !
-
-        ! INTEGER*1 scalar
-        subroutine adios_read_int1_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*2 scalar
-        subroutine adios_read_int2_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*4 scalar
-        subroutine adios_read_int4_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*8 scalar
-        subroutine adios_read_int8_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*4 scalar
-        subroutine adios_read_real4_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,         intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*8 scalar
-        subroutine adios_read_real8_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,         intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! COMPLEX (*8) scalar
-        subroutine adios_read_complex8_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,        intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX scalar
-        subroutine adios_read_complex16_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,     intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! CHARACTER scalar
-        !subroutine adios_read_char_d0 (fd, varname, buffer, buffer_size, err)
-        !    implicit none
-        !    integer*8,      intent(in)  :: fd
-        !    character(*),   intent(in)  :: varname
-        !    character(*),   intent(out) :: buffer
-        !    integer*8,      intent(in)  :: buffer_size
-        !    integer,        intent(in)  :: err
-        !
-        !    call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        !end subroutine
-
-        ! LOGICAL*1 scalar
-        subroutine adios_read_logical1_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*2 scalar
-        subroutine adios_read_logical2_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*4 scalar
-        subroutine adios_read_logical4_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*8 scalar
-        subroutine adios_read_logical8_d0 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-
-        !
-        ! 1D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_read_int1_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_read_int2_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_read_int4_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_read_int8_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_read_real4_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_read_real8_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_read_complex8_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_read_complex16_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_read_char_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),   intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_read_logical1_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_read_logical2_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_read_logical4_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_read_logical8_d1 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        !
-        ! 2D buffer
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_read_int1_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_read_int2_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_read_int4_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_read_int8_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_read_real4_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_read_real8_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_read_complex8_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_read_complex16_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_read_char_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_read_logical1_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_read_logical2_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_read_logical4_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_read_logical8_d2 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        !
-        ! 3D buffer
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_read_int1_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_read_int2_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_read_int4_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_read_int8_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_read_real4_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_read_real8_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_read_complex8_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_read_complex16_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_read_char_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(:,:),  intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_read_logical1_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_read_logical2_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_read_logical4_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_read_logical8_d3 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        !
-        ! 4D buffer
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_read_int1_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_read_int2_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_read_int4_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_read_int8_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_read_real4_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_read_real8_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_read_complex8_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_read_complex16_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_read_char_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_read_logical1_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_read_logical2_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_read_logical4_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_read_logical8_d4 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        !
-        ! 5D buffer
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_read_int1_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_read_int2_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_read_int4_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_read_int8_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_read_real4_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_read_real8_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_read_complex8_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_read_complex16_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_read_char_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:,:),intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_read_logical1_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_read_logical2_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_read_logical4_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_read_logical8_d5 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        !
-        ! 6D buffer
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_read_int1_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_read_int2_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_read_int4_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_read_int8_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_read_real4_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_read_real8_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_read_complex8_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_read_complex16_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_read_char_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:,:,:),intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_read_logical1_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_read_logical2_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_read_logical4_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_read_logical8_d6 (fd, varname, buffer, buffer_size, err)
-            implicit none
-            integer*8,      intent(in)  :: fd
-            character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size
-            integer,        intent(in)  :: err
-
-            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
-        end subroutine
+    !
+    ! scalar data
+    !
+
+    ! INTEGER*1 scalar
+    subroutine adios_read_int1_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1,      intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*2 scalar
+    subroutine adios_read_int2_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2,      intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*4 scalar
+    subroutine adios_read_int4_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4,      intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*8 scalar
+    subroutine adios_read_int8_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8,      intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*4 scalar
+    subroutine adios_read_real4_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,         intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*8 scalar
+    subroutine adios_read_real8_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,         intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! COMPLEX (*8) scalar
+    subroutine adios_read_complex8_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,        intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX scalar
+    subroutine adios_read_complex16_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,     intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! CHARACTER scalar
+    !subroutine adios_read_char_d0 (fd, varname, buffer, buffer_size, err)
+    !    implicit none
+    !    integer*8,      intent(in)  :: fd
+    !    character(*),   intent(in)  :: varname
+    !    character(*),   intent(out) :: buffer
+    !    integer*8,      intent(in)  :: buffer_size
+    !    integer,        intent(in)  :: err
+    !
+    !    call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    !end subroutine
+
+    ! LOGICAL*1 scalar
+    subroutine adios_read_logical1_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1,      intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*2 scalar
+    subroutine adios_read_logical2_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2,      intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*4 scalar
+    subroutine adios_read_logical4_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4,      intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*8 scalar
+    subroutine adios_read_logical8_d0 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8,      intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+
+    !
+    ! 1D data
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_read_int1_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_read_int2_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_read_int4_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_read_int8_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_read_real4_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_read_real8_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_read_complex8_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_read_complex16_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_read_char_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),   intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_read_logical1_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_read_logical2_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_read_logical4_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_read_logical8_d1 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    !
+    ! 2D buffer
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_read_int1_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_read_int2_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_read_int4_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_read_int8_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_read_real4_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_read_real8_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_read_complex8_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_read_complex16_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_read_char_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(*), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_read_logical1_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_read_logical2_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_read_logical4_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_read_logical8_d2 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    !
+    ! 3D buffer
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_read_int1_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_read_int2_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_read_int4_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_read_int8_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_read_real4_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_read_real8_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_read_complex8_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_read_complex16_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_read_char_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(:,:),  intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_read_logical1_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_read_logical2_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_read_logical4_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_read_logical8_d3 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    !
+    ! 4D buffer
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_read_int1_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_read_int2_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_read_int4_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_read_int8_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_read_real4_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_read_real8_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_read_complex8_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_read_complex16_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_read_char_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_read_logical1_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_read_logical2_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_read_logical4_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_read_logical8_d4 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    !
+    ! 5D buffer
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_read_int1_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_read_int2_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_read_int4_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_read_int8_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_read_real4_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_read_real8_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_read_complex8_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_read_complex16_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_read_char_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(:,:,:,:),intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_read_logical1_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_read_logical2_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_read_logical4_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_read_logical8_d5 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    !
+    ! 6D buffer
+    !
+
+    ! INTEGER*1 array
+    subroutine adios_read_int1_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*2 array
+    subroutine adios_read_int2_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_read_int4_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_read_int8_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        integer*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_read_real4_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*4,    dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_read_real8_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        real*8,   dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! COMPLEX (*8) array
+    subroutine adios_read_complex8_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex,   dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! DOUBLE-COMPLEX array
+    subroutine adios_read_complex16_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        complex*16,dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! CHARACTER array
+    subroutine adios_read_char_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        character(*),dimension(:,:,:,:,:),intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*1 array
+    subroutine adios_read_logical1_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*2 array
+    subroutine adios_read_logical2_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*4 array
+    subroutine adios_read_logical4_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
+
+    ! LOGICAL*8 array
+    subroutine adios_read_logical8_d6 (fd, varname, buffer, buffer_size, err)
+        implicit none
+        integer*8,      intent(in)  :: fd
+        character(*),   intent(in)  :: varname
+        logical*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
+        integer*8,      intent(in)  :: buffer_size
+        integer,        intent(in)  :: err
+
+        call adios_read_f2c (fd, varname, buffer, buffer_size, err)
+    end subroutine
 
     ! end of ADIOS_READ functions
 
@@ -3865,254 +3873,254 @@ module adios_write_mod
     ! Usage: call adios_define_attrribute_byvalue (group_id, attrname, path, nelems, values, err)
     !
     !
-        ! Special case: CHARACTER*1 array
-        ! This calls a different function to keep the string length information within
-        subroutine adios_define_attribute_byvalue_char_d1 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            character(*),   intent(in)  :: values
-            integer,        intent(out) :: err
+    ! Special case: CHARACTER*1 array
+    ! This calls a different function to keep the string length information within
+    subroutine adios_define_attribute_byvalue_char_d1 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        character(*),   intent(in)  :: values
+        integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_string (group_id, attrname, path, nelems, values, err)
-        end subroutine
+        call adios_define_attribute_byvalue_string (group_id, attrname, path, nelems, values, err)
+    end subroutine
 
-        ! Special case: CHARACTER*2 array
-        ! This calls a different function to keep the string length information within
-        subroutine adios_define_attribute_byvalue_char_d2 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            character(*), dimension(:), intent(in)  :: values
-            integer,        intent(out) :: err
+    ! Special case: CHARACTER*2 array
+    ! This calls a different function to keep the string length information within
+    subroutine adios_define_attribute_byvalue_char_d2 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        character(*), dimension(:), intent(in)  :: values
+        integer,        intent(out) :: err
 
-            !character(*) :: v1
-            !v1 = values(1)
+        !character(*) :: v1
+        !v1 = values(1)
 
-            if (nelems <= size(values)) then
-                !write (*,'("String Array: dims = ",i4, "string size=",i4)')  size(values,1), len(values)
-                !write (*,*)  shape(values)
-                call adios_define_attribute_byvalue_string_array (group_id, attrname, path, nelems, &
-                                                                  values, len(values), err)
-            else
-                write (*,'("ADIOS Attribute definition error: ",a,"/",a," string array size =",i4," nelems = ",i4)') &
-                    path, attrname, size(values), nelems
-            endif
-        end subroutine
+        if (nelems <= size(values)) then
+            !write (*,'("String Array: dims = ",i4, "string size=",i4)')  size(values,1), len(values)
+            !write (*,*)  shape(values)
+            call adios_define_attribute_byvalue_string_array (group_id, attrname, path, nelems, &
+                values, len(values), err)
+        else
+            write (*,'("ADIOS Attribute definition error: ",a,"/",a," string array size =",i4," nelems = ",i4)') &
+                path, attrname, size(values), nelems
+        endif
+    end subroutine
 
-        ! INTEGER*1 scalar
-        subroutine adios_define_attribute_byvalue_int1_d0 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            integer*1,      intent(in)  :: values
-            integer,        intent(out) :: err
+    ! INTEGER*1 scalar
+    subroutine adios_define_attribute_byvalue_int1_d0 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        integer*1,      intent(in)  :: values
+        integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double_complex, adios_byte, values, err)
-        end subroutine
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double_complex, adios_byte, values, err)
+    end subroutine
 
-        ! INTEGER*2 scalar
-        subroutine adios_define_attribute_byvalue_int2_d0 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            integer*2,      intent(in)  :: values
-            integer,        intent(out) :: err
+    ! INTEGER*2 scalar
+    subroutine adios_define_attribute_byvalue_int2_d0 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        integer*2,      intent(in)  :: values
+        integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_short, nelems, values, err)
-        end subroutine
-
-
-        ! INTEGER*4 scalar
-        subroutine adios_define_attribute_byvalue_int4_d0 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            integer*4,      intent(in)  :: values
-            integer,        intent(out) :: err
-
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_integer, nelems, values, err)
-        end subroutine
-
-        ! INTEGER*8 scalar
-        subroutine adios_define_attribute_byvalue_int8_d0 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            integer*8,      intent(in)  :: values
-            integer,        intent(out) :: err
-
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_long, nelems, values, err)
-        end subroutine
-
-        ! REAL*4 scalar
-        subroutine adios_define_attribute_byvalue_real4_d0 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            real*4,         intent(in)  :: values
-            integer,        intent(out) :: err
-
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_real, nelems, values, err)
-        end subroutine
-
-        ! REAL*8 scalar
-        subroutine adios_define_attribute_byvalue_real8_d0 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            real*8,         intent(in)  :: values
-            integer,        intent(out) :: err
-
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double, nelems, values, err)
-        end subroutine
-
-        ! COMPLEX*8 scalar
-        subroutine adios_define_attribute_byvalue_complex8_d0 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            complex*8,      intent(in)  :: values
-            integer,        intent(out) :: err
-
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_complex, nelems, values, err)
-        end subroutine
-
-        ! COMPLEX*16 scalar
-        subroutine adios_define_attribute_byvalue_complex16_d0 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            complex*16,     intent(in)  :: values
-            integer,        intent(out) :: err
-
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double_complex, nelems, values, err)
-        end subroutine
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_short, nelems, values, err)
+    end subroutine
 
 
-        ! INTEGER*1 array
-        subroutine adios_define_attribute_byvalue_int1_d1 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            integer*1, dimension(:), intent(in)  :: values
-            integer,        intent(out) :: err
+    ! INTEGER*4 scalar
+    subroutine adios_define_attribute_byvalue_int4_d0 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        integer*4,      intent(in)  :: values
+        integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_byte, nelems, values, err)
-        end subroutine
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_integer, nelems, values, err)
+    end subroutine
 
-        ! INTEGER*2 array
-        subroutine adios_define_attribute_byvalue_int2_d1 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            integer*2, dimension(:), intent(in)  :: values
-            integer,        intent(out) :: err
+    ! INTEGER*8 scalar
+    subroutine adios_define_attribute_byvalue_int8_d0 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        integer*8,      intent(in)  :: values
+        integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_short, nelems, values, err)
-        end subroutine
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_long, nelems, values, err)
+    end subroutine
 
-        ! INTEGER*4 array
-        subroutine adios_define_attribute_byvalue_int4_d1 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            integer*4, dimension(:), intent(in)  :: values
-            integer,        intent(out) :: err
+    ! REAL*4 scalar
+    subroutine adios_define_attribute_byvalue_real4_d0 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        real*4,         intent(in)  :: values
+        integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_integer, nelems, values, err)
-        end subroutine
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_real, nelems, values, err)
+    end subroutine
 
-        ! INTEGER*8 array
-        subroutine adios_define_attribute_byvalue_int8_d1 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            integer*8, dimension(:), intent(in)  :: values
-            integer,        intent(out) :: err
+    ! REAL*8 scalar
+    subroutine adios_define_attribute_byvalue_real8_d0 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        real*8,         intent(in)  :: values
+        integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_long, nelems, values, err)
-        end subroutine
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double, nelems, values, err)
+    end subroutine
 
-        ! REAL*4 array
-        subroutine adios_define_attribute_byvalue_real4_d1 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            real*4, dimension(:), intent(in)  :: values
-            integer,        intent(out) :: err
+    ! COMPLEX*8 scalar
+    subroutine adios_define_attribute_byvalue_complex8_d0 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        complex*8,      intent(in)  :: values
+        integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_real, nelems, values, err)
-        end subroutine
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_complex, nelems, values, err)
+    end subroutine
 
-        ! REAL*8 array
-        subroutine adios_define_attribute_byvalue_real8_d1 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            real*8, dimension(:), intent(in)  :: values
-            integer,        intent(out) :: err
+    ! COMPLEX*16 scalar
+    subroutine adios_define_attribute_byvalue_complex16_d0 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        complex*16,     intent(in)  :: values
+        integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double, nelems, values, err)
-        end subroutine
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double_complex, nelems, values, err)
+    end subroutine
 
-        ! COMPLEX*8 array
-        subroutine adios_define_attribute_byvalue_complex8_d1 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            complex*8, dimension(:), intent(in)  :: values
-            integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_complex, nelems, values, err)
-        end subroutine
+    ! INTEGER*1 array
+    subroutine adios_define_attribute_byvalue_int1_d1 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        integer*1, dimension(:), intent(in)  :: values
+        integer,        intent(out) :: err
 
-        ! COMPLEX*16 array
-        subroutine adios_define_attribute_byvalue_complex16_d1 (group_id, attrname, path, nelems, values, err)
-            implicit none
-            integer*8,      intent(in)  :: group_id
-            character(*),   intent(in)  :: attrname
-            character(*),   intent(in)  :: path
-            integer,        intent(in)  :: nelems
-            complex*16, dimension(:), intent(in)  :: values
-            integer,        intent(out) :: err
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_byte, nelems, values, err)
+    end subroutine
 
-            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double_complex, nelems, values, err)
-        end subroutine
+    ! INTEGER*2 array
+    subroutine adios_define_attribute_byvalue_int2_d1 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        integer*2, dimension(:), intent(in)  :: values
+        integer,        intent(out) :: err
+
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_short, nelems, values, err)
+    end subroutine
+
+    ! INTEGER*4 array
+    subroutine adios_define_attribute_byvalue_int4_d1 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        integer*4, dimension(:), intent(in)  :: values
+        integer,        intent(out) :: err
+
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_integer, nelems, values, err)
+    end subroutine
+
+    ! INTEGER*8 array
+    subroutine adios_define_attribute_byvalue_int8_d1 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        integer*8, dimension(:), intent(in)  :: values
+        integer,        intent(out) :: err
+
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_long, nelems, values, err)
+    end subroutine
+
+    ! REAL*4 array
+    subroutine adios_define_attribute_byvalue_real4_d1 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        real*4, dimension(:), intent(in)  :: values
+        integer,        intent(out) :: err
+
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_real, nelems, values, err)
+    end subroutine
+
+    ! REAL*8 array
+    subroutine adios_define_attribute_byvalue_real8_d1 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        real*8, dimension(:), intent(in)  :: values
+        integer,        intent(out) :: err
+
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double, nelems, values, err)
+    end subroutine
+
+    ! COMPLEX*8 array
+    subroutine adios_define_attribute_byvalue_complex8_d1 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        complex*8, dimension(:), intent(in)  :: values
+        integer,        intent(out) :: err
+
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_complex, nelems, values, err)
+    end subroutine
+
+    ! COMPLEX*16 array
+    subroutine adios_define_attribute_byvalue_complex16_d1 (group_id, attrname, path, nelems, values, err)
+        implicit none
+        integer*8,      intent(in)  :: group_id
+        character(*),   intent(in)  :: attrname
+        character(*),   intent(in)  :: path
+        integer,        intent(in)  :: nelems
+        complex*16, dimension(:), intent(in)  :: values
+        integer,        intent(out) :: err
+
+        call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double_complex, nelems, values, err)
+    end subroutine
 
     ! end of ADIOS_DEFINE_ATTRIBUTE_BYVALUE functions
 

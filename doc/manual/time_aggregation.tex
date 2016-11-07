@@ -1,0 +1,43 @@
+\chapter{Time aggregation}
+
+From version 1.11, ADIOS allows aggregating multiple output steps in a memory buffer before flushing it to the file system or whatever the actual transport method is doing at \verb+adios_close()+. This temporal aggregation only works with transport methods that use the ADIOS internal buffering and thus rely on the BP file format, including the \verb+POSIX, MPI, MPI_LUSTRE, MPI_AGGREGATE, BGQ+ methods.
+
+To use time aggregation, simply set it for a group that has been declared. The examples below show how to do that in the XML config file, or in the source code. There is a new XML element and a new function to do this, respectively. 
+
+\begin{lstlisting}[language=XML,caption=Set time aggregation for a group in XML]
+<adios-group name="diagnostics"> ... </adios-group>    
+<time-aggregation group="diagnostics"   buffer-size=32000 />
+\end{lstlisting}
+
+\begin{lstlisting}[caption=Set time aggregation for a group in source code]
+adios_declare_group (&groupid, ...);
+adios_set_time_aggregation (groupid, 32000, NULL);
+\end{lstlisting}
+
+The buffer size is given in {\em bytes}. Make sure that at least one output step fits into the buffer. If the buffer is smaller than that, only a fraction of the output will be saved. If the buffer size is set to $0$, that turns off time aggregation for the group.
+
+
+\section{Synchronizing flushes with another group's output}
+
+One may want to enforce a policy that the time-aggregated buffer is flushed to the file system whenever a less regular I/O event happens, e.g. checkpointing. If the application dies between two checkpoints, it is guaranteed that there is data in the time-aggregated output up to the last checkpoint. One may also want a stricter policy that enforces that the aggregated output does contain steps {\em exactly} up to the last checkpoint. ADIOS provides an option for the former while the latter can be achieved by the user by allowing a buffer large enough to hold all output steps between two checkpoints.  
+
+We can tell ADIOS that the aggregated group should be "synchronized" with another group. This will cause the buffer be flushed whenever an \verb+adios_close()+ for the {\em other group}  happens. The aggregated buffer will also be flushed whenever there is no more space in the aggregation buffer, and also at \verb+adios_finalize()+. In the XML element \verb+<time_aggregation>+, add an attribute \verb+sync_with_group="restart"+ to set the group which enforces the flushing of the aggregated group. In the non-XML source, the third parameter of the \verb+adios_set_time_aggregation+ should be the group ID of this group. 
+
+
+\begin{lstlisting}[language=XML,caption=Set time aggregation for a group in XML with a synchronizing group]
+<adios-group name="checkpoint"> ... </adios-group>
+<adios-group name="diagnostics"> ... </adios-group>
+<time-aggregation group="diagnostics" 
+                  buffer-size=32000 
+                  sync-with-group="checkpoint" />
+\end{lstlisting}
+
+
+\begin{lstlisting}[caption=Set time aggregation for a group in source code with a synchronizing group]
+adios_declare_group (&ckpt_groupid, "checkpoint");
+adios_declare_group (&diag_groupid, "diagnostics";
+adios_set_time_aggregation (diag_groupid, 32000, ckpt_groupid);
+\end{lstlisting}
+
+
+

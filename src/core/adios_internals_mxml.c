@@ -1887,9 +1887,7 @@ static int parseAnalysis (mxml_node_t * node)
         return 0;
     }
 
-    adios_common_get_group (&group_id, group);
-    g = (struct adios_group_struct *) group_id;
-
+    g = adios_common_get_group (group);
     if (!g)
     {
         log_warn ("config.xml: Didn't find group %s for analysis\n", group);
@@ -2048,6 +2046,75 @@ static int parseBuffer (mxml_node_t * node)
     }
 
     return 1;
+}
+
+
+static int parseTimeAggregation (mxml_node_t * node, int rank)
+{
+    mxml_node_t * n;
+
+    const char * buffersize = 0;
+    const char * syncgroup = 0;
+    const char * group = 0;
+    uint64_t bufsize;
+    int i;
+
+
+    for (i = 0; i < node->value.element.num_attrs; i++)
+    {
+        mxml_attr_t * attr = &node->value.element.attrs [i];
+
+        GET_ATTR("buffer-size",attr,buffersize,"method")
+        GET_ATTR("sync-with-group",attr,syncgroup,"method")
+		GET_ATTR("group",attr,group,"method")
+		log_warn ("config.xml: unknown attribute '%s' on %s "
+				"(ignored)\n"
+				,attr->name
+				,"method"
+		);
+    }
+
+    if (!buffersize)
+        bufsize = 0;
+    else
+        bufsize = atoi (buffersize);
+
+    if (!group)
+    {
+        adios_error (err_no_group_defined, "config.xml:  time-aggregation requires a group\n");
+        return 0;
+    }
+
+    struct adios_group_struct *g = adios_common_get_group (group);
+    if (!g)
+    {
+        log_warn ("config.xml: Didn't find group %s for time-aggregation\n", group);
+        return 0;
+    }
+
+    struct adios_group_struct *sg = NULL;
+    if (syncgroup) {
+        sg = adios_common_get_group (syncgroup);
+        if (!sg)
+        {
+            log_warn ("config.xml: Didn't find sync group %s for time-aggregation of group %s\n",
+                    syncgroup, group);
+        }
+    }
+
+    if (rank == 0)
+    {
+        if (sg) {
+            log_info ("Set time aggregation for group '%s' with buffer size %" PRIu64 " bytes and "
+                    "synchronizing flushes with group '%s'\n",
+                    group, bufsize, syncgroup);
+        } else {
+            log_info ("Set time aggregation for group '%s' with buffer size %" PRIu64 " bytes\n",
+                    group, bufsize);
+        }
+    }
+    int ret = adios_common_set_time_aggregation(g, bufsize, sg);
+    return ret;
 }
 
 
@@ -2282,17 +2349,25 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                     }
                     else
                     {
-                        if (!strncmp (node->value.element.name, "!--", 3))
+                        if (!strcasecmp (node->value.element.name, "time-aggregation"))
                         {
-                            continue;
+                            if (!parseTimeAggregation(node, rank))
+                                break;
                         }
                         else
                         {
-                            log_warn ("config.xml: invalid element: %s\n"
-                                    ,node->value.element.name
-                                    );
+                        	if (!strncmp (node->value.element.name, "!--", 3))
+                        	{
+                        		continue;
+                        	}
+                        	else
+                        	{
+                        		log_warn ("config.xml: invalid element: %s\n"
+                        				,node->value.element.name
+                        		);
 
-                            break;
+                        		break;
+                        	}
                         }
                     }
                 }
@@ -2425,7 +2500,6 @@ int adios_common_select_method (int priority, const char * method
         ,const char * base_path, int iters
         )
 {
-    int64_t group_id;
     struct adios_group_struct * g;
     struct adios_method_struct * new_method;
     int requires_group_comm = 0;
@@ -2470,8 +2544,7 @@ int adios_common_select_method (int priority, const char * method
         return 0;
     }
 
-    adios_common_get_group (&group_id, group);
-    g = (struct adios_group_struct *) group_id;
+    g = adios_common_get_group (group);
     if (!g)
     {
         adios_error (err_missing_invalid_group, "config.xml: Didn't find group: %s for transport: %s\n"

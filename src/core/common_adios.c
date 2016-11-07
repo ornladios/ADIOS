@@ -68,32 +68,27 @@ int common_adios_init_noxml (MPI_Comm comm)
     return adios_errno;
 }
 
+
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_finalize (int mype)
 {
     struct adios_method_list_struct * m;
     struct adios_group_list_struct * g;
 
-    //Yuan: there may be time steps left in the time aggregated buffer, which
+    //Time Aggregation: there may be time steps left in the time aggregated buffer, which
     // needs to be dumped out before finalize
     for (g = adios_get_groups(); g; g = g->next)
     {
         if (TimeAggregationInProgress(g->group)) {
-            //printf("time buffering enabled and data left... close file\n");
+            //log_debug("time buffering enabled and data left in finalize... close file\n");
             /* At this point the buffer of the last step has been closed and
              * the index has been built but it was not yet passed on to the
              * method's close function.
              * do_ts_finalize signals this special case to common_adios_close()
              */
-            g->group->ts_to_buffer=0; //reset the counter
-            g->group->ts_fd->current_pg=g->group->ts_fd->pgs_written;
-            g->group->built_index=1;
-            SetTimeAggregationFinalizeMode(g->group);
+            SetTimeAggregationFlush(g->group, 1);
+            // => TimeAggregationIsFlushing => TimeAggregationLastStep
             common_adios_close (g->group->ts_fd); // close file
-            if (g->group->index)
-                adios_free_index_v1 (g->group->index);
-            g->group->index = NULL;
-            g->group->ts_fd = NULL;
             SetTimeAggregation(g->group, 0); //turn off ts buffering
         }
     }
@@ -141,35 +136,6 @@ void adios_pin_timestep(uint32_t ts) {
 }
 
 
-/////////////////
-//Yuan: check for number of ts to be buffered from XML  
-static uint64_t get_ts_buffering(char *parameters, const struct adios_group_struct *g)
-{
-    int64_t bts=0;
-    struct PairStruct *pairs = a2s_text_to_name_value_pairs(parameters);
-    struct PairStruct *p = pairs;
-    while (p) {
-        if ( !strcasecmp (p->name, "ts_buffersize") )
-        {
-            //get the buffer size from XML in bytes
-            errno = 0;
-            bts = strtoll(p->value, NULL, 10);
-             if (bts < 0 || errno != 0) {
-                 log_error ("Invalid 'ts_buffersize' parameter given to the group '%s'\n", p->value);
-             }
-        }
-        p = p->next;
-    }
-    a2s_free_name_value_pairs (pairs);
-
-    if (bts < 0) {
-        fprintf (stderr, "The buffer size for time step buffering can not be <0.\n");
-        bts=0;
-    }
-
-    return (uint64_t) bts;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
 
@@ -181,7 +147,6 @@ struct adios_file_struct * common_adios_open (
     timer_start ("adios_open");
 #endif
 
-    int64_t group_id = 0;
     struct adios_group_struct * g = NULL;
     struct adios_method_list_struct * methods = NULL;
     struct adios_file_struct * fd = NULL;
@@ -190,8 +155,7 @@ struct adios_file_struct * common_adios_open (
     //printf("beginning of file open... bytes_written=%llu\n", fd->bytes_written);
 
     adios_errno = err_no_error;
-    adios_common_get_group (&group_id, group_name);
-    g = (struct adios_group_struct *) group_id;
+    g = adios_common_get_group (group_name);
     if (!g) {
         adios_error(err_invalid_group, 
                     "adios_open: try to open file %s with undefined group: %s\n",
@@ -219,12 +183,11 @@ struct adios_file_struct * common_adios_open (
                 }
 
     //printf("ts_to buffer=%d max_tx=%d\n", g->ts_to_buffer, g->max_ts);
-    //Yuan: buffering time steps doesn't need to init file open every time
+    //Time Aggregation: buffering time steps doesn't need to init file open every time
     if (TimeAggregationInProgress(g)) {
         fd = g->ts_fd; //continue writing to the previous file
         //   printf("skip file init... bytes_written=%llu file_handle_addr=%llu\n", fd->bytes_written, fd);
         //  printf("open: fd->pgs_written->pg_start_in_file=%lld, fd->current_pg->pg_start_in_file=%lld\n", fd->pgs_written->pg_start_in_file, fd->current_pg->pg_start_in_file);
-        //Yuan: buffering time steps doesn't need to init file open every time
         log_debug("TimeAggr: skip file name and group assignment\n");
     }
     else {
@@ -246,7 +209,7 @@ struct adios_file_struct * common_adios_open (
 
     methods = g->methods;
 
-    //Yuan: if time aggregation is turned on, only open() at the first time step
+    //Time Aggregation: if time aggregation is turned on, only open() at the first time step
     if (TimeAggregationInProgress(g))
     {
         //printf("time buffering.... skip open\n");
@@ -263,25 +226,6 @@ struct adios_file_struct * common_adios_open (
             {
                 adios_transports [methods->method->m].adios_open_fn
                 (fd, methods->method, fd->comm);
-            }
-
-            //Yuan: check if need to buffer time steps
-            //following the assumption that only one method will be defined at
-            //this point
-            if (methods->method->parameters) { 
-                g->ts_buffsize=get_ts_buffering(methods->method->parameters, g);
-                SetTimeAggregation (g, (g->ts_buffsize > 0));
-
-                /*
-                if(g->max_ts>0) {
-                    g->do_ts_aggr=1;
-                    g->ts_to_buffer=g->max_ts;
-                }
-                else {
-                    g->do_ts_aggr=0;
-                    g->ts_to_buffer=0;
-                }*/
-                //printf("open: do_ts_aggr=%d  max_ts=%d ts_to_buffer=%d\n", g->do_ts_aggr, g->max_ts, g->ts_to_buffer);
             }
 
             methods = methods->next;
@@ -367,30 +311,19 @@ struct adios_file_struct * common_adios_open (
             }
         }
 
-        //Yuan: FIXME only evaluate the list when opening file; otherwise
-        //simply add PG  
         /* Add first PG to the group */
         if (NotTimeAggregated(g) || TimeAggregationJustBegan(g))
         {
-            assert (!fd->pgs_written); //Yuan: the start of the PG list
-            assert (!fd->current_pg); // the last of the PG list
+            assert (!fd->pgs_written); // the start of the PG list
+            assert (!fd->current_pg);  // the last of the PG list
         }
         //printf("rank %d: fd->bytes-written=%llu\n",fd->group->process_id, fd->bytes_written);
         add_new_pg_written (fd);
-        //keep a record of the PG offsets. Assume every
-        //process writes the same amount of data 
+        //keep a record of the PG offsets.
+        // FIXME: Time Aggregation: Assume every process writes the same amount of data
         if(TimeAggregated(g))
             fd->current_pg->pg_start_in_file=fd->bytes_written;
 
-
-
-#if 0
-        //printf("add new pg\n");
-        //Yuan: record the first PG for the output offset later  
-        if(fd->mode == adios_mode_write && g->do_ts_aggr==1 &&
-                g->ts_to_buffer==g->max_ts)
-            fd->first_pg_written=fd->current_pg;
-#endif
 
 
 #ifdef ADIOS_TIMERS
@@ -439,9 +372,10 @@ struct adios_file_struct * common_adios_open (
                 else
                     bufsize = adios_databuffer_get_extension_size (fd);
             } else {
-                //Yuan: set the buffer at the first time step to be buffered
-                //Yuan: ts buffering doesn't need buffer extension, only one
-                            //time allocation at the first time step
+                /* Time Aggregation: set the buffer size at the first time step to be buffered.
+                   ts buffering doesn't need buffer extension,
+                   only one time allocation at the first time step
+                 */
                 if (TimeAggregationJustBegan(g)) {
                     adios_databuffer_set_max_size(g->ts_buffsize);
                     bufsize=g->ts_buffsize;
@@ -450,7 +384,7 @@ struct adios_file_struct * common_adios_open (
 
             //printf("==open bufsize=%llu\n", bufsize);
 
-            //Yuan: when ts buffering is on, only the first step needs to
+            //Time Aggregation: when ts buffering is on, only the first step needs to
             //allocate the buffer
             if (NotTimeAggregated(g) || TimeAggregationJustBegan(g))
             {
@@ -1207,16 +1141,6 @@ int common_adios_stop_calculation ()
     return adios_errno;
 }
 
-//Yuan:
-#if 0
-static void update_index_offsets(struct adios_index_struct_v1 * index,
-                                 uint64_t pg_size)
-{
-    struct adios_index_process_group_struct_v1 * pg = index->pg_tail;
-    pg->offset_in_file = pg->pg_start_in_file
-
-}
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_close (struct adios_file_struct * fd)
@@ -1254,7 +1178,7 @@ int common_adios_close (struct adios_file_struct * fd)
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_var_struct * v = fd->group->vars;
 
-    if (fd->mode != adios_mode_read && !TimeAggregationFinalizeMode(fd->group))
+    if (fd->mode != adios_mode_read && !TimeAggregationIsFlushing(fd->group))
     {
         //printf("=====common_adios_close offset=%llu %llu\n max_ts=%d ts_to_buffer=%d \n", fd->pgs_written->pg_start_in_file, fd->current_pg->pg_start_in_file, fd->group->max_ts, fd->group->ts_to_buffer);
         //        fd->current_pg=fd->pgs_written;
@@ -1355,27 +1279,32 @@ int common_adios_close (struct adios_file_struct * fd)
             }
             else
             {
-                //Yuan: last time step, build index, then move the PG pointer to the first pg 
-                // to build correct starting offset of this process
-                struct adios_index_struct_v1 * current_index;
-                current_index=adios_alloc_index_v1(1);
-                adios_build_index_v1 (fd, current_index);
-                //printf("current->index time=%d offset=%llu\n", current_index->vars_root->characteristics[0].time_index, current_index->vars_root->characteristics[0].offset);
-                if (fd->group->index == NULL)
+                if (!TimeAggregationIsFlushing(fd->group))
                 {
-                    //first time step, we just built the index for the group
-                    fd->group->index = current_index;
+                    // Time Aggregation: build index for current step and merge it in to
+                    // the aggregated index
+                    struct adios_index_struct_v1 * current_index;
+                    current_index=adios_alloc_index_v1(1);
+                    adios_build_index_v1 (fd, current_index);
+                    //printf("current->index time=%d offset=%llu\n", current_index->vars_root->characteristics[0].time_index, current_index->vars_root->characteristics[0].offset);
+                    if (fd->group->index == NULL)
+                    {
+                        //first time step, we just built the index for the group
+                        fd->group->index = current_index;
+                    }
+                    else
+                    {
+                        adios_merge_index_v1 (fd->group->index, current_index->pg_root,
+                                current_index->vars_root, current_index->attrs_root, 1);
+                        adios_free_index_v1 (current_index);
+                    }
+                    //printf("fd->group->index time=%d offset=%llu\n", fd->group->index->vars_root->characteristics[1].time_index, fd->group->index->vars_root->characteristics[1].offset);
                 }
-                else
-                {
-                    adios_merge_index_v1 (fd->group->index, current_index->pg_root,
-                                          current_index->vars_root, current_index->attrs_root, 1);
-                    adios_free_index_v1 (current_index);
-                }
-                //printf("fd->group->index time=%d offset=%llu\n", fd->group->index->vars_root->characteristics[1].time_index, fd->group->index->vars_root->characteristics[1].offset);
 
                 if (TimeAggregationLastStep(fd->group))
                 {
+                    // in last step, move the PG pointer to the first pg
+                    // to build correct starting offset of this process for all aggregated steps
                     fd->current_pg=fd->pgs_written;
                     fd->group->built_index=1;
                     //printf("bytes-writen=%llu time index=%lu\n", fd->bytes_written, fd->group->index->pg_root->time_index);
@@ -1394,7 +1323,34 @@ int common_adios_close (struct adios_file_struct * fd)
     }
 
 
-    //Yuan: only free the buffer if 1) we are not buffering time steps; 
+    /* Synced groups for time-aggregation.
+     * Force close on those groups that are time-aggregated and are synced with this group
+     */
+    if (NotTimeAggregated(fd->group) || TimeAggregationLastStep(fd->group))
+    {
+        if (TimeAggregationIsaSyncGroup(fd->group))
+        {
+            struct adios_group_struct * syncedgroup = TimeAggregationGetSyncedGroup(fd->group);
+            if (syncedgroup->ts_fd != NULL)
+            {
+                int rank;
+                MPI_Comm_rank(fd->comm, &rank);
+                if (rank == 0) {
+                    log_info ("Sync flush group '%s' because we just wrote group '%s'. "
+                            "Synced group size is currently %" PRIu64 " bytes holding %d steps\n",
+                            syncedgroup->name, fd->group->name, syncedgroup->ts_fd->bytes_written,
+                            syncedgroup->max_ts-syncedgroup->ts_to_buffer);
+                }
+                SetTimeAggregationFlush(syncedgroup, 1);
+                // => TimeAggregationIsFlushing => TimeAggregationLastStep
+                common_adios_close (syncedgroup->ts_fd); // close file for sync'd group
+                SetTimeAggregationFlush(syncedgroup, 0);
+            }
+        }
+    }
+
+
+    //Time Aggregation: only free the buffer if 1) we are not buffering time steps;
     //2) we have enough time steps buffered  
     //printf("close: do_ts_aggr=%d  max_ts=%d ts_to_buffer=%d\n", fd->group->do_ts_aggr, fd->group->max_ts, fd->group->ts_to_buffer);
     if (NotTimeAggregated(fd->group) || TimeAggregationLastStep(fd->group))
@@ -1438,7 +1394,7 @@ int common_adios_close (struct adios_file_struct * fd)
 #endif
 
 
-    //Yuan: add time step aggregation logic
+    //Time Aggregation: add time step aggregation logic
     //ts aggregation will keep the buffer for next time steps
     //only free the buffer when ts aggregation is not required, or it
     //has reached the MAX_TS. 
@@ -1446,8 +1402,8 @@ int common_adios_close (struct adios_file_struct * fd)
     if (fd->bufstrat != no_buffering)
     {
         if (fd->group->last_buffer_size < fd->buffer_size) {
-            // remember how much buffer we used for the next cycle
-            // Yuan: with ts buffering, it will be the total amount of data
+            // Remember how much buffer we used for the next cycle.
+            // Time Aggregation: with ts buffering, it will be the total amount of data
             // written; however last_buffer_size isn't used anyways
             if(TimeAggregated(fd->group))
                 fd->group->last_buffer_size = fd->buffer_size;
@@ -1456,7 +1412,6 @@ int common_adios_close (struct adios_file_struct * fd)
         }
         if (NotTimeAggregated(fd->group) || TimeAggregationLastStep(fd->group)) {
             adios_databuffer_free (fd);
-            //printf("adios_databuffer_free\n");
         }
     }
 
@@ -1464,7 +1419,7 @@ int common_adios_close (struct adios_file_struct * fd)
     {
         if (TimeAggregationLastStep(fd->group))
         {
-            //Yuan: reset the ts counter when the last ts is in
+            //Time Aggregation: reset the ts counter when the last ts is in
             //printf("reset ts_to_buffer\n");
             fd->group->ts_to_buffer = fd->group->max_ts;
             fd->group->ts_fd = NULL;
@@ -1520,8 +1475,10 @@ int common_adios_close (struct adios_file_struct * fd)
     //timer_reset_timers ();
 #endif
 
+
     return adios_errno;
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 // Methods normally only called by the XML parser
