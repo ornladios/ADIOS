@@ -22,12 +22,12 @@ AC_MSG_NOTICE([=== checking for ZFP ===])
 AM_CONDITIONAL(HAVE_ZFP,true)
 AM_CONDITIONAL(BUILD_ZFP,false)
 
+
 AC_ARG_WITH(zfp,
         [  --with-zfp=DIR      Location of ZFP library],
-        [ZFP_LDFLAGS="-L$withval/lib";
-         ZFP_LIBS="-lzfp";
-         ZFP_CPPFLAGS="-I$withval/inc";],
+        [],
         [with_zfp=builtin])
+
 
 if test "x$with_zfp" == "xno"; then
    AM_CONDITIONAL(HAVE_ZFP,false)
@@ -39,18 +39,28 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lzfp"
+
+
+	if test -z "${ZFP_LIBS}"; then
+		ZFP_LIBS="-lzfp"
+	fi
+
+	if test -z "${ZFP_LDFLAGS}"; then
+		ZFP_LDFLAGS="-L$with_zfp/lib"
+	fi
+
+	if test -z "${ZFP_CPPFLAGS}"; then
+		ZFP_CPPFLAGS="-I$with_zfp/inc"
+	fi
+
+
+    LIBS="$LIBS $ZFP_LIBS"
     LDFLAGS="$LDFLAGS $ZFP_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $ZFP_CPPFLAGS"
 
     if test -z "${HAVE_ZFP_TRUE}"; then
            AC_CHECK_HEADERS(zfp.h, , [AM_CONDITIONAL(HAVE_ZFP,false)])
     fi
-
-    dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
-    dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-    dnl        [SZIP_LIBS="-lsz"],
-    dnl        [AM_CONDITIONAL(HAVE_SZIP,false)])
 
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
