@@ -1103,6 +1103,7 @@ adios_read_icee_open(const char * fname,
     for (i = 0; i < fp->nvars; i++)
     {
         adiosfile->var_namelist[i] = strdup(vp->varname);
+        adiosfile->file_size += vp->varlen + sizeof(icee_varinfo_rec_t);
         vp = vp->next;
     }
 
@@ -1115,7 +1116,7 @@ adios_read_icee_open(const char * fname,
     adiosfile->path = strdup(fname);
 
     adiosfile->version = -1;
-    adiosfile->file_size = 0;
+    //adiosfile->file_size = 0;
     adios_errno = err_no_error;
 
     return adiosfile;
