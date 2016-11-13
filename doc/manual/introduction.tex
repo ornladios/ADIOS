@@ -82,6 +82,22 @@ Linux clusters and Mac OSX.
 
 %
 %
+\section {What's new in version 1.11}
+Two new features in this release are {\bf time aggregation} and the {\bf ZFP lossy compression transformation}. Time aggregation allows for buffering a small/frequently written dataset for multiple output steps and flush to disk less frequently. The buffer size is controlled by the user. Optionally the aggregated group can be forced to flush when another group (e.g. checkpoint) is written. 
+Lossy compression allows for reducing output data much further than what's available with the current lossless compression transformations. ZFP gives control to the user to set the required accuracy in the output dataset.  
+
+\begin{itemize}
+\item Time aggregation of a group. See \verb+adios_set_time_aggregation()+ or the \verb+<time-aggregation>+ element in the XML syntax in Chapter~\ref{sec:time_aggregation}.
+\item ZFP lossy compression transform method, see Chapter~\ref{sec:transform_plugins}.
+
+\item Bug fixes
+    \begin{itemize}
+    \item Performance bug in \verb+MPI_AGGREGATE+ method in 1.9/1.10 fixed. Concurrent aggregation and writing was not working efficiently.  
+    \item Build bug when configured with the latest HDF5 1.10 release. 
+    \end{itemize}
+\end{itemize}
+
+
 
 \section {What's new in version 1.10}
 The new feature of this release is the new Query API and three query methods, Minmax, FastBit and Alacrity. This release makes the oft-criticized \verb+adios_group_size()+ call optional. Another convenience is that the MXML dependency is now built with ADIOS so it does not need to be built separately. Also, a sequential-only build is possible using the --without-mpi option. 

@@ -1,4 +1,5 @@
 \chapter{Time aggregation}
+\label{sec:time_aggregation}
 
 From version 1.11, ADIOS allows aggregating multiple output steps in a memory buffer before flushing it to the file system or whatever the actual transport method is doing at \verb+adios_close()+. This temporal aggregation only works with transport methods that use the ADIOS internal buffering and thus rely on the BP file format, including the \verb+POSIX, MPI, MPI_LUSTRE, MPI_AGGREGATE, BGQ+ methods.
 
