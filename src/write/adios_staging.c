@@ -222,10 +222,13 @@ int adios_staging_open (struct adios_file_struct * fd,
         adios_common_define_var ((int64_t)md->group, "pg", "", adios_byte,
                                            "pg_ldim", "pg_gdim", "pg_offs");
 
-        adios_common_define_var ((int64_t)md->group, "index_size", "", adios_long, 0, 0, 0);
+        if (md->rank == 0)
+        {
+            adios_common_define_var ((int64_t)md->group, "index_size", "", adios_long, 0, 0, 0);
 
-        adios_common_define_var ((int64_t)md->group, "index", "", adios_byte,
-                                           "index_size", "index_size", "0");
+            adios_common_define_var ((int64_t)md->group, "index", "", adios_byte,
+                                     "index_size", "index_size", "0");
+        }
 
 
         md->method_initialized = 1;
