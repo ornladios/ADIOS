@@ -186,6 +186,11 @@ cdef extern from "adios.h":
 
     cdef void adios_set_max_buffer_size (uint64_t max_buffer_size_MB)
 
+    cdef int adios_set_time_aggregation(int64_t groupid,
+                                        uint64_t buffersize,
+                                        int64_t syncgroupid)
+
+
 cdef extern from "adios_selection.h":
     ctypedef enum ADIOS_SELECTION_TYPE:
         ADIOS_SELECTION_BOUNDINGBOX
@@ -559,8 +564,16 @@ cpdef int select_method (int64_t group,
 cpdef int set_transform (int64_t var_id, str transform_type_str):
     return adios_set_transform (var_id, s2b(transform_type_str))
 
-cpdef void max_buffer_size (int64_t max_buffer_size_MB):
+cpdef void set_max_buffer_size (int64_t max_buffer_size_MB):
     adios_set_max_buffer_size (max_buffer_size_MB)
+
+cpdef int set_time_aggregation (int64_t groupid,
+                                      uint64_t buffersize,
+                                      int64_t syncgroupid):
+    return adios_set_time_aggregation (groupid,
+                                       buffersize,
+                                       syncgroupid)
+
 
 ## ====================
 ## ADIOS Read API (V2)
@@ -1744,6 +1757,8 @@ cdef class writer(object):
     cpdef dict vars
     cpdef dict attrs
 
+    cpdef uint64_t timeaggregation_buffersize
+
     property fname:
         """ The filename to write. """
         def __get__(self):
@@ -1774,10 +1789,18 @@ cdef class writer(object):
         def __get__(self):
             return self.attrs
 
+    property timeaggregation_buffersize:
+        """ Time-aggregation buffersize. """
+        def __get__(self):
+            return self.timeaggregation_buffersize
+        def __set__(self, value):
+            self.timeaggregation_buffersize = value
+
     def __init__(self, str fname,
                  bint is_noxml = True,
                  str mode = "w",
                  MPI.Comm comm = MPI.COMM_WORLD):
+        self.gid = 0
         self.fname = fname
         self.method = ""
         self.method_params = ""
@@ -1786,15 +1809,17 @@ cdef class writer(object):
         self.comm = comm
         self.vars = dict()
         self.attrs = dict()
+        self.timeaggregation_buffersize = 0
 
-        init_noxml(comm)
+        ##init_noxml(comm)
+
     ##def __var_factory__(self, name, value):
     ##    print "var_factory:", name, value
     ##
     ##def __attr_factory__(self, name, value):
     ##    print "attr_factory:", name, value
 
-    def declare_group(self, str gname,
+    def declare_group(self, str gname = None,
                       str method = "POSIX1",
                       str method_params = ""):
         """
@@ -1810,11 +1835,21 @@ cdef class writer(object):
         >>>  fw.declare_group('group', method='MPI', method_params='verbose=3')
 
         """
-        self.gid = declare_group(gname, "", adios_stat_default)
-        self.gname = gname
+        if gname is not None:
+            self.gname = gname
+
+        if self.gname is None:
+            self.gname = "group"
+
+        self.gid = declare_group(self.gname, "", adios_stat_default)
         self.method = method
         self.method_params = method_params
         select_method(self.gid, self.method, self.method_params, "")
+
+        if self.gid > 0 and self.timeaggregation_buffersize > 0:
+            print('Do time aggregation', self.gid, self.timeaggregation_buffersize)
+            set_time_aggregation (self.gid, self.timeaggregation_buffersize, 0);
+
 
     def define_var(self, str varname,
                    ldim = tuple(),
@@ -1883,8 +1918,8 @@ cdef class writer(object):
         """
         Write variables and attributes to a file and close the writer.
         """
-        if self.gname is None:
-            self.declare_group("group")
+        if self.gid == 0:
+            self.declare_group()
 
         fd = open(self.gname, self.fname, self.mode)
 
@@ -2056,6 +2091,7 @@ cdef class varinfo(object):
                    str(offset_).replace(' ', '').strip('(,)'))
 
         if (self.transform is not None):
+            print ('set_transform:', self.name, varid, self.transform)
             set_transform(varid, self.transform)
 
     def bytes(self):
