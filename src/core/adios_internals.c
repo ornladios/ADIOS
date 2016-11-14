@@ -1384,8 +1384,9 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->index=NULL;
     g->built_index=0;
     g->do_ts_flush=0;
-    g->sync_ts_with_me=0;
-    g->synced_group=NULL;
+    g->synced_groups=NULL;
+    g->synced_groups_size=0;
+    g->synced_groups_capacity=0;
 
     *id = (int64_t) g;
 
@@ -1634,6 +1635,11 @@ void adios_common_free_groupstruct (struct adios_group_struct * g)
     adios_timing_destroy(g->timing_obj);
     adios_timing_destroy(g->prev_timing_obj);
 #endif
+    if (g->synced_groups)
+    {
+        free (g->synced_groups);
+        g->synced_groups = NULL;
+    }
     free (g);
 }
 

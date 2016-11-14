@@ -179,8 +179,9 @@ struct adios_group_struct
     struct adios_index_struct_v1 * index; //the indexes for current written PGs 
     int built_index; // FIXME: 0 or 1, if index has been built, do not build it during close()
     int do_ts_flush; // 1 if we need close during finalize/group-sync, otherwise always 0
-    int sync_ts_with_me; // 1 if this group forces time-aggregated groups to be flushed
-    struct adios_group_struct *synced_group;
+    struct adios_group_struct **synced_groups;
+    int synced_groups_size; // > 0 if this group forces time-aggregated groups to be flushed
+    int synced_groups_capacity; // synced_groups is a Vector
 };
 
 static inline void SetTimeAggregation (struct adios_group_struct * g, int flag)
@@ -236,20 +237,41 @@ static inline int TimeAggregationIsFlushing (struct adios_group_struct * g)
     return (g->do_ts_flush != 0);
 }
 
-static inline void SetTimeAggregationSyncGroup (struct adios_group_struct * g, struct adios_group_struct * synced_group)
+static inline void SetTimeAggregationSyncGroup (struct adios_group_struct * g,
+                                                struct adios_group_struct * synced_group)
 {
-    g->sync_ts_with_me = 1; // => TimeAggregationIsaSyncGroup
-    g->synced_group = synced_group;
+    if (g->synced_groups_capacity <= g->synced_groups_size) // first synced group
+    {
+        struct adios_group_struct ** newg = (struct adios_group_struct **)
+                realloc (g->synced_groups, g->synced_groups_size+5);
+        if (newg != NULL)
+        {
+            g->synced_groups_capacity = g->synced_groups_size + 5;
+            g->synced_groups = newg;
+        }
+        /*else
+        {
+            adios_error(err_no_memory, "Could not (re)allocate small memory for synchronized groups. "
+                    "Keep the current list of %d groups synchronized with group %s\n",
+                    g->synced_groups_capacity, g->name);
+        }*/
+    }
+
+    g->synced_groups[g->synced_groups_size] = synced_group;
+    g->synced_groups_size++;  // => TimeAggregationIsaSyncGroup
 }
 
 static inline int TimeAggregationIsaSyncGroup (struct adios_group_struct * g)
 {
-    return (g->sync_ts_with_me != 0);
+    return (g->synced_groups_size != 0);
 }
 
-static inline struct adios_group_struct * TimeAggregationGetSyncedGroup (struct adios_group_struct * g)
+static inline void TimeAggregationGetSyncedGroups (struct adios_group_struct * g,
+                                                   struct adios_group_struct *** synced_groups,
+                                                   int *ngroups)
 {
-    return g->synced_group;
+    *synced_groups = g->synced_groups;
+    *ngroups = g->synced_groups_size;
 }
 
 struct adios_group_list_struct

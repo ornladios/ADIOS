@@ -2,34 +2,44 @@
 <adios-config host-language="C">
 
   <adios-group name="checkpoint">
-    <var name="NX" type="integer"/>
-    <var name="NY" type="integer"/>
-    <var name="size" type="integer"/>
-    <var name="rank" type="integer"/>
-    <var name="step" type="integer"/>
+      <var name="NX" type="integer"/>
+      <var name="NY" type="integer"/>
+      <var name="size" type="integer"/>
+      <var name="rank" type="integer"/>
+      <var name="step" type="integer"/>
 
-    <global-bounds dimensions="size,NX" offsets="rank,0">
-       <var name="temperature" gwrite="t" type="double" dimensions="1,NX"/>
-    </global-bounds>
+      <global-bounds dimensions="size,NX" offsets="rank,0">
+          <var name="temperature" gwrite="t" type="double" dimensions="1,NX"/>
+      </global-bounds>
 
-    <global-bounds dimensions="size,NY" offsets="rank,0">
-       <var name="pressure" gwrite="p" type="double" dimensions="1,NY"/>
-    </global-bounds>
+      <global-bounds dimensions="size,NY" offsets="rank,0">
+          <var name="pressure" gwrite="p" type="double" dimensions="1,NY"/>
+      </global-bounds>
   </adios-group> <!-- checkpoint -->
 
   <adios-group name="diagnostics">
-    <var name="NY" type="integer"/>
-    <var name="size" type="integer"/>
-    <var name="rank" type="integer"/>
-    <global-bounds dimensions="size,NY" offsets="rank,0">
-       <var name="pressure" gwrite="p" type="double" dimensions="1,NY"/>
-    </global-bounds>
+      <var name="NY" type="integer"/>
+      <var name="size" type="integer"/>
+      <var name="rank" type="integer"/>
+      <global-bounds dimensions="size,NY" offsets="rank,0">
+          <var name="pressure" gwrite="p" type="double" dimensions="1,NY"/>
+      </global-bounds>
+  </adios-group> <!-- diagnostics -->
+
+  <adios-group name="diag2">
+      <var name="size" type="integer"/>
+      <var name="rank" type="integer"/>
+      <global-bounds dimensions="size,1" offsets="rank,0">
+          <var name="t0" gwrite="temperature[0]" type="double" dimensions="1,1"/>
+      </global-bounds>
   </adios-group> <!-- diagnostics -->
 
   <method group="checkpoint" method="MPI">verbose=3</method>
   <method group="diagnostics" method="MPI">verbose=3</method>
+  <method group="diag2" method="MPI">verbose=3</method>
   
-  <time-aggregation group="diagnostics" buffer-size=32000 sync-with-group="checkpoint"/>
+  <time-aggregation group="diagnostics" buffer-size=12000 sync-with-group="checkpoint"/>
+  <time-aggregation group="diag2" buffer-size=32000 sync-with-group="checkpoint"/>
 
 </adios-config>
 

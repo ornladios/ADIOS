@@ -1340,19 +1340,25 @@ int common_adios_close (struct adios_file_struct * fd)
     {
         if (TimeAggregationIsaSyncGroup(fd->group))
         {
-            struct adios_group_struct * syncedgroup = TimeAggregationGetSyncedGroup(fd->group);
-            if (syncedgroup->ts_fd != NULL)
+            struct adios_group_struct ** syncedgroups;
+            int ngroups, i;
+            TimeAggregationGetSyncedGroups(fd->group, &syncedgroups, &ngroups );
+            for (i=0; i<ngroups; i++)
             {
-                if (fd->group->process_id == 0) {
-                    log_info ("Sync flush group '%s' because we just wrote group '%s'. "
-                            "Synced group size is currently %" PRIu64 " bytes holding %d steps\n",
-                            syncedgroup->name, fd->group->name, syncedgroup->ts_fd->bytes_written,
-                            syncedgroup->max_ts-syncedgroup->ts_to_buffer);
+                struct adios_group_struct *sg = syncedgroups[i];
+                if (sg->ts_fd != NULL)
+                {
+                    if (fd->group->process_id == 0) {
+                        log_info ("Sync flush group '%s' because we just wrote group '%s'. "
+                                "Synced group size is currently %" PRIu64 " bytes holding %d steps\n",
+                                sg->name, fd->group->name, sg->ts_fd->bytes_written,
+                                sg->max_ts-sg->ts_to_buffer-1);
+                    }
+                    SetTimeAggregationFlush(sg, 1);
+                    // => TimeAggregationIsFlushing => TimeAggregationLastStep
+                    common_adios_close (sg->ts_fd); // close file for sync'd group
+                    SetTimeAggregationFlush(sg, 0);
                 }
-                SetTimeAggregationFlush(syncedgroup, 1);
-                // => TimeAggregationIsFlushing => TimeAggregationLastStep
-                common_adios_close (syncedgroup->ts_fd); // close file for sync'd group
-                SetTimeAggregationFlush(syncedgroup, 0);
             }
         }
     }

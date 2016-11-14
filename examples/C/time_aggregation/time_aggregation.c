@@ -13,6 +13,7 @@
 const int  NX = 10;
 const int  NY = 5;
 const char diagfilename[] = "diag.bp";
+const char diag2filename[] = "diag2.bp";
 const char ckptfilename[] = "ckpt.bp";
 
 const MPI_Comm comm = MPI_COMM_WORLD;
@@ -21,7 +22,7 @@ int rank, size;
 void write_diag (int step, double * p)
 {
     int64_t     adios_handle;
-    if (rank==0) printf("Timestep %d write diagnostics\n", step);
+    if (rank==0) printf("    write diagnostics\n", step);
 
     if (step==1)
         adios_open (&adios_handle, "diagnostics", diagfilename, "w", comm);
@@ -36,10 +37,27 @@ void write_diag (int step, double * p)
     adios_close (adios_handle);
 }
 
+void write_diag2 (int step, double * t)
+{
+    int64_t     adios_handle;
+    if (rank==0) printf("    write diag2\n", step);
+
+    if (step==1)
+        adios_open (&adios_handle, "diag2", diag2filename, "w", comm);
+    else
+        adios_open (&adios_handle, "diag2", diag2filename, "a", comm);
+
+    adios_write (adios_handle, "size", &size);
+    adios_write (adios_handle, "rank", &rank);
+    adios_write (adios_handle, "t0", t);
+
+    adios_close (adios_handle);
+}
+
 void write_checkpoint (int step, double * p, double *t)
 {
     int64_t     adios_handle;
-    if (rank==0) printf("Checkpointing at step %d\n", step);
+    if (rank==0) printf("    Checkpointing at step %d\n", step);
     adios_open (&adios_handle, "checkpoint", ckptfilename, "w", comm);
     adios_write (adios_handle, "NX", &NX);
     adios_write (adios_handle, "NY", &NY);
@@ -67,6 +85,7 @@ int main (int argc, char ** argv)
 
     for (it = 1; it <= 100; it++)
     {
+        if (rank==0) printf("Timestep %d...\n", it);
 
         for (i = 0; i < NX; i++)
             t[i] = it*1000.0 + rank*NX + i;
@@ -75,13 +94,14 @@ int main (int argc, char ** argv)
             p[i] = it*1000.0 + rank*NY + i;
 
         write_diag(it, p);
+        write_diag2(it, t);
 
         if ( it%30 == 0) {
             write_checkpoint(it, p, t);
         }
 
         MPI_Barrier (comm);
-        if (rank==0) printf("Timestep %d written\n", it);
+        if (rank==0) printf("    step completed\n", it);
     }
 
     MPI_Barrier (comm);
