@@ -1811,8 +1811,7 @@ cdef class writer(object):
         self.attrs = dict()
         self.timeaggregation_buffersize = 0
 
-        ##init_noxml(comm)
-
+        init_noxml(comm)
     ##def __var_factory__(self, name, value):
     ##    print "var_factory:", name, value
     ##
@@ -2091,7 +2090,6 @@ cdef class varinfo(object):
                    str(offset_).replace(' ', '').strip('(,)'))
 
         if (self.transform is not None):
-            print ('set_transform:', self.name, varid, self.transform)
             set_transform(varid, self.transform)
 
     def bytes(self):
