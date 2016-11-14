@@ -155,7 +155,7 @@ cdef extern from "adios.h":
                                   char * time_index,
                                   ADIOS_STATISTICS_FLAG stats)
 
-    cdef int adios_define_var (int64_t group_id,
+    cdef int64_t adios_define_var (int64_t group_id,
                                char * name,
                                char * path,
                                ADIOS_DATATYPES type,
@@ -181,6 +181,10 @@ cdef extern from "adios.h":
                                   char * method,
                                   char * parameters,
                                   char * base_path)
+
+    cdef int adios_set_transform (int64_t var_id, const char *transform_type_str)
+
+    cdef void adios_set_max_buffer_size (uint64_t max_buffer_size_MB)
 
 cdef extern from "adios_selection.h":
     ctypedef enum ADIOS_SELECTION_TYPE:
@@ -471,7 +475,7 @@ cpdef int64_t declare_group(str name,
                          <ADIOS_STATISTICS_FLAG> stats)
     return id
 
-cpdef int define_var(int64_t group_id,
+cpdef int64_t define_var(int64_t group_id,
                      str name,
                      str path,
                      int atype,
@@ -552,6 +556,11 @@ cpdef int select_method (int64_t group,
                                 s2b(parameters),
                                 s2b(base_path))
 
+cpdef int set_transform (int64_t var_id, str transform_type_str):
+    return adios_set_transform (var_id, s2b(transform_type_str))
+
+cpdef void max_buffer_size (int64_t max_buffer_size_MB):
+    adios_set_max_buffer_size (max_buffer_size_MB)
 
 ## ====================
 ## ADIOS Read API (V2)
@@ -1810,15 +1819,17 @@ cdef class writer(object):
     def define_var(self, str varname,
                    ldim = tuple(),
                    gdim = tuple(),
-                   offset = tuple()):
+                   offset = tuple(),
+                   transform = None):
         """
         Define a variable associated with the file.
 
         Args:
-            varname (str): variable name.
+            varname (str): variable name
             ldim (tuple, optional): local dimension (default: tuple())
             gdim (tuple, optional): global dimension (default: tuple())
             offset (tuple, optional): offset (default: tuple())
+            transform (str): transform name
 
         Example:
 
@@ -1827,7 +1838,7 @@ cdef class writer(object):
         >>>  fw.define_var ('temperature', (2,3))
 
         """
-        self.vars[varname] = varinfo(varname, ldim, gdim, offset)
+        self.vars[varname] = varinfo(varname, ldim, gdim, offset, transform=transform)
 
     def define_attr(self, str attrname):
         """
@@ -1843,13 +1854,22 @@ cdef class writer(object):
                             str varname,
                             dtype):
         self.attrs[attrname] = attrinfo(attrname, varname, dtype, is_static=False)
+
     def __setitem__(self, name, val):
         if self.vars.has_key(name):
-            self.vars[name] = val
+            if not isinstance(val, varinfo):
+                self.vars[name].value = val
+            else:
+                self.vars[name] = val
         elif self.attrs.has_key(name):
-            self.attrs[name] = val
+            if not isinstance(val, attrinfo):
+                self.attrs[name] = attrinfo(name, val, np.array(val).dtype)
+            else:
+                self.attrs[name].value = val
         else:
-            self.vars[name] = val
+            n = np.array(val)
+            self.vars[name] = varinfo(name, n.shape)
+            self.vars[name].value = val
 
     def __getitem__(self, name):
         if self.vars.has_key(name):
@@ -1877,7 +1897,8 @@ cdef class writer(object):
                 extra_vars[key] = varinfo(key, n.shape)
                 extra_vars[key].value = val
             else:
-                if self.is_noxml: val.define(self.gid)
+                if self.is_noxml:
+                    val.define(self.gid)
 
         for key, val in extra_vars.iteritems():
             if self.is_noxml: val.define(self.gid)
@@ -1984,17 +2005,27 @@ cdef class varinfo(object):
     cdef public gdim
     cdef public offset
     cdef public value
+    cdef str transform
+
+    property transform:
+        """ Transform method """
+        def __get__(self):
+            return self.fname
+        def __set__(self, value):
+            self.transform = value
 
     def __init__(self, str name,
                  ldim = tuple(),
                  gdim = tuple(),
                  offset = tuple(),
-                 value = None):
+                 value = None,
+                 transform = None):
         self.name = name
         self.ldim = ldim
         self.gdim = gdim
         self.offset = offset
         self.value = value
+        self.transform = transform
 
     def define(self, int64_t gid):
         if self.value is None:
@@ -2018,10 +2049,14 @@ cdef class varinfo(object):
 
         atype = np2adiostype(val_.dtype)
         ## No space allowed
-        define_var(gid, self.name, "", atype,
+        cdef int64_t varid = 0;
+        varid = define_var(gid, self.name, "", atype,
                    str(ldim_).replace(' ', '').strip('(,)'),
                    str(gdim_).replace(' ', '').strip('(,)'),
                    str(offset_).replace(' ', '').strip('(,)'))
+
+        if (self.transform is not None):
+            set_transform(varid, self.transform)
 
     def bytes(self):
         val_ = self.value
@@ -2038,8 +2073,8 @@ cdef class varinfo(object):
         write(fd, self.name, val_)
 
     def __repr__(self):
-        return ("AdiosVarinfo (name=%r, ldim=%r, gdim=%r, offset=%r, value=%r)") % \
-                (self.name, self.ldim, self.gdim, self.offset, self.value)
+        return ("AdiosVarinfo (name=%r, ldim=%r, gdim=%r, offset=%r, transform=%r, value=%r)") % \
+                (self.name, self.ldim, self.gdim, self.offset, self.transform, self.value)
 
 ## Aliases
 File = file
