@@ -225,8 +225,9 @@ static inline int TimeAggregationLastStep (struct adios_group_struct * g)
 
 static inline void SetTimeAggregationFlush (struct adios_group_struct * g, int do_flush)
 {
-    g->ts_to_buffer = 0;               // => TimeAggregationLastStep
     g->do_ts_flush = (do_flush != 0);  // => TimeAggregationIsFlushing
+    if (g->do_ts_flush)
+        g->ts_to_buffer = 0;               // => TimeAggregationLastStep
 }
 
 // TimeAggregationIsFlushing => TimeAggregated AND TimeAggreationInProgress AND TimeAggregationLastStep

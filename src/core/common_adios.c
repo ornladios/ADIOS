@@ -1343,9 +1343,7 @@ int common_adios_close (struct adios_file_struct * fd)
             struct adios_group_struct * syncedgroup = TimeAggregationGetSyncedGroup(fd->group);
             if (syncedgroup->ts_fd != NULL)
             {
-                int rank;
-                MPI_Comm_rank(fd->comm, &rank);
-                if (rank == 0) {
+                if (fd->group->process_id == 0) {
                     log_info ("Sync flush group '%s' because we just wrote group '%s'. "
                             "Synced group size is currently %" PRIu64 " bytes holding %d steps\n",
                             syncedgroup->name, fd->group->name, syncedgroup->ts_fd->bytes_written,
@@ -1411,6 +1409,9 @@ int common_adios_close (struct adios_file_struct * fd)
     //printf("close: bytes_written=%llu buffer_siz=%llu fd->group->last_buffer_size=%llu\n", fd->bytes_written, fd->buffer_size, fd->group->last_buffer_size);
     if (fd->bufstrat != no_buffering)
     {
+        //printf("rank %d group %s last buffer size = %" PRIu64 " buffer_size = %" PRIu64 "\n",
+        //        fd->group->process_id, fd->group->name, fd->group->last_buffer_size, fd->buffer_size);
+
         if (fd->group->last_buffer_size < fd->buffer_size) {
             // Remember how much buffer we used for the next cycle.
             // Time Aggregation: with ts buffering, it will be the total amount of data
@@ -1430,7 +1431,7 @@ int common_adios_close (struct adios_file_struct * fd)
         if (TimeAggregationLastStep(fd->group))
         {
             //Time Aggregation: reset the ts counter when the last ts is in
-            //printf("reset ts_to_buffer\n");
+            //printf("group %s reset ts_to_buffer to %d\n", fd->group->name, fd->group->max_ts);
             fd->group->ts_to_buffer = fd->group->max_ts;
             fd->group->ts_fd = NULL;
             free (fd);
