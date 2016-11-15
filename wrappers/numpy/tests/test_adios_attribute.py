@@ -16,7 +16,8 @@ init = "verbose=3;"
 
 ## Init
 ad.init_noxml()
-ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
+ad.set_max_buffer_size (10)
+
 g = ad.declare_group("temperature", "", 1)
 ad.define_var(g, "NX", "", ad.DATATYPE.integer, "", "", "")
 ad.define_var(g, "size", "", ad.DATATYPE.integer, "", "", "")
