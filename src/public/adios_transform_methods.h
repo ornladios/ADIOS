@@ -10,13 +10,13 @@ typedef struct
     int ntransforms;            // number of transformations
     char ** name;               // array of transform names
     char ** description;        // array of descriptions
-} ADIOS_AVAILABLE_TRANSFORMS;
+} ADIOS_AVAILABLE_TRANSFORM_METHODS;
 
 /* Provide the names of transformations available in the running application
  */
-ADIOS_AVAILABLE_TRANSFORMS * adios_available_transforms();
+ADIOS_AVAILABLE_TRANSFORM_METHODS * adios_available_transform_methods();
 
-void adios_available_transforms_free (ADIOS_AVAILABLE_TRANSFORMS *);
+void adios_available_transform_methods_free (ADIOS_AVAILABLE_TRANSFORM_METHODS *);
 
 #ifdef __cplusplus
 }
