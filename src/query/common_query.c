@@ -890,3 +890,50 @@ enum ADIOS_PREDICATE_MODE adios_query_getOp(const char* opStr)
     return ADIOS_NE;
   }
 }
+
+
+ADIOS_AVAILABLE_QUERY_METHODS * adios_available_query_methods()
+{
+    int i, n;
+    n = 0;
+    for (i = 0; i < ADIOS_QUERY_METHOD_COUNT; i++) {
+        if (query_hooks[i].method_name) {
+            n++;
+        }
+    }
+
+    if (n == 0)
+        return NULL;
+
+    ADIOS_AVAILABLE_QUERY_METHODS * m = (ADIOS_AVAILABLE_QUERY_METHODS *) malloc (sizeof(ADIOS_AVAILABLE_QUERY_METHODS));
+    if (!m)
+        return NULL;
+
+    m->name     = (char**) malloc (n*sizeof(char*));
+    m->nmethods = n;
+
+    n = 0;
+    for (i = 0; i < ADIOS_QUERY_METHOD_COUNT; i++) {
+        if (query_hooks[i].method_name) {
+        	m->name[n] = strdup (query_hooks[i].method_name);
+        	n++;
+        }
+    }
+    return m;
+}
+
+void adios_available_query_methods_free (ADIOS_AVAILABLE_QUERY_METHODS *m)
+{
+	int i;
+	if (m)
+	{
+	    for (i=0; i < m->nmethods; i++)
+	    {
+	        if (m->name[i]) {
+	            free (m->name[i]);
+	            m->name[i] = NULL;
+	        }
+	    }
+	    free (m);
+	}
+}

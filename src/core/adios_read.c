@@ -212,7 +212,6 @@ void adios_print_fileinfo (ADIOS_FILE *fp)
     common_read_print_fileinfo(fp);
 }
 
-
 ADIOS_SELECTION * adios_selection_boundingbox (int ndim, const uint64_t *start, const uint64_t *count)
 {
     return a2sel_boundingbox (ndim, start, count);

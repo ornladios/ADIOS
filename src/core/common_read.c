@@ -3966,5 +3966,49 @@ void common_read_print_fileinfo (const ADIOS_FILE *fp)
 }
 
 
+ADIOS_AVAILABLE_READ_METHODS * adios_available_read_methods()
+{
+    int i, n;
+    n = 0;
+    for (i = 0; i < ADIOS_READ_METHOD_COUNT; i++) {
+        if (adios_read_hooks[i].method_name) {
+            n++;
+        }
+    }
 
+    if (n == 0)
+        return NULL;
+
+    ADIOS_AVAILABLE_READ_METHODS * m = (ADIOS_AVAILABLE_READ_METHODS *) malloc (sizeof(ADIOS_AVAILABLE_READ_METHODS));
+    if (!m)
+        return NULL;
+
+    m->name     = (char**) malloc (n*sizeof(char*));
+    m->nmethods = n;
+
+    n = 0;
+    for (i = 0; i < ADIOS_READ_METHOD_COUNT; i++) {
+        if (adios_read_hooks[i].method_name) {
+        	m->name[n] = strdup (adios_read_hooks[i].method_name);
+        	n++;
+        }
+    }
+    return m;
+}
+
+void adios_available_read_methods_free (ADIOS_AVAILABLE_READ_METHODS *m)
+{
+	int i;
+	if (m)
+	{
+	    for (i=0; i < m->nmethods; i++)
+	    {
+	        if (m->name[i]) {
+	            free (m->name[i]);
+	            m->name[i] = NULL;
+	        }
+	    }
+	    free (m);
+	}
+}
 

@@ -5,7 +5,7 @@
 #include "core/transforms/adios_transforms_hooks_read.h"
 #include "core/transforms/adios_transforms_read.h"
 
-ADIOS_IMPLEMENTED_TRANSFORMS * adios_implemented_transforms()
+ADIOS_AVAILABLE_TRANSFORMS * adios_available_transforms()
 {
     int i, n;
     n = 0;
@@ -18,7 +18,7 @@ ADIOS_IMPLEMENTED_TRANSFORMS * adios_implemented_transforms()
     if (n == 0)
         return NULL;
 
-    ADIOS_IMPLEMENTED_TRANSFORMS * t = (ADIOS_IMPLEMENTED_TRANSFORMS *) malloc (sizeof(ADIOS_IMPLEMENTED_TRANSFORMS));
+    ADIOS_AVAILABLE_TRANSFORMS * t = (ADIOS_AVAILABLE_TRANSFORMS *) malloc (sizeof(ADIOS_AVAILABLE_TRANSFORMS));
     if (!t)
         return NULL;
 
@@ -37,23 +37,23 @@ ADIOS_IMPLEMENTED_TRANSFORMS * adios_implemented_transforms()
     return t;
 }
 
-void adios_implemented_transforms_free (ADIOS_IMPLEMENTED_TRANSFORMS *t)
+void adios_available_transforms_free (ADIOS_AVAILABLE_TRANSFORMS *t)
 {
-	int i;
-	if (t)
-	{
-	    for (i=0; i < t->ntransforms; i++)
-	    {
-	        if (t->name[i]) {
-	            free (t->name[i]);
-	            t->name[i] = NULL;
-	        }
-	        if (t->description[i]) {
-	            free (t->description[i]);
-	            t->description[i] = NULL;
-	        }
-	    }
-	free (t);
-	}
+    int i;
+    if (t)
+    {
+        for (i=0; i < t->ntransforms; i++)
+        {
+            if (t->name[i]) {
+                free (t->name[i]);
+                t->name[i] = NULL;
+            }
+            if (t->description[i]) {
+                free (t->description[i]);
+                t->description[i] = NULL;
+            }
+        }
+        free (t);
+    }
 }
 

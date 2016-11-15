@@ -271,6 +271,21 @@ int adios_define_mesh_unstructured (char * points,
                                     char * nspace,
                                     int64_t group_id,
                                     const char * name);
+
+
+typedef struct
+{
+    int nmethods; 		// number of available methods
+    char ** name;     	// array of transport method names
+} ADIOS_AVAILABLE_WRITE_METHODS;
+
+/* Provide the names of transport methods available in the running application
+ */
+ADIOS_AVAILABLE_WRITE_METHODS * adios_available_write_methods();
+
+void adios_available_write_methods_free (ADIOS_AVAILABLE_WRITE_METHODS *);
+
+
 #ifdef __cplusplus
 }
 #endif

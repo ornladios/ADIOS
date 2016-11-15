@@ -591,6 +591,20 @@ void adios_reset_dimension_order (ADIOS_FILE *fp, int is_fortran);
 /** Test function to print basic info about the file to stdout */
 void adios_print_fileinfo (ADIOS_FILE *fp);
 
+
+typedef struct
+{
+    int nmethods; 		// number of available read methods
+    char ** name;     	// array of read method names
+} ADIOS_AVAILABLE_READ_METHODS;
+
+/* Provide the names of read methods available in the running application
+ */
+ADIOS_AVAILABLE_READ_METHODS * adios_available_read_methods();
+
+void adios_available_read_methods_free (ADIOS_AVAILABLE_READ_METHODS *);
+
+
 #endif  /*__INCLUDED_FROM_FORTRAN_API__*/
 
 #ifdef __cplusplus

@@ -7,17 +7,16 @@ extern "C" {
 
 typedef struct
 {
-    int ntransforms; 		// number of transformations
-    char ** name;     		// array of transform names
-    char ** description;	// array of descriptions
-} ADIOS_IMPLEMENTED_TRANSFORMS;
+    int ntransforms;            // number of transformations
+    char ** name;               // array of transform names
+    char ** description;        // array of descriptions
+} ADIOS_AVAILABLE_TRANSFORMS;
 
-/* Return an array of transformations available in the running application
- * The return value is the size of the array.
+/* Provide the names of transformations available in the running application
  */
-ADIOS_IMPLEMENTED_TRANSFORMS * adios_implemented_transforms();
+ADIOS_AVAILABLE_TRANSFORMS * adios_available_transforms();
 
-void adios_implemented_transforms_free (ADIOS_IMPLEMENTED_TRANSFORMS *t);
+void adios_available_transforms_free (ADIOS_AVAILABLE_TRANSFORMS *);
 
 #ifdef __cplusplus
 }
