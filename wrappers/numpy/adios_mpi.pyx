@@ -1790,11 +1790,9 @@ cdef class writer(object):
             return self.attrs
 
     property timeaggregation_buffersize:
-        """ Time-aggregation buffersize. """
+        """ Get time-aggregation buffersize. """
         def __get__(self):
             return self.timeaggregation_buffersize
-        def __set__(self, value):
-            self.timeaggregation_buffersize = value
 
     def __init__(self, str fname,
                  bint is_noxml = True,
@@ -1844,11 +1842,16 @@ cdef class writer(object):
         self.method = method
         self.method_params = method_params
         select_method(self.gid, self.method, self.method_params, "")
+        self.set_time_aggregation()
 
-        if self.gid > 0 and self.timeaggregation_buffersize > 0:
-            print('Do time aggregation', self.gid, self.timeaggregation_buffersize)
+    def set_time_aggregation(self, buffer_size = None):
+        """
+        Set time-aggregation buffersize.
+        """
+        if buffer_size is not None:
+            self.timeaggregation_buffersize = buffer_size
+        if self.gid > 0:
             set_time_aggregation (self.gid, self.timeaggregation_buffersize, 0);
-
 
     def define_var(self, str varname,
                    ldim = tuple(),
