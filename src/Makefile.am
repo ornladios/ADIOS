@@ -176,6 +176,7 @@ libcoreonce_a_SOURCES = core/a2sel.c \
                             core/qhashtbl.c \
                             core/strutil.c \
                             core/util.c \
+                            core/adios_transform_methods.c \
                             $(transforms_common_SOURCES) \
                             $(transforms_write_SOURCES) \
                             $(transforms_read_SOURCES) 
@@ -822,7 +823,8 @@ include_HEADERS += public/adios.h \
                    public/adios_schema.h \
                    public/adios_link.h \
                    public/adios_read_ext.h \
-                   public/adios_query.h
+                   public/adios_query.h \
+                   public/adios_transform_methods.h 
                  
 EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \

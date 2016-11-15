@@ -86,6 +86,18 @@ int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
     else
     {
         retval = 1;
+        // try to alloc/realloc a buffer to max allowed size
+        // align usable buffer to BYTE_ALIGN bytes
+        void * b = realloc (fd->allocated_bufptr, max_size +  BYTE_ALIGN - 1);
+        if (b)
+        {
+            fd->allocated_bufptr = b;
+            uint64_t p = (uint64_t) fd->allocated_bufptr;
+            fd->buffer = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
+            log_debug ("Data buffer extended from %" PRIu64 " to %" PRIu64 " bytes\n", fd->buffer_size, size);
+            fd->buffer_size = max_size;
+
+        }
         log_warn ("Cannot allocate %" PRIu64 " bytes for buffered output of group %s "
                 " because max allowed is %" PRIu64 " bytes. "
                 "Continue buffering with buffer size %" PRIu64 " MB\n",

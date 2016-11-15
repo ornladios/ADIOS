@@ -1,5 +1,5 @@
 1.11.0 Release November 2016
-    - Time aggregation of a group
+    - Time aggregation (temporal aggregation of an output in memory)
       see adios_set_time_aggregation() or the <time-aggregation> element in the XML syntax.
     - ZFP lossy compression transform method
     - Performance bug in MPI_AGGREGATE method in 1.9/1.10 fixed 

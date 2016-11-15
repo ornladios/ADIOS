@@ -495,10 +495,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
                 }
                 else 
                 {
-                    // index is in memory, update time index and offsets
-                    if (fd->mode == adios_mode_append) {
-                        fd->group->time_index++;
-                    }
+                    // index is in memory, right now there is nothing to do here
                 }
             }
             else 
