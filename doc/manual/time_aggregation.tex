@@ -35,8 +35,8 @@ We can tell ADIOS that the aggregated group should be "synchronized" with anothe
 
 
 \begin{lstlisting}[caption=Set time aggregation for a group in source code with a synchronizing group]
-adios_declare_group (&ckpt_groupid, "checkpoint");
-adios_declare_group (&diag_groupid, "diagnostics";
+adios_declare_group (&ckpt_groupid, "checkpoint", "", adios_stat_default);
+adios_declare_group (&diag_groupid, "diagnostics", "", adios_stat_default);
 adios_set_time_aggregation (diag_groupid, 32000, ckpt_groupid);
 \end{lstlisting}
 
