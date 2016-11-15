@@ -31,11 +31,11 @@
 
 #include "core/adios_internals.h" // write hooks and adios_transport_struct
 #include "core/adios_read_hooks.h" // read hooks and adios_read_hooks_struct
-#include "core/transforms/adios_transforms_hooks.h" 
+//#include "core/transforms/adios_transforms_hooks.h"
 #include "core/transforms/adios_transforms_hooks_read.h"
-#include "core/transforms/adios_transforms_read.h"
+//#include "core/transforms/adios_transforms_read.h"
 #include "query/adios_query_hooks.h"
-
+#include "public/adios_transform_methods.h"
 
 int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype);
 
@@ -82,6 +82,7 @@ int main (int argc, char ** argv) {
         }
 
         printf ("Available data transformation methods (in XML transform tags in <var> elements):\n");
+        /*
         for (i = (int)adios_transform_none; i < num_adios_transform_types; i++) {    
             if (adios_transform_is_implemented((enum ADIOS_TRANSFORM_TYPE)i)) {
             printf("    \"%s\"\t: %s\n", 
@@ -89,6 +90,16 @@ int main (int argc, char ** argv) {
                     adios_transform_plugin_desc((enum ADIOS_TRANSFORM_TYPE)i));
             }
         }
+        */
+        ADIOS_IMPLEMENTED_TRANSFORMS * t = adios_implemented_transforms();
+        if (t) {
+            for (i=0; i<t->ntransforms; i++)
+            {
+                printf("    \"%s\"\t: %s\n",  t->name[i], t->description[i]);
+            }
+            adios_implemented_transforms_free(t);
+        }
+
 
         printf ("Available query methods (in adios_query_set_method()):\n");
         for (i = 0; i < ADIOS_QUERY_METHOD_COUNT; i++) {
