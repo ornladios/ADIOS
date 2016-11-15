@@ -2,19 +2,20 @@
 """
 Example:
 
-$ python ./test_adios_write.py
+$ python ./test_adios_writer.py
 """
 
+""" Import ADIOS Python/Numpy wrapper """
 import adios as ad
 import numpy as np
 
 print("\n>>> Prepare ...\n")
 fname = 'adios_test_writer.bp'
-NX = 100000
+NX = 10
 size = 2
-t = np.array(list(range(NX*size)), dtype=np.float64)
-tt = t.reshape((size, NX))
+tt = np.arange(NX*size, dtype=np.float64).reshape((size, NX))
 
+""" Writing """
 print("\n>>> Writing ...\n")
 ad.init_noxml()
 ad.set_max_buffer_size (10)
@@ -29,7 +30,7 @@ fw['temperature'].transform = "zfp:accuracy=0.001"
 fw.attrs['/temperature/description'] = "Global array written from 'size' processes"
 fw.close()
 
-## Reading
+""" Reading """
 print("\n>>> Reading ...\n")
 
 f = ad.file(fname)
@@ -39,5 +40,6 @@ for key, val in f.vars.items():
 for key, val in f.attrs.items():
     print(key, '=', val.value)
 
-## Testing
+""" Finalizing """
 print("\n>>> Done.\n")
+ad.finalize()

@@ -12627,13 +12627,13 @@ static PyObject *__pyx_pf_5adios_4file_2__del__(struct __pyx_obj_5adios_file *__
  *         self.close()
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
- *         """ Enter for with statemetn """
+ *         """ Enter for with statement """
  *         return self
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_5adios_4file_5__enter__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static char __pyx_doc_5adios_4file_4__enter__[] = "file.__enter__(self)\n Enter for with statemetn ";
+static char __pyx_doc_5adios_4file_4__enter__[] = "file.__enter__(self)\n Enter for with statement ";
 static PyObject *__pyx_pw_5adios_4file_5__enter__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
@@ -12652,7 +12652,7 @@ static PyObject *__pyx_pf_5adios_4file_4__enter__(struct __pyx_obj_5adios_file *
 
   /* "adios.pyx":876
  *     def __enter__(self):
- *         """ Enter for with statemetn """
+ *         """ Enter for with statement """
  *         return self             # <<<<<<<<<<<<<<
  * 
  *     def __exit__(self, exception_type, exception_value, traceback):
@@ -12666,7 +12666,7 @@ static PyObject *__pyx_pf_5adios_4file_4__enter__(struct __pyx_obj_5adios_file *
  *         self.close()
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
- *         """ Enter for with statemetn """
+ *         """ Enter for with statement """
  *         return self
  */
 
@@ -30609,13 +30609,13 @@ static PyObject *__pyx_pf_5adios_6writer_18__repr__(struct __pyx_obj_5adios_writ
  *                  self.mode)
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
- *         """ Enter for with statemetn """
+ *         """ Enter for with statement """
  *         return self
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_5adios_6writer_21__enter__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
-static char __pyx_doc_5adios_6writer_20__enter__[] = "writer.__enter__(self)\n Enter for with statemetn ";
+static char __pyx_doc_5adios_6writer_20__enter__[] = "writer.__enter__(self)\n Enter for with statement ";
 static PyObject *__pyx_pw_5adios_6writer_21__enter__(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
@@ -30634,7 +30634,7 @@ static PyObject *__pyx_pf_5adios_6writer_20__enter__(struct __pyx_obj_5adios_wri
 
   /* "adios.pyx":1981
  *     def __enter__(self):
- *         """ Enter for with statemetn """
+ *         """ Enter for with statement """
  *         return self             # <<<<<<<<<<<<<<
  * 
  *     def __exit__(self, exception_type, exception_value, traceback):
@@ -30648,7 +30648,7 @@ static PyObject *__pyx_pf_5adios_6writer_20__enter__(struct __pyx_obj_5adios_wri
  *                  self.mode)
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
- *         """ Enter for with statemetn """
+ *         """ Enter for with statement """
  *         return self
  */
 

@@ -556,6 +556,130 @@ cdef class attr:
         """ Return string representation. """
 \end{lstlisting}
 
+\subsection{Helper class for writing}
+To help with easy writing, ADIOS python/numpy wrapper provides \verb+writer+ class. Users can add variables and attributes to an instance of the writer class and files will be written by calling \verb+close+ function.
+
+A typical example is as follows:
+\begin{lstlisting}[language=Python,caption={An example of the use of the writer class},label={},]
+>>> import adios as ad
+>>> NX = 10
+>>> fw = ad.writer(fname)
+>>> fw.declare_group('group', method='POSIX1')
+>>> fw['temperature'] = np.arange(10, dtype=np.float64)
+>>> fw.attr['/temperature/description'] = "Global array"
+>>> fw.close()
+\end{lstlisting}
+
+To specify more details on variable, such as global dimensions, local dimensions, offsets, and transforms, use \verb+define_var+ function after defining group, as follows:
+\begin{lstlisting}[language=Python,caption={An example of define var function},label={},]
+fw.define_var('temperature', ldim=(1,NX), transform='zlib')
+\end{lstlisting}
+
+To simply specify transform method, users can do as follows:
+\begin{lstlisting}[language=Python,caption={An example of using transform method},label={},]
+>>> fw['temperature'].transform = 'zfp:accuracy=0.001'
+\end{lstlisting}
+
+Time aggregation can be associated with the writer.
+\begin{lstlisting}[language=Python,caption={An example of time aggregation method},label={},]
+>>> fw.set_time_aggregation(3200)
+\end{lstlisting}
+
+More details of writer APIs are as follows (defined in Cython syntax). Like in the writing, MPI related arguments can be ignored in the serial binding.
+
+\begin{lstlisting}[language=cython,caption={Writer functions},label={},]
+cdef class writer(object):
+    """
+    writer class for Adios write.
+
+    Args:
+        fname (str): filename.
+        is_noxml (bool, optional): Set True if use noxml APIs (default: True).
+        comm (MPI.Comm, optional): MPI comm for parallel read/write 
+                                   (default: MPI.COMM_WORLD).
+
+    Example:
+
+    >>> import adios as ad
+    >>> f = ad.writer('adiosfile.bp')
+
+    """
+
+    property fname:
+        """ The filename to write. """
+    property gname:
+        """ The groupname associated with the file. """
+    property is_noxml:
+        """ Boolean to indicate using No-XML or not. """
+    property mode:
+        """ Writing mode: overwrite or append. """
+    property vars:
+        """ Dictionary of variables to write. """
+    property attrs:
+        """ Dictionary of attributes to write. """
+    property timeaggregation_buffersize:
+        """ Get time-aggregation buffersize. """
+
+    def declare_group(self, str gname = None,
+                      str method = "POSIX1",
+                      str method_params = ""):
+        """
+        Define a group associated with the file.
+
+        Args:
+            gname (str): group name.
+            method (str, optional): Adios write method (default: 'POSIX1')
+            method_params (str, optional): parameters for the write method (default: '')
+
+        Example:
+
+        >>>  fw.declare_group('group', method='MPI', method_params='verbose=3')
+
+        """
+
+    def set_time_aggregation(self, buffer_size = None):
+        """
+        Set time-aggregation buffersize.
+        """
+
+    def define_var(self, str varname,
+                   ldim = tuple(),
+                   gdim = tuple(),
+                   offset = tuple(),
+                   transform = None):
+        """
+        Define a variable associated with the file.
+
+        Args:
+            varname (str): variable name
+            ldim (tuple, optional): local dimension (default: tuple())
+            gdim (tuple, optional): global dimension (default: tuple())
+            offset (tuple, optional): offset (default: tuple())
+            transform (str): transform name
+
+        Example:
+
+        Write 'temperature' variable of size of 2x3 array.
+
+        >>>  fw.define_var ('temperature', (2,3))
+
+        """
+
+    def define_attr(self, str attrname):
+        """
+        Define attribute in the file.
+
+        Args:
+            attrname (str): attribute name.
+        """
+
+    def close(self):
+        """
+        Write variables and attributes to a file and close the writer.
+        """
+
+\end{lstlisting}
+
 \subsection{Utility functions}
 Besides exposing ADIOS APIs directly, we provide utility functions users can call in python in a simple way
 
@@ -583,51 +707,53 @@ def bpls(fname):
 \end{lstlisting}
 
 \subsection{Examples}
-Examples of using ADIOS Python/Numpy functions are shown below. The first example is to write and read ADIOS BP files with a single process. You can find the code in the source distribution: \verb+wrapper/numpy/tests/test_adios.py+.
+Examples of using ADIOS Python/Numpy functions are shown below. The first example is to write and read ADIOS BP files with a single process. You can find the code in the source distribution: \\
+\verb+wrapper/numpy/tests/test_adios_writer.py+.
 
 \begin{lstlisting}[language=ADIOS-python,caption={A Python/Numpy example for writing/reading ADIOS BP file},label={},]
 """ Import ADIOS Python/Numpy wrapper """
 import adios as ad
 import numpy as np
 
-""" Writing """
-print "\n>>> Writing ...\n"
-
-ad.init("config.xml")
-fd = ad.open("temperature", "adios_test.bp", "w")
-
+print("\n>>> Prepare ...\n")
+fname = 'adios_test_writer.bp'
 NX = 10
 size = 2
-groupsize =  4 + 4 + 8 * size * NX
-t = np.array(range(NX*size), dtype=np.float64)
-tt = t.reshape((size, NX))
-ad.set_group_size(fd, groupsize)
-ad.write_int(fd, "NX", NX)
-ad.write_int(fd, "size", size)
-ad.write(fd, "temperature", tt)
-ad.close(fd)
+tt = np.arange(NX*size, dtype=np.float64).reshape((size, NX))
 
-ad.finalize()
+""" Writing """
+print("\n>>> Writing ...\n")
+ad.init_noxml()
+ad.set_max_buffer_size (10)
+
+fw = ad.writer(fname)
+fw.declare_group('group', method='POSIX1')
+
+fw['NX'] = NX
+fw['size'] = size
+fw['temperature'] = tt
+fw['temperature'].transform = "zfp:accuracy=0.001"
+fw.attrs['/temperature/description'] = "Global array written from 'size' processes"
+fw.close()
 
 """ Reading """
-print "\n>>> Reading ...\n"
+print("\n>>> Reading ...\n")
 
-f = ad.file("adios_test.bp")
-f.printself()
+f = ad.file(fname)
+for key, val in f.vars.items():
+    print(key, '=', val.read())
 
-v = f.var['temperature']
-v.printself()
+for key, val in f.attrs.items():
+    print(key, '=', val.value)
 
-val = v.read()
-print val
-assert ((tt == val).all())
-f.close()
-
+""" Finalizing """
+print("\n>>> Done.\n")
+ad.finalize()
 \end{lstlisting}
 
 The above code can be executed as follows:
 \begin{lstlisting}
-python test_adios.py
+python test_adios_writer.py
 \end{lstlisting}
 
 The second example is about parallel writing and reading by using multiple MPI processes. You can find the code in the source distribution: \verb+/wrapper/numpy/tests/test_adios_mpi.py+.
@@ -681,5 +807,5 @@ if rank == 0:
 
 The above code can be executed as follows:
 \begin{lstlisting}
-mpiexec -n 4 python ./test_adios.py
+mpiexec -n 4 python ./test_adios_mpi.py
 \end{lstlisting}

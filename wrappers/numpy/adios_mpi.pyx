@@ -871,7 +871,7 @@ cdef class file(dict):
         self.close()
 
     def __enter__(self):
-        """ Enter for with statemetn """
+        """ Enter for with statement """
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
@@ -1976,7 +1976,7 @@ cdef class writer(object):
                  self.mode)
 
     def __enter__(self):
-        """ Enter for with statemetn """
+        """ Enter for with statement """
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
