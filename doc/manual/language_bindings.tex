@@ -310,6 +310,18 @@ cpdef int select_method (int64_t group,
                          char * method,
                          char * parameters,
                          char * base_path)
+
+""" Call adios_set_max_buffer_size """
+cpdef void set_max_buffer_size (int64_t max_buffer_size_MB)
+
+""" Call adios_set_transform """
+cpdef int set_transform (int64_t var_id, str transform_type_str)
+
+""" Call adios_set_time_aggregation """
+cpdef int set_time_aggregation (int64_t groupid,
+                                uint64_t buffersize,
+                                int64_t syncgroupid)
+
 \end{lstlisting}
 
 \subsection{APIs for Reading}
