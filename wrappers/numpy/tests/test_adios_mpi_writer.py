@@ -24,7 +24,6 @@ offset = (rank, 0)
 
 print("\n>>> Writing ... (rank = %d)\n" % rank)
 ad.init_noxml()
-##ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 100);
 ad.set_max_buffer_size (100);
 
 fw = ad.writer(fname, comm=comm)

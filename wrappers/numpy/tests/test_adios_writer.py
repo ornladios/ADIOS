@@ -10,14 +10,14 @@ import numpy as np
 
 print("\n>>> Prepare ...\n")
 fname = 'adios_test_writer.bp'
-NX = 10
+NX = 100000
 size = 2
 t = np.array(list(range(NX*size)), dtype=np.float64)
 tt = t.reshape((size, NX))
 
 print("\n>>> Writing ...\n")
 ad.init_noxml()
-ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
+ad.set_max_buffer_size (10)
 
 fw = ad.writer(fname)
 fw.declare_group('group', method='POSIX1')
@@ -25,6 +25,7 @@ fw.declare_group('group', method='POSIX1')
 fw['NX'] = NX
 fw['size'] = size
 fw['temperature'] = tt
+fw['temperature'].transform = "zfp:accuracy=0.001"
 fw.attrs['/temperature/description'] = "Global array written from 'size' processes"
 fw.close()
 
