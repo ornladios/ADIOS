@@ -29,8 +29,10 @@ libzfp_a_CFLAGS=
 
 
 
-EXTRA_DIST = ${ZFP_SRCDIR}/src/block1.h ${ZFP_SRCDIR}/src/block2.h \
-             ${ZFP_SRCDIR}/src/block3.h ${ZFP_SRCDIR}/src/traitsd.h \
+EXTRA_DIST = ${ZFP_SRCDIR}/src/block1.h \
+	     ${ZFP_SRCDIR}/src/block2.h \
+             ${ZFP_SRCDIR}/src/block3.h \
+	     ${ZFP_SRCDIR}/src/traitsd.h \
              ${ZFP_SRCDIR}/src/traitsf.h \
              ${ZFP_SRCDIR}/src/Makefile \
              ${ZFP_SRCDIR}/src/inline/inline.h \
@@ -56,4 +58,4 @@ EXTRA_DIST = ${ZFP_SRCDIR}/src/block1.h ${ZFP_SRCDIR}/src/block2.h \
              ${ZFP_SRCDIR}/inc/zfp.h \
              ${ZFP_SRCDIR}/API ${ZFP_SRCDIR}/Config ${ZFP_SRCDIR}/FAQ ${ZFP_SRCDIR}/LICENSE \
              ${ZFP_SRCDIR}/Makefile ${ZFP_SRCDIR}/README ${ZFP_SRCDIR}/VERSIONS \
-             ${ZFP_SRCDIR}/array ${ZFP_SRCDIR}/examples ${ZFP_SRCDIR}/lib
+             ${ZFP_SRCDIR}/array ${ZFP_SRCDIR}/examples 
