@@ -910,13 +910,15 @@ ADIOS_AVAILABLE_QUERY_METHODS * adios_available_query_methods()
         return NULL;
 
     m->name     = (char**) malloc (n*sizeof(char*));
+    m->methodID = (enum ADIOS_QUERY_METHOD *) malloc (n*sizeof(enum ADIOS_QUERY_METHOD));
     m->nmethods = n;
 
     n = 0;
     for (i = 0; i < ADIOS_QUERY_METHOD_COUNT; i++) {
         if (query_hooks[i].method_name) {
-        	m->name[n] = strdup (query_hooks[i].method_name);
-        	n++;
+            m->name[n] = strdup (query_hooks[i].method_name);
+            m->methodID[n] = (enum ADIOS_QUERY_METHOD)i;
+            n++;
         }
     }
     return m;
@@ -924,16 +926,25 @@ ADIOS_AVAILABLE_QUERY_METHODS * adios_available_query_methods()
 
 void adios_available_query_methods_free (ADIOS_AVAILABLE_QUERY_METHODS *m)
 {
-	int i;
-	if (m)
-	{
-	    for (i=0; i < m->nmethods; i++)
-	    {
-	        if (m->name[i]) {
-	            free (m->name[i]);
-	            m->name[i] = NULL;
-	        }
-	    }
-	    free (m);
-	}
+    int i;
+    if (m)
+    {
+        if (m->name)
+        {
+            for (i=0; i < m->nmethods; i++)
+            {
+                if (m->name[i]) {
+                    free (m->name[i]);
+                    m->name[i] = NULL;
+                }
+            }
+            free (m->name);
+            m->name = NULL;
+        }
+        if (m->methodID) {
+            free (m->methodID);
+            m->methodID = NULL;
+        }
+        free (m);
+    }
 }

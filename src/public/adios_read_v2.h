@@ -596,6 +596,7 @@ typedef struct
 {
     int nmethods; 		// number of available read methods
     char ** name;     	// array of read method names
+    enum ADIOS_READ_METHOD * methodID; // enum ID of the method in source code
 } ADIOS_AVAILABLE_READ_METHODS;
 
 /* Provide the names of read methods available in the running application
