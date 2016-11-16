@@ -841,6 +841,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              transforms/adios_transform_identity_read.h \
              transforms/adios_transform_szip.h \
              transforms/adios_transform_alacrity_common.h \
+             transforms/adios_transform_zfp_common.h \
              transforms/adios_transform_template_read.c \
              transforms/adios_transform_template_write.c \
              query/Makefile.plugins.cmake 
