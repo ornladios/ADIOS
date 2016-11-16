@@ -3,6 +3,13 @@
 import sys
 import os
 
+# Make sure that the gpp modules are available...
+# ...for the installed gpp
+sys.path.insert (0, os.path.dirname(sys.argv[0]) + '/../lib/python')
+
+# ...for the gpp in the utils dir of the adios source
+#sys.path.insert (0, os.path.dirname(sys.argv[0]))
+
 import ad_config
 import type_mapper
 

@@ -67,7 +67,8 @@ set (transforms_common_HDRS core/adios_copyspec.h
                          core/transforms/adios_transforms_common.h 
                          core/transforms/adios_transforms_hooks.h 
                          core/transforms/adios_transforms_util.h 
-                         core/adios_subvolume.h)
+                         core/adios_subvolume.h
+                         public/adios_transform_methods.h)
 
 set (transforms_read_HDRS core/transforms/adios_transforms_read.h 
                        core/transforms/adios_transforms_hooks_read.h 
@@ -87,7 +88,8 @@ set (transforms_common_SOURCES  ${transforms_common_HDRS}
                             core/adios_subvolume.c 
                             core/transforms/plugindetect/detect_plugin_infos.h 
                             core/transforms/plugindetect/detect_plugin_types.h 
-                            core/transforms/plugindetect/plugin_info_types.h)
+                            core/transforms/plugindetect/plugin_info_types.h
+                            core/adios_transform_methods.c)
 
 set (transforms_read_SOURCES ${transforms_read_HDRS} 
                           core/transforms/adios_transforms_read.c 
@@ -510,7 +512,8 @@ set(include_HEADERS ${include_HEADERS} public/adios.h
                    public/adios_schema.h
                    public/adios_link.h
                    public/adios_read_ext.h
-                   public/adios_query.h)
+                   public/adios_query.h
+                   public/adios_transform_methods.h)
 
 set(libadiosread_a_SOURCES core/adios_bp_v1.c
                       core/adios_endianness.c 
@@ -687,7 +690,7 @@ if(BUILD_FORTRAN)
 #add library adiosreadf and adiosreadf_v1
     #include_directories(${nodist_include_HEADERS})
 #  install(FILES ${nodist_include_HEADERS} DESTINATION ${includedir})
-    install(FILES ${PROJECT_BINARY_DIR}/src/adios_read_mod.mod DESTINATION ${includedir})
+    install(FILES ${PROJECT_BINARY_DIR}/src/adios_read_mod.mod ${PROJECT_BINARY_DIR}/src/adios_defs_mod.mod ${PROJECT_BINARY_DIR}/src/adios_query_mod.mod DESTINATION ${includedir})
     add_library(adiosreadf ${libadiosreadf_a_SOURCES} ${EXTRA_READ_OBJECTS})
     set_target_properties(adiosreadf PROPERTIES COMPILE_FLAGS "${libadiosreadf_a_CPPFLAGS} ${libadiosreadf_a_CFLAGS}")
   

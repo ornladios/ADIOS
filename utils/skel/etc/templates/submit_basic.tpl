@@ -11,7 +11,7 @@ sleep 5   #Make sure mpd has a chance to start
 $$START_TEST$$
 echo $$METHOD$$
 $$PRE_RM$$
-set_method.sh $$METHOD$$ $$APP$$_skel.xml.in $$APP$$_skel.xml 
+skel_set_method.sh $$METHOD$$ $$APP$$_skel.xml.in $$APP$$_skel.xml 
 mpirun -n $$CORES_USED$$ ./$$EXEC$$
 $$POST_RM$$
 
