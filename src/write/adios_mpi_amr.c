@@ -1900,10 +1900,11 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                                          ,0, md->index);
 
                     START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                    uint32_t index_size = (uint32_t) buffer_offset;
+                    MPI_Gather (&index_size, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->g_comm1
                                );
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, index_size, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->g_comm1
                                 );
@@ -2039,11 +2040,12 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                                              ,0, md->index);
  
                         START_TIMER (ADIOS_TIMER_COMM);
-                        MPI_Gather (&buffer_size2, 1, MPI_INT
+                        uint32_t index_size = (uint32_t) buffer_offset2;
+                        MPI_Gather (&index_size, 1, MPI_INT
                                    ,0, 0, MPI_INT
                                    ,0, md->g_comm2
                                    );
-                        MPI_Gatherv (buffer2, buffer_size2, MPI_BYTE
+                        MPI_Gatherv (buffer2, index_size, MPI_BYTE
                                     ,0, 0, 0, MPI_BYTE
                                     ,0, md->g_comm2
                                     );
@@ -2564,11 +2566,12 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                                          ,0, md->index);
 
                     START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gather (&buffer_size2, 1, MPI_INT
+                    uint32_t index_size = (uint32_t) buffer_offset2;
+                    MPI_Gather (&index_size, 1, MPI_INT
                                ,0, 0, MPI_INT
                                ,0, md->g_comm2
                                );
-                    MPI_Gatherv (buffer2, buffer_size2, MPI_BYTE
+                    MPI_Gatherv (buffer2, index_size, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->g_comm2
                                 );
