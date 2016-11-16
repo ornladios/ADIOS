@@ -1015,7 +1015,7 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
             }
         }
 
-        free_dspaces_stream_info(md);
+        free_dspaces_stream_info();
 
         log_info("%s: Disconnect from DATASPACES server now, rank=%d ...\n", __func__, mype);
         // disconnect from dataspaces if we are connected from writer but not anymore from reader
