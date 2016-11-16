@@ -69,6 +69,51 @@ void write_checkpoint (int step, double * p, double *t)
     adios_close (adios_handle);
 }
 
+void define_groups ()
+{
+    int64_t  g_diag, g_diag2, g_ckpt;
+
+    // Group diagnosis
+    adios_declare_group (&g_diag, "diagnostics", "", adios_stat_default);
+    adios_define_var (g_diag, "NY",  "", adios_integer, 0, 0, 0);
+    adios_define_var (g_diag, "size","", adios_integer, 0, 0, 0);
+    adios_define_var (g_diag, "rank","", adios_integer, 0, 0, 0);
+    int64_t var_p = adios_define_var (g_diag, "pressure", "", adios_double,
+                                       "1,NY", "size,NY", "rank,0");
+    adios_set_transform (var_p, "none");
+
+
+    // Group diag2
+    adios_declare_group (&g_diag2, "diag2", "", adios_stat_default);
+    adios_define_var (g_diag2, "size","", adios_integer, 0, 0, 0);
+    adios_define_var (g_diag2, "rank","", adios_integer, 0, 0, 0);
+    int64_t var_t0 = adios_define_var (g_diag2, "t0", "", adios_double,
+                                       "1,1", "size,1", "rank,0");
+    adios_set_transform (var_t0, "none");
+
+
+    // Group checkpoint
+    adios_declare_group (&g_ckpt, "checkpoint", "", adios_stat_default);
+    adios_define_var (g_ckpt, "NX",  "", adios_integer, 0, 0, 0);
+    adios_define_var (g_ckpt, "NY",  "", adios_integer, 0, 0, 0);
+    adios_define_var (g_ckpt, "size","", adios_integer, 0, 0, 0);
+    adios_define_var (g_ckpt, "rank","", adios_integer, 0, 0, 0);
+    adios_define_var (g_ckpt, "step","", adios_integer, 0, 0, 0);
+    adios_define_var (g_ckpt, "temperature", "", adios_double,
+                      "1,NX", "size,NX", "rank,0");
+    adios_define_var (g_ckpt, "pressure", "", adios_double,
+                      "1,NY", "size,NY", "rank,0");
+
+
+    adios_select_method (g_diag,  "MPI", "verbose=3", "");
+    adios_select_method (g_diag2, "MPI", "verbose=3", "");
+    adios_select_method (g_ckpt,  "MPI", "verbose=3", "");
+    //adios_select_method (m_ckpt, "MPI_AGGREGATE", "num_ost=2;num_aggregators=2;aggregation_type=2;verbose=3", "");
+
+    adios_set_time_aggregation (g_diag, 12000, g_ckpt);
+    adios_set_time_aggregation (g_diag2, 32000, g_ckpt);
+}
+
 int main (int argc, char ** argv) 
 {
 
@@ -80,7 +125,9 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_init ("time_aggregation.xml", comm);
+    adios_init_noxml (comm);
+    adios_set_max_buffer_size (10);
+    define_groups();
 
 
     for (it = 1; it <= 100; it++)
