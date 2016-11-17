@@ -20,7 +20,7 @@ for i in {1..$$ITERATIONS$$}
 do
 echo $$METHOD$$
 $$PRE_RM$$
-set_method.sh $$METHOD$$ $$APP$$_skel.xml.in $$APP$$_skel.xml $$METHOD_PARAMS$$
+skel_set_method.sh $$METHOD$$ $$APP$$_skel.xml.in $$APP$$_skel.xml $$METHOD_PARAMS$$
 aprun -n $$CORES_USED$$ ./$$EXEC$$
 $$POST_RM$$
 done

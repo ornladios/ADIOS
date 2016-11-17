@@ -56,7 +56,7 @@ deploy:
 	rm -f $(DEST_DIR)/submit*
 	cp $(APP)_skel.xml $(DEST_DIR)/$(APP)_skel.xml.in
 	cp $(TESTS) submit_$$TARGET$$* $(DEST_DIR)
-	cp $(SKEL_DIR)/bin/set_method.sh $(DEST_DIR)
+	cp $(SKEL_DIR)/bin/skel_set_method.sh $(DEST_DIR)
 	cp $(SKEL_DIR)/bin/skel_cat.py $(DEST_DIR)
 
 clean:

@@ -213,6 +213,7 @@ typedef struct
 {
     int nmethods; 		// number of available query methods
     char ** name;     	// array of query method names
+    enum ADIOS_QUERY_METHOD * methodID; // enum ID of the method in source code
 } ADIOS_AVAILABLE_QUERY_METHODS;
 
 /* Provide the names of query methods available in the running application

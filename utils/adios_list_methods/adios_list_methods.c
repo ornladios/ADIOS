@@ -73,19 +73,19 @@ int main (int argc, char ** argv) {
         ADIOS_AVAILABLE_READ_METHODS * rm = adios_available_read_methods();
         if (rm) {
         	for (i = 0; i < rm->nmethods; i++) {
-        		printf("    \"%s\"\n", rm->name[i]);
+        		printf("    %s (=%d)\n", rm->name[i], rm->methodID[i]);
         	}
         	adios_available_read_methods_free(rm);
         }
 
         printf ("Available data transformation methods (in XML transform tags in <var> elements):\n");
-        ADIOS_AVAILABLE_TRANSFORMS * t = adios_available_transforms();
+        ADIOS_AVAILABLE_TRANSFORM_METHODS * t = adios_available_transform_methods();
         if (t) {
             for (i=0; i<t->ntransforms; i++)
             {
                 printf("    \"%s\"\t: %s\n",  t->name[i], t->description[i]);
             }
-            adios_available_transforms_free(t);
+            adios_available_transform_methods_free(t);
         }
 
 
@@ -93,7 +93,7 @@ int main (int argc, char ** argv) {
         ADIOS_AVAILABLE_QUERY_METHODS * qm = adios_available_query_methods();
         if (qm) {
         	for (i = 0; i < qm->nmethods; i++) {
-        		printf("    \"%s\"\n", qm->name[i]);
+        		printf("    %s (=%d)\n", qm->name[i], qm->methodID[i]);
         	}
         	adios_available_query_methods_free(qm);
         }

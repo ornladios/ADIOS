@@ -89,8 +89,23 @@ Lossy compression allows for reducing output data much further than what's avail
 \begin{itemize}
 \item Time aggregation of a group. See \verb+adios_set_time_aggregation()+ or the \verb+<time-aggregation>+ element in the XML syntax in Chapter~\ref{sec:time_aggregation}.
 \item ZFP lossy compression transform method, see Chapter~\ref{sec:transform_plugins}.
-\item Adios Python wrapper added transform and time aggregation method.
+\item Python wrapper includes functions \ref{section-bindings-numpy} for :
+	\begin{itemize}
+	\item selecting transforms and time aggregation: \verb+adios_set_transform()+
+	\item time aggregation: \verb+adios_set_time_aggregation()+
+	\item set maximum buffer size used by any ADIOS group: \verb+adios_set_max_buffer_size()+
+	\end{itemize}
 
+\item Collect min/max statistics only by default.  \verb+adios_declare_group()+ \ref{func:adios-declare_group} last argument type changed to be an option for statistics. Options are: \verb+adios_stat_no+, \verb+adios_stat_minmax+, \verb+adios_stat_full+, and \verb+adios_stat_default+, which is minmax.
+	
+\item Added functions to C API to detect available methods in the ADIOS installation
+      \begin{itemize}
+      \item \verb+adios.h+: \verb+adios_available_write_methods()+
+      \item \verb+adios_read.h+: \verb+adios_available_read_methods()+
+      \item \verb+adios_transform_methods.h+: \verb+adios_available_transform_methods()+
+      \item \verb+adios_query.h+: \verb+adios_available_query_methods()+
+      \end{itemize}
+      
 \item Bug fixes
     \begin{itemize}
     \item Performance bug in \verb+MPI_AGGREGATE+ method in 1.9/1.10 fixed. Concurrent aggregation and writing was not working efficiently.  

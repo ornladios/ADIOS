@@ -7,10 +7,10 @@ link_directories(${PROJECT_BINARY_DIR}/examples/C/time_aggregation)
 add_executable(time_aggregation time_aggregation.c)
 target_link_libraries(time_aggregation adios ${ADIOSLIB_LDADD})
 
-#add_executable(time_aggregation_no_xml time_aggregation_no_xml.c)
-#target_link_libraries(time_aggregation_no_xml adios ${ADIOSLIB_LDADD})
+add_executable(time_aggregation_no_xml time_aggregation_no_xml.c)
+target_link_libraries(time_aggregation_no_xml adios ${ADIOSLIB_LDADD})
 
-set (PROGS time_aggregation)
+set (PROGS time_aggregation time_aggregation_no_xml)
 foreach (PROG ${PROGS} )
   if(MPI_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")

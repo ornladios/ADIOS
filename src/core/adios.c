@@ -621,8 +621,8 @@ ADIOS_AVAILABLE_WRITE_METHODS * adios_available_write_methods()
     n = 0;
     for (i = 0; i < ADIOS_METHOD_COUNT; i++) {
         if (adios_transports[i].method_name) {
-        	m->name[n] = strdup (adios_transports[i].method_name);
-        	n++;
+            m->name[n] = strdup (adios_transports[i].method_name);
+            n++;
         }
     }
     return m;
@@ -633,12 +633,17 @@ void adios_available_write_methods_free (ADIOS_AVAILABLE_WRITE_METHODS * m)
 	int i;
 	if (m)
 	{
-	    for (i=0; i < m->nmethods; i++)
+	    if (m->name)
 	    {
-	        if (m->name[i]) {
-	            free (m->name[i]);
-	            m->name[i] = NULL;
+	        for (i=0; i < m->nmethods; i++)
+	        {
+	            if (m->name[i]) {
+	                free (m->name[i]);
+	                m->name[i] = NULL;
+	            }
 	        }
+	        free (m->name);
+	        m->name = NULL;
 	    }
 	    free (m);
 	}

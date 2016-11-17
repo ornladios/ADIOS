@@ -152,7 +152,7 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
     module unload pgi gcc intel pathscale
     module unload python
     module load PE-$TARGET
-    module load python
+    #module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
     module load hdf5/1.8.11
@@ -176,6 +176,8 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
     #module load bzip2
     module load dataspaces/1.6.1
     module load flexpath/stable
+    module load alacrity/1.0.0
+    module load fastbit/svn
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -206,6 +208,10 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
         --with-lustre \
         --with-dataspaces=$DATASPACES_DIR \
         --with-flexpath=$FLEXPATH_DIR \
+        --with-alacrity=$ALACRITY_DIR \
+        --with-zlib \
+        --with-bzip2 \
+        --with-fastbit=$FASTBIT_DIR \
         #--with-hdf5=${SEQ_HDF5_DIR} \
         #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         #--with-phdf5=${PAR_HDF5_DIR} \
@@ -214,8 +220,6 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
         #--with-netcdf-libs="${SEQ_NC_CLIB}" \
         #--with-nc4par=${PAR_NC_DIR} \
         #--with-nc4par-libs="${PAR_NC_CLIB}" \
-        #--with-zlib \
-        #--with-bzip2=$BZIP2_DIR \
         #--with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
         #--with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
         #--with-fgr=/ccs/proj/e2e/qliu/tap \
@@ -617,7 +621,7 @@ elif [ `hostname | cut -c 1-4` == "cori" ]; then
 
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
-    ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/1.10.0/cori/$TARGET \
+    ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/1.11.0/cori/$TARGET \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --with-lustre=/usr \
@@ -865,7 +869,7 @@ elif [ `hostname | cut -c 1-9` == "PC0098504" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export LDFLAGS="-lpthread"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    ${SRCDIR}/configure --prefix=/opt/adios/1.10 \
+    ${SRCDIR}/configure --prefix=/opt/adios \
         --enable-dependency-tracking \
         --enable-timers \
         --disable-timer-events 
@@ -884,7 +888,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export FC=gfortran
 
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    ${SRCDIR}/configure --prefix=/opt/adios/1.10 \
+    ${SRCDIR}/configure --prefix=/opt/adios/1.11 \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-timers \

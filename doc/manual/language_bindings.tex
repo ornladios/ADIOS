@@ -245,6 +245,7 @@ public class AdiosNoxmlExample
 \section{Python/Numpy support}
 \label{section-bindings-numpy}
 We developed a ADIOS python wrapper by using Cython. Numpy, a scientific module for Python, is a mandatory requirement. 
+To help with easy writing, ADIOS python/numpy wrapper provides  a \verb+writer+ class, see below in section \ref{sec:numpy-helper-class}.
 
 \subsection{APIs for Writing and No-XML}
 The ADIOS python/numpy wrapper provides functions to call ADIOS write and no-XML related APIs as follows (defined in Cython syntax). MPI related arguments can be ignored in the serial binding.
@@ -311,8 +312,10 @@ cpdef int select_method (int64_t group,
                          char * parameters,
                          char * base_path)
 
+
 """ Call adios_set_max_buffer_size """
 cpdef void set_max_buffer_size (int64_t max_buffer_size_MB)
+
 
 """ Call adios_set_transform """
 cpdef int set_transform (int64_t var_id, str transform_type_str)
@@ -557,6 +560,7 @@ cdef class attr:
 \end{lstlisting}
 
 \subsection{Helper class for writing}
+\label{sec:numpy-helper-class}
 To help with easy writing, ADIOS python/numpy wrapper provides \verb+writer+ class. Users can add variables and attributes to an instance of the writer class and files will be written by calling \verb+close+ function.
 
 A typical example is as follows:

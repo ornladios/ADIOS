@@ -528,16 +528,17 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
         echo "Configure using clang"
     fi
     # The rest is common for all
-    export CC=/usr/local/bin/mpicc
-    export FC=/usr/local/bin/mpif90
-    export CXX=/usr/local/bin/mpicxx
+    # The rest is common for all
+    export CC=mpicc #/usr/local/bin/mpicc
+    export FC=mpif90 #/usr/local/bin/mpif90
+    export CXX=mpicxx #/usr/local/bin/mpicxx
     export CFLAGS="-g -Wall -DO_LARGEFILE=0 -fno-common" 
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export adios_timers=ON
     export INSTALL_PREFIX="/opt/adios"
-    export PAR_HDF5_DIR=/usr/local
-    export PAR_HDF5_LIBS="-L/usr/local/lib -lhdf5_hl -lhdf5 -lm"
+#export PAR_HDF5_DIR=/usr/local
+#export PAR_HDF5_LIBS="-L/usr/local/lib -lhdf5_hl -lhdf5 -lm"
     unset SEQ_HDF5_DIR
     unset SEQ_HDF5_LIBS
     unset SEQ_NC_DIR
@@ -609,7 +610,7 @@ elif [ `hostname | cut -c 1-9` == "PC0098504" ]; then
     export CC=mpicc
     export CXX=mpicxx
     export FC=mpif90
-    export INSTALL_PREFIX="/opt/adios/1.10"
+    export INSTALL_PREFIX="/opt/adios"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
     export LDFLAGS="-lpthread"
@@ -626,7 +627,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export CC=mpicc
     export CXX=mpicxx
     export FC=mpif90
-    export INSTALL_PREFIX="/opt/adios/1.10"
+    export INSTALL_PREFIX="/opt/adios/1.11"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
     export BZIP2_DIR="/usr/lib"

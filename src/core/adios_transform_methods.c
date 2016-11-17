@@ -5,7 +5,7 @@
 #include "core/transforms/adios_transforms_hooks_read.h"
 #include "core/transforms/adios_transforms_read.h"
 
-ADIOS_AVAILABLE_TRANSFORMS * adios_available_transforms()
+ADIOS_AVAILABLE_TRANSFORM_METHODS * adios_available_transform_methods()
 {
     int i, n;
     n = 0;
@@ -18,7 +18,7 @@ ADIOS_AVAILABLE_TRANSFORMS * adios_available_transforms()
     if (n == 0)
         return NULL;
 
-    ADIOS_AVAILABLE_TRANSFORMS * t = (ADIOS_AVAILABLE_TRANSFORMS *) malloc (sizeof(ADIOS_AVAILABLE_TRANSFORMS));
+    ADIOS_AVAILABLE_TRANSFORM_METHODS * t = (ADIOS_AVAILABLE_TRANSFORM_METHODS *) malloc (sizeof(ADIOS_AVAILABLE_TRANSFORM_METHODS));
     if (!t)
         return NULL;
 
@@ -37,7 +37,7 @@ ADIOS_AVAILABLE_TRANSFORMS * adios_available_transforms()
     return t;
 }
 
-void adios_available_transforms_free (ADIOS_AVAILABLE_TRANSFORMS *t)
+void adios_available_transform_methods_free (ADIOS_AVAILABLE_TRANSFORM_METHODS *t)
 {
     int i;
     if (t)
