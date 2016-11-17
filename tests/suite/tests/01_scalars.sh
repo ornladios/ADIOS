@@ -46,7 +46,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C scalars_read"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_read_C > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_read_C  # produces  c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of scalars_read failed with exit code $EX"
@@ -90,7 +90,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run Fortran scalars_read"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_read_F > f_read.txt
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_read_F  # produces f_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of scalars_read failed with exit code $EX"

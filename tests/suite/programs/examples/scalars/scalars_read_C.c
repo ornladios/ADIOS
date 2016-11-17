@@ -60,6 +60,7 @@ int main (int argc, char ** argv)
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
 
+    FILE* outf = fopen ("c_read.txt", "w");
     strcpy (filename, "scalars_C.bp");
 
     adios_read_init_method (method, comm, "verbose=3");
@@ -83,28 +84,29 @@ int main (int argc, char ** argv)
     adios_perform_reads (f,1);
 
     if (rank == 0) {
-        printf("byte        v1  = %d\n", v1);
-        printf("short       v2  = %d\n", v2);
-        printf("integer     v3  = %d\n", v3);
-        printf("long        v4  = %lld\n", v4);
+        fprintf (outf, "byte        v1  = %d\n", v1);
+        fprintf (outf, "short       v2  = %d\n", v2);
+        fprintf (outf, "integer     v3  = %d\n", v3);
+        fprintf (outf, "long        v4  = %lld\n", v4);
 
-        printf("uns.byte    v5  = %u\n", v5);
-        printf("uns.short   v6  = %u\n", v6);
-        printf("uns.int     v7  = %u\n", v7);
-        printf("uns.long    v8  = %llu\n", v8);
+        fprintf (outf, "uns.byte    v5  = %u\n", v5);
+        fprintf (outf, "uns.short   v6  = %u\n", v6);
+        fprintf (outf, "uns.int     v7  = %u\n", v7);
+        fprintf (outf, "uns.long    v8  = %llu\n", v8);
 
-        printf("float       v9  = %g\n", v9);
-        printf("double      v10 = %g\n", v10);
+        fprintf (outf, "float       v9  = %g\n", v9);
+        fprintf (outf, "double      v10 = %g\n", v10);
 
-        printf("string      v11 = %s\n", v11);
+        fprintf (outf, "string      v11 = %s\n", v11);
 
-        printf("complex     v12 = (%g, i%g)\n", v12.r, v12.i);
-        printf("dbl-complex v13 = (%g, i%g)\n", v13.r, v13.i);
+        fprintf (outf, "complex     v12 = (%g, i%g)\n", v12.r, v12.i);
+        fprintf (outf, "dbl-complex v13 = (%g, i%g)\n", v13.r, v13.i);
     }
 
     adios_read_close (f);
     MPI_Barrier (comm);
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    fclose (outf);
     MPI_Finalize ();
 
     return 0;
