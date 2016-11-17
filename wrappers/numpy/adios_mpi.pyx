@@ -163,6 +163,74 @@ cdef extern from "adios.h":
                                char * global_dimensions,
                                char * local_offsets)
 
+    ### Ab hier:
+    cdef int adios_define_schema_version (int64_t group_id, char * schema_version)
+
+    cdef int adios_define_var_mesh (int64_t group_id , const char * varname ,
+                                    const char * meshname)
+
+    cdef int adios_define_var_centering (int64_t group_id , const char * varname ,
+                                         const char * centering)
+
+    cdef int adios_define_var_timesteps (const char * timesteps , int64_t group_id ,
+                                         const char * name)
+
+    cdef int adios_define_var_timescale (const char * timescale , int64_t group_id ,
+                                         const char * name)
+    
+    cdef int adios_define_var_timeseriesformat (const char * timeseries , int64_t group_id ,
+                                                const char * name)
+    
+    cdef int adios_define_var_hyperslab (const char * hyperslab , int64_t group_id ,
+                                         const char * name)
+    
+    cdef int adios_define_mesh_timevarying (const char * timevarying , int64_t group_id ,
+                                            const char * name)
+    
+    cdef int adios_define_mesh_timesteps (const char * timesteps , int64_t group_id ,
+                                          const char * name)
+    
+    cdef int adios_define_mesh_timescale (const char * timescale , int64_t group_id ,
+                                         const char * name)
+    
+    cdef int adios_define_mesh_timeseriesformat (const char * timeseries , int64_t group_id ,
+                                                 const char * name)
+
+    cdef int adios_define_mesh_uniform (char * dimensions,
+                                   char * origin,
+                                   char * spacing,
+                                   char * maximum,
+                                   char * nspace,
+                                   int64_t group_id,
+                                   const char * name
+                                  )
+    
+    cdef int adios_define_mesh_rectilinear (char * dimensions,
+                                       char * coordinates,
+                                       char * nspace,
+                                       int64_t group_id,
+                                       const char * name
+                                      ) 
+    
+    cdef int adios_define_mesh_structured (char * dimensions,
+                                      char * points,
+                                      char * nspace,
+                                      int64_t group_id,
+                                      const char * name
+                                     )
+    
+    cdef int adios_define_mesh_unstructured (char * points,
+                                        char * data,
+                                        char * count,
+                                        char * cell_type,
+                                        char * npoints,
+                                        char * nspace,
+                                        int64_t group_id,
+                                        const char * name
+                                       )
+
+    ### Bis hier 
+
     cdef int adios_define_attribute (int64_t group,
                                      char * name,
                                      char * path,
@@ -494,6 +562,101 @@ cpdef int64_t define_var(int64_t group_id,
                             s2b(dimensions),
                             s2b(global_dimensions),
                             s2b(local_offsets))
+
+cpdef int define_schema_version (int64_t group_id, str schema_version):
+    return adios_define_schema_version (group_id, s2b(schema_version))
+
+cpdef int define_var_mesh (int64_t group_id, str varname, str meshname):
+    return adios_define_var_mesh (group_id, s2b(varname), s2b(meshname))
+
+cpdef int define_var_centering (int64_t group_id, str varname, str centering):
+    return adios_define_var_centering (group_id, s2b(varname), s2b(centering))
+
+cpdef int define_var_timesteps (str timesteps, int64_t group_id, str name):
+    return adios_define_var_timesteps (s2b(timesteps), group_id, s2b(name))
+
+cpdef int define_var_timescale (str timescale , int64_t group_id ,str name):
+    return adios_define_var_timescale (s2b(timescale) , group_id ,s2b(name))
+                                         
+cpdef int define_var_timeseriesformat (str timeseries , int64_t group_id ,str name):
+    return adios_define_var_timeseriesformat (s2b(timeseries) , group_id ,s2b(name))
+                                                
+cpdef int define_var_hyperslab (str hyperslab , int64_t group_id ,str name):
+    return adios_define_var_hyperslab (s2b(hyperslab) , group_id ,s2b(name))
+                                         
+cpdef int define_mesh_timevarying (str timevarying , int64_t group_id ,str name):
+    return adios_define_mesh_timevarying (s2b(timevarying) , group_id ,s2b(name))
+                                            
+cpdef int define_mesh_timesteps (str timesteps , int64_t group_id ,str name):
+    return adios_define_mesh_timesteps (s2b(timesteps) , group_id ,s2b(name))
+                                          
+cpdef int define_mesh_timescale (str timescale , int64_t group_id ,str name):
+    return adios_define_mesh_timescale (s2b(timescale) , group_id ,s2b(name))
+                                         
+cpdef int define_mesh_timeseriesformat (str timeseries , int64_t group_id ,str name):
+    return adios_define_mesh_timeseriesformat (s2b(timeseries) , group_id ,s2b(name))
+                                                 
+cpdef int define_mesh_uniform (str dimensions,
+                                   str origin,
+                                   str spacing,
+                                   str maximum,
+                                   str nspace,
+                                   int64_t group_id,
+                                   str name
+                                  ):
+    return adios_define_mesh_uniform (s2b(dimensions),
+                                   s2b(origin),
+                                   s2b(spacing),
+                                   s2b(maximum),
+                                   s2b(nspace),
+                                   group_id,
+                                   s2b(name)
+                                  )
+    
+cpdef int define_mesh_rectilinear (str dimensions,
+                                       str coordinates,
+                                       str nspace,
+                                       int64_t group_id,
+                                       str name
+                                      ): 
+    return adios_define_mesh_rectilinear (s2b(dimensions),
+                                       s2b(coordinates),
+                                       s2b(nspace),
+                                       group_id,
+                                       s2b(name)
+                                      ) 
+    
+cpdef int define_mesh_structured (str dimensions,
+                                      str points,
+                                      str nspace,
+                                      int64_t group_id,
+                                      str name
+                                     ):
+    return adios_define_mesh_structured (s2b(dimensions),
+                                      s2b(points),
+                                      s2b(nspace),
+                                      group_id,
+                                      s2b(name)
+                                     )
+    
+cpdef int define_mesh_unstructured (str points,
+                                        str data,
+                                        str count,
+                                        str cell_type,
+                                        str npoints,
+                                        str nspace,
+                                        int64_t group_id,
+                                        str name
+                                       ):
+    return adios_define_mesh_unstructured (s2b(points),
+                                        s2b(data),
+                                        s2b(count),
+                                        s2b(cell_type),
+                                        s2b(npoints),
+                                        s2b(nspace),
+                                        group_id,
+                                        s2b(name)
+                                       )
 
 cpdef int define_attribute (int64_t group,
                             str name,
