@@ -8,12 +8,14 @@
 #include "adios_transforms_hooks_read.h"
 #include "adios_transforms_reqgroup.h"
 
-#ifdef SZ
+#include "sz.h"
+
+#ifdef HAVE_SZ
 
 int adios_transform_sz_is_implemented (void) {return 1;}
 
 int adios_transform_sz_generate_read_subrequests(adios_transform_read_request *reqgroup,
-                                                       adios_transform_pg_read_request *pg_reqgroup)
+                                                 adios_transform_pg_read_request *pg_reqgroup)
 {
     log_info("function: %s\n", __FUNCTION__);
     void *buf = malloc(pg_reqgroup->raw_var_length);
@@ -24,8 +26,8 @@ int adios_transform_sz_generate_read_subrequests(adios_transform_read_request *r
 
 // Do nothing for individual subrequest
 adios_datablock * adios_transform_sz_subrequest_completed(adios_transform_read_request *reqgroup,
-                                                                adios_transform_pg_read_request *pg_reqgroup,
-                                                                adios_transform_raw_read_request *completed_subreq)
+                                                          adios_transform_pg_read_request *pg_reqgroup,
+                                                          adios_transform_raw_read_request *completed_subreq)
 {
     log_info("function: %s\n", __FUNCTION__);
     return NULL;
@@ -34,20 +36,66 @@ adios_datablock * adios_transform_sz_subrequest_completed(adios_transform_read_r
 
 
 adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
-                                                                 adios_transform_pg_read_request *completed_pg_reqgroup)
+                                                           adios_transform_pg_read_request *completed_pg_reqgroup)
 {
     log_info("function: %s\n", __FUNCTION__);
     uint64_t raw_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
-    void* raw_buff = completed_pg_reqgroup->subreqs->data;
-
-    uint64_t orig_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
-    int d = 0;
-    for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
-        orig_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
-
-    void* orig_buff = malloc(orig_size);
+    unsigned char *raw_buff = completed_pg_reqgroup->subreqs->data;
+    unsigned char *bytes = raw_buff;
 
     // Decompress into orig_buff
+    sz_params sz;
+    sz.dataEndianType = LITTLE_ENDIAN_DATA;
+    //sz.sysEndianType = BIG_ENDIAN_DATA;
+    sz.sol_ID = SZ;
+    sz.layers = 1;
+    sz.sampleDistance = 50;
+    sz.quantization_intervals = 0;
+    sz.predThreshold = 0.98;
+    sz.offset = 0;
+    sz.szMode = SZ_DEFAULT_COMPRESSION;
+    sz.gzipMode = 1;
+    sz.errorBoundMode = REL;
+    sz.absErrBound = 1E-6;
+    sz.relBoundRatio = 1E-5;
+    
+    SZ_Init_Params(&sz);
+
+    // Get type info
+    int dtype;
+    switch (reqgroup->transinfo->orig_type)
+    {
+        case adios_double:
+            dtype = SZ_DOUBLE;
+            break;
+        case adios_real:
+            dtype = SZ_FLOAT;
+            break;
+        default:
+            adios_error(err_transform_failure, "No supported data type\n");
+            return NULL;
+            break;
+    }
+    
+    // Get dimension info
+    int ndims = reqgroup->transinfo->orig_ndim;
+    if (ndims > 5)
+    {
+        adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
+        return NULL;
+    }
+    
+    int r[5] = {0,0,0,0,0};
+    int i = 0;
+    for(i = 0; i < ndims; i++)
+    {
+        uint64_t dsize = (uint64_t)(completed_pg_reqgroup->orig_varblock->count[i]);
+        r[5-ndims+i] = dsize;
+    }
+    printf("r: %d %d %d %d %d\n", r[0], r[1], r[2], r[3], r[4]);
+    
+    void* orig_buff;
+    orig_buff = SZ_decompress(dtype, raw_buff, (int)raw_size, r[0], r[1], r[2], r[3], r[4]);
 
     return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, orig_buff);
 }

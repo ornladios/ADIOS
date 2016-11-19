@@ -37,7 +37,7 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lsz"
+    LIBS="$LIBS -lsz -lzlib"
     LDFLAGS="$LDFLAGS $SZ_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $SZ_CPPFLAGS"
 
