@@ -36,18 +36,16 @@ target_link_libraries(no_xml_write_byid adios ${ADIOSLIB_LDADD})
 add_executable(read_no_xml_write_byid read_no_xml_write_byid.c)
 target_link_libraries(read_no_xml_write_byid adiosread ${ADIOSREADLIB_LDADD})
 
-set (PROGS adios_global adios_global_2files adios_read_global
-  adios_read_writeblock adios_read_chunk adios_read_gpp adios_global_no_xml
-  adios_read_global_no_xml no_xml_write_byid read_no_xml_write_byid)
+set (PROGS_READ  adios_read_global adios_read_chunk adios_read_gpp adios_read_global_no_xml )
+set (PROGS_WRITE adios_global adios_global_2files adios_read_global adios_global_no_xml adios_read_writeblock
+                 no_xml_write_byid read_no_xml_write_byid)
 
-foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
-    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
-  endif()
-  if(MPI_LINK_FLAGS)
-    set_target_properties(${PROG} PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
-  endif()
-  target_link_libraries(${PROG} adios ${MPI_C_LIBRARIES})
+foreach (PROG ${PROGS_WRITE})
+  set_property(TARGET ${PROG} PROPERTY COMPILE_FLAGS "${ADIOSLIB_CFLAGS}")
+endforeach()
+
+foreach (PROG ${PROGS_READ})
+  set_property(TARGET ${PROG} PROPERTY COMPILE_FLAGS "${ADIOSREADLIB_CFLAGS}")
 endforeach()
 
 #install(FILES adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array)

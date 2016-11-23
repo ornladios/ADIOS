@@ -17,15 +17,18 @@ target_link_libraries(adios_read_globaltime adiosread ${ADIOSREADLIB_LDADD})
 add_executable(adios_read_globaltime_streaming adios_read_globaltime_streaming.c)
 target_link_libraries(adios_read_globaltime_streaming adiosread ${ADIOSREADLIB_LDADD})
 
-set (PROGS adios_read_globaltime_streaming adios_read_globaltime adios_globaltime_no_xml adios_globaltime)
-foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
-    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
-  endif()
-  if(MPI_LINK_FLAGS)
-    set_target_properties(${PROG} PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
-  endif()
-  target_link_libraries(${PROG} adios ${MPI_C_LIBRARIES})
+set (PROGS_READ adios_read_globaltime_streaming adios_read_globaltime)
+
+set (PROGS_WRITE adios_globaltime_no_xml adios_globaltime)
+
+foreach (PROG ${PROGS_WRITE})
+  set_property(TARGET ${PROG} PROPERTY COMPILE_FLAGS "${ADIOSLIB_CFLAGS}")
+    target_link_libraries(${PROG} adios)
+endforeach()
+
+foreach (PROG ${PROGS_READ})
+  set_property(TARGET ${PROG} PROPERTY COMPILE_FLAGS "${ADIOSREADLIB_CFLAGS}")
+  target_link_libraries(${PROG} adios)
 endforeach()
 
 #install(FILES adios_globaltime.xml gread_restart.ch gwrite_restart.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array-time)

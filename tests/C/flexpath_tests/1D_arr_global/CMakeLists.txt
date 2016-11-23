@@ -5,7 +5,8 @@ include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/src)
 
 add_executable(writer_global writer.c ../common/utils.c)
-target_link_libraries(writer_global adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES}) 
+set_property(TARGET writer_global PROPERTY COMPILE_FLAGS "${ADIOSLIB_CFLAGS}")
+target_link_libraries(writer_global adios ${ADIOSLIB_LDADD})
 #add_custom_target(
 #    writer ALL
 #    COMMAND $(CC) writer.c ../common/utils.c -o writer -I${PROJECT_SOURCE_DIR}/src/public -I${CMAKE_CURRENT_SOURCE_DIR}/../include -ladios -L${PROJECT_BINARY_DIR}/src ${ADIOSLIB_LDADD}
@@ -14,7 +15,8 @@ target_link_libraries(writer_global adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
 
 
 add_executable(reader_global reader.c ../common/utils.c)
-target_link_libraries(reader_global adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+set_property(TARGET reader_global PROPERTY COMPILE_FLAGS "${ADIOSLIB_CFLAGS}")
+target_link_libraries(reader_global adios ${ADIOSLIB_LDADD})
 #add_custom_target(
 #    reader ALL
 #    COMMAND $(CC) reader.c ../common/utils.c -o reader -I${PROJECT_SOURCE_DIR}/src/public -I${CMAKE_CURRENT_SOURCE_DIR}/../include -ladios -L${PROJECT_BINARY_DIR}/src ${ADIOSLIB_LDADD}

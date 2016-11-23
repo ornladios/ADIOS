@@ -42,7 +42,7 @@ foreach (PROG ${PROGS} )
   if(MPI_LINK_FLAGS)
     set_target_properties(${PROG} PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
   endif()
-  target_link_libraries(${PROG} adios ${MPI_C_LIBRARIES})
+  target_link_libraries(${PROG} adios)
 endforeach()
 
 if(BUILD_FORTRAN)
