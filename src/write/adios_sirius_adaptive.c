@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <sys/stat.h>
+#include <float.h>
 // xml parser
 #include <mxml.h>
 
@@ -29,6 +30,7 @@
 #define MAXLEVEL 10
 #define Y_POS 0
 #define X_POS 1
+#define MAX_NODE_DEGREE 100
 
 static char *io_method[MAXLEVEL]; //the IO methods for data output for each level
 static char *io_parameters[MAXLEVEL]; //the IO method parameters
@@ -805,7 +807,7 @@ int insert_node (double * newz, double * newr, double * newfield, int * size,
                   double z, double r, double field)
 {
     int found;
-printf ("(%e, %e)\n", z, r);
+
     found = 0;
     for (int node = 0; node < *size; node++)
     {
@@ -826,6 +828,350 @@ printf ("(%e, %e)\n", z, r);
 
         return (*size) - 1;
     }
+}
+
+int find_mincost (int ** conn, int nvertices, double * r, double * z)
+{
+    int min_idx;
+    double min_cost = DBL_MAX;
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        int n1 = i;
+        int j = 0;
+
+        while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
+        {
+            int n2 = conn[i][j];
+            double edge = sqrt((r[n1] - r[n2]) * (r[n1] - r[n2]) + (z[n1] - z[n2]) * (z[n1] - z[n2]));
+
+            if (edge <= min_cost)
+            {
+                min_cost = edge;
+                min_idx = i * MAX_NODE_DEGREE + j;
+            }
+
+            j++;
+        }
+
+    }
+
+    return min_idx;
+}
+
+void sort2 (int * n1, int * n2)
+{
+    int t;
+
+    if (* n1 > * n2)
+    {
+        t = * n1;
+        * n1 = * n2;
+        * n2 = t;
+    }
+}
+
+void sort3 (int * n1, int * n2, int * n3)
+{
+    int t;
+
+    if (* n1 > * n2)
+    {
+        t = * n1;
+        * n1 = * n2;
+        * n2 = t;
+    }
+
+    if (* n2 > * n3)
+    {
+        t = * n2;
+        * n2 = * n3;
+        * n3 = t;
+    }
+
+    if (* n1 > * n2)
+    {
+        t = * n1;
+        * n1 = * n2;
+        * n2 = t;
+    }
+
+}
+
+
+void insert_triangle (int n1, int n2, int n3, int ** conn)
+{
+    int j = 0, found;
+
+    found = 0;
+    j = 0;
+    while (j < MAX_NODE_DEGREE && conn[n1][j] != -1)
+    {
+        if (conn[n1][j] == n2)
+        {
+            found = 1;
+        }
+
+        j++;
+    }
+
+    if (j == MAX_NODE_DEGREE)
+    {
+        printf ("Reaching max MAX_NODE_DEGREE.\n");
+    }
+    else
+    {
+        if (!found)
+        {
+           conn[n1][j] = n2;
+        }
+    }
+
+    found = 0;
+    j = 0;
+    while (j < MAX_NODE_DEGREE && conn[n1][j] != -1)
+    {
+        if (conn[n1][j] == n3)
+        {
+            found = 1;
+        }
+        
+        j++;
+    }
+
+    if (j == MAX_NODE_DEGREE)
+    {
+        printf ("Reaching max MAX_NODE_DEGREE.\n");
+    }
+    else
+    {
+        if (!found)
+        {
+           conn[n1][j] = n3;
+        }
+    }
+
+    found = 0;
+    j = 0;
+    while (j < MAX_NODE_DEGREE && conn[n2][j] != -1)
+    {
+        if (conn[n2][j] == n3)
+        {
+            found = 1;
+        }
+
+        j++;
+    }
+
+    if (j == MAX_NODE_DEGREE)
+    {
+        printf ("Reaching max MAX_NODE_DEGREE.\n");
+    }
+    else
+    {
+        if (!found)
+        {
+           conn[n2][j] = n3;
+        }
+    }
+
+}
+
+
+int new_node(int ** conn, int v1, int n)
+{
+    int i = 0;
+
+    while (i < MAX_NODE_DEGREE && conn[v1][i] != -1)
+    {
+        if (conn[v1][i] == n)
+            return 0;
+
+        i++;
+    }
+
+    return 1;
+}
+
+int ** build_conn (int nvertices, int * mesh, int nmesh)
+{
+    int ** conn = (int **) malloc (nvertices * 8);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        conn[i] = (int *) malloc (MAX_NODE_DEGREE * 4);
+        for (int j = 0; j < MAX_NODE_DEGREE; j++)
+        {
+            conn[i][j] = -1;
+        }
+    }
+
+    for (int i = 0; i < nmesh; i++)
+    {
+        int n1 = * (mesh + i * 3); 
+        int n2 = * (mesh + i * 3 + 1);
+        int n3 = * (mesh + i * 3 + 2);
+
+        sort3 (&n1, &n2, &n3);
+        insert_triangle (n1, n2, n3, conn);
+    }
+
+    return conn;
+}
+
+void decimate (double * r, double * z, double * field, int nvertices,
+               int * mesh, int nmesh,
+               double * r_new, double * z_new, double * field_new,
+               int * nvertices_new
+              )
+{
+    int vertices_cut = 0;
+    r_new = (double *) malloc (nvertices * 8);
+    z_new = (double *) malloc (nvertices * 8);
+    field_new = (double *) malloc (nvertices * 8);
+
+    int ** conn = build_conn (nvertices, mesh, nmesh);
+    int min_idx = find_mincost (conn, nvertices, r, z);
+
+#if 0
+        for (int j = 0; j < 10; j++)
+        {
+            printf ("%d ", conn[19012][j]);
+        }
+        printf ("\n");
+#endif
+    while ((double)vertices_cut / (double)nvertices < 0.1)
+    {
+        int v1 = min_idx / MAX_NODE_DEGREE;
+        assert (v1 >=0 && v1 < nvertices);
+
+        int v2 = conn[v1][min_idx % MAX_NODE_DEGREE];
+        assert (v2 >=0 && v2 < nvertices);
+
+        sort2 (&v1, &v2);
+
+        int i = 0, j = 0, m = 0, k = 0;
+        while (j < MAX_NODE_DEGREE && conn[v1][j] != -1 
+            && conn[v1][j] != v2)
+        {
+            j++;
+        }
+
+        assert (j != MAX_NODE_DEGREE && conn[v1][j] != -1);
+
+        // 1. To remove (v1, v2)
+        // 2. keep the node ID of v1, remove node ID of v2
+        // 
+        // 3. change v1's position, and value.
+        if (j == MAX_NODE_DEGREE - 1)
+        {
+            conn[v1][j] = -1;
+        }
+        else
+        {
+            while (j < MAX_NODE_DEGREE - 1 && conn[v1][j] != -1)
+            {
+                conn[v1][j] = conn[v1][j + 1];
+                if (conn[v1][j] != -1)
+                {
+                    j++;
+                }
+            }
+        }
+
+        i = 0;
+        m = 0;
+        while ((j + m) < MAX_NODE_DEGREE && conn[v2][i] != -1)
+        {
+            if (new_node(conn, v1, conn[v2][i]))
+            {
+                conn[v1][j + m] = conn[v2][i];
+                m++;
+            }
+
+            conn[v2][i] = -1;
+
+            i++;
+        }
+
+        for (i = 0; i < v2; i++)
+        {
+            j = 0;
+
+            if (i < v1)
+            {
+                while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
+                {
+                    if (conn[i][j] == v2)
+                    {
+                        if (new_node(conn, i, v1))
+                        {
+                            conn[i][j] == v1;
+                        }
+                        else
+                        {
+                        }
+                    }
+
+                    j++;
+                }
+            }
+            else if (i > v1)
+            {
+                while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
+                {
+                    if (conn[i][j] == v2)
+                    {
+                        k = 0;
+                        while (k < MAX_NODE_DEGREE && conn[v1][k] != -1)
+                        {
+                            k++;
+                        }
+
+                        if (k < MAX_NODE_DEGREE)
+                        {
+                            if (new_node(conn, v1, i))
+                            {
+                                conn[v1][k] = i;
+                            }
+
+                            k = j;
+
+                            while (k < MAX_NODE_DEGREE - 1 && conn[i][k] != -1)
+                            {
+                                conn[i][k] = conn[i][k + 1];
+                                k++;
+                            }
+
+                            if (k == MAX_NODE_DEGREE - 1)
+                            {
+                                conn[i][k] = -1;
+                            }
+                        }
+
+                    }
+
+                    j++;
+                }
+            }
+        }
+
+        vertices_cut++;
+        min_idx = find_mincost (conn, nvertices, r, z);
+    }
+
+#if 0
+    for (int i = 0; i < nvertices; i++)
+    {
+        printf ("(%d): ", i);
+        for (int j = 0; j < 20; j++)
+        {
+            printf ("%d ", conn[i][j]);
+        }
+        printf ("\n");
+    }
+#endif
+    * nvertices_new = nvertices - vertices_cut;
 }
 
 void adios_sirius_adaptive_write (struct adios_file_struct * fd
@@ -981,6 +1327,14 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             return 1;
                         }
 
+                        void * r_new, * z_new, * data_new;
+                        int nvertices_new;
+
+                        // Decimation for level 0
+                        decimate (R->data, Z->data, data, nelems,
+                                  mesh->data, mesh_ldims[0],
+                                  r_new, z_new, data_new, &nvertices_new);
+
                         for (int m = 0; m < mesh_ldims[0]; m++)
                         {
                             int n1 = * ((int *) mesh->data + m * 3);
@@ -1007,7 +1361,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             }
                         }  // loop through the node connectivity array
 
-                        printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
+                        //printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
                         newz = (double *) malloc (ntaggedCells * 3 * 8);
                         newr = (double *) malloc (ntaggedCells * 3 * 8);
                         newfield = (double *) malloc (ntaggedCells * 3 * 8);
