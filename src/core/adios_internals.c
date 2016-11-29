@@ -383,7 +383,7 @@ int adios_parse_dimension (const char * dimension
     }
     else
     {
-        dim->dimension.rank = atoi (dimension);
+        dim->dimension.rank = strtol (dimension, NULL, 10);
     }
 
     if (!global_dimension)
