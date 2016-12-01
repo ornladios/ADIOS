@@ -39,9 +39,8 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
                                                            adios_transform_pg_read_request *completed_pg_reqgroup)
 {
     log_info("function: %s\n", __FUNCTION__);
-    uint64_t raw_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
+    int raw_size = (int) completed_pg_reqgroup->raw_var_length;
     unsigned char *raw_buff = completed_pg_reqgroup->subreqs->data;
-    unsigned char *bytes = raw_buff;
 
     // Decompress into orig_buff
     sz_params sz;
@@ -90,12 +89,20 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     for(i = 0; i < ndims; i++)
     {
         uint64_t dsize = (uint64_t)(completed_pg_reqgroup->orig_varblock->count[i]);
-        r[5-ndims+i] = dsize;
+        r[i] = dsize;
     }
-    printf("r: %d %d %d %d %d\n", r[0], r[1], r[2], r[3], r[4]);
     
+    printf("=== SZ decompress ===\n");
+    printf("%10s: %d\n", "dtype", dtype);
+    printf("%10s: %d\n", "raw_size", raw_size);
+    printf("%10s: %d %d %d %d %d ... %d %d %d %d %d\n", "out_buff",
+           raw_buff[0], raw_buff[1], raw_buff[2], raw_buff[3], raw_buff[4],
+           raw_buff[raw_size-5], raw_buff[raw_size-4], raw_buff[raw_size-3], raw_buff[raw_size-2], raw_buff[raw_size-1]);
+    printf("%10s: %d %d %d %d %d\n", "dim", r[0], r[1], r[2], r[3], r[4]);
+    printf("=====================\n");
+
     void* orig_buff;
-    orig_buff = SZ_decompress(dtype, raw_buff, (int)raw_size, r[0], r[1], r[2], r[3], r[4]);
+    orig_buff = SZ_decompress(dtype, raw_buff, raw_size, r[4], r[3], r[2], r[1], r[0]);
 
     return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, orig_buff);
 }

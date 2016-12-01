@@ -72,6 +72,10 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     int outsize;
     int r[5] = {0,0,0,0,0};
 
+    int  errorBoundMode = REL;
+    double absErrBound = 1E-6;
+    double relBoundRatio = 1E-5;
+    
     // Get type info
     int dtype;
     switch (var->pre_transform_type)
@@ -98,7 +102,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         return NULL;
     }
 
-    int i, ii;
+    int i = 0, ii = 0;
     for (i=0; i<ndims; i++)
     {
         uint dsize = (uint) adios_get_dim_value(&d->dimension);
@@ -106,13 +110,48 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             ii = ndims - 1 - i;
         else
             ii = i;
-        r[5-ndims+ii] = dsize;
+        r[ii] = dsize;
         d = d->next;
     }
-    printf("r: %d %d %d %d %d\n", r[0], r[1], r[2], r[3], r[4]);
+
+    /* SZ parameters */
+    struct adios_transform_spec_kv_pair* param;
+    for (i=0; i<var->transform_spec->param_count; i++)
+    {
+        param = &(var->transform_spec->params[i]);
+        if (strcmp(param->key, "errorboundmode") == 0)
+        {
+            errorBoundMode = atoi(param->value);
+        }
+        else if (strcmp(param->key, "abserrbound") == 0)
+        {
+            absErrBound = atof(param->value);
+        }
+        else if (strcmp(param->key, "relboundratio") == 0)
+        {
+            relBoundRatio = atof(param->value);
+        }
+        else
+        {
+            log_warn("An unknown SZ parameter: %s\n", param->key);
+        }
+    }
     
-    bytes = SZ_compress(dtype, (void *) input_buff, &outsize, r[0], r[1], r[2], r[3], r[4]);
-    printf("SZ outsize: %d\n", outsize);
+    
+    bytes = SZ_compress_args (dtype, (void *) input_buff, &outsize,
+                              errorBoundMode, absErrBound, relBoundRatio,
+                              r[4], r[3], r[2], r[1], r[0]);
+
+    unsigned char *raw_buff = (unsigned char*) bytes;
+    int raw_size = outsize;
+    printf("=== SZ compress ===\n");
+    printf("%10s: %d\n", "dtype", dtype);
+    printf("%10s: %d\n", "out_size", raw_size);
+    printf("%10s: %d %d %d %d %d ... %d %d %d %d %d\n", "out_buff",
+           raw_buff[0], raw_buff[1], raw_buff[2], raw_buff[3], raw_buff[4],
+           raw_buff[raw_size-5], raw_buff[raw_size-4], raw_buff[raw_size-3], raw_buff[raw_size-2], raw_buff[raw_size-1]);
+    printf("%10s: %d %d %d %d %d\n", "dim", r[0], r[1], r[2], r[3], r[4]);
+    printf("===================\n");
         
     // Output
     uint64_t output_size = outsize/* Compute how much output size we need */;
