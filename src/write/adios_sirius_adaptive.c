@@ -1019,28 +1019,240 @@ int ** build_conn (int nvertices, int * mesh, int nmesh)
     return conn;
 }
 
+int intersect (int ** conn, int n1, int n2, int * n3_list)
+{
+    int i, j, c;
+    assert (n3_list);
+
+    i = 0;
+    c = 0;
+    while (i < MAX_NODE_DEGREE && conn[n1][i] != -1)
+    {
+        j = 0;
+        while (j < MAX_NODE_DEGREE && conn[n2][j] != -1)
+        {
+            if (conn[n1][i] == conn[n2][j])
+            {
+                n3_list[c++] = conn[n1][i];
+            }
+
+            j++;
+        }
+
+        i++;
+    }
+
+    return c;
+}
+
+void prep_mesh (int ** conn, int nvertices, int nvertices_new)
+                
+{
+    for (int i = 0; i < nvertices; i++)
+    {
+        int j = 0; 
+        while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
+        {
+            int n1 = i, n2 = conn[i][j];
+            int k = 0;
+
+            while (k < MAX_NODE_DEGREE && conn[n2][k] != -1)
+            {
+                if (conn[n2][k] == n1) break;
+
+                k++;
+            }
+
+            if (k < MAX_NODE_DEGREE && conn[n2][k] == -1)
+            {
+                conn[n2][k] = n1;
+            }
+
+            j++;
+        }
+    }
+}
+
+
+void rebuild_conn (int ** conn, int nvertices, int nvertices_new, 
+                   int * nodes_cut)
+{
+    for (int i = 0; i < nvertices; i++)
+    {
+        int j = 0;
+
+        while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
+        {
+            conn[i][j] -= to_offset (nodes_cut, nvertices - nvertices_new,
+                                     conn[i][j]);
+            j++;
+        }
+    }
+}
+
+
+int build_mesh (int ** conn, int nvertices, int nvertices_new,
+                int * nodes_cut, int * mesh)
+{
+    rebuild_conn (conn, nvertices, nvertices_new, nodes_cut);
+
+    mesh = malloc (nvertices_new * 3 * 4);
+    assert (mesh);
+#if 0
+    for (int i = 0; i < nvertices; i++)
+    {
+        int j = 0;
+        while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
+        {
+            int n1 = i, n2 = conn[i][j];
+            int k = 0;
+
+            while (k < MAX_NODE_DEGREE && conn[n2][k] != -1)
+            {
+                if (conn[n2][k] == n1) break;
+
+                k++;
+            }
+
+            if (k < MAX_NODE_DEGREE && conn[n2][k] == -1)
+            {
+                conn[n2][k] = n1;
+            }
+
+            j++;
+        }
+    }
+#endif
+#if 0
+    int cnt = 0;
+    for (int i = 0; i < nvertices; i++)
+    {
+        if (conn[i][0] == -1)
+             cnt++;
+    }
+
+    printf ("cnt = %d\n", cnt);
+#endif
+    int * n3_list = 0, len = 0, lastcell;
+#define MAX_COMMON_NODES 10
+    n3_list = malloc (MAX_COMMON_NODES *4);
+    assert (n3_list);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        int j = 0, k = 0;
+        lastcell = 0;
+
+        while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
+        {
+            int n1 = i, n2 = conn[i][j];
+
+            len = intersect (conn, n1, n2, n3_list);
+            if (len > 0)
+            {
+                for (k = 0; k < len; k++)
+                {
+                    * (mesh + lastcell * 3) = n1;  
+                    * (mesh + lastcell * 3 + 1) = n2;  
+                    * (mesh + lastcell * 3 + 2) = n3_list[k]; 
+                    lastcell++; 
+                }
+            }
+
+            j++;
+        }
+    }
+
+    free (n3_list);
+    n3_list = 0;
+
+    return lastcell;
+}
+
+int to_offset (int * nodes_cut, int nnodes_cut, int my_node_id)
+{
+    int i;
+ 
+    for (i = 0; i < nnodes_cut; i++)
+    {
+        if (my_node_id < nodes_cut[i])
+        {
+            return i;
+        }
+    }
+
+    return nnodes_cut;
+}
+
+int * get_nodes_cut (int ** conn, int nvertices, int nvertices_new)
+{
+    int * nodes_cut = malloc ((nvertices - nvertices_new) * 4);
+    assert (nodes_cut);
+
+    int next = 0;
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        if (conn[i][0] == -1)
+        {
+            nodes_cut[next++] = i;
+        }
+    }
+
+    assert (nvertices - nvertices_new == next);
+
+    return nodes_cut;
+}
+
+void build_field (int ** conn, int nvertices, int nvertices_new, int * nodes_cut,
+                  double * r, double * z, double * field,
+                  double * r_new, double * z_new, double * field_new)
+{
+    int i, prev, off;
+
+    prev = 0;
+    off = 0;
+    for (i = 0; i < nvertices - nvertices_new; i++)
+    {
+        int elems_to_cp = nodes_cut[i] - prev;
+        memcpy (r_new, r + off, elems_to_cp * 8); 
+        memcpy (z_new, z + off, elems_to_cp * 8); 
+        memcpy (field_new, field + off, elems_to_cp * 8);
+
+        r_new += elems_to_cp;
+        z_new += elems_to_cp;
+        field_new += elems_to_cp;
+
+        off += elems_to_cp + 1;
+        prev = nodes_cut[i] + 1;
+    }
+}
+
+int get_node_degree (int ** conn, int n)
+{
+    int i = 0;
+
+    while (i < MAX_NODE_DEGREE && conn[n][i] != -1)
+    {
+        i++;
+    }
+
+    return i;
+}
+
 void decimate (double * r, double * z, double * field, int nvertices,
                int * mesh, int nmesh,
-               double * r_new, double * z_new, double * field_new,
-               int * nvertices_new
+               double ** r_reduced, double ** z_reduced, double ** field_reduced, int * nvertices_new,
+               int ** mesh_reduced, int * nmesh_new
               )
 {
+    double * r_new, * z_new, * field_new, * mesh_new;
     int vertices_cut = 0;
-    r_new = (double *) malloc (nvertices * 8);
-    z_new = (double *) malloc (nvertices * 8);
-    field_new = (double *) malloc (nvertices * 8);
-
     int ** conn = build_conn (nvertices, mesh, nmesh);
     int min_idx = find_mincost (conn, nvertices, r, z);
 
-#if 0
-        for (int j = 0; j < 10; j++)
-        {
-            printf ("%d ", conn[19012][j]);
-        }
-        printf ("\n");
-#endif
     while ((double)vertices_cut / (double)nvertices < 0.1)
+//    while (vertices_cut < 3000)
     {
         int v1 = min_idx / MAX_NODE_DEGREE;
         assert (v1 >=0 && v1 < nvertices);
@@ -1057,7 +1269,7 @@ void decimate (double * r, double * z, double * field, int nvertices,
             j++;
         }
 
-        assert (j != MAX_NODE_DEGREE && conn[v1][j] != -1);
+        assert (j < MAX_NODE_DEGREE && conn[v1][j] == v2);
 
         // 1. To remove (v1, v2)
         // 2. keep the node ID of v1, remove node ID of v2
@@ -1066,6 +1278,7 @@ void decimate (double * r, double * z, double * field, int nvertices,
         if (j == MAX_NODE_DEGREE - 1)
         {
             conn[v1][j] = -1;
+            assert (0);
         }
         else
         {
@@ -1077,6 +1290,8 @@ void decimate (double * r, double * z, double * field, int nvertices,
                     j++;
                 }
             }
+
+            assert (j < MAX_NODE_DEGREE - 1);
         }
 
         i = 0;
@@ -1094,6 +1309,8 @@ void decimate (double * r, double * z, double * field, int nvertices,
             i++;
         }
 
+        assert (j + m < MAX_NODE_DEGREE);
+
         for (i = 0; i < v2; i++)
         {
             j = 0;
@@ -1106,14 +1323,26 @@ void decimate (double * r, double * z, double * field, int nvertices,
                     {
                         if (new_node(conn, i, v1))
                         {
-                            conn[i][j] == v1;
+                            conn[i][j] = v1;
+                            j++;
                         }
                         else
                         {
+                            k = j;
+                            while (k < MAX_NODE_DEGREE - 1 && conn[i][k] != -1)
+                            {
+                                conn[i][k] = conn[i][k + 1];
+                                if (conn[i][k] != -1)
+                                {
+                                    k++;
+                                }
+                            }
                         }
                     }
-
-                    j++;
+                    else
+                    {
+                        j++;
+                    }
                 }
             }
             else if (i > v1)
@@ -1171,8 +1400,44 @@ void decimate (double * r, double * z, double * field, int nvertices,
         printf ("\n");
     }
 #endif
+
     * nvertices_new = nvertices - vertices_cut;
+    printf ("nvertices_old = %d, nvertices_new = %d\n", nvertices, * nvertices_new);
+    prep_mesh (conn, nvertices, * nvertices_new);
+
+    r_new = (double *) malloc ((* nvertices_new) * 8);
+    z_new = (double *) malloc ((* nvertices_new) * 8);
+    field_new = (double *) malloc ((*nvertices_new) * 8);
+    assert (r_new && z_new && field_new);
+   
+
+    int * nodes_cut = get_nodes_cut (conn, nvertices, * nvertices_new);
+
+    build_field (conn, nvertices, * nvertices_new, nodes_cut,
+                 r, z, field, 
+                 r_new, z_new, field_new);
+
+    * nmesh_new = build_mesh (conn, nvertices, * nvertices_new, 
+                              nodes_cut, mesh_new);
+
+    free (nodes_cut);
+
+    * r_reduced = r_new;
+    * z_reduced = z_new;
+    * field_reduced = field_new;
+    * mesh_reduced = mesh_new;
 }
+
+#define DEFINE_VAR_LEVEL(varname, l, type)         \  
+    adios_common_define_var (md->level[l].grp      \
+                            ,varname               \
+                            ,var->path             \
+                            ,type                  \
+                            ,new_local_dimensions  \
+                            ,new_global_dimensions \
+                            ,new_local_offsets     \
+                            )
+
 
 void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                  ,struct adios_var_struct * v
@@ -1196,6 +1461,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
     double * newz, * newr, * newfield;
     int * newmesh;
     int newsize = 0, cell_cnt = 0;
+    void * r_reduced = 0, * z_reduced = 0, * data_reduced = 0;
+    int nvertices_new;
+    int * mesh_reduced = 0, nmesh_reduced;
 
     for (l = 0; l < nlevels; l++)
     {
@@ -1274,6 +1542,28 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         var->local_offsets = print_dimensions (1, offsets);
                     }
                 } 
+                else if (l == 2)
+                {
+                    var->data = data;
+                     
+                    if (!strcmp (v->name, "R")
+                     || !strcmp (v->name, "Z"))
+                    {
+                        ldims[0] = gdims[0] = nvertices_new;
+                        offsets[0] = 0;
+
+                        var->global_dimensions = print_dimensions (1, gdims);
+                        var->local_dimensions = print_dimensions (1, ldims);
+                        var->local_offsets = print_dimensions (1, offsets);
+
+                    }
+                    else
+                    {
+                        var->global_dimensions = print_dimensions (1, gdims);
+                        var->local_dimensions = print_dimensions (1, ldims);
+                        var->local_offsets = print_dimensions (1, offsets);
+                    }
+                }
 
                 if (!strcmp (v->name, "dpot"))
                 {
@@ -1327,13 +1617,13 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             return 1;
                         }
 
-                        void * r_new, * z_new, * data_new;
-                        int nvertices_new;
-
                         // Decimation for level 0
-                        decimate (R->data, Z->data, data, nelems,
-                                  mesh->data, mesh_ldims[0],
-                                  r_new, z_new, data_new, &nvertices_new);
+                        decimate (R->data, Z->data, data, 
+                                  nelems, mesh->data, mesh_ldims[0],
+                                  &r_reduced, &z_reduced, &data_reduced, 
+                                  &nvertices_new, &mesh_reduced, 
+                                  &nmesh_reduced
+                                 );
 
                         for (int m = 0; m < mesh_ldims[0]; m++)
                         {
@@ -1402,6 +1692,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     else if (l == 1)
                     {
                     }
+                    else if (l == 2)
+                    {
+                    }
                 }  // if dpot
             } // if double
             else
@@ -1453,33 +1746,10 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_global_dimensions = print_dimensions (1, &new_gdims);
                     new_local_dimensions = print_dimensions (1, &new_ldims);
                     new_local_offsets = print_dimensions (1, &new_offsets);
-
-                    adios_common_define_var (md->level[1].grp
-                                        ,"R/L1"
-                                        ,var->path
-                                        ,var->type
-                                        ,new_local_dimensions
-                                        ,new_global_dimensions
-                                        ,new_local_offsets
-                                        );
-
-                    adios_common_define_var (md->level[1].grp
-                                        , "Z/L1"
-                                        ,var->path
-                                        ,var->type
-                                        ,new_local_dimensions
-                                        ,new_global_dimensions
-                                        ,new_local_offsets
-                                        );
-
-                    adios_common_define_var (md->level[1].grp
-                                        , "dpot/L1"
-                                        ,var->path
-                                        ,var->type
-                                        ,new_local_dimensions
-                                        ,new_global_dimensions
-                                        ,new_local_offsets
-                                        );
+                    
+                    DEFINE_VAR_LEVEL("R/L1",1,adios_double);
+                    DEFINE_VAR_LEVEL("Z/L1",1,adios_double);
+                    DEFINE_VAR_LEVEL("dpot/L1",1,adios_double);
 
                     new_ldims[0] = ntaggedCells;
                     new_ldims[1] = 3;
@@ -1487,16 +1757,31 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_offsets[0] = 0;
                     new_offsets[1] = 0;
                     new_local_offsets = print_dimensions (2, &new_offsets);
+                    new_global_dimensions = "";
 
-                    adios_common_define_var (md->level[1].grp
-                                        , "mesh/L1"
-                                        ,var->path
-                                        ,adios_integer
-                                        ,new_local_dimensions
-                                        ,""
-                                        ,new_local_offsets
-                                        );
+                    DEFINE_VAR_LEVEL("mesh/L1",1,adios_integer);
+///////////
+                    new_gdims[0] = nvertices_new;
+                    new_ldims[0] = nvertices_new;
+                    new_offsets[0] = 0;
 
+                    new_global_dimensions = print_dimensions (1, &new_gdims);
+                    new_local_dimensions = print_dimensions (1, &new_ldims);
+                    new_local_offsets = print_dimensions (1, &new_offsets);
+
+                    DEFINE_VAR_LEVEL("R/L2",2,adios_double);
+                    DEFINE_VAR_LEVEL("Z/L2",2,adios_double);
+                    DEFINE_VAR_LEVEL("dpot/L2",2,adios_double);
+
+                    new_ldims[0] = nmesh_reduced;
+                    new_ldims[1] = 3;
+                    new_local_dimensions = print_dimensions (2, &new_ldims);
+                    new_offsets[0] = 0;
+                    new_offsets[1] = 0;
+                    new_local_offsets = print_dimensions (2, &new_offsets);
+                    new_global_dimensions = "";
+
+                    DEFINE_VAR_LEVEL("mesh/L2",2,adios_integer);
                 }
             }
 
@@ -1506,7 +1791,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
         if ( (!strcmp (v->name, "R") || !strcmp (v->name, "Z") 
              || !strcmp (v->name, "mesh") || !strcmp (v->name, "dpot")) 
-           && l == 1)
+           && (l == 1 || l == 2))
         {
             // do not write R and Z is level 1
         }
@@ -1523,6 +1808,12 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     do_write (md->level[1].fd, "Z/L1", newz);
                     do_write (md->level[1].fd, "mesh/L1", newmesh);
                     do_write (md->level[1].fd, "dpot/L1", newfield);
+#if 1
+                    do_write (md->level[2].fd, "R/L2", r_reduced);
+//                    do_write (md->level[2].fd, "Z/L2", z_reduced);
+//                    do_write (md->level[2].fd, "mesh/L2", mesh_reduced);
+//                    do_write (md->level[2].fd, "dpot/L2", data_reduced);
+#endif
                 }
             }
         } // if
