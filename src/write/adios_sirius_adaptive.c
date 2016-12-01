@@ -1123,7 +1123,7 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
         }
     }
 #endif
-#if 0
+#if 1
     int cnt = 0;
     for (int i = 0; i < nvertices; i++)
     {
@@ -1133,7 +1133,7 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
 
     printf ("cnt = %d\n", cnt);
 #endif
-    int * n3_list = 0, len = 0, lastcell;
+    int * n3_list = 0, len = 0, lastcell = 0;
 #define MAX_COMMON_NODES 10
     n3_list = malloc (MAX_COMMON_NODES *4);
     assert (n3_list);
@@ -1141,7 +1141,6 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
     for (int i = 0; i < nvertices; i++)
     {
         int j = 0, k = 0;
-        lastcell = 0;
 
         while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
         {
@@ -1426,6 +1425,8 @@ void decimate (double * r, double * z, double * field, int nvertices,
     * z_reduced = z_new;
     * field_reduced = field_new;
     * mesh_reduced = mesh_new;
+
+printf ("nmesh_new = %d\n", * nmesh_new);
 }
 
 #define DEFINE_VAR_LEVEL(varname, l, type)         \  
@@ -1810,9 +1811,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     do_write (md->level[1].fd, "dpot/L1", newfield);
 #if 1
                     do_write (md->level[2].fd, "R/L2", r_reduced);
-//                    do_write (md->level[2].fd, "Z/L2", z_reduced);
-//                    do_write (md->level[2].fd, "mesh/L2", mesh_reduced);
-//                    do_write (md->level[2].fd, "dpot/L2", data_reduced);
+                    do_write (md->level[2].fd, "Z/L2", z_reduced);
+                    do_write (md->level[2].fd, "mesh/L2", mesh_reduced);
+                    do_write (md->level[2].fd, "dpot/L2", data_reduced);
 #endif
                 }
             }
