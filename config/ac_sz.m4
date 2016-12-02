@@ -24,7 +24,7 @@ AM_CONDITIONAL(HAVE_SZ,true)
 AC_ARG_WITH(sz,
         [  --with-sz=DIR      Location of SZ library],
         [SZ_LDFLAGS="-L$withval/lib";
-         SZ_LIBS="-lsz";
+         SZ_LIBS="-lsz -lzlib";
          SZ_CPPFLAGS="-I$withval/include";],
         [with_sz=no])
 
