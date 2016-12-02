@@ -1092,11 +1092,11 @@ void rebuild_conn (int ** conn, int nvertices, int nvertices_new,
 
 
 int build_mesh (int ** conn, int nvertices, int nvertices_new,
-                int * nodes_cut, int * mesh)
+                int * nodes_cut, int ** mesh_new)
 {
     rebuild_conn (conn, nvertices, nvertices_new, nodes_cut);
 
-    mesh = malloc (nvertices_new * 3 * 4);
+    int * mesh = malloc (nvertices_new * 3 * 4);
     assert (mesh);
 #if 0
     for (int i = 0; i < nvertices; i++)
@@ -1164,6 +1164,8 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
 
     free (n3_list);
     n3_list = 0;
+
+    * mesh_new = mesh;
 
     return lastcell;
 }
@@ -1417,7 +1419,7 @@ void decimate (double * r, double * z, double * field, int nvertices,
                  r_new, z_new, field_new);
 
     * nmesh_new = build_mesh (conn, nvertices, * nvertices_new, 
-                              nodes_cut, mesh_new);
+                              nodes_cut, &mesh_new);
 
     free (nodes_cut);
 
@@ -1806,14 +1808,28 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                 if (!strcmp (v->name, "dpot") && l == 0)
                 {
                     do_write (md->level[1].fd, "R/L1", newr);
+                    free (newr);
+
                     do_write (md->level[1].fd, "Z/L1", newz);
+                    free (newz);
+
                     do_write (md->level[1].fd, "mesh/L1", newmesh);
+                    free (newmesh);
+
                     do_write (md->level[1].fd, "dpot/L1", newfield);
+                    free (newfield);
 #if 1
                     do_write (md->level[2].fd, "R/L2", r_reduced);
+                    free (r_reduced);
+
                     do_write (md->level[2].fd, "Z/L2", z_reduced);
+                    free (z_reduced);
+
                     do_write (md->level[2].fd, "mesh/L2", mesh_reduced);
+                    free (mesh_reduced);
+
                     do_write (md->level[2].fd, "dpot/L2", data_reduced);
+                    free (data_reduced);
 #endif
                 }
             }
