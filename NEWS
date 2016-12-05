@@ -1,12 +1,26 @@
-    - performance bug in MPI_AGGREGATE method since 1.9.0 fixed 
-    - collect min/max statistics only by default
-      adios_declare_group() signature changed with option for statistics 
-      collection: off, minmax, full
-    - added ZFP lossy compression transform method
+1.11.0 Release November 2016
+    - Time aggregation (temporal aggregation of an output in memory)
+      see adios_set_time_aggregation() or the <time-aggregation> element in the XML syntax.
+    - ZFP lossy compression transform method
+    - Python wrapper includes functions for:
+        - Selecting transforms and time aggregation: adios_set_transform()
+        - Time aggregation: adios_set_time_aggregation()
+        - Set maximum buffer size used by any ADIOS group: adios_set_max_buffer_size()
+    - Collect min/max statistics only by default
+      adios_declare_group() last argument type changed to be an option for statistics. 
+      Options are: adios_stat_no, adios_stat_minmax, adios_stat_full, and adios_stat_default, which is minmax
+    - Added functions to C API to detect available methods in the ADIOS installation
+        adios.h: adios_available_write_methods()
+        adios_read.h: adios_available_read_methods()
+        adios_transform_methods.h: adios_available_transform_methods()
+        adios_query.h: adios_available_query_methods()
+    - Performance bug in MPI_AGGREGATE method in 1.9/1.10 fixed 
     - fix: bug building with hdf5 1.10
 
 1.10.0 Release July 2016
+    - Updated Query API and Minmax, FastBit and Alacrity query methods
     - Fortran API for inquiring selections
+    - ADIOS builds without first installing Mini-XML separately
     - bprecover utility
       - recover a BP file which has a damaged index data
     - adios_group_size() optional now

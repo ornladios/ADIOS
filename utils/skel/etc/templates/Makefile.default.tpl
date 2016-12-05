@@ -39,7 +39,7 @@ deploy:
 	cp $(APP)_skel.xml $(DEST_DIR)/$(APP)_skel.xml.in
 	cp $(CTESTS) submit* $(DEST_DIR)
 	cp $(FTESTS) submit* $(DEST_DIR)
-	cp $(prefix)/bin/set_method.sh $(DEST_DIR)
+	cp $(prefix)/bin/skel_set_method.sh $(DEST_DIR)
 	cp $(prefix)/bin/skel_cat.py $(DEST_DIR)
 
 clean:

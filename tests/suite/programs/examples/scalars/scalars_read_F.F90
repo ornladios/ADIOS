@@ -46,6 +46,8 @@ program scalars_read
     call MPI_Comm_rank (comm, rank, ierr)
     call MPI_Comm_size (comm, size, ierr);
 
+    OPEN(1,FILE="f_read.txt",FORM="FORMATTED",STATUS="REPLACE",ACTION="WRITE")
+
     call adios_read_init_method (method, comm, "verbose=3", ierr);
 
     call adios_read_open (f, filename, method, comm, ADIOS_LOCKMODE_NONE, 1.0, ierr);
@@ -74,29 +76,31 @@ program scalars_read
     ! the above variables contain the value only at this point
 
     if (rank == 0) then
-        write (*, '("int*1      v1  = ",i3)') v1
-        write (*, '("int*2      v2  = ",i3)') v2
-        write (*, '("int*4      v3  = ",i3)') v3
-        write (*, '("int*8      v4  = ",i3)') v4
+        write (1, '("int*1      v1  = ",i3)') v1
+        write (1, '("int*2      v2  = ",i3)') v2
+        write (1, '("int*4      v3  = ",i3)') v3
+        write (1, '("int*8      v4  = ",i3)') v4
 
-        write (*, '("int*1      v5  = ",i3)') v5
-        write (*, '("int*2      v6  = ",i3)') v6
-        write (*, '("int*4      v7  = ",i3)') v7
-        write (*, '("int*8      v8  = ",i3)') v8
+        write (1, '("int*1      v5  = ",i3)') v5
+        write (1, '("int*2      v6  = ",i3)') v6
+        write (1, '("int*4      v7  = ",i3)') v7
+        write (1, '("int*8      v8  = ",i3)') v8
 
-        write (*, '("real*4     v9  = ",f6.2)') v9
-        write (*, '("real*8     v10 = ",f6.2)') v10
+        write (1, '("real*4     v9  = ",f6.2)') v9
+        write (1, '("real*8     v10 = ",f6.2)') v10
 
-        write (*, '("string     v11 = ",a)') trim(v11)
+        write (1, '("string     v11 = ",a)') trim(v11)
 
-        write (*, '("complex*8  v12 = (",f6.2,", ", f6.2,")")') v12
-        write (*, '("complex*16 v13 = (",f6.2,", ", f6.2,")")') v13
+        write (1, '("complex*8  v12 = (",f6.2,", ", f6.2,")")') v12
+        write (1, '("complex*16 v13 = (",f6.2,", ", f6.2,")")') v13
     endif
 
     call adios_read_close (f, ierr)
     call MPI_Barrier (comm, ierr);
     call adios_read_finalize_method (method, ierr);
     call MPI_Finalize (ierr);
+
+    CLOSE(UNIT=1)
 
 end program
 

@@ -5,7 +5,7 @@ if HAVE_MPI
 endif
 
 
-dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py
+dist_bin_SCRIPTS = bin/skel bin/skel_set_method.sh bin/skel_extract.py bin/skel_cat.py
 
 pythonlibdir=@libdir@/python
 

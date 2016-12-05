@@ -108,6 +108,7 @@ call adios_set_max_buffer_size (sizeMB)
 %
 
 \subsection{adios\_declare\_group}
+\label{func:adios-declare_group}
 
 This function is used to declare a new ADIOS group. The concept of ADIOS group, variable, 
 attribute is detailed in Chapter \ref{chapter-xml}.
@@ -129,8 +130,8 @@ attribute, an empty string (\verb+""+) should be passed
 
 \item stats - a flag indicating whether or not to generate ADIOS statistics during writing, 
 such as min, max, average and standard deviation. The value of \textit{stats} can be either 
-\verb+adios_stat_no+,  \verb+adios_stat_default+, or \verb+adios_stat_full+. If stats is set to \verb+adios_stat_default+, 
-ADIOS internally calculates and outputs min and max for each processor automatically. If it is set to full, additional statistics are calculated including partially calculated data for average and standard deviation, which are completed at read time. 
+\verb+adios_stat_no+,  \verb+adios_stat_minmax+, \verb+adios_stat_default+, or \verb+adios_stat_full+. If stats is set to \verb+adios_stat_minmax+, 
+ADIOS internally calculates and outputs min and max for each processor automatically. This is the default behavior since version 1.11.  If it is set to full, additional statistics are calculated including partially calculated data for average and standard deviation, which are completed at read time. 
 The downside of turning stats on is that it consumes more CPU and memory during writing 
 and the metadata will be larger. Min and max should be turned on to enable the MINMAX query method to work on the dataset (see Chapter~\ref{chapter:query_api}). 
 \end{itemize}

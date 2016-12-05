@@ -208,6 +208,21 @@ void adios_query_free(ADIOS_QUERY* q);
 /* conversion from string to query operation enum type */
 enum ADIOS_PREDICATE_MODE adios_query_getOp(const char* opStr);
 
+
+typedef struct
+{
+    int nmethods; 		// number of available query methods
+    char ** name;     	// array of query method names
+    enum ADIOS_QUERY_METHOD * methodID; // enum ID of the method in source code
+} ADIOS_AVAILABLE_QUERY_METHODS;
+
+/* Provide the names of query methods available in the running application
+ */
+ADIOS_AVAILABLE_QUERY_METHODS * adios_available_query_methods();
+
+void adios_available_query_methods_free (ADIOS_AVAILABLE_QUERY_METHODS *);
+
+
 #endif /* __INCLUDED_FROM_FORTRAN_API__ */
 
 #ifdef __cplusplus

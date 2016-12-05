@@ -61,7 +61,7 @@ See the \verb+ADIOS_SELECTION_POINTS_STRUCT+ struct in \verb+adios_selection.h+ 
 \linebreak \verb+query_result->npoints+ shows the total number of exact hits in all selections. This can be used to allocate memory at once for all data. 
 One can use any of the selections individually in an \verb+adios_schedule_read()+ call to retrieve the data to those points, or use the convenience function above \verb+adios_query_read_boundingbox()+ to retrieve the data points and fill an array covering the original bounding box. The other points in the bounding box are not modified by the function, so one can pre-fill it with any default value. 
 
-Each sub-query needs to be deleted separately to free all memory at the end (freeing the top query does not free the sub-queries. The selection should also be deleted. In ADIOS 1.10, we cannot use the \linebreak \verb+adios_selection_delete()+. Therefore, the point-lists must be manually freed separately. 
+Each sub-query needs to be deleted separately to free all memory at the end (freeing the top query does not free the sub-queries. The selection should also be deleted. We cannot use the \linebreak \verb+adios_selection_delete()+. Therefore, the point-lists must be manually freed separately. 
 
 \begin{lstlisting}[alsolanguage=C]
 adios_query_free(q);             // free all the query structs
@@ -80,7 +80,7 @@ adios_selection_delete (boxsel); // don't forget the original selection
 %
 % SECTION: Query methods
 %
-\section{Query methods in ADIOS 1.10}
+\section{Query methods}
 
 Just as with the write/read and transformation methods, ADIOS is designed to allow for adding new indexing and querying methods later. 
 
@@ -109,7 +109,7 @@ The evaluate function is designed to return a subset of all possible solutions i
 It may look like an overcomplicated design that each sub query has it's own input selection and then, the evaluate function takes yet another selection as input. The reason for this is that one may want to evaluate multiple sub-queries on different columns of a table (2D array) and read the data of yet another column from the rows that match the query. See an example at the end of this chapter in section~\ref{sec:query-example-columns}. The requirement about the selections is therefore that their shape matches (dimensionality and size) but not necessarily their locations (offsets).
 
 \subsection{Default query method}
-In ADIOS 1.10, unless the user picks a query method, the Minmax method will be used by default if the statistics are present in the BP file. Otherwise, FastBit will be used, if ADIOS is built with FastBit support. Fastbit works on BP files that have not been indexed, but it will evaluate the query by reading all the data and therefore will be very slow. Alacrity will not be picked by ADIOS automatically in this version.
+Unless the user picks a query method, the Minmax method will be used by default if the statistics are present in the BP file. Otherwise, FastBit will be used, if ADIOS is built with FastBit support. Fastbit works on BP files that have not been indexed, but it will evaluate the query by reading all the data and therefore will be very slow. Alacrity will not be picked by ADIOS automatically in this version.
 
 
 

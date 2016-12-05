@@ -19,7 +19,7 @@ do
 echo $bpy.get_method() 
 ##dpre_rm
 rm -rf out*
-./set_method.sh $bpy.get_method() ${project}_skel.xml.in ${project}_skel.xml 
+./skel_set_method.sh $bpy.get_method() ${project}_skel.xml.in ${project}_skel.xml 
 mpirun -n $bpy.get_num_procs() $executable
 mv skel_time.xml ${project}_skel_time_\${PBS_JOBID}_\${i}.xml
 ##dpost_rm

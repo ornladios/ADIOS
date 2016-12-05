@@ -263,6 +263,34 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
 }
 #endif
 
+/** Set up a simple MPI communication chain from ranks 0,...,size-1
+ *  This chain is used in the cascaded open, which is faster if
+ *  this chain is already set up by MPI.
+ */
+
+static void init_mpi_chain(MPI_Comm comm)
+{
+	int rank, size;
+	int token=1;
+	MPI_Request req;
+	MPI_Status status;
+	MPI_Comm_rank(comm, &rank);
+	MPI_Comm_size(comm, &size);
+
+	//if (rank == 0)
+	//	log_info ("Initialize MPI chain between ranks 0..%d\n", size-1);
+
+    // Send a message to next process and receive from previous to
+    if (rank < size-1)
+    {
+    	MPI_Isend (&token, 1, MPI_INT, rank+1, rank, comm, &req);
+    }
+
+    if (rank > 0)
+    {
+    	MPI_Recv (&token, 1, MPI_INT, rank-1, rank-1, comm, &status);
+    }
+}
 
 void adios_mpi_init (const PairStruct * parameters
                     ,struct adios_method_struct * method
@@ -289,6 +317,7 @@ void adios_mpi_init (const PairStruct * parameters
     md->index = adios_alloc_index_v1(1); // with hashtables
 
     adios_buffer_struct_init (&md->b);
+    init_mpi_chain (md->group_comm);
 #if COLLECT_METRICS
     // init the pointer for the first go around avoiding the bad free in open
     timing.t24 = 0;

@@ -21,7 +21,7 @@ for i in {1..$$ITERATIONS$$}
 do
 echo $$METHOD$$
 $$PRE_RM$$
-./set_method.sh $$METHOD$$ $$APP$$_skel.xml.in $$APP$$_skel.xml 
+./skel_set_method.sh $$METHOD$$ $$APP$$_skel.xml.in $$APP$$_skel.xml 
 mpiexec ./$$EXEC$$
 mv $$APP$$_skel_time.xml $$APP$$_skel_time_${PBS_JOBID}_${i}.xml
 $$POST_RM$$

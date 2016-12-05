@@ -495,10 +495,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
                 }
                 else 
                 {
-                    // index is in memory, update time index and offsets
-                    if (fd->mode == adios_mode_append) {
-                        fd->group->time_index++;
-                    }
+                    // index is in memory, right now there is nothing to do here
                 }
             }
             else 
@@ -1016,13 +1013,13 @@ void adios_posix_close (struct adios_file_struct * fd
                 {
                     START_TIMER (ADIOS_TIMER_COMM);
                     // Added this explicit cast to avoid truncation of low-order bytes on BGP
-                    int i_buffer_size = (int) buffer_size;
+                    int i_buffer_size = (int) buffer_offset;
                     MPI_Gather (&i_buffer_size, 1, MPI_INT
                                ,0, 0, MPI_INT
                                ,0, p->group_comm
                                );
 
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, i_buffer_size, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, p->group_comm
                                 );

@@ -238,9 +238,11 @@ function query_datasets() {
           echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $DSID IN $FILEMODE MODE ======"
           echo
           set -o xtrace
-          $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML_LOCAL" "$FILEMODE" > "$EXPECTED_POINTS_FILE" ||
+          $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML_LOCAL" "$FILEMODE" > "$EXPECTED_POINTS_FILE".raw ||
             die "ERROR: $QUERY_SEQSCAN_EXE_LOCAL failed with exit code $?"
           set +o xtrace
+          # filter out job manager's output line at the end of stdout
+          grep -v "^Application" "$EXPECTED_POINTS_FILE".raw > "$EXPECTED_POINTS_FILE"
         
           # NOTE: the sequential scan program produces a point list that is guaranteed to be sorted in C array order, so no need to sort it here
         done
@@ -270,9 +272,12 @@ function query_datasets() {
               echo "====== RUNNING QUERY $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $DSID IN $FILEMODE MODE ======"
               echo
               set -o xtrace
-              $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE" "$FILEMODE" > "$OUTPUT_POINTS_FILE" ||
+              $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE" "$FILEMODE" > "$OUTPUT_POINTS_FILE".raw ||
                 die "ERROR: $QUERY_EXE_LOCAL failed with exit code $?"
               set +o xtrace
+              # filter out job manager's output line at the end of stdout
+              grep -v "^Application" "$OUTPUT_POINTS_FILE".raw > "$OUTPUT_POINTS_FILE"
+
 
               # Sort the output points in C array order, since the query engine makes no guarantee as to the ordering of the results
               # Sort file in place (-o FILE) with numerical sort order (-n) on each of the first 9 fields (-k1,1 ...)

@@ -606,3 +606,53 @@ int adios_define_mesh_unstructured (char * points,
     return adios_common_define_mesh_unstructured (points, data, count, cell_type, nspace, npoints, name, group_id);
 }
 
+ADIOS_AVAILABLE_WRITE_METHODS * adios_available_write_methods()
+{
+    int i, n;
+    n = 0;
+    for (i = 0; i < ADIOS_METHOD_COUNT; i++) {
+        if (adios_transports[i].method_name) {
+            n++;
+        }
+    }
+
+    if (n == 0)
+        return NULL;
+
+    ADIOS_AVAILABLE_WRITE_METHODS * m = (ADIOS_AVAILABLE_WRITE_METHODS *) malloc (sizeof(ADIOS_AVAILABLE_WRITE_METHODS));
+    if (!m)
+        return NULL;
+
+    m->name     = (char**) malloc (n*sizeof(char*));
+    m->nmethods = n;
+
+    n = 0;
+    for (i = 0; i < ADIOS_METHOD_COUNT; i++) {
+        if (adios_transports[i].method_name) {
+            m->name[n] = strdup (adios_transports[i].method_name);
+            n++;
+        }
+    }
+    return m;
+}
+
+void adios_available_write_methods_free (ADIOS_AVAILABLE_WRITE_METHODS * m)
+{
+	int i;
+	if (m)
+	{
+	    if (m->name)
+	    {
+	        for (i=0; i < m->nmethods; i++)
+	        {
+	            if (m->name[i]) {
+	                free (m->name[i]);
+	                m->name[i] = NULL;
+	            }
+	        }
+	        free (m->name);
+	        m->name = NULL;
+	    }
+	    free (m);
+	}
+}

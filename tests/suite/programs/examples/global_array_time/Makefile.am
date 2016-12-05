@@ -28,7 +28,7 @@ global_array_time_read_as_stream_C_LDADD += $(ADIOSREADLIB_LDADD)
 
 CLEANFILES = *.bp *.ch *.fh
 CC=$(MPICC)
-EXTRA_DIST = global_array_time_C.xml global_array_time_F.xml
+EXTRA_DIST = global_array_time_C.xml global_array_time_F.xml global_array_time_aggr_C.xml
 
 if BUILD_FORTRAN
 check_PROGRAMS += global_array_time_write_F
