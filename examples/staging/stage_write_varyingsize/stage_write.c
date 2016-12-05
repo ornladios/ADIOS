@@ -317,7 +317,7 @@ int process_metadata(int step)
         adios_get_grouplist(f, &group_namelist);
         group_name = strdup (group_namelist[0]);
         print0("Group name is %s\n", group_name);
-        adios_declare_group(&gh,group_name,"",adios_flag_yes);
+        adios_declare_group(&gh,group_name,"",adios_stat_default);
     }
 
     varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);
