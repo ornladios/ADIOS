@@ -934,6 +934,8 @@ AC_CONFIG_FILES([Makefile
                  examples/Fortran/global-array/Makefile
                  examples/Fortran/global-array-time/Makefile
                  examples/Fortran/schema/Makefile
+                 examples/staging/Makefile
+                 examples/staging/stage_write_varyingsize/Makefile
                  adios_config.flags.makesrc
                  adios_config.makesrc
                  src/public/adios_version.h
