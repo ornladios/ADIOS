@@ -27,14 +27,14 @@ typedef struct
 
 uint16_t adios_transform_sz_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
-    log_debug("function: %s\n", __FUNCTION__);
+    //log_debug("function: %s\n", __FUNCTION__);
     return 0; // Set amount of transform-internal metadata space to allocate
 }
 
 void adios_transform_sz_transformed_size_growth(const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
                                                 uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
-    log_debug("function: %s\n", __FUNCTION__);
+    //log_debug("function: %s\n", __FUNCTION__);
 }
 
 int adios_transform_sz_apply(struct adios_file_struct *fd,
@@ -43,8 +43,8 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
                              int use_shared_buffer,
                              int *wrote_to_shared_buffer)
 {
-    log_debug("function: %s\n", __FUNCTION__);
-    log_debug("use_shared_buffer: %d\n", use_shared_buffer);
+    //log_debug("function: %s\n", __FUNCTION__);
+    //log_debug("use_shared_buffer: %d\n", use_shared_buffer);
     
     // Get the input data and data length
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
@@ -94,7 +94,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     // Get dimension info
     struct adios_dimension_struct* d = var->pre_transform_dimensions;
     int ndims = (uint) count_dimensions(d);
-    log_debug("ndims: %d\n", ndims);
+    //log_debug("ndims: %d\n", ndims);
     if (ndims > 5)
     {
         adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
@@ -143,9 +143,10 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     
     unsigned char *raw_buff = (unsigned char*) bytes;
     int raw_size = outsize;
-    log_debug("=== SZ compress ===\n");
-    log_debug("%10s: %d\n", "dtype", dtype);
-    log_debug("%10s: %d\n", "out_size", raw_size);
+    //log_debug("=== SZ compress ===\n");
+    log_debug("%s: %d\n", "SZ dtype", dtype);
+    log_debug("%s: %d\n", "SZ out_size", raw_size);
+    /*
     log_debug("%10s: %d %d %d %d %d ... %d %d %d %d %d\n", "out_buff",
               raw_buff[0], raw_buff[1], raw_buff[2], raw_buff[3], raw_buff[4],
               raw_buff[raw_size-5], raw_buff[raw_size-4], raw_buff[raw_size-3], raw_buff[raw_size-2], raw_buff[raw_size-1]);
@@ -155,8 +156,9 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         sum += raw_buff[i];
     }
     log_debug("%10s: %d\n", "sum", sum);
-    log_debug("%10s: %d %d %d %d %d\n", "dim", r[0], r[1], r[2], r[3], r[4]);
-    log_debug("===================\n");
+     */
+    log_debug("%s: %d %d %d %d %d\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
+    //log_debug("===================\n");
     
     // Output
     uint64_t output_size = outsize/* Compute how much output size we need */;
