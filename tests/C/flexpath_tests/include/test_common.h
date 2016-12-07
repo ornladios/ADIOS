@@ -46,13 +46,13 @@
 
 #define p_test_failed(fmt, args...)                             \
     do {                                                  \
-         printf("%s " fmt, DBG_TEST_FAILED_STR,  ##args);  \
+	 fprintf(stderr, "%s " fmt, DBG_TEST_FAILED_STR,  ##args);	\
          fflush(stdout);  											\
     } while(0)
 
 #define p_test_passed(fmt, args...)                             \
     do {                                                  \
-         printf("%s " fmt, DBG_TEST_PASSED_STR,  ##args);  \
+         fprintf(stderr, "%s " fmt, DBG_TEST_PASSED_STR,  ##args);  \
          fflush(stdout);  											\
     } while(0)
 
@@ -62,7 +62,7 @@
 #define p_error(fmt, args...)                             				\
     do {                                                                \
         if((DBG_ERROR) <= DBG_LEVEL) {                                  \
-            printf("%s(%d) %s:%s:%d: " fmt, DBG_ERROR_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
+            fprintf(stderr, "%s(%d) %s:%s:%d: " fmt, DBG_ERROR_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
             fflush(stdout);  											\
         }                                                               \
     } while(0)
@@ -71,7 +71,7 @@
 #define p_warn(fmt, args...) \
 	do {                                                                \
         if((DBG_WARNING) <= DBG_LEVEL) {                                      \
-        	printf("%s(%d) %s:%s:%d: " fmt, DBG_WARN_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
+        	fprintf(stderr, "%s(%d) %s:%s:%d: " fmt, DBG_WARN_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
             fflush(stdout);												\
         }                                                               \
     } while(0)
@@ -79,7 +79,7 @@
 #define p_info(fmt, args...) \
 	do {                                                                \
         if((DBG_INFO) <= DBG_LEVEL) {                                      \
-        	printf("%s(%d) %s:%s:%d: " fmt, DBG_INFO_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
+        	fprintf(stderr, "%s(%d) %s:%s:%d: " fmt, DBG_INFO_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
             fflush(stdout);												\
         }                                                               \
     } while(0)
@@ -87,7 +87,7 @@
 #define p_debug(fmt, args...) \
 	do {                                                                \
         if((DBG_DEBUG) <= DBG_LEVEL) {                                      \
-        	printf("%s(%d) %s:%s:%d: " fmt, DBG_DEBUG_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
+        	fprintf(stderr, "%s(%d) %s:%s:%d: " fmt, DBG_DEBUG_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
             fflush(stdout);												\
         }                                                               \
     } while(0)
