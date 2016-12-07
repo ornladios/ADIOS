@@ -50,7 +50,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff = var->data;
     
-    sz_params sz = {};
+    sz_params sz = {0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0.0, 0.0};
     sz.dataEndianType = LITTLE_ENDIAN_DATA;
     sz.sysEndianType = LITTLE_ENDIAN_DATA;
     sz.sol_ID = SZ;

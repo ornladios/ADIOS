@@ -43,7 +43,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     unsigned char *raw_buff = completed_pg_reqgroup->subreqs->data;
     
     // Decompress into orig_buff
-    sz_params sz = {};
+    sz_params sz = {0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0.0, 0.0};
     sz.dataEndianType = LITTLE_ENDIAN_DATA;
     sz.sysEndianType = LITTLE_ENDIAN_DATA;
     sz.sol_ID = SZ;
