@@ -44,6 +44,7 @@
 #define  FLEXPATH_SIDE "READER"
 #include "core/flexpath.h"
 #include "core/futils.h"
+#include "core/globals.h"
 
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
@@ -290,6 +291,10 @@ ffs_type_to_adios_type(const char *ffs_type, int size)
         filtered_type = strncpy(filtered_type, ffs_type, posfound);
     }
 
+    if (filtered_type[0] == '*') {
+	/*  skip "*(" at the beginning */
+	filtered_type += 2;
+    }
     if (!strcmp("integer", filtered_type)) {
 	if (size == sizeof(int)) {
 	    return adios_integer;
@@ -423,7 +428,9 @@ calc_ffspacket_size(FMField *f, attr_list attrs, void *buffer)
         strcat(atom_name, "_");
         strcat(atom_name, f->field_name);
         int num_dims = 0;
-        get_int_attr(attrs, attr_atom_from_string(atom_name), &num_dims);
+	if (!get_int_attr(attrs, attr_atom_from_string(atom_name), &num_dims)) {
+	    fprintf(stderr, "Lookup failure in calc_ffs_packet_size, dims attribute %s\n", atom_name);
+	}
 	if (num_dims == 0) {
 	    size += (uint64_t)f->field_size;
 	}
@@ -440,7 +447,10 @@ calc_ffspacket_size(FMField *f, attr_list attrs, void *buffer)
 		char dim_num[10] = "";
 		sprintf(dim_num, "%d", i+1);
 		strcat(atom_name, dim_num);
-		get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
+		if (!get_string_attr(attrs, attr_atom_from_string(atom_name), &dim)) {
+		    fprintf(stderr, "LOOKUP FAILURE in get_string_attr, %s\n", atom_name);
+		}
+
 
 		FMField *temp_field = find_field_by_name(dim, f);
 		uint64_t *temp_val = get_FMfieldAddr_by_name(temp_field,
@@ -596,12 +606,15 @@ int
 get_ndims_attr(const char *field_name, attr_list attrs)
 {
     char atom_name[200] = "";
+    if (strncmp("FPDIM_", field_name, 6) == 0) return 0;
     strcat(atom_name, FP_NDIMS_ATTR_NAME);
     strcat(atom_name, "_");
     strcat(atom_name, field_name);
-    int num_dims;
+    int num_dims = 0;
     atom_t atm = attr_atom_from_string(atom_name);
-    get_int_attr(attrs, atm, &num_dims);
+    if (!get_int_attr(attrs, atm, &num_dims)) {
+	fprintf(stderr, "LOOKUP FAILURE in get_ndims_attr, %s\n", atom_name);
+    }
     return num_dims;
 }
 
@@ -612,7 +625,8 @@ setup_flexpath_vars(FMField *f, int *num)
     int var_count = 0;
 
     while (f->field_name != NULL) {
-	flexpath_var *curr_var = new_flexpath_var(f->field_name,
+	char *unmangle = flexpath_unmangle(f->field_name);
+	flexpath_var *curr_var = new_flexpath_var(unmangle,
 						  var_count,
 						  f->field_size);
 	curr_var->num_chunks = 1;
@@ -623,7 +637,7 @@ setup_flexpath_vars(FMField *f, int *num)
 	flexpath_var *temp = vars;
 	curr_var->next = temp;
 	vars = curr_var;
-	if (strncmp(f->field_name, "FPDIM", 5)) {
+	if (strncmp(unmangle, "FPDIM", 5)) {
 	    var_count++;
 	}
 	f++;
@@ -986,8 +1000,11 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	adiosfile->var_namelist = malloc(var_count * sizeof(char *));
 	int i = 0;
 	while (f->field_name != NULL) {
-	    if (strncmp(f->field_name, "FPDIM", 5)) {
-		adiosfile->var_namelist[i++] = strdup(f->field_name);
+	    char *unmangle = flexpath_unmangle(f->field_name);
+	    if (strncmp(unmangle, "FPDIM", 5)) {
+		adiosfile->var_namelist[i++] = unmangle;
+	    } else {
+		free(unmangle);
 	    }
 	    f++;
 	}
@@ -1000,7 +1017,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 
     while (f->field_name) {
         char atom_name[200] = "";
-    	flexpath_var *var = find_fp_var(fp->var_list, f->field_name);
+	char *unmangle = flexpath_unmangle(f->field_name);
+	char *dims[100]; /* more than we should ever need */
+    	flexpath_var *var = find_fp_var(fp->var_list, unmangle);
 
     	if (!var) {
     	    adios_error(err_file_open_error,
@@ -1008,7 +1027,19 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    return err_file_open_error;
     	}
 
-	int num_dims = get_ndims_attr(f->field_name, attrs);
+	int num_dims = 0;
+	if (f->field_type) {
+	    char *tmp = index(f->field_type, '[');
+	    while (tmp != NULL) {
+		int len;
+		tmp++;
+		len = index(tmp, ']') - tmp;
+		dims[num_dims] = calloc(len + 1, 1);
+		strncpy(dims[num_dims], tmp, len);
+		tmp = index(tmp+1, '[');
+		num_dims++;
+	    }
+	}
     	var->ndims = num_dims;
 
 	flexpath_var_chunk *curr_chunk = &var->chunks[0];
@@ -1029,17 +1060,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 			var->array_size = var->type_size;
 			int i;
 			for (i=0; i<num_dims; i++) {
-			    char *dim;
-			    atom_name[0] ='\0';
-			    strcat(atom_name, FP_DIM_ATTR_NAME);
-			    strcat(atom_name, "_");
-			    strcat(atom_name, f->field_name);
-			    strcat(atom_name, "_");
-			    char dim_num[10] = "";
-			    sprintf(dim_num, "%d", i+1);
-			    strcat(atom_name, dim_num);
-			    get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
-
+			    char *dim = dims[i];
 			    FMField *temp_field = find_field_by_name(dim, f);
 			    if (!temp_field) {
 				adios_error(err_corrupted_variable,
@@ -1056,6 +1077,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 				uint64_t dim = (uint64_t)(*temp_data);
 				var->array_size = var->array_size * dim;
 			    }
+			    free(dims[i]);
 			}
 			void *arrays_data  = get_FMPtrField_by_name(f,
 								    f->field_name,
@@ -1102,15 +1124,13 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		}
 	    }
 	}
-	else { //var has not been scheduled;
-	    if (num_dims == 0) { // only worry about scalars
-		flexpath_var_chunk *chunk = &var->chunks[0];
-		if (!chunk->has_data) {
-		    void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
-		    chunk->data = malloc(f->field_size);
-		    memcpy(chunk->data, tmp_data, f->field_size);
-		    chunk->has_data = 1;
-		}
+	if (num_dims == 0) { // only worry about scalars
+	    flexpath_var_chunk *chunk = &var->chunks[0];
+	    if (!chunk->has_data) {
+		void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+		chunk->data = malloc(f->field_size);
+		memcpy(chunk->data, tmp_data, f->field_size);
+		chunk->has_data = 1;
 	    }
 	}
         f++;
@@ -1663,7 +1683,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     flexpath_var *fpvar = fp->var_list;
 
-    fp_verbose(fp, "entering schedule_read_byid\n");
+    fp_verbose(fp, "entering schedule_read_byid, varid %d\n", varid);
     while (fpvar) {
         if (fpvar->id == varid)
         	break;
@@ -1723,7 +1743,11 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     {
         // boundingbox for a scalar; handle it as we do with inq_var
         if (fpvar->ndims == 0) {
-            memcpy(data, chunk->data, fpvar->type_size);
+	    if (chunk->has_data) {
+		memcpy(data, chunk->data, fpvar->type_size);
+	    } else {
+		printf("Trying to schedule read on scalar %s, no data fpvar %p, chunk %p\n", fpvar->varname, fpvar, chunk);
+	    }
         } else {
             if (fp->host_language == FP_FORTRAN_MODE) {
                 reverse_dims(sel->u.bb.start, sel->u.bb.ndim);
@@ -1774,7 +1798,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	break;
     }
     }
-    fp_verbose(fp, "entering schedule_read_byid\n");
+    fp_verbose(fp, "exiting schedule_read_byid\n");
     return 0;
 }
 
