@@ -34,25 +34,32 @@ int main (int argc, char ** argv)
     adios_init ("arrays.xml", comm);
     
     int test_scalar = rank * 1000;
-    int ii;
-    for(ii = 0; ii<20; ii++){
+    int group_num;
+    for(group_num = 0; group_num<20; group_num++){
       for (i = 0; i < NX; i++)
-        t[i] = rank * NX + i;
+        t[i] = rank * NX + i + 100*group_num;
     
       adios_open (&adios_handle, "temperature", filename, "w", comm);
     
+      test_scalar++;
       adios_write (adios_handle, "NX", &NX);
       adios_write (adios_handle, "NY", &NY);
       adios_write (adios_handle, "test_scalar", &test_scalar);
       adios_write (adios_handle, "size", &size);
       adios_write (adios_handle, "rank", &rank);
       adios_write (adios_handle, "var_2d_array", t);
+		fprintf(stderr, "Writer side Rank=%d: test_scalar: %d step: %d, t[0,5+x] = [%6.2f",rank, test_scalar, group_num, t[0]);
+		for(int j=1; j<    NX; j++) {    
+		    fprintf(stderr, ", %6.2f", t[j]);
+		}
+		fprintf(stderr, "]\n");
     
       adios_close (adios_handle);
-      fprintf(stderr, "Rank=%d commited write %d\n", rank, ii);
+      fprintf(stderr, "Rank=%d commited write %d\n", rank, group_num);
     }
     adios_finalize (rank);
 
-    //MPI_Finalize ();
+    MPI_Finalize ();
     return 0;
 }
+
