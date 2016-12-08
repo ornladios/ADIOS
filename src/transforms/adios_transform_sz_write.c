@@ -142,12 +142,13 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
                               r[4], r[3], r[2], r[1], r[0]);
     
     unsigned char *raw_buff = (unsigned char*) bytes;
+    
     int raw_size = outsize;
     //log_debug("=== SZ compress ===\n");
     log_debug("%s: %d\n", "SZ dtype", dtype);
     log_debug("%s: %d\n", "SZ out_size", raw_size);
     /*
-    log_debug("%10s: %d %d %d %d %d ... %d %d %d %d %d\n", "out_buff",
+    log_debug("%s: %d %d %d %d %d ... %d %d %d %d %d\n", "SZ out_buff",
               raw_buff[0], raw_buff[1], raw_buff[2], raw_buff[3], raw_buff[4],
               raw_buff[raw_size-5], raw_buff[raw_size-4], raw_buff[raw_size-3], raw_buff[raw_size-2], raw_buff[raw_size-1]);
     int sum = 0;
@@ -155,7 +156,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     {
         sum += raw_buff[i];
     }
-    log_debug("%10s: %d\n", "sum", sum);
+    log_debug("%s: %d\n", "SZ sum", sum);
      */
     log_debug("%s: %d %d %d %d %d\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
     //log_debug("===================\n");
@@ -189,6 +190,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     }
     
     *transformed_len = output_size; // Return the size of the data buffer
+    SZ_Finalize();
     return 1;
 }
 
