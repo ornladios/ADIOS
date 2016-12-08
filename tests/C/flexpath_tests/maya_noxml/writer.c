@@ -36,8 +36,8 @@
  * @param path_str The path to the variable
  * @param variable  The var to be written out
  */
-#define WRITE_FULLPATH(path_str, var) \
-	sprintf(fullpath, "%s%s", path_str, fullname); \
+#define WRITE_FULLPATH(var_name, var) \
+    sprintf(fullpath, "%s%s", fullname, var_name);		\
 	adios_write(adios_handle, fullpath, var);
 
 
@@ -102,34 +102,38 @@ int main(int argc, char ** argv){
     // first define variable, since I am using no XML api
     for(i = 0; i < MAYA_GRID_FUNC_COUNT; ++i ){
     	// this is common for grid functions and scalars
-        adios_define_var (adios_grp, "patch_id", "", adios_unsigned_integer, "", "", "");
+
+    	gen_maya_var_name(fullname, MAYA_VAR_BUF_SIZE, MAYA_GF_VAR_PFX, i);
+
+        adios_define_var (adios_grp, "patch_id", fullname, adios_unsigned_integer, "", "", "");
         adios_groupsize += sizeof (uint64_t);
 
-        adios_define_var (adios_grp, "shape_dim_x", "", adios_unsigned_integer, "", "", "");
-        adios_define_var (adios_grp, "shape_dim_y", "", adios_unsigned_integer, "", "", "");
-        adios_define_var (adios_grp, "shape_dim_z", "", adios_unsigned_integer, "", "", "");
+        adios_define_var (adios_grp, "shape_dim_x", fullname, adios_integer, "", "", "");
+        adios_define_var (adios_grp, "shape_dim_y", fullname, adios_integer, "", "", "");
+        adios_define_var (adios_grp, "shape_dim_z", fullname, adios_integer, "", "", "");
         adios_groupsize += 3*sizeof (uint64_t); // can be bigger
 
         // I simulate writing grid functions
-        char * dimensions="1,shape_dim_x,shape_dim_y,shape_dim_z";
         // global dimensions should be, I suppose greater than shap_dim_xxx
         // i.e., shape_dim_x <= 48, shape_dim_y <= 89, shape_dim_z <= 116
         char * global_dimensions=GLOBAL_DIMENSIONS;
-        char * offsets="patch_id,0,0,0";
         // the name of maya variable
-        memset(fullname, 0, MAYA_VAR_BUF_SIZE);
-        sprintf(fullname, MAYA_GF_VAR_PFX "%d", i );
-
+	char *offsets = malloc(strlen(fullname) + strlen("patch_id,0,0,0") + 4);
+	sprintf(offsets, "%s/patch_id,0,0,0", fullname);
+	char *dimensions = malloc(strlen(fullname)*3 + strlen("shape_dim_x,shape_dim_y,shape_dim_z") + 12);
+	sprintf(dimensions, "1,%s/shape_dim_x,%s/shape_dim_y,%s/shape_dim_z", fullname, fullname, fullname);
         // I think this is for dataset size for doubles
+	char *single_offset = malloc(strlen(fullname) + strlen("/patch_id") + 1);
+	sprintf(single_offset, "%s/patch_id", fullname);
         adios_groupsize += max_data_size;
-        adios_define_var (adios_grp, fullname, "/data", adios_double, dimensions, global_dimensions, offsets);
-
-        adios_groupsize += (4 + 4 + 4 + 4 + 8);
-        adios_define_var (adios_grp, fullname, "/level", adios_integer, "1", "P", "patch_id") ;
-        adios_define_var (adios_grp, fullname, "/carpet_mglevel", adios_integer, "1", "P", "patch_id");
-        adios_define_var (adios_grp, fullname, "/timestep", adios_integer, "1", "P", "patch_id");
-        adios_define_var (adios_grp, fullname, "/group_timelevel", adios_integer, "1", "P", "patch_id");
-        adios_define_var (adios_grp, fullname, "/time", adios_double, "1", "P", "patch_id");
+        adios_define_var (adios_grp, "data", fullname, adios_double, dimensions, global_dimensions, offsets);
+ 
+	adios_groupsize += (4 + 4 + 4 + 4 + 8);
+        adios_define_var (adios_grp, "level", fullname, adios_integer, "1", "P", single_offset) ;
+        adios_define_var (adios_grp, "carpet_mglevel", fullname, adios_integer, "1", "P", single_offset);
+        adios_define_var (adios_grp, "timestep", fullname, adios_integer, "1", "P", single_offset);
+        adios_define_var (adios_grp, "group_timelevel", fullname, adios_integer, "1", "P", single_offset);
+        adios_define_var (adios_grp, "time", fullname, adios_double, "1", "P", single_offset);
 
         char ndim[16];
         char global_dims[18];
@@ -138,30 +142,34 @@ int main(int argc, char ** argv){
         adios_groupsize += (4 * 2 * dim);
         sprintf(ndim, "1,%d", 2 * dim);
         sprintf(global_dims, "P,%d", 2 * dim);
-        sprintf(local_offsets, "patch_id,0");
-        adios_define_var(adios_grp, fullname, "/cctk_bbox", adios_integer, ndim, global_dims, local_offsets);
+        sprintf(local_offsets, "%s/patch_id,0", fullname);
+        adios_define_var(adios_grp, "cctk_bbox", fullname, adios_integer, ndim, global_dims, local_offsets);
 
         adios_groupsize += (4 * dim);
         sprintf(ndim, "1,%d", dim);
         sprintf(global_dims, "P,%d", dim);
-        adios_define_var(adios_grp, fullname, "/cctk_nghostzones",adios_integer, ndim, global_dims, local_offsets);
+        adios_define_var(adios_grp, "cctk_nghostzones", fullname, adios_integer, ndim, global_dims, local_offsets);
 
         adios_groupsize += (8 * dim);
         sprintf(ndim, "1,%d", dim);
         sprintf(global_dims, "P,%d", dim);
-        adios_define_var(adios_grp, fullname, "/origin", adios_double, ndim, global_dims, local_offsets);
+        adios_define_var(adios_grp, "origin", fullname, adios_double, ndim, global_dims, local_offsets);
 
         adios_groupsize += (8 * dim);
-        adios_define_var(adios_grp, fullname, "/delta", adios_double, ndim, global_dims, local_offsets);
+        adios_define_var(adios_grp, "delta", fullname, adios_double, ndim, global_dims, local_offsets);
 
         adios_groupsize += (4 * dim);
-        adios_define_var(adios_grp, fullname, "/iorigin", adios_integer, ndim, global_dims, local_offsets);
+        adios_define_var(adios_grp, "iorigin", fullname, adios_integer, ndim, global_dims, local_offsets);
 
         adios_groupsize += (sizeof(uint64_t) * dim);
-        adios_define_var(adios_grp, fullname, "/shape", adios_unsigned_long,ndim, global_dims, local_offsets);
+        adios_define_var(adios_grp, "shape", fullname, adios_unsigned_long,ndim, global_dims, local_offsets);
+
+	free(dimensions);
+	free(offsets);
+
     }
 
-    SET_ERROR_IF_ZERO(adios_select_method(adios_grp, adios_opts.transport, "", ""), err_count);
+    SET_ERROR_IF_NOT_ZERO(adios_select_method(adios_grp, adios_opts.transport, "", ""), err_count);
     RET_IF_ERROR(err_count, rank);
 
 	// open our group and transport method associated with it
@@ -184,18 +192,18 @@ int main(int argc, char ** argv){
 	// now goes adWRiteGroupVar
 
     char fullpath[STR_BUFFER_SIZE];
-    char * levelpath = "/level/";
-    char * datapath = "/data/";
-    char * mglevelpath = "/carpet_mglevel/";
-    char * timesteppath ="/timestep/";
-    char * group_timelevelpath = "/group_timelevel/";
-    char * timepath = "/time/";
-    char * cbbpath = "/cctk_bbox/";
-    char * cngzpath = "/cctk_nghostzones/";
-    char * originpath = "/origin/";
-    char * deltapath = "/delta/";
-    char * ioriginpath = "/iorigin/";
-    char * shapepath = "/shape/";
+    char * levelpath = "/level";
+    char * datapath = "/data";
+    char * mglevelpath = "/carpet_mglevel";
+    char * timesteppath ="/timestep";
+    char * group_timelevelpath = "/group_timelevel";
+    char * timepath = "/time";
+    char * cbbpath = "/cctk_bbox";
+    char * cngzpath = "/cctk_nghostzones";
+    char * originpath = "/origin";
+    char * deltapath = "/delta";
+    char * ioriginpath = "/iorigin";
+    char * shapepath = "/shape";
 
     assert(shape[0] * shape[1] *shape[2] * 8 == data_size);
     assert(max_shape[0] * max_shape[1] * max_shape[2] * 8 == max_data_size);
@@ -216,6 +224,8 @@ int main(int argc, char ** argv){
     for(i = 0; i < MAYA_GRID_FUNC_COUNT; ++i){
 
     	// generate the name of maya variable
+        memset(fullname, 0, MAYA_VAR_BUF_SIZE);
+
     	gen_maya_var_name(fullname, MAYA_VAR_BUF_SIZE, MAYA_GF_VAR_PFX, i);
 
     	// the purpose of writing this variable is to enable
@@ -230,15 +240,15 @@ int main(int argc, char ** argv){
     	// you need to have adios_write(patch_id) here; not above the
     	// for loop
     	// the idea was to write each variable with a designated different patch
-    	adios_write (adios_handle, "patch_id", &my_patch_index);
+    	WRITE_FULLPATH ("/patch_id", &my_patch_index);
     	my_patch_index++;
     	my_patch_index %= global_patch_count;
 
     	// these max shape dims; this also tests if we can rewrite the
     	// same variable over and over; as we did this for the Maya
-    	adios_write (adios_handle, "shape_dim_x", &max_shape[0]) ;
-    	adios_write (adios_handle, "shape_dim_y", &max_shape[1]) ;
-    	adios_write (adios_handle, "shape_dim_z", &max_shape[2]) ;
+    	WRITE_FULLPATH ("/shape_dim_x", &max_shape[0]) ;
+    	WRITE_FULLPATH ("/shape_dim_y", &max_shape[1]) ;
+    	WRITE_FULLPATH ("/shape_dim_z", &max_shape[2]) ;
 
     	// Write the data
     	WRITE_FULLPATH(datapath, my_data);
