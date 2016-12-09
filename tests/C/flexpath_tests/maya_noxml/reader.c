@@ -61,7 +61,7 @@
  * @param out_buf  The output buffer
  */
 #define READ_FULLPATH(path_str, out_buf) \
-	sprintf(fullpath, "%s%s", path_str, fullname);  \
+	sprintf(fullpath, "%s%s", fullname, path_str);		\
 	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, sel, fullpath,0,1, out_buf), error_counts.adios); \
 	BREAK_IF_ERROR(error_counts.adios);
 
@@ -135,22 +135,29 @@ int main (int argc, char **argv){
 	double delta[3];
 	int32_t iorigin[3];
 	uint64_t shape[3];
+	char fullpath[STR_BUFFER_SIZE];
 
 	// I think these are global variables, so shouldn't be a problem
 
 	// first schedule reading of the entire variables (so NULL selection)
 	// reading the patch_id doesn't make much sense as it seems that only the
 	// very first value is written out so we will get 0
-	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "patch_id",0,1, &patch_id), error_counts.adios);
+	gen_maya_var_name(fullname, MAYA_VAR_BUF_SIZE, MAYA_GF_VAR_PFX, 0);
+
+	sprintf(fullpath, "%s%s", fullname, "/patch_id");
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, fullpath, 0,1, &patch_id), error_counts.adios);
 	RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
-	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "shape_dim_x",0,1, &shape_max_dims[0]), error_counts.adios);
+	sprintf(fullpath, "%s%s", fullname, "/shape_dim_x");
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, fullpath, 0,1, &shape_max_dims[0]), error_counts.adios);
 	RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
-	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "shape_dim_y",0,1, &shape_max_dims[1]), error_counts.adios);
+	sprintf(fullpath, "%s%s", fullname, "/shape_dim_y");
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, fullpath, 0,1, &shape_max_dims[1]), error_counts.adios);
 	RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
-	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "shape_dim_z",0,1, &shape_max_dims[2]), error_counts.adios);
+	sprintf(fullpath, "%s%s", fullname, "/shape_dim_z");
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, fullpath, 0,1, &shape_max_dims[2]), error_counts.adios);
 	RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
 	// not sure if this assumption is correct; difficult to find in the ADIOS sources
@@ -196,19 +203,18 @@ int main (int argc, char **argv){
 
 
 	// for storing the name of the variable
-	char fullpath[STR_BUFFER_SIZE];
-	char * levelpath = "/level/";
-	char * datapath = "/data/";
-	char * mglevelpath = "/carpet_mglevel/";
-	char * timesteppath ="/timestep/";
-	char * group_timelevelpath = "/group_timelevel/";
-	char * timepath = "/time/";
-	char * cbbpath = "/cctk_bbox/";
-	char * cngzpath = "/cctk_nghostzones/";
-	char * originpath = "/origin/";
-	char * deltapath = "/delta/";
-	char * ioriginpath = "/iorigin/";
-	char * shapepath = "/shape/";
+	char * levelpath = "/level";
+	char * datapath = "/data";
+	char * mglevelpath = "/carpet_mglevel";
+	char * timesteppath ="/timestep";
+	char * group_timelevelpath = "/group_timelevel";
+	char * timepath = "/time";
+	char * cbbpath = "/cctk_bbox";
+	char * cngzpath = "/cctk_nghostzones";
+	char * originpath = "/origin";
+	char * deltapath = "/delta";
+	char * ioriginpath = "/iorigin";
+	char * shapepath = "/shape";
 
 	// read all variables with attributes
 	for(i = 0; i < MAYA_GRID_FUNC_COUNT; ++i){
@@ -362,6 +368,8 @@ int main (int argc, char **argv){
 		BREAK_IF_ERROR(error_counts.test);
 	}
 
+	adios_release_step(adios_handle);
+	adios_advance_step(adios_handle, 0, 30);
 	adios_free_varinfo(avi);
 	avi = NULL;
 

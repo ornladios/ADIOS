@@ -311,7 +311,7 @@ diag_t gen_maya_var_name(char *buf, int buf_size, char *maya_var_pfx, int number
 	}
 
 	memset(buf, 0, buf_size);
-	sprintf(buf, "%s%d", maya_var_pfx, number);
+	sprintf(buf, "/%s%d", maya_var_pfx, number);
 
 	return DIAG_OK;
 }

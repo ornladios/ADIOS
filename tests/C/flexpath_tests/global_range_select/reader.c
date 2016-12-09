@@ -91,11 +91,16 @@ int main (int argc, char ** argv)
     
         //sleep(20);
     
-        printf("Rank=%d: test_scalar: %d step: %d, t[0,5+x] = [%6.2f", rank, test_scalar, ii, t[0]);
-        for(j=0; j<nelem; j++) {
-            printf(", %6.2f", t[j]);
-        }
-        printf("]\n");
+        for(j=0; j<    (global_range_select.u.bb.count)[1]; j++) {    
+	    if (t[j] != rank * NX + j + 100*ii) {
+
+		fprintf(stderr, "BAD VALUE j=%d, expected %g, got %g \nBAD Rank=%d: test_scalar: %d step: %d, t[0,5+x] = [%6.2f", j, (double)rank *NX+j+100*ii, t[j], rank, test_scalar, ii, t[0]);
+		for(j=1; j<    (global_range_select.u.bb.count)[1]; j++) {    
+		    fprintf(stderr, ", %6.2f", t[j]);
+		}
+		fprintf(stderr, "]\n");
+	    }
+	}
         adios_release_step(afile);
         adios_advance_step(afile, 0, 30);
         ii++;
@@ -107,7 +112,7 @@ int main (int argc, char ** argv)
 
     adios_read_finalize_method(ADIOS_READ_METHOD_FLEXPATH);
 
-    //MPI_Finalize ();
+    MPI_Finalize ();
 
     return 0;
 }
