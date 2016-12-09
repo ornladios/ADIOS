@@ -572,6 +572,8 @@ need_writer(
 	/* printf("need writer rank: %d writer: %d sel_start: %d sel_count: %d rank_offset: %d rank_size: %d\n", */
 	/*        fp->rank, writer, (int)sel_offset, (int)sel_size, (int)rank_offset, (int)rank_size); */
 
+        if ((rank_size == 0) || (sel_size == 0)) return 0;
+
         if ((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
 	     log_debug("matched overlap type 1\n");
         }
