@@ -888,6 +888,7 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
     export CFLAGS="-g -O0 -fPIC"
     ${SRCDIR}/configure --prefix=/home/qliu/ADIOS.install \
         --enable-dependency-tracking \
+        --with-glib=/home/qliu/glib \
         --with-mxml=/home/qliu/mxml
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local

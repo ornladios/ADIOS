@@ -11,6 +11,7 @@
 #include <float.h>
 // xml parser
 #include <mxml.h>
+#include <glib.h>
 
 // see if we have MPI or other tools
 #include "config.h"
@@ -1089,54 +1090,58 @@ void rebuild_conn (int ** conn, int nvertices, int nvertices_new,
         }
     }
 }
+#if 0
+uint64_t * alloc_ht (int size)
+{
+    uint64_t * ht = (uint64_t *) malloc (size * 8);
 
+    assert (ht);
+
+    for (int i = 0; i < size; i++)
+    {
+        ht[i] = 0;
+    }
+
+    return ht;
+}
+
+
+int ht_insert (int n1, int n2, int n3, uint64_t * ht, int unit, int size)
+{
+    assert (n1 < n2 && n2 < n3);
+
+    uint64_t v = n1 * unit * unit + n2 * unit + n3;
+    int i = 0;
+
+    while (i < size && ht[i] != 0)
+    {
+        if (ht[i++] == v) return 0;
+    }
+
+//    printf ("i = %d, size = %d\n", i, size);
+    assert (i < size * 10);
+
+    ht[i] = v;
+
+    return 1;
+}
+#endif
 
 int build_mesh (int ** conn, int nvertices, int nvertices_new,
-                int * nodes_cut, int ** mesh_new)
+                int nmesh, int * nodes_cut, int ** mesh_new)
 {
-    rebuild_conn (conn, nvertices, nvertices_new, nodes_cut);
+//    rebuild_conn (conn, nvertices, nvertices_new, nodes_cut);
 
-    int * mesh = malloc (nvertices_new * 3 * 4);
+    int * mesh = malloc (nmesh * 3 * 4);
     assert (mesh);
-#if 0
-    for (int i = 0; i < nvertices; i++)
-    {
-        int j = 0;
-        while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
-        {
-            int n1 = i, n2 = conn[i][j];
-            int k = 0;
 
-            while (k < MAX_NODE_DEGREE && conn[n2][k] != -1)
-            {
-                if (conn[n2][k] == n1) break;
-
-                k++;
-            }
-
-            if (k < MAX_NODE_DEGREE && conn[n2][k] == -1)
-            {
-                conn[n2][k] = n1;
-            }
-
-            j++;
-        }
-    }
-#endif
-#if 1
-    int cnt = 0;
-    for (int i = 0; i < nvertices; i++)
-    {
-        if (conn[i][0] == -1)
-             cnt++;
-    }
-
-    printf ("cnt = %d\n", cnt);
-#endif
     int * n3_list = 0, len = 0, lastcell = 0;
-#define MAX_COMMON_NODES 10
-    n3_list = malloc (MAX_COMMON_NODES *4);
+#if 1
+#define MAX_COMMON_NODES 50
+    n3_list = malloc (MAX_COMMON_NODES * 4);
     assert (n3_list);
+
+    GHashTable * ght = g_hash_table_new (g_str_hash,g_str_equal);
 
     for (int i = 0; i < nvertices; i++)
     {
@@ -1151,10 +1156,32 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
             {
                 for (k = 0; k < len; k++)
                 {
-                    * (mesh + lastcell * 3) = n1;  
-                    * (mesh + lastcell * 3 + 1) = n2;  
-                    * (mesh + lastcell * 3 + 2) = n3_list[k]; 
-                    lastcell++; 
+                    int n3 = n3_list[k];
+                    char temp_str[128];
+                    int t1 = n1, t2 = n2, t3 = n3;
+
+                    sort3 (&t1, &t2, &t3);
+
+                    assert (t1 < t2 && t2 < t3);
+
+                    sprintf (temp_str, "%d,%d,%d", t1, t2, t3);
+                    gchar * key_str = g_strdup (temp_str);
+
+                    if (g_hash_table_insert (ght, key_str, 0) == TRUE)
+                    {
+//if (n1 == 36 || n2 == 36 ||n3 == 36)
+//printf ("(%d,%d,%d)\n", n1, n2, n3);
+#if 1
+                        * (mesh + lastcell * 3) = n1 - to_offset (nodes_cut, nvertices - nvertices_new, n1);
+;
+                        * (mesh + lastcell * 3 + 1) = n2 - to_offset (nodes_cut, nvertices - nvertices_new, n2);
+
+                        * (mesh + lastcell * 3 + 2) = n3 - to_offset (nodes_cut, nvertices - nvertices_new, n3);
+; 
+//                        printf ("(n1, n2, n3) = (%d, %d, %d)\n", n1, n2, n3);
+#endif
+                        lastcell++; 
+                    }
                 }
             }
 
@@ -1162,9 +1189,13 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
         }
     }
 
+    g_hash_table_destroy (ght);
+
     free (n3_list);
     n3_list = 0;
+#endif
 
+printf ("last cell 1 = %d\n", lastcell);
     * mesh_new = mesh;
 
     return lastcell;
@@ -1185,7 +1216,7 @@ int to_offset (int * nodes_cut, int nnodes_cut, int my_node_id)
     return nnodes_cut;
 }
 
-int * get_nodes_cut (int ** conn, int nvertices, int nvertices_new)
+int * build_nodes_cut_list (int ** conn, int nvertices, int nvertices_new)
 {
     int * nodes_cut = malloc ((nvertices - nvertices_new) * 4);
     assert (nodes_cut);
@@ -1205,6 +1236,12 @@ int * get_nodes_cut (int ** conn, int nvertices, int nvertices_new)
     return nodes_cut;
 }
 
+void free_nodes_cut_list (int * nodes_cut)
+{
+    assert (nodes_cut);
+    free (nodes_cut);
+}
+
 void build_field (int ** conn, int nvertices, int nvertices_new, int * nodes_cut,
                   double * r, double * z, double * field,
                   double * r_new, double * z_new, double * field_new)
@@ -1213,9 +1250,11 @@ void build_field (int ** conn, int nvertices, int nvertices_new, int * nodes_cut
 
     prev = 0;
     off = 0;
-    for (i = 0; i < nvertices - nvertices_new; i++)
+    for (i = 0; i < nvertices - nvertices_new + 1; i++)
     {
-        int elems_to_cp = nodes_cut[i] - prev;
+        int elems_to_cp = (i < nvertices - nvertices_new ? 
+                           nodes_cut[i] - prev : nvertices - prev);
+        
         memcpy (r_new, r + off, elems_to_cp * 8); 
         memcpy (z_new, z + off, elems_to_cp * 8); 
         memcpy (field_new, field + off, elems_to_cp * 8);
@@ -1241,6 +1280,13 @@ int get_node_degree (int ** conn, int n)
     return i;
 }
 
+void update_field (int v1, int v2, double * r, double * z, double * field)
+{
+    r[v1] = (r[v1] + r[v2]) / 2;
+    z[v1] = (z[v1] + z[v2]) / 2;
+    field[v1] = (field[v1] + field[v2]) / 2;
+}
+
 void decimate (double * r, double * z, double * field, int nvertices,
                int * mesh, int nmesh,
                double ** r_reduced, double ** z_reduced, double ** field_reduced, int * nvertices_new,
@@ -1252,8 +1298,17 @@ void decimate (double * r, double * z, double * field, int nvertices,
     int ** conn = build_conn (nvertices, mesh, nmesh);
     int min_idx = find_mincost (conn, nvertices, r, z);
 
+#if 0
+    prep_mesh (conn, nvertices, nvertices);
+
+    int * nodes_cut2 = build_nodes_cut_list (conn, nvertices, nvertices);
+
+    * nmesh_new = build_mesh (conn, nvertices, nvertices,
+                              nodes_cut2, &mesh_new);
+#endif
+
     while ((double)vertices_cut / (double)nvertices < 0.1)
-//    while (vertices_cut < 3000)
+//    while (vertices_cut < 100)
     {
         int v1 = min_idx / MAX_NODE_DEGREE;
         assert (v1 >=0 && v1 < nvertices);
@@ -1262,6 +1317,8 @@ void decimate (double * r, double * z, double * field, int nvertices,
         assert (v2 >=0 && v2 < nvertices);
 
         sort2 (&v1, &v2);
+
+        update_field (v1, v2, r, z, field);
 
         int i = 0, j = 0, m = 0, k = 0;
         while (j < MAX_NODE_DEGREE && conn[v1][j] != -1 
@@ -1404,6 +1461,7 @@ void decimate (double * r, double * z, double * field, int nvertices,
 
     * nvertices_new = nvertices - vertices_cut;
     printf ("nvertices_old = %d, nvertices_new = %d\n", nvertices, * nvertices_new);
+
     prep_mesh (conn, nvertices, * nvertices_new);
 
     r_new = (double *) malloc ((* nvertices_new) * 8);
@@ -1412,16 +1470,16 @@ void decimate (double * r, double * z, double * field, int nvertices,
     assert (r_new && z_new && field_new);
    
 
-    int * nodes_cut = get_nodes_cut (conn, nvertices, * nvertices_new);
+    int * nodes_cut = build_nodes_cut_list (conn, nvertices, * nvertices_new);
 
     build_field (conn, nvertices, * nvertices_new, nodes_cut,
                  r, z, field, 
                  r_new, z_new, field_new);
 
     * nmesh_new = build_mesh (conn, nvertices, * nvertices_new, 
-                              nodes_cut, &mesh_new);
+                              nmesh, nodes_cut, &mesh_new);
 
-    free (nodes_cut);
+    free_nodes_cut_list (nodes_cut);
 
     * r_reduced = r_new;
     * z_reduced = z_new;
