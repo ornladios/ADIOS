@@ -1169,17 +1169,12 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
 
                     if (g_hash_table_insert (ght, key_str, 0) == TRUE)
                     {
-//if (n1 == 36 || n2 == 36 ||n3 == 36)
-//printf ("(%d,%d,%d)\n", n1, n2, n3);
-#if 1
                         * (mesh + lastcell * 3) = n1 - to_offset (nodes_cut, nvertices - nvertices_new, n1);
 ;
                         * (mesh + lastcell * 3 + 1) = n2 - to_offset (nodes_cut, nvertices - nvertices_new, n2);
 
                         * (mesh + lastcell * 3 + 2) = n3 - to_offset (nodes_cut, nvertices - nvertices_new, n3);
 ; 
-//                        printf ("(n1, n2, n3) = (%d, %d, %d)\n", n1, n2, n3);
-#endif
                         lastcell++; 
                     }
                 }
@@ -1307,7 +1302,7 @@ void decimate (double * r, double * z, double * field, int nvertices,
                               nodes_cut2, &mesh_new);
 #endif
 
-    while ((double)vertices_cut / (double)nvertices < 0.1)
+    while ((double)vertices_cut / (double)nvertices < 0.9)
 //    while (vertices_cut < 100)
     {
         int v1 = min_idx / MAX_NODE_DEGREE;
