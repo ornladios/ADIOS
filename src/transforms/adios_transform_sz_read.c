@@ -8,9 +8,9 @@
 #include "adios_transforms_hooks_read.h"
 #include "adios_transforms_reqgroup.h"
 
-#include "sz.h"
-
 #ifdef HAVE_SZ
+
+#include "sz.h"
 
 int adios_transform_sz_is_implemented (void) {return 1;}
 

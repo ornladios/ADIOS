@@ -16,9 +16,9 @@
 #include "adios_transforms_hooks_write.h"
 #include "adios_transforms_util.h"
 
-#include "sz.h"
-
 #ifdef HAVE_SZ
+
+#include "sz.h"
 
 typedef struct
 {
