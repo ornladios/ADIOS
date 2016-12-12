@@ -138,6 +138,7 @@ examples/C/transforms/adios_read_points
 examples/C/transforms/adios_read_subv
 examples/C/transforms/adios_read_wb_subpg
 examples/C/transforms/adios_write_all_3D
+examples/C/time_aggregation/time_aggregation
 examples/C/icee_arrays/array/adios_read
 examples/C/icee_arrays/array/adios_write
 examples/C/query/adios_read_ext_test
@@ -193,6 +194,8 @@ tests/C/flexpath_tests/maya_noxml/reader_maya_noxml
 tests/C/flexpath_tests/maya_noxml/writer_maya_noxml
 tests/C/flexpath_tests/scalar/reader_scalar
 tests/C/flexpath_tests/scalar/writer_scalar
+tests/C/flexpath_tests/global_range_select/reader_range
+tests/C/flexpath_tests/global_range_select/writer_range
 tests/C/flexpath_tests/global_range_select/arrays_read
 tests/C/flexpath_tests/global_range_select/arrays_write
 tests/C/query/common/adios_query_test
