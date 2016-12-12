@@ -49,7 +49,8 @@ int main (int argc, char ** argv)
       adios_write (adios_handle, "rank", &rank);
       adios_write (adios_handle, "var_2d_array", t);
 		fprintf(stderr, "Writer side Rank=%d: test_scalar: %d step: %d, t[0,5+x] = [%6.2f",rank, test_scalar, group_num, t[0]);
-		for(int j=1; j<    NX; j++) {    
+		int j; // CFLAGS may not be C99 (sigh)
+		for(j=1; j < NX; j++) {
 		    fprintf(stderr, ", %6.2f", t[j]);
 		}
 		fprintf(stderr, "]\n");
