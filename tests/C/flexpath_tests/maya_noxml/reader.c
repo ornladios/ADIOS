@@ -295,13 +295,15 @@ int main (int argc, char **argv){
 		TEST_INT_EQUAL(i, level, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
-		TEST_INT_EQUAL(i%2, carpet_mglevel, error_counts.test, test_result.result);
+		int j = i%2;
+		TEST_INT_EQUAL(j, carpet_mglevel, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
 		TEST_INT_EQUAL(26, timestep, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
-		TEST_INT_EQUAL(i%3, grp_tl, error_counts.test, test_result.result);
+		j=i%3;
+		TEST_INT_EQUAL(j, grp_tl, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
 		TEST_DOUBLE_EQUAL(13.0, time_attr, error_counts.test, test_result.result);
