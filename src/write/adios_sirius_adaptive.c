@@ -26,6 +26,8 @@
 #include "core/common_adios.h"
 #include "core/util.h"
 
+#include "pqueue.h"
+
 #include "mpi.h"
 
 #define MAXLEVEL 10
@@ -47,6 +49,330 @@ typedef struct Box
     uint64_t lower[16];
     uint64_t upper[16];
 } Box;
+
+typedef struct node_t
+{
+	pqueue_pri_t pri;
+	int    val;
+	size_t pos;
+} node_t;
+
+typedef struct edge_cost_t
+{
+    node_t * pq_node;
+    double cost;
+} edge_cost_t;
+
+static int
+cmp_pri(pqueue_pri_t next, pqueue_pri_t curr)
+{
+	return (next >= curr);
+}
+
+
+static pqueue_pri_t
+get_pri(void *a)
+{
+	return ((node_t *) a)->pri;
+}
+
+
+static void
+set_pri(void *a, pqueue_pri_t pri)
+{
+	((node_t *) a)->pri = pri;
+}
+
+
+static size_t
+get_pos(void *a)
+{
+	return ((node_t *) a)->pos;
+}
+
+
+static void
+set_pos(void *a, size_t pos)
+{
+	((node_t *) a)->pos = pos;
+}
+
+#define left(i)   ((i) << 1)
+#define right(i)  (((i) << 1) + 1)
+#define parent(i) ((i) >> 1)
+
+
+pqueue_t *
+pqueue_init(size_t n,
+            pqueue_cmp_pri_f cmppri,
+            pqueue_get_pri_f getpri,
+            pqueue_set_pri_f setpri,
+            pqueue_get_pos_f getpos,
+            pqueue_set_pos_f setpos)
+{
+    pqueue_t *q;
+
+    if (!(q = malloc(sizeof(pqueue_t))))
+        return NULL;
+
+    /* Need to allocate n+1 elements since element 0 isn't used. */
+    if (!(q->d = malloc((n + 1) * sizeof(void *)))) {
+        free(q);
+        return NULL;
+    }
+
+    q->size = 1;
+    q->avail = q->step = (n+1);  /* see comment above about n+1 */
+    q->cmppri = cmppri;
+    q->setpri = setpri;
+    q->getpri = getpri;
+    q->getpos = getpos;
+    q->setpos = setpos;
+
+    return q;
+}
+
+
+void
+pqueue_free(pqueue_t *q)
+{
+    free(q->d);
+    free(q);
+}
+
+
+size_t
+pqueue_size(pqueue_t *q)
+{
+    /* queue element 0 exists but doesn't count since it isn't used. */
+    return (q->size - 1);
+}
+
+
+static void
+bubble_up(pqueue_t *q, size_t i)
+{
+    size_t parent_node;
+    void *moving_node = q->d[i];
+    pqueue_pri_t moving_pri = q->getpri(moving_node);
+
+    for (parent_node = parent(i);
+         ((i > 1) && q->cmppri(q->getpri(q->d[parent_node]), moving_pri));
+         i = parent_node, parent_node = parent(i))
+    {
+        q->d[i] = q->d[parent_node];
+        q->setpos(q->d[i], i);
+    }
+
+    q->d[i] = moving_node;
+    q->setpos(moving_node, i);
+}
+
+
+static size_t
+maxchild(pqueue_t *q, size_t i)
+{
+    size_t child_node = left(i);
+
+    if (child_node >= q->size)
+        return 0;
+
+    if ((child_node+1) < q->size &&
+        q->cmppri(q->getpri(q->d[child_node]), q->getpri(q->d[child_node+1])))
+        child_node++; /* use right child instead of left */
+
+    return child_node;
+}
+
+
+static void
+percolate_down(pqueue_t *q, size_t i)
+{
+    size_t child_node;
+    void *moving_node = q->d[i];
+    pqueue_pri_t moving_pri = q->getpri(moving_node);
+
+    while ((child_node = maxchild(q, i)) &&
+           q->cmppri(moving_pri, q->getpri(q->d[child_node])))
+    {
+        q->d[i] = q->d[child_node];
+        q->setpos(q->d[i], i);
+        i = child_node;
+    }
+
+    q->d[i] = moving_node;
+    q->setpos(moving_node, i);
+}
+
+
+int
+pqueue_insert(pqueue_t *q, void *d)
+{
+    void *tmp;
+    size_t i;
+    size_t newsize;
+
+    if (!q) return 1;
+
+    /* allocate more memory if necessary */
+    if (q->size >= q->avail) {
+        newsize = q->size + q->step;
+        if (!(tmp = realloc(q->d, sizeof(void *) * newsize)))
+            return 1;
+        q->d = tmp;
+        q->avail = newsize;
+    }
+
+    /* insert item */
+    i = q->size++;
+    q->d[i] = d;
+    bubble_up(q, i);
+
+    return 0;
+}
+
+
+void
+pqueue_change_priority(pqueue_t *q,
+                       pqueue_pri_t new_pri,
+                       void *d)
+{
+    size_t posn;
+    pqueue_pri_t old_pri = q->getpri(d);
+
+    q->setpri(d, new_pri);
+    posn = q->getpos(d);
+    if (q->cmppri(old_pri, new_pri))
+        bubble_up(q, posn);
+    else
+        percolate_down(q, posn);
+}
+
+
+int
+pqueue_remove(pqueue_t *q, void *d)
+{
+    size_t posn = q->getpos(d);
+    q->d[posn] = q->d[--q->size];
+    if (q->cmppri(q->getpri(d), q->getpri(q->d[posn])))
+        bubble_up(q, posn);
+    else
+        percolate_down(q, posn);
+
+    return 0;
+}
+
+
+void *
+pqueue_pop(pqueue_t *q)
+{
+    void *head;
+
+    if (!q || q->size == 1)
+        return NULL;
+
+    head = q->d[1];
+    q->d[1] = q->d[--q->size];
+    percolate_down(q, 1);
+
+    return head;
+}
+
+
+void *
+pqueue_peek(pqueue_t *q)
+{
+    void *d;
+    if (!q || q->size == 1)
+        return NULL;
+    d = q->d[1];
+    return d;
+}
+
+
+void
+pqueue_dump(pqueue_t *q,
+            FILE *out,
+            pqueue_print_entry_f print)
+{
+    int i;
+
+    fprintf(stdout,"posn\tleft\tright\tparent\tmaxchild\t...\n");
+    for (i = 1; i < q->size ;i++) {
+        fprintf(stdout,
+                "%d\t%d\t%d\t%d\t%ul\t",
+                i,
+                left(i), right(i), parent(i),
+                (unsigned int)maxchild(q, i));
+        print(out, q->d[i]);
+    }
+}
+
+#if 0
+static void
+set_pos(void *d, size_t val)
+{
+    /* do nothing */
+}
+
+
+static void
+set_pri(void *d, pqueue_pri_t pri)
+{
+    /* do nothing */
+}
+#endif
+
+void
+pqueue_print(pqueue_t *q,
+             FILE *out,
+             pqueue_print_entry_f print)
+{
+    pqueue_t *dup;
+	void *e;
+
+    dup = pqueue_init(q->size,
+                      q->cmppri, q->getpri, set_pri,
+                      q->getpos, set_pos);
+    dup->size = q->size;
+    dup->avail = q->avail;
+    dup->step = q->step;
+
+    memcpy(dup->d, q->d, (q->size * sizeof(void *)));
+
+    while ((e = pqueue_pop(dup)))
+		print(out, e);
+
+    pqueue_free(dup);
+}
+
+
+static int
+subtree_is_valid(pqueue_t *q, int pos)
+{
+    if (left(pos) < q->size) {
+        /* has a left child */
+        if (q->cmppri(q->getpri(q->d[pos]), q->getpri(q->d[left(pos)])))
+            return 0;
+        if (!subtree_is_valid(q, left(pos)))
+            return 0;
+    }
+    if (right(pos) < q->size) {
+        /* has a right child */
+        if (q->cmppri(q->getpri(q->d[pos]), q->getpri(q->d[right(pos)])))
+            return 0;
+        if (!subtree_is_valid(q, right(pos)))
+            return 0;
+    }
+    return 1;
+}
+
+
+int
+pqueue_is_valid(pqueue_t *q)
+{
+    return subtree_is_valid(q, 1);
+}
 
 void print_2d_box (Box * b)
 {
@@ -831,24 +1157,21 @@ int insert_node (double * newz, double * newr, double * newfield, int * size,
     }
 }
 
-int find_mincost (int ** conn, int nvertices, double * r, double * z)
+int find_mincost (int ** conn, edge_cost_t ** cost_matrix, 
+                  int nvertices, double * r, double * z)
 {
     int min_idx;
     double min_cost = DBL_MAX;
 
     for (int i = 0; i < nvertices; i++)
     {
-        int n1 = i;
         int j = 0;
 
         while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
         {
-            int n2 = conn[i][j];
-            double edge = sqrt((r[n1] - r[n2]) * (r[n1] - r[n2]) + (z[n1] - z[n2]) * (z[n1] - z[n2]));
-
-            if (edge <= min_cost)
+            if (cost_matrix[i][j].cost <= min_cost)
             {
-                min_cost = edge;
+                min_cost = cost_matrix[i][j].cost;
                 min_idx = i * MAX_NODE_DEGREE + j;
             }
 
@@ -858,6 +1181,57 @@ int find_mincost (int ** conn, int nvertices, double * r, double * z)
     }
 
     return min_idx;
+}
+
+
+pqueue_t * build_pq (int ** conn, edge_cost_t *** cost_matrix_p,
+                   int nvertices, double * r, double * z)
+{
+    edge_cost_t ** cost_matrix = (edge_cost_t **) malloc (nvertices * 8);
+    assert (cost_matrix);
+
+    * cost_matrix_p = cost_matrix;
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        cost_matrix[i] = (edge_cost_t *) malloc (MAX_NODE_DEGREE * sizeof (edge_cost_t));
+        assert (cost_matrix[i]);
+
+        for (int j = 0; j < MAX_NODE_DEGREE; j++)
+        {
+            cost_matrix[i][j].cost = DBL_MAX;
+            cost_matrix[i][j].pq_node = 0;
+        }
+    }
+
+    pqueue_t * pq = pqueue_init (nvertices * MAX_NODE_DEGREE, 
+                                 cmp_pri, get_pri, set_pri, 
+                                 get_pos, set_pos);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        int n1 = i;
+        int j = 0;
+
+        while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
+        {
+            int n2 = conn[i][j];
+            cost_matrix[i][j].cost = sqrt((r[n1] - r[n2]) * (r[n1] - r[n2]) + (z[n1] - z[n2]) * (z[n1] - z[n2]));
+
+            node_t * pqn = (node_t *) malloc (sizeof (node_t));
+            pqn->pri = cost_matrix[i][j].cost;
+            pqn->val = i * MAX_NODE_DEGREE + j;
+
+            cost_matrix[i][j].pq_node = pqn;
+
+            pqueue_insert(pq, pqn);
+
+            j++;
+        }
+
+    }
+
+    return pq;
 }
 
 void sort2 (int * n1, int * n2)
@@ -1282,16 +1656,90 @@ void update_field (int v1, int v2, double * r, double * z, double * field)
     field[v1] = (field[v1] + field[v2]) / 2;
 }
 
+void update_cost (int ** conn, edge_cost_t ** cost_matrix,
+                  pqueue_t * pq, int n1, int j,
+                  double * r, double * z)
+{
+    int n2 = conn[n1][j];
+
+    if (n2 == -1)
+    {
+        cost_matrix[n1][j].cost = DBL_MAX;
+
+        if (cost_matrix[n1][j].pq_node)
+        {
+            assert (!pqueue_remove(pq, cost_matrix[n1][j].pq_node));
+            free (cost_matrix[n1][j].pq_node);
+            cost_matrix[n1][j].pq_node = 0;
+        }
+    }
+    else
+    {
+        cost_matrix[n1][j].cost = sqrt((r[n1] - r[n2]) * (r[n1] - r[n2]) + (z[n1] - z[n2]) * (z[n1] - z[n2]));
+
+        if (cost_matrix[n1][j].pq_node)
+        {
+            pqueue_change_priority (pq, cost_matrix[n1][j].cost, 
+                                    cost_matrix[n1][j].pq_node);
+
+        }
+        else
+        {
+            node_t * pqn = (node_t *) malloc (sizeof (node_t));
+            pqn->pri = cost_matrix[n1][j].cost;
+            pqn->val = n1 * MAX_NODE_DEGREE + j;
+            cost_matrix[n1][j].pq_node = pqn;
+            
+            pqueue_insert(pq, pqn);
+        }
+
+    }
+}
+
+void free_conn (int ** conn, int nvertices)
+{
+    for (int i = 0; i < nvertices; i++)
+    {
+        free (conn[i]);
+    }
+
+    free (conn);
+}
+
+void free_cost_matrix (edge_cost_t ** cost_matrix, int nvertices)
+{
+    for (int i = 0; i < nvertices; i++)
+    {
+        free (cost_matrix[i]);
+    }
+
+    free (cost_matrix);
+}
+   
 void decimate (double * r, double * z, double * field, int nvertices,
                int * mesh, int nmesh,
-               double ** r_reduced, double ** z_reduced, double ** field_reduced, int * nvertices_new,
+               double ** r_reduced, double ** z_reduced, 
+               double ** field_reduced, int * nvertices_new,
                int ** mesh_reduced, int * nmesh_new
               )
 {
     double * r_new, * z_new, * field_new, * mesh_new;
     int vertices_cut = 0;
     int ** conn = build_conn (nvertices, mesh, nmesh);
-    int min_idx = find_mincost (conn, nvertices, r, z);
+    edge_cost_t ** cost_matrix;
+
+    pqueue_t * pq = build_pq (conn, &cost_matrix, nvertices, r, z);
+#if 0
+    int min_idx = find_mincost (conn, cost_matrix, nvertices, r, z);
+#endif
+    node_t * pq_min = pqueue_pop(pq);
+    int min_idx = pq_min->val;
+    int pq_v1 = min_idx / MAX_NODE_DEGREE;
+    assert (pq_v1 >=0 && pq_v1 < nvertices);
+
+    free (cost_matrix[pq_v1][min_idx % MAX_NODE_DEGREE].pq_node);
+    cost_matrix[pq_v1][min_idx % MAX_NODE_DEGREE].pq_node = 0;
+
 
 #if 0
     prep_mesh (conn, nvertices, nvertices);
@@ -1302,8 +1750,9 @@ void decimate (double * r, double * z, double * field, int nvertices,
                               nodes_cut2, &mesh_new);
 #endif
 
-    while ((double)vertices_cut / (double)nvertices < 0.9)
-//    while (vertices_cut < 100)
+double t0 = MPI_Wtime();
+    while ((double)vertices_cut / (double)nvertices < 0.99)
+//    while (vertices_cut < 10000)
     {
         int v1 = min_idx / MAX_NODE_DEGREE;
         assert (v1 >=0 && v1 < nvertices);
@@ -1319,6 +1768,7 @@ void decimate (double * r, double * z, double * field, int nvertices,
         while (j < MAX_NODE_DEGREE && conn[v1][j] != -1 
             && conn[v1][j] != v2)
         {
+            update_cost (conn, cost_matrix, pq, v1, j, r, z);
             j++;
         }
 
@@ -1338,6 +1788,8 @@ void decimate (double * r, double * z, double * field, int nvertices,
             while (j < MAX_NODE_DEGREE - 1 && conn[v1][j] != -1)
             {
                 conn[v1][j] = conn[v1][j + 1];
+                update_cost (conn, cost_matrix, pq, v1, j, r, z);
+
                 if (conn[v1][j] != -1)
                 {
                     j++;
@@ -1354,10 +1806,12 @@ void decimate (double * r, double * z, double * field, int nvertices,
             if (new_node(conn, v1, conn[v2][i]))
             {
                 conn[v1][j + m] = conn[v2][i];
+                update_cost (conn, cost_matrix, pq, v1, j + m, r, z);
                 m++;
             }
 
             conn[v2][i] = -1;
+            update_cost (conn, cost_matrix, pq, v2, i, r, z);
 
             i++;
         }
@@ -1372,11 +1826,17 @@ void decimate (double * r, double * z, double * field, int nvertices,
             {
                 while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
                 {
-                    if (conn[i][j] == v2)
+                    if (conn[i][j] == v1)
+                    {
+                        update_cost (conn, cost_matrix, pq, i, j, r, z);
+                        j++;
+                    }
+                    else if (conn[i][j] == v2)
                     {
                         if (new_node(conn, i, v1))
                         {
                             conn[i][j] = v1;
+                            update_cost (conn, cost_matrix, pq, i, j, r, z);
                             j++;
                         }
                         else
@@ -1385,6 +1845,9 @@ void decimate (double * r, double * z, double * field, int nvertices,
                             while (k < MAX_NODE_DEGREE - 1 && conn[i][k] != -1)
                             {
                                 conn[i][k] = conn[i][k + 1];
+
+                                update_cost (conn, cost_matrix, pq, i, k, r, z);
+
                                 if (conn[i][k] != -1)
                                 {
                                     k++;
@@ -1415,6 +1878,8 @@ void decimate (double * r, double * z, double * field, int nvertices,
                             if (new_node(conn, v1, i))
                             {
                                 conn[v1][k] = i;
+
+                                update_cost (conn, cost_matrix, pq, v1, k, r, z);
                             }
 
                             k = j;
@@ -1422,12 +1887,17 @@ void decimate (double * r, double * z, double * field, int nvertices,
                             while (k < MAX_NODE_DEGREE - 1 && conn[i][k] != -1)
                             {
                                 conn[i][k] = conn[i][k + 1];
+
+                                update_cost (conn, cost_matrix, pq, i, k, r, z);
+
                                 k++;
                             }
 
                             if (k == MAX_NODE_DEGREE - 1)
                             {
                                 conn[i][k] = -1;
+
+                                update_cost (conn, cost_matrix, pq, i, k, r, z);
                             }
                         }
 
@@ -1439,9 +1909,22 @@ void decimate (double * r, double * z, double * field, int nvertices,
         }
 
         vertices_cut++;
-        min_idx = find_mincost (conn, nvertices, r, z);
+double t1 = MPI_Wtime();
+#if 0
+        min_idx = find_mincost (conn, cost_matrix, nvertices, r, z);
+#endif
+        node_t * pq_min = pqueue_pop(pq);
+        min_idx = pq_min->val;
+
+        int pq_v1 = min_idx / MAX_NODE_DEGREE;
+        assert (pq_v1 >=0 && pq_v1 < nvertices);
+
+        free (cost_matrix[pq_v1][min_idx % MAX_NODE_DEGREE].pq_node);
+        cost_matrix[pq_v1][min_idx % MAX_NODE_DEGREE].pq_node = 0;
     }
 
+double t2 = MPI_Wtime();
+printf ("time = %f\n", t2 - t0);
 #if 0
     for (int i = 0; i < nvertices; i++)
     {
@@ -1481,6 +1964,9 @@ void decimate (double * r, double * z, double * field, int nvertices,
     * field_reduced = field_new;
     * mesh_reduced = mesh_new;
 
+    free_conn (conn, nvertices);
+    free_cost_matrix (cost_matrix, nvertices);
+    pqueue_free (pq);
 printf ("nmesh_new = %d\n", * nmesh_new);
 }
 
