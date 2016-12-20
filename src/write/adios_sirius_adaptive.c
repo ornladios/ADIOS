@@ -43,6 +43,7 @@ static char *splitter_type;
 
 double threshold = 0.0001;
 double fillratio = 0.28;
+GHashTable ** nodes_ght = 0;
 
 typedef struct Box
 {
@@ -1273,8 +1274,40 @@ void sort3 (int * n1, int * n2, int * n3)
 
 }
 
+void insert_hash (int nvertices, int node, int k, int v)
+{
+    assert (node >= 0 && node < nvertices);
 
-void insert_triangle (int n1, int n2, int n3, int ** conn)
+    int * pkey = malloc (4);
+    * pkey = k;
+
+    int * pval = malloc (4);
+    * pval = v;
+
+    assert (TRUE == g_hash_table_insert (nodes_ght[node], pkey, pval));
+}
+
+void replace_hash (int nvertices, int node, int k, int v)
+{
+    assert (node >= 0 && node < nvertices);
+
+    int * pkey = malloc (4);
+    * pkey = k;
+
+    int * pval = malloc (4);
+    * pval = v;
+
+    if (FALSE == g_hash_table_replace (nodes_ght[node], pkey, pval));
+}
+
+void remove_hash (int nvertices, int node, int k)
+{
+    assert (node >= 0 && node < nvertices);
+
+    assert (TRUE == g_hash_table_remove (nodes_ght[node], &k));
+}
+
+void insert_triangle (int nvertices, int n1, int n2, int n3, int ** conn)
 {
     int j = 0, found;
 
@@ -1299,6 +1332,7 @@ void insert_triangle (int n1, int n2, int n3, int ** conn)
         if (!found)
         {
            conn[n1][j] = n2;
+           insert_hash (nvertices, n2, n1, n1 * MAX_NODE_DEGREE + j);
         }
     }
 
@@ -1323,6 +1357,7 @@ void insert_triangle (int n1, int n2, int n3, int ** conn)
         if (!found)
         {
            conn[n1][j] = n3;
+           insert_hash (nvertices, n3, n1, n1 * MAX_NODE_DEGREE + j);
         }
     }
 
@@ -1347,6 +1382,7 @@ void insert_triangle (int n1, int n2, int n3, int ** conn)
         if (!found)
         {
            conn[n2][j] = n3;
+           insert_hash (nvertices, n3, n2, n2 * MAX_NODE_DEGREE + j);
         }
     }
 
@@ -1371,6 +1407,7 @@ int new_node(int ** conn, int v1, int n)
 int ** build_conn (int nvertices, int * mesh, int nmesh)
 {
     int ** conn = (int **) malloc (nvertices * 8);
+    nodes_ght = (GHashTable **) malloc (nvertices * 8); 
 
     for (int i = 0; i < nvertices; i++)
     {
@@ -1379,6 +1416,8 @@ int ** build_conn (int nvertices, int * mesh, int nmesh)
         {
             conn[i][j] = -1;
         }
+
+        nodes_ght[i] = g_hash_table_new_full (g_int_hash, g_int_equal, free, free);
     }
 
     for (int i = 0; i < nmesh; i++)
@@ -1388,7 +1427,7 @@ int ** build_conn (int nvertices, int * mesh, int nmesh)
         int n3 = * (mesh + i * 3 + 2);
 
         sort3 (&n1, &n2, &n3);
-        insert_triangle (n1, n2, n3, conn);
+        insert_triangle (nvertices, n1, n2, n3, conn);
     }
 
     return conn;
@@ -1515,7 +1554,7 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
     n3_list = malloc (MAX_COMMON_NODES * 4);
     assert (n3_list);
 
-    GHashTable * ght = g_hash_table_new (g_str_hash,g_str_equal);
+    GHashTable * ght = g_hash_table_new_full (g_str_hash,g_str_equal, free, free);
 
     for (int i = 0; i < nvertices; i++)
     {
@@ -1751,7 +1790,7 @@ void decimate (double * r, double * z, double * field, int nvertices,
 #endif
 
 double t0 = MPI_Wtime();
-    while ((double)vertices_cut / (double)nvertices < 0.99)
+    while ((double)vertices_cut / (double)nvertices < 0.95)
 //    while (vertices_cut < 10000)
     {
         int v1 = min_idx / MAX_NODE_DEGREE;
@@ -1785,13 +1824,17 @@ double t0 = MPI_Wtime();
         }
         else
         {
+            remove_hash (nvertices, v2, v1);
+
             while (j < MAX_NODE_DEGREE - 1 && conn[v1][j] != -1)
             {
                 conn[v1][j] = conn[v1][j + 1];
+
                 update_cost (conn, cost_matrix, pq, v1, j, r, z);
 
                 if (conn[v1][j] != -1)
                 {
+                    replace_hash (nvertices, conn[v1][j], v1, v1 * MAX_NODE_DEGREE + j);
                     j++;
                 }
             }
@@ -1806,10 +1849,13 @@ double t0 = MPI_Wtime();
             if (new_node(conn, v1, conn[v2][i]))
             {
                 conn[v1][j + m] = conn[v2][i];
+
                 update_cost (conn, cost_matrix, pq, v1, j + m, r, z);
+                insert_hash (nvertices, conn[v1][j + m], v1, v1 * MAX_NODE_DEGREE + j + m);
                 m++;
             }
 
+            remove_hash (nvertices, conn[v2][i], v2);
             conn[v2][i] = -1;
             update_cost (conn, cost_matrix, pq, v2, i, r, z);
 
@@ -1817,7 +1863,125 @@ double t0 = MPI_Wtime();
         }
 
         assert (j + m < MAX_NODE_DEGREE);
+#if 1
+        GHashTableIter iter;
+        int * key, * value;
 
+        g_hash_table_iter_init (&iter, nodes_ght[v1]);
+        while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+            i = * key;
+            j = (* value) % MAX_NODE_DEGREE;
+
+            update_cost (conn, cost_matrix, pq, i, j, r, z);
+        }
+
+        g_hash_table_iter_init (&iter, nodes_ght[v2]);
+
+        int v2_ht_size = g_hash_table_size (nodes_ght[v2]);
+        int toff;
+        int * temp_table = malloc (v2_ht_size * 2 * 4);
+
+        assert  (temp_table);
+
+        toff = 0;
+        while (g_hash_table_iter_next (&iter, &key, &value))
+        {
+            * (temp_table + toff * 2) = * key;
+            * (temp_table + toff * 2 + 1) = * value;
+
+            toff++;
+        }
+
+        toff = 0;
+        while (toff < v2_ht_size)
+        {
+            i = * (temp_table + toff * 2);
+            j = * (temp_table + toff * 2 + 1) % MAX_NODE_DEGREE;
+
+            toff++;
+
+            if (i < v1)
+            {
+                if (new_node(conn, i, v1))
+                {
+                    conn[i][j] = v1;
+                    update_cost (conn, cost_matrix, pq, i, j, r, z);
+
+                    insert_hash (nvertices, conn[i][j], i, i * MAX_NODE_DEGREE + j);
+                 }
+                 else
+                 {
+                     k = j;
+
+                     remove_hash (nvertices, conn[i][k], i);
+
+                     while (k < MAX_NODE_DEGREE - 1 && conn[i][k] != -1)
+                     {
+                         conn[i][k] = conn[i][k + 1];
+
+                         update_cost (conn, cost_matrix, pq, i, k, r, z);
+
+                         if (conn[i][k] != -1)
+                         {
+                             replace_hash (nvertices, conn[i][k], i, i * MAX_NODE_DEGREE + k);
+                             k++;
+                         }
+                     }
+
+                 }
+            }
+            else if (i > v1)
+            {
+                k = 0;
+                while (k < MAX_NODE_DEGREE && conn[v1][k] != -1)
+                {
+                    k++;
+                }
+
+                if (k < MAX_NODE_DEGREE)
+                {
+                    if (new_node(conn, v1, i))
+                    {
+                        conn[v1][k] = i;
+
+                        update_cost (conn, cost_matrix, pq, v1, k, r, z);
+                        insert_hash (nvertices, conn[v1][k], v1, v1 * MAX_NODE_DEGREE + k);
+                    }
+
+                    k = j;
+
+                    remove_hash (nvertices, conn[i][k], i);
+                    while (k < MAX_NODE_DEGREE - 1 && conn[i][k] != -1)
+                    {
+                        conn[i][k] = conn[i][k + 1];
+
+                        update_cost (conn, cost_matrix, pq, i, k, r, z);
+
+                        if (conn[i][k] != -1)
+                        {
+                            replace_hash (nvertices, conn[i][k], i, i * MAX_NODE_DEGREE + k);
+
+                            k++;
+                        }
+                    }
+
+                    if (k == MAX_NODE_DEGREE - 1)
+                    {
+                        remove_hash (nvertices, conn[i][k], i);
+
+                        conn[i][k] = -1;
+
+                        update_cost (conn, cost_matrix, pq, i, k, r, z);
+                    }
+                }
+            }
+        }
+
+        free (temp_table);
+
+#endif
+#if 0
         for (i = 0; i < v2; i++)
         {
             j = 0;
@@ -1828,20 +1992,31 @@ double t0 = MPI_Wtime();
                 {
                     if (conn[i][j] == v1)
                     {
+int * ptmp = g_hash_table_lookup (nodes_ght[v1], &i);
+assert (* ptmp == (i * MAX_NODE_DEGREE + j));
+
                         update_cost (conn, cost_matrix, pq, i, j, r, z);
                         j++;
                     }
                     else if (conn[i][j] == v2)
                     {
+int * ptmp = g_hash_table_lookup (nodes_ght[v2], &i);
+assert (* ptmp == (i * MAX_NODE_DEGREE + j));
+
                         if (new_node(conn, i, v1))
                         {
                             conn[i][j] = v1;
                             update_cost (conn, cost_matrix, pq, i, j, r, z);
+
+                            insert_hash (nvertices, conn[i][j], i, i * MAX_NODE_DEGREE + j);
                             j++;
                         }
                         else
                         {
                             k = j;
+
+                            remove_hash (nvertices, conn[i][k], i);
+
                             while (k < MAX_NODE_DEGREE - 1 && conn[i][k] != -1)
                             {
                                 conn[i][k] = conn[i][k + 1];
@@ -1850,6 +2025,7 @@ double t0 = MPI_Wtime();
 
                                 if (conn[i][k] != -1)
                                 {
+                                    replace_hash (nvertices, conn[i][k], i, i * MAX_NODE_DEGREE + k);
                                     k++;
                                 }
                             }
@@ -1867,6 +2043,9 @@ double t0 = MPI_Wtime();
                 {
                     if (conn[i][j] == v2)
                     {
+int * ptmp = g_hash_table_lookup (nodes_ght[v2], &i);
+assert (* ptmp == (i * MAX_NODE_DEGREE + j));
+
                         k = 0;
                         while (k < MAX_NODE_DEGREE && conn[v1][k] != -1)
                         {
@@ -1880,9 +2059,12 @@ double t0 = MPI_Wtime();
                                 conn[v1][k] = i;
 
                                 update_cost (conn, cost_matrix, pq, v1, k, r, z);
+                                insert_hash (nvertices, conn[v1][k], v1, v1 * MAX_NODE_DEGREE + k);
                             }
 
                             k = j;
+
+                            remove_hash (nvertices, conn[i][k], i);
 
                             while (k < MAX_NODE_DEGREE - 1 && conn[i][k] != -1)
                             {
@@ -1890,11 +2072,18 @@ double t0 = MPI_Wtime();
 
                                 update_cost (conn, cost_matrix, pq, i, k, r, z);
 
-                                k++;
+                                if (conn[i][k] != -1)
+                                {
+                                    replace_hash (nvertices, conn[i][k], i, i * MAX_NODE_DEGREE + k);
+
+                                    k++;
+                                }
                             }
 
                             if (k == MAX_NODE_DEGREE - 1)
                             {
+                                remove_hash (nvertices, conn[i][k], i);
+
                                 conn[i][k] = -1;
 
                                 update_cost (conn, cost_matrix, pq, i, k, r, z);
@@ -1907,6 +2096,7 @@ double t0 = MPI_Wtime();
                 }
             }
         }
+#endif
 
         vertices_cut++;
 double t1 = MPI_Wtime();
@@ -1967,6 +2157,13 @@ printf ("time = %f\n", t2 - t0);
     free_conn (conn, nvertices);
     free_cost_matrix (cost_matrix, nvertices);
     pqueue_free (pq);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        g_hash_table_destroy (nodes_ght[i]);
+    }
+
+    free (nodes_ght);
 printf ("nmesh_new = %d\n", * nmesh_new);
 }
 
