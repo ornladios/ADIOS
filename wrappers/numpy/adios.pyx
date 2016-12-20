@@ -1982,7 +1982,8 @@ cdef class writer(object):
 
     def declare_group(self, str gname = None,
                       str method = "POSIX1",
-                      str method_params = ""):
+                      str method_params = "",
+                      int stats = adios_stat_default):
         """
         Define a group associated with the file.
 
@@ -2002,7 +2003,7 @@ cdef class writer(object):
         if self.gname is None:
             self.gname = "group"
 
-        self.gid = declare_group(self.gname, "", adios_stat_default)
+        self.gid = declare_group(self.gname, "", stats)
         self.method = method
         self.method_params = method_params
         select_method(self.gid, self.method, self.method_params, "")
@@ -2087,7 +2088,7 @@ cdef class writer(object):
         if self.gid == 0:
             self.declare_group()
 
-        fd = open(self.gname, self.fname, self.mode)
+        fd = open(self.gname, self.fname, self.mode, comm=self.comm)
 
         extra_vars = dict()
         extra_attrs = dict()
