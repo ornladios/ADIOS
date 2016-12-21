@@ -914,7 +914,7 @@ pqueue_t * build_pq (int ** conn, edge_cost_t *** cost_matrix_p,
         while (j < MAX_NODE_DEGREE && conn[i][j] != -1)
         {
             int n2 = conn[i][j];
-            cost_matrix[i][j].cost = sqrt((r[n1] - r[n2]) * (r[n1] - r[n2]) + (z[n1] - z[n2]) * (z[n1] - z[n2]));
+            cost_matrix[i][j].cost = sqrt(pow (r[n1] - r[n2], 2) + pow (z[n1] - z[n2], 2));
 
             node_t * pqn = (node_t *) malloc (sizeof (node_t));
             pqn->pri = cost_matrix[i][j].cost;
@@ -1260,7 +1260,7 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
     assert (mesh);
 
     int * n3_list = 0, len = 0, lastcell = 0;
-#if 1
+
 #define MAX_COMMON_NODES 50
     n3_list = malloc (MAX_COMMON_NODES * 4);
     assert (n3_list);
@@ -1312,9 +1312,7 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
 
     free (n3_list);
     n3_list = 0;
-#endif
 
-printf ("last cell 1 = %d\n", lastcell);
     * mesh_new = mesh;
 
     return lastcell;
@@ -1410,7 +1408,7 @@ void update_cost (int ** conn, edge_cost_t ** cost_matrix,
     }
     else
     {
-        cost_matrix[n1][j].cost = sqrt((r[n1] - r[n2]) * (r[n1] - r[n2]) + (z[n1] - z[n2]) * (z[n1] - z[n2]));
+        cost_matrix[n1][j].cost = sqrt(pow (r[n1] - r[n2], 2) + pow (z[n1] - z[n2], 2));
 
         if (cost_matrix[n1][j].pq_node)
         {
@@ -1451,8 +1449,8 @@ void free_cost_matrix (edge_cost_t ** cost_matrix, int nvertices)
     free (cost_matrix);
 }
    
-void decimate (double * r, double * z, double * field, int nvertices,
-               int * mesh, int nmesh,
+void decimate (double * r, double * z, double * field, 
+               int nvertices, int * mesh, int nmesh,
                double ** r_reduced, double ** z_reduced, 
                double ** field_reduced, int * nvertices_new,
                int ** mesh_reduced, int * nmesh_new
@@ -1460,7 +1458,8 @@ void decimate (double * r, double * z, double * field, int nvertices,
 {
     double * r_new, * z_new, * field_new;
     int * mesh_new;
-    int vertices_cut = 0;
+    int vertices_cut = 0, min_idx, pq_v1;
+
     int ** conn = build_conn (nvertices, mesh, nmesh);
     edge_cost_t ** cost_matrix;
 
@@ -1468,23 +1467,14 @@ void decimate (double * r, double * z, double * field, int nvertices,
 #if 0
     int min_idx = find_mincost (conn, cost_matrix, nvertices, r, z);
 #endif
-    node_t * pq_min = pqueue_pop(pq);
-    int min_idx = pq_min->val;
-    int pq_v1 = min_idx / MAX_NODE_DEGREE;
+    node_t * pq_min = pqueue_pop (pq);
+    min_idx = pq_min->val;
+    pq_v1 = min_idx / MAX_NODE_DEGREE;
+
     assert (pq_v1 >=0 && pq_v1 < nvertices);
 
     free (cost_matrix[pq_v1][min_idx % MAX_NODE_DEGREE].pq_node);
     cost_matrix[pq_v1][min_idx % MAX_NODE_DEGREE].pq_node = 0;
-
-
-#if 0
-    prep_mesh (conn, nvertices, nvertices);
-
-    int * nodes_cut2 = build_nodes_cut_list (conn, nvertices, nvertices);
-
-    * nmesh_new = build_mesh (conn, nvertices, nvertices,
-                              nodes_cut2, &mesh_new);
-#endif
 
 double t0 = MPI_Wtime();
     while ((double)vertices_cut / (double)nvertices < 0.99)
@@ -2076,7 +2066,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                             double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
                             double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
-                            double grad_mag = sqrt (grad_z * grad_z + grad_r * grad_r);
+                            double grad_mag = sqrt (pow (grad_z, 2) + pow (grad_r, 2));
 
                             grad[n1] = grad[n2] = grad[n3] = grad_mag;
 
@@ -2107,7 +2097,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                             double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
                             double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
-                            double grad_mag = sqrt (grad_z * grad_z + grad_r * grad_r);
+                            double grad_mag = sqrt (pow (grad_z, 2) + pow (grad_r, 2));
 
                             grad[n1] = grad[n2] = grad[n3] = grad_mag;
 
