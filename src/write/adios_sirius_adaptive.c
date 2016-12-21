@@ -1184,6 +1184,20 @@ void prep_mesh (int ** conn, int nvertices, int nvertices_new)
     }
 }
 
+int to_offset (int * nodes_cut, int nnodes_cut, int my_node_id)
+{
+    int i;
+
+    for (i = 0; i < nnodes_cut; i++)
+    {
+        if (my_node_id < nodes_cut[i])
+        {
+            return i;
+        }
+    }
+
+    return nnodes_cut;
+}
 
 void rebuild_conn (int ** conn, int nvertices, int nvertices_new, 
                    int * nodes_cut)
@@ -1304,21 +1318,6 @@ printf ("last cell 1 = %d\n", lastcell);
     * mesh_new = mesh;
 
     return lastcell;
-}
-
-int to_offset (int * nodes_cut, int nnodes_cut, int my_node_id)
-{
-    int i;
- 
-    for (i = 0; i < nnodes_cut; i++)
-    {
-        if (my_node_id < nodes_cut[i])
-        {
-            return i;
-        }
-    }
-
-    return nnodes_cut;
 }
 
 int * build_nodes_cut_list (int ** conn, int nvertices, int nvertices_new)
@@ -1459,7 +1458,8 @@ void decimate (double * r, double * z, double * field, int nvertices,
                int ** mesh_reduced, int * nmesh_new
               )
 {
-    double * r_new, * z_new, * field_new, * mesh_new;
+    double * r_new, * z_new, * field_new;
+    int * mesh_new;
     int vertices_cut = 0;
     int ** conn = build_conn (nvertices, mesh, nmesh);
     edge_cost_t ** cost_matrix;
@@ -1487,7 +1487,7 @@ void decimate (double * r, double * z, double * field, int nvertices,
 #endif
 
 double t0 = MPI_Wtime();
-    while ((double)vertices_cut / (double)nvertices < 0.95)
+    while ((double)vertices_cut / (double)nvertices < 0.99)
 //    while (vertices_cut < 10000)
     {
         int v1 = min_idx / MAX_NODE_DEGREE;
@@ -1565,7 +1565,7 @@ double t0 = MPI_Wtime();
         int * key, * value;
 
         g_hash_table_iter_init (&iter, nodes_ght[v1]);
-        while (g_hash_table_iter_next (&iter, &key, &value))
+        while (g_hash_table_iter_next (&iter, (gpointer *)&key, (gpointer *)&value))
         {
             i = * key;
             j = (* value) % MAX_NODE_DEGREE;
@@ -1582,7 +1582,7 @@ double t0 = MPI_Wtime();
         assert  (temp_table);
 
         toff = 0;
-        while (g_hash_table_iter_next (&iter, &key, &value))
+        while (g_hash_table_iter_next (&iter, (gpointer *)&key, (gpointer *)&value))
         {
             * (temp_table + toff * 2) = * key;
             * (temp_table + toff * 2 + 1) = * value;
@@ -1864,7 +1864,7 @@ printf ("time = %f\n", t2 - t0);
 printf ("nmesh_new = %d\n", * nmesh_new);
 }
 
-#define DEFINE_VAR_LEVEL(varname, l, type)         \  
+#define DEFINE_VAR_LEVEL(varname, l, type)         \
     adios_common_define_var (md->level[l].grp      \
                             ,varname               \
                             ,var->path             \
@@ -1897,7 +1897,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
     double * newz, * newr, * newfield;
     int * newmesh;
     int newsize = 0, cell_cnt = 0;
-    void * r_reduced = 0, * z_reduced = 0, * data_reduced = 0;
+    double * r_reduced = 0, * z_reduced = 0, * data_reduced = 0;
     int nvertices_new;
     int * mesh_reduced = 0, nmesh_reduced;
 
@@ -1950,7 +1950,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                 if (l == 0)
                 {
-                    var->data = data;
+                    var->data = (void *) data;
                     var->global_dimensions = print_dimensions (1, gdims);
                     var->local_dimensions = print_dimensions (1, ldims);
                     var->local_offsets = print_dimensions (1, offsets);
@@ -1958,7 +1958,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                 }
                 else if (l == 1)
                 {
-                    var->data = data;
+                    var->data = (void *) data;
 
                     if (!strcmp (v->name, "R")
                      || !strcmp (v->name, "Z"))
@@ -1980,7 +1980,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                 } 
                 else if (l == 2)
                 {
-                    var->data = data;
+                    var->data = (void *) data;
                      
                     if (!strcmp (v->name, "R")
                      || !strcmp (v->name, "Z"))
@@ -2016,7 +2016,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             adios_error (err_invalid_varname, 
                                  "Bad var name (ignored) in SIRIUS_ADAPTIVE"
                                  " adios_write(): %s\n", mesh->name);
-                            return 1;
+                            return;
                         }
 
                         mesh_ndims = count_dimensions (mesh->dimensions);
@@ -2030,7 +2030,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         if (mesh_ldims[1] != 3)
                         {
                             printf ("The mesh is incorrect!\n");
-                            return 1;
+                            return;
                         }
 
                         struct adios_var_struct * R = adios_find_var_by_name (fd->group, "R");
@@ -2040,7 +2040,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             adios_error (err_invalid_varname,
                                  "Bad var name (ignored) in SIRIUS_ADAPTIVE"
                                  " adios_write(): %s\n", R->name);
-                            return 1;
+                            return;
                         }
 
                         struct adios_var_struct * Z = adios_find_var_by_name (fd->group, "Z");
@@ -2050,7 +2050,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             adios_error (err_invalid_varname,
                                  "Bad var name (ignored) in SIRIUS_ADAPTIVE"
                                  " adios_write(): %s\n", Z->name);
-                            return 1;
+                            return;
                         }
 #if 0
                         // Decimation for level 0
@@ -2067,9 +2067,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             int n2 = * ((int *) mesh->data + m * 3 + 1);
                             int n3 = * ((int *) mesh->data + m * 3 + 2);
 
-                            double * field = data;
-                            double * r = R->data;
-                            double * z = Z->data;
+                            double * field = (double *) data;
+                            double * r = (double *) R->data;
+                            double * z = (double *) Z->data;
                             /* Gradient formular from Mark 
                                grad u = u1 [y2-y3, x3-x2] + u2 [y3-y1, x1-x3] + u3 [y1-y2,x2-x1]
                              */
@@ -2101,9 +2101,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             int n2 = * ((int *) mesh->data + m * 3 + 1);
                             int n3 = * ((int *) mesh->data + m * 3 + 2);
 
-                            double * field = data;
-                            double * r = R->data;
-                            double * z = Z->data;
+                            double * field = (double *) data;
+                            double * r = (double *) R->data;
+                            double * z = (double *) Z->data;
 
                             double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
                             double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
@@ -2127,8 +2127,8 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         }  // loop through the node connectivity
 
                         // Decimation for level 0
-                        decimate (R->data, Z->data, data, 
-                                  nelems, mesh->data, mesh_ldims[0],
+                        decimate ((double *) R->data, (double *) Z->data, (double *) data, 
+                                  nelems, (int *) mesh->data, mesh_ldims[0],
                                   &r_reduced, &z_reduced, &data_reduced, 
                                   &nvertices_new, &mesh_reduced, 
                                   &nmesh_reduced
@@ -2189,9 +2189,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_ldims[0] = newsize;
                     new_offsets[0] = 0;
 
-                    new_global_dimensions = print_dimensions (1, &new_gdims);
-                    new_local_dimensions = print_dimensions (1, &new_ldims);
-                    new_local_offsets = print_dimensions (1, &new_offsets);
+                    new_global_dimensions = print_dimensions (1, new_gdims);
+                    new_local_dimensions = print_dimensions (1, new_ldims);
+                    new_local_offsets = print_dimensions (1, new_offsets);
                     
                     DEFINE_VAR_LEVEL("R/L1",1,adios_double);
                     DEFINE_VAR_LEVEL("Z/L1",1,adios_double);
@@ -2199,10 +2199,10 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     new_ldims[0] = ntaggedCells;
                     new_ldims[1] = 3;
-                    new_local_dimensions = print_dimensions (2, &new_ldims);
+                    new_local_dimensions = print_dimensions (2, new_ldims);
                     new_offsets[0] = 0;
                     new_offsets[1] = 0;
-                    new_local_offsets = print_dimensions (2, &new_offsets);
+                    new_local_offsets = print_dimensions (2, new_offsets);
                     new_global_dimensions = "";
 
                     DEFINE_VAR_LEVEL("mesh/L1",1,adios_integer);
@@ -2211,9 +2211,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_ldims[0] = nvertices_new;
                     new_offsets[0] = 0;
 
-                    new_global_dimensions = print_dimensions (1, &new_gdims);
-                    new_local_dimensions = print_dimensions (1, &new_ldims);
-                    new_local_offsets = print_dimensions (1, &new_offsets);
+                    new_global_dimensions = print_dimensions (1, new_gdims);
+                    new_local_dimensions = print_dimensions (1, new_ldims);
+                    new_local_offsets = print_dimensions (1, new_offsets);
 
                     DEFINE_VAR_LEVEL("R/L2",2,adios_double);
                     DEFINE_VAR_LEVEL("Z/L2",2,adios_double);
@@ -2221,10 +2221,10 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     new_ldims[0] = nmesh_reduced;
                     new_ldims[1] = 3;
-                    new_local_dimensions = print_dimensions (2, &new_ldims);
+                    new_local_dimensions = print_dimensions (2, new_ldims);
                     new_offsets[0] = 0;
                     new_offsets[1] = 0;
-                    new_local_offsets = print_dimensions (2, &new_offsets);
+                    new_local_offsets = print_dimensions (2, new_offsets);
                     new_global_dimensions = "";
 
                     DEFINE_VAR_LEVEL("mesh/L2",2,adios_integer);
