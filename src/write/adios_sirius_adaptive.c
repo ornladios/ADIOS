@@ -2001,13 +2001,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         struct adios_var_struct 
                             * mesh = adios_find_var_by_name (fd->group, "mesh");
 
-                        if (!mesh)
-                        {
-                            adios_error (err_invalid_varname, 
-                                 "Bad var name (ignored) in SIRIUS_ADAPTIVE"
-                                 " adios_write(): %s\n", mesh->name);
-                            return;
-                        }
+                        assert (mesh);
 
                         mesh_ndims = count_dimensions (mesh->dimensions);
                         mesh_nelems = get_var_dimensions (mesh, 
@@ -2017,31 +2011,14 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                                           mesh_offsets
                                                          );
 
-                        if (mesh_ldims[1] != 3)
-                        {
-                            printf ("The mesh is incorrect!\n");
-                            return;
-                        }
+                        assert (mesh_ldims[1] == 3)
 
                         struct adios_var_struct * R = adios_find_var_by_name (fd->group, "R");
+                        assert (R);
 
-                        if (!R)
-                        {
-                            adios_error (err_invalid_varname,
-                                 "Bad var name (ignored) in SIRIUS_ADAPTIVE"
-                                 " adios_write(): %s\n", R->name);
-                            return;
-                        }
 
                         struct adios_var_struct * Z = adios_find_var_by_name (fd->group, "Z");
-
-                        if (!Z)
-                        {
-                            adios_error (err_invalid_varname,
-                                 "Bad var name (ignored) in SIRIUS_ADAPTIVE"
-                                 " adios_write(): %s\n", Z->name);
-                            return;
-                        }
+                        assert (Z);
 #if 0
                         // Decimation for level 0
                         decimate (R->data, Z->data, data, 
@@ -2077,7 +2054,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             }
                         }  // loop through the node connectivity array
 
-                        printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
+//                        printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
 
                         newz = (double *) malloc (ntaggedCells * 3 * 8);
                         newr = (double *) malloc (ntaggedCells * 3 * 8);
