@@ -2011,7 +2011,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                                           mesh_offsets
                                                          );
 
-                        assert (mesh_ldims[1] == 3)
+                        assert (mesh_ldims[1] == 3);
 
                         struct adios_var_struct * R = adios_find_var_by_name (fd->group, "R");
                         assert (R);
