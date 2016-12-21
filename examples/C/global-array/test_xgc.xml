@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+  <adios-group name="field" stats="On">
+    <var name="NX" type="integer"/>
+    <var name="GX" type="integer"/>
+    <var name="OX" type="integer"/>
+    <var name="MX" type="integer"/>
+    <var name="MY" type="integer"/>
+    <global-bounds dimensions="GX" offsets="OX">
+       <var name="dpot" gwrite="t" type="double" dimensions="NX" transform="none"/>
+       <var name="R" gwrite="g" type="double" dimensions="NX" transform="none"/>
+       <var name="Z" gwrite="g" type="double" dimensions="NX" transform="none"/>
+    </global-bounds>
+       <var name="mesh" gwrite="t" type="integer" dimensions="MY,MX" 
+            transform="none"/>
+  </adios-group>
+
+    <!--method group="temperature" method="SIRIUS_ADAPTIVE">method=MPI;path=data1;parameters;method=MPI;path=data2;parameters</method-->
+    <method group="field" method="SIRIUS_ADAPTIVE">
+        method=MPI;path=data1;parameters;
+        method=MPI;path=data2;parameters;
+        method=MPI;path=data3;parameters
+    </method>
+  <!--method group="temperature" method="MPI_AGGREGATE">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0;num_ost=2</method-->
+  <!--method group="temperature" method="PHDF5"/-->
+ 
+  <buffer max-size-MB="1"/>
+
+</adios-config>
+
