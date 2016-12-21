@@ -31,7 +31,7 @@ ad.init_noxml()
 ad.set_max_buffer_size (100);
 
 fw = ad.writer(fname, comm=comm)
-fw.declare_group('group', method='MPI')
+fw.declare_group('group', method='MPI', stats=ad.STATISTICS.FULL)
 #fw.define_var('temperature', ldim=(1,NX), gdim=gdim, offset=offset, transform='zfp:accuracy=0.0001')
 #fw.define_var('temperature', ldim=(1,NX), gdim=gdim, offset=offset, transform='zlib')
 fw.define_var('temperature', ldim=ldim, gdim=gdim, offset=offset, transform='none')
