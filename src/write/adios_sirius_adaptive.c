@@ -2355,7 +2355,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                  " adios_write(): %s\n", Z->name);
                             return 1;
                         }
-
+#if 0
                         // Decimation for level 0
                         decimate (R->data, Z->data, data, 
                                   nelems, mesh->data, mesh_ldims[0],
@@ -2363,7 +2363,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                   &nvertices_new, &mesh_reduced, 
                                   &nmesh_reduced
                                  );
-
+#endif
                         for (int m = 0; m < mesh_ldims[0]; m++)
                         {
                             int n1 = * ((int *) mesh->data + m * 3);
@@ -2390,7 +2390,8 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             }
                         }  // loop through the node connectivity array
 
-                        //printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
+                        printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
+
                         newz = (double *) malloc (ntaggedCells * 3 * 8);
                         newr = (double *) malloc (ntaggedCells * 3 * 8);
                         newfield = (double *) malloc (ntaggedCells * 3 * 8);
@@ -2427,6 +2428,15 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                 newmesh[cell_cnt++] = tri3;
                             }
                         }  // loop through the node connectivity
+
+                        // Decimation for level 0
+                        decimate (R->data, Z->data, data, 
+                                  nelems, mesh->data, mesh_ldims[0],
+                                  &r_reduced, &z_reduced, &data_reduced, 
+                                  &nvertices_new, &mesh_reduced, 
+                                  &nmesh_reduced
+                                 );
+
                     }
                     else if (l == 1)
                     {
