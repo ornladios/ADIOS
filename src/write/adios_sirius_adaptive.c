@@ -37,9 +37,8 @@ static char *io_method[MAXLEVEL]; //the IO methods for data output for each leve
 static char *io_parameters[MAXLEVEL]; //the IO method parameters
 static char *io_paths[MAXLEVEL]; //the IO method output paths (prefix to filename)
 static int nlevels=2; // Number of levels
-static char *splitter_type;
 
-double threshold = 0.0001;
+double threshold = 0.1;
 GHashTable ** nodes_ght = 0;
 
 typedef struct node_t
@@ -500,7 +499,6 @@ static void init_output_parameters(const PairStruct *params)
     int level_params = 0;
     int level_paths = 0;
 
-    splitter_type = strdup("float");
     while (p) {
         if (!strcasecmp (p->name, "method")) {
             errno = 0;
@@ -537,17 +535,14 @@ static void init_output_parameters(const PairStruct *params)
                 io_paths[level_paths] = NULL;
             }
             level_paths++;
-        }
-        else if (!strcasecmp(p->name, "type"))
+        } else if (!strcasecmp (p->name, "grad_threshold"))
         {
-            errno = 0;
-            free(splitter_type);
-            splitter_type = strdup(p->value);            
-            fprintf(stderr, "set param type = %s\n", splitter_type);
+            threshold = atof (p->value);
         } else {
             log_error ("Parameter name %s is not recognized by the SIRIUS "
                        "method\n", p->name);
         }
+
         p = p->next;
     }
     assert(nlevels==level_params);
@@ -1459,10 +1454,9 @@ void decimate (double * r, double * z, double * field,
     double * r_new, * z_new, * field_new;
     int * mesh_new;
     int vertices_cut = 0, min_idx, pq_v1;
-
-    int ** conn = build_conn (nvertices, mesh, nmesh);
     edge_cost_t ** cost_matrix;
 
+    int ** conn = build_conn (nvertices, mesh, nmesh);
     pqueue_t * pq = build_pq (conn, &cost_matrix, nvertices, r, z);
 #if 0
     int min_idx = find_mincost (conn, cost_matrix, nvertices, r, z);
@@ -2048,7 +2042,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             grad[n1] = grad[n2] = grad[n3] = grad_mag;
 
                             //TODO: To add threshold stuff
-                            if (grad_mag > 0.2)
+                            if (grad_mag > threshold)
                             {
                                 ntaggedCells++;
                             }
@@ -2079,7 +2073,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                             grad[n1] = grad[n2] = grad[n3] = grad_mag;
 
                             //TODO: To add threshold stuff
-                            if (grad_mag > 0.2)
+                            if (grad_mag > threshold)
                             {
                                 int tri1 = insert_node (newz, newr, newfield, &newsize,
                                      z[n1], r[n1], field[n1]);
