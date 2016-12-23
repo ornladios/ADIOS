@@ -119,7 +119,7 @@ int main(int argc, char ** argv){
         char * global_dimensions=GLOBAL_DIMENSIONS;
         // the name of maya variable
 	char *offsets = malloc(strlen(fullname) + strlen("patch_id,0,0,0") + 4);
-	sprintf(offsets, "%s/patch_id,0,0,0", fullname);
+	sprintf(offsets, "%d,0,0,0", rank);
 	char *dimensions = malloc(strlen(fullname)*3 + strlen("shape_dim_x,shape_dim_y,shape_dim_z") + 12);
 	sprintf(dimensions, "1,%s/shape_dim_x,%s/shape_dim_y,%s/shape_dim_z", fullname, fullname, fullname);
         // I think this is for dataset size for doubles
@@ -250,6 +250,10 @@ int main(int argc, char ** argv){
     	WRITE_FULLPATH ("/shape_dim_y", &max_shape[1]) ;
     	WRITE_FULLPATH ("/shape_dim_z", &max_shape[2]) ;
 
+        if( set_value(my_data, max_shape[0] * max_shape[1] *max_shape[2], (double) 2*i+rank) != DIAG_OK ){
+            p_error("with generating data. Quitting\n");
+            return DIAG_ERR;
+        }
     	// Write the data
     	WRITE_FULLPATH(datapath, my_data);
 
