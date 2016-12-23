@@ -216,33 +216,6 @@ append_path_name(char *path, char *name)
 }
 
 
-// add an attr for each dimension to an attr_list
-static void 
-set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) 
-{
-    char atomName[200] = "";
-    char dimNum[10];
-    int junk;
-    strcat(atomName, FP_DIM_ATTR_NAME);
-    strcat(atomName, "_");
-    strcat(atomName, varName);
-    strcat(atomName, "_");
-    sprintf(dimNum, "%d", numDims);
-    strcat(atomName, dimNum);
-    atom_t dimAtom = attr_atom_from_string(atomName);
-    add_string_attr(attrs, dimAtom, altName);
-    atomName[0] = '\0';
-    strcat(atomName, FP_NDIMS_ATTR_NAME);
-    strcat(atomName, "_");
-    strcat(atomName, altName);
-
-    atom_t ndimsAtom = attr_atom_from_string(atomName);
-    if (!get_int_attr(attrs, ndimsAtom, &junk)) {
-        add_int_attr(attrs, ndimsAtom, 0);
-    }
-}
-
-
 attr_list 
 set_flush_id_atom(attr_list attrs, int value) 
 {
@@ -495,12 +468,15 @@ queue_contains(FlexpathVarNode* queue, const char* name, int rank)
 static char*
 get_alt_name(char *name, char *dimName) 
 {
+    /* 
+     *  Formerly, this created an alternative dimension name for each variable, so that transformation code 
+     *  might modify it without affecting other vars.  This facility is deprecated, so simplifying.
+     *  Just return a new copy of the original name.
+     */
+
     int len = strlen(name) + strlen(dimName) + strlen("FPDIM_") + 2;
     char *newName = malloc(sizeof(char) * len);
-    strcpy(newName, "FPDIM_");
-    strcat(newName, dimName);
-    strcat(newName, "_");
-    strcat(newName, name);
+    strcpy(newName, dimName);
     return newName;
 }
 
@@ -844,7 +820,6 @@ set_format(struct adios_group_struct *t,
 			char *mangle_dim = flexpath_mangle(aname);
 			//printf("aname: %s\n", aname);
 			dims=add_var(dims, mangle_dim, NULL, 0);
-//			set_attr_dimensions(mangle_name, mangle_dim, num_dims, fileData->attrs);
 		    }
                     char *gname = get_dim_name(&adim->global_dimension);
 		    if (gname) {
@@ -853,7 +828,6 @@ set_format(struct adios_group_struct *t,
 			char *aname = get_alt_name(fullname, gname);
 			char *mangle_dim = flexpath_mangle(aname);
 			dims=add_var(dims, mangle_dim, NULL, 0);
-//			set_attr_dimensions(mangle_name, mangle_dim, num_dims, fileData->attrs);
 		    }
 		    if (adim->global_dimension.rank > 0) {
 			fileData->globalCount++;
@@ -879,12 +853,9 @@ set_format(struct adios_group_struct *t,
 	    for (; d != NULL; d = d->next) {
                 char *vname = get_dim_name(&d->dimension);
                 if (vname) {
-		    
-		    //char *name = find_fixed_name(currentFm, vname);
-		    FlexpathAltName *a = find_alt_name(currentFm, vname, (char*)field_list[fieldNo].field_name);
-		    altvarcount++;
-		    snprintf(el, ELSIZE, "[%s]", a->name);
-//		    snprintf(el, ELSIZE, "[%s]", vname);
+		    vname = flexpath_mangle(vname);
+		    snprintf(el, ELSIZE, "[%s]", vname);
+		    free(vname);
 		    v_offset = 0;
 		    all_static = 0;
 		} else {
