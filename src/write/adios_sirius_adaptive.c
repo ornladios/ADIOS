@@ -39,6 +39,7 @@ static char *io_paths[MAXLEVEL]; //the IO method output paths (prefix to filenam
 static int nlevels=2; // Number of levels
 
 double threshold = 0.1;
+
 GHashTable ** nodes_ght = 0;
 
 typedef struct node_t
@@ -53,6 +54,10 @@ typedef struct edge_cost_t
     node_t * pq_node;
     double cost;
 } edge_cost_t;
+
+typedef enum {NONE = 0, ABSOLUTE = 1, GRAD} op_type;
+
+op_type thresh_type = NONE;
 
 static int
 cmp_pri(pqueue_pri_t next, pqueue_pri_t curr)
@@ -535,9 +540,21 @@ static void init_output_parameters(const PairStruct *params)
                 io_paths[level_paths] = NULL;
             }
             level_paths++;
-        } else if (!strcasecmp (p->name, "grad_threshold"))
+        } else if (!strcasecmp (p->name, "thresh_type"))
+        {
+            if (!strcasecmp (p->value, "absolute"))
+            {
+                thresh_type = ABSOLUTE;
+            }
+            else if (!strcasecmp (p->value, "grad"))
+            {
+                thresh_type = GRAD;
+            }
+
+        } else if (!strcasecmp (p->name, "thresh"))
         {
             threshold = atof (p->value);
+
         } else {
             log_error ("Parameter name %s is not recognized by the SIRIUS "
                        "method\n", p->name);
@@ -1848,6 +1865,172 @@ printf ("time = %f\n", t2 - t0);
 printf ("nmesh_new = %d\n", * nmesh_new);
 }
 
+void thresholding (double * r, double * z, double * field,
+                   int nelems, int * mesh, int nmesh,
+                   double ** pnewr, double ** pnewz, 
+                   double ** pnewfield, int ** pnewmesh,
+                   int * pnewsize, int * pntaggedCells)
+{
+    int ntaggedCells = 0, cell_cnt = 0, newsize = 0;
+
+    for (int m = 0; m < nmesh; m++)
+    {
+        int n1 = * (mesh + m * 3);
+        int n2 = * (mesh + m * 3 + 1);
+        int n3 = * (mesh + m * 3 + 2);
+
+        /* Gradient formular from Mark 
+        grad u = u1 [y2-y3, x3-x2] + u2 [y3-y1, x1-x3] + u3 [y1-y2,x2-x1]
+        */
+
+        double avg_mag = (field[n1] + field[n2] + field[n3]) / 3;
+
+        //grad[n1] = grad[n2] = grad[n3] = grad_mag;
+
+        if (avg_mag > threshold)
+        {
+            ntaggedCells++;
+        }
+    }  // loop through the node connectivity array
+
+//  printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
+
+    double * newz = (double *) malloc (ntaggedCells * 3 * 8);
+    double * newr = (double *) malloc (ntaggedCells * 3 * 8);
+    double * newfield = (double *) malloc (ntaggedCells * 3 * 8);
+    int * newmesh = (int *) malloc (ntaggedCells * 3 * 4);
+    assert (newz && newr && newfield && newmesh);
+
+    for (int m = 0; m < nmesh; m++)
+    {
+        int n1 = * (mesh + m * 3);
+        int n2 = * (mesh + m * 3 + 1);
+        int n3 = * (mesh + m * 3 + 2);
+
+        double avg_mag = (field[n1] + field[n2] + field[n3]) / 3;
+
+        if (avg_mag > threshold)
+        {
+            int tri1 = insert_node (newz, newr, newfield, &newsize,
+                                    z[n1], r[n1], field[n1]);
+            int tri2 = insert_node (newz, newr, newfield, &newsize,
+                                    z[n2], r[n2], field[n2]);
+            int tri3 = insert_node (newz, newr, newfield, &newsize,
+                                    z[n3], r[n3], field[n3]);
+            newmesh[cell_cnt++] = tri1;
+            newmesh[cell_cnt++] = tri2;
+            newmesh[cell_cnt++] = tri3;
+        }
+    }  // loop through the node connectivity
+
+    * pnewz = newz;
+    * pnewr = newr;
+    * pnewfield = newfield;
+    * pnewmesh = newmesh;
+    * pntaggedCells = ntaggedCells;
+    * pnewsize = newsize;
+}
+
+void extract_high_gradient (double * r, double * z, double * field,
+                            int nelems, int * mesh, int nmesh,
+                            double ** pnewr, double ** pnewz, 
+                            double ** pnewfield, int ** pnewmesh,
+                            int * pnewsize, int * pntaggedCells)
+{
+    int ntaggedCells = 0, cell_cnt = 0, newsize = 0;
+    double * grad = (double *) malloc (nelems * 8);
+
+    for (int m = 0; m < nmesh; m++)
+    {
+        int n1 = * (mesh + m * 3);
+        int n2 = * (mesh + m * 3 + 1);
+        int n3 = * (mesh + m * 3 + 2);
+
+        /* Gradient formular from Mark 
+        grad u = u1 [y2-y3, x3-x2] + u2 [y3-y1, x1-x3] + u3 [y1-y2,x2-x1]
+        */
+
+        double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
+        double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
+        double grad_mag = sqrt (pow (grad_z, 2) + pow (grad_r, 2));
+
+        grad[n1] = grad[n2] = grad[n3] = grad_mag;
+
+        if (grad_mag > threshold)
+        {
+            ntaggedCells++;
+        }
+    }  // loop through the node connectivity array
+
+//  printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
+
+    double * newz = (double *) malloc (ntaggedCells * 3 * 8);
+    double * newr = (double *) malloc (ntaggedCells * 3 * 8);
+    double * newfield = (double *) malloc (ntaggedCells * 3 * 8);
+    int * newmesh = (int *) malloc (ntaggedCells * 3 * 4);
+    assert (newz && newr && newfield && newmesh);
+
+    for (int m = 0; m < nmesh; m++)
+    {
+        int n1 = * (mesh + m * 3);
+        int n2 = * (mesh + m * 3 + 1);
+        int n3 = * (mesh + m * 3 + 2);
+
+        double grad_z = field[n1] * (z[n2] - z[n3]) + field[n2] * (z[n3] - z[n1]) + field[n3]* (z[n1] - z[n2]);
+        double grad_r = field[n1] * (r[n3] - r[n2]) + field[n2] * (r[n1] - r[n3]) + field[n3]* (r[n2] - r[n1]);
+        double grad_mag = sqrt (pow (grad_z, 2) + pow (grad_r, 2));
+
+        grad[n1] = grad[n2] = grad[n3] = grad_mag;
+
+        if (grad_mag > threshold)
+        {
+            int tri1 = insert_node (newz, newr, newfield, &newsize,
+                                    z[n1], r[n1], field[n1]);
+            int tri2 = insert_node (newz, newr, newfield, &newsize,
+                                    z[n2], r[n2], field[n2]);
+            int tri3 = insert_node (newz, newr, newfield, &newsize,
+                                    z[n3], r[n3], field[n3]);
+            newmesh[cell_cnt++] = tri1;
+            newmesh[cell_cnt++] = tri2;
+            newmesh[cell_cnt++] = tri3;
+        }
+    }  // loop through the node connectivity
+
+    * pnewz = newz;
+    * pnewr = newr;
+    * pnewfield = newfield;
+    * pnewmesh = newmesh;
+    * pntaggedCells = ntaggedCells;
+    * pnewsize = newsize;
+
+    free (grad);
+}
+
+void extract_features (double * r, double * z, double * field,
+                       int nelems, int * mesh, int nmesh,
+                       double ** pnewr, double ** pnewz,
+                       double ** pnewfield, int ** pnewmesh,
+                       int * pnewsize, int * pntaggedCells)
+{
+    if (thresh_type == ABSOLUTE)
+    {
+        thresholding (r, z, field,
+                      nelems, mesh, nmesh,
+                      pnewr, pnewz,
+                      pnewfield, pnewmesh,
+                      pnewsize, pntaggedCells);
+    }
+    else
+    {
+        extract_high_gradient (r, z, field,
+                      nelems, mesh, nmesh,
+                      pnewr, pnewz,
+                      pnewfield, pnewmesh,
+                      pnewsize, pntaggedCells);
+    }
+}
+
+
 #define DEFINE_VAR_LEVEL(varname, l, type)         \
     adios_common_define_var (md->level[l].grp      \
                             ,varname               \
@@ -1989,9 +2172,6 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                 {
                     if (l == 0)
                     {
-                        double * grad = malloc (nelems * 8);
-                        assert (grad);
-
                         struct adios_var_struct 
                             * mesh = adios_find_var_by_name (fd->group, "mesh");
 
@@ -2022,6 +2202,15 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                   &nmesh_reduced
                                  );
 #endif
+
+                        extract_features ((double *) R->data, 
+                                          (double *) Z->data, 
+                                          (double *) data, 
+                                          nelems, (int *) mesh->data,
+                                          mesh_ldims[0],
+                                          &newr, &newz, &newfield, &newmesh,
+                                          &newsize, &ntaggedCells);
+#if 0
                         for (int m = 0; m < mesh_ldims[0]; m++)
                         {
                             int n1 = * ((int *) mesh->data + m * 3);
@@ -2086,6 +2275,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                 newmesh[cell_cnt++] = tri3;
                             }
                         }  // loop through the node connectivity
+#endif
 
                         // Decimation for level 0
                         decimate ((double *) R->data, (double *) Z->data, (double *) data, 
@@ -2094,7 +2284,6 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                   &nvertices_new, &mesh_reduced, 
                                   &nmesh_reduced
                                  );
-
                     }
                     else if (l == 1)
                     {

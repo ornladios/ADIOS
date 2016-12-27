@@ -17,7 +17,8 @@
 
     <!--method group="temperature" method="SIRIUS_ADAPTIVE">method=MPI;path=data1;parameters;method=MPI;path=data2;parameters</method-->
     <method group="field" method="SIRIUS_ADAPTIVE">
-        grad_threshold=0.2;
+        thresh_type=absolute;
+        thresh=40;
         method=MPI;path=data1;parameters;
         method=MPI;path=data2;parameters;
         method=MPI;path=data3;parameters
