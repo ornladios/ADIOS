@@ -1488,7 +1488,7 @@ void decimate (double * r, double * z, double * field,
     cost_matrix[pq_v1][min_idx % MAX_NODE_DEGREE].pq_node = 0;
 
 double t0 = MPI_Wtime();
-    while ((double)vertices_cut / (double)nvertices < 0.99)
+    while ((double)vertices_cut / (double)nvertices < 0.9)
 //    while (vertices_cut < 10000)
     {
         int v1 = min_idx / MAX_NODE_DEGREE;
@@ -2347,9 +2347,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_local_dimensions = print_dimensions (1, new_ldims);
                     new_local_offsets = print_dimensions (1, new_offsets);
                     
-                    DEFINE_VAR_LEVEL("R/L1",1,adios_double);
-                    DEFINE_VAR_LEVEL("Z/L1",1,adios_double);
-                    DEFINE_VAR_LEVEL("dpot/L1",1,adios_double);
+                    DEFINE_VAR_LEVEL("R/L2",2,adios_double);
+                    DEFINE_VAR_LEVEL("Z/L2",2,adios_double);
+                    DEFINE_VAR_LEVEL("dpot/L2",2,adios_double);
 
                     new_ldims[0] = ntaggedCells;
                     new_ldims[1] = 3;
@@ -2359,7 +2359,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_local_offsets = print_dimensions (2, new_offsets);
                     new_global_dimensions = "";
 
-                    DEFINE_VAR_LEVEL("mesh/L1",1,adios_integer);
+                    DEFINE_VAR_LEVEL("mesh/L2",2,adios_integer);
 ///////////
                     new_gdims[0] = nvertices_new;
                     new_ldims[0] = nvertices_new;
@@ -2369,9 +2369,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_local_dimensions = print_dimensions (1, new_ldims);
                     new_local_offsets = print_dimensions (1, new_offsets);
 
-                    DEFINE_VAR_LEVEL("R/L2",2,adios_double);
-                    DEFINE_VAR_LEVEL("Z/L2",2,adios_double);
-                    DEFINE_VAR_LEVEL("dpot/L2",2,adios_double);
+                    DEFINE_VAR_LEVEL("R/L1",1,adios_double);
+                    DEFINE_VAR_LEVEL("Z/L1",1,adios_double);
+                    DEFINE_VAR_LEVEL("dpot/L1",1,adios_double);
 
                     new_ldims[0] = nmesh_reduced;
                     new_ldims[1] = 3;
@@ -2381,7 +2381,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_local_offsets = print_dimensions (2, new_offsets);
                     new_global_dimensions = "";
 
-                    DEFINE_VAR_LEVEL("mesh/L2",2,adios_integer);
+                    DEFINE_VAR_LEVEL("mesh/L1",1,adios_integer);
                 }
             }
 
@@ -2404,28 +2404,28 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                 if (!strcmp (v->name, "dpot") && l == 0)
                 {
-                    do_write (md->level[1].fd, "R/L1", newr);
+                    do_write (md->level[2].fd, "R/L2", newr);
                     free (newr);
 
-                    do_write (md->level[1].fd, "Z/L1", newz);
+                    do_write (md->level[2].fd, "Z/L2", newz);
                     free (newz);
 
-                    do_write (md->level[1].fd, "mesh/L1", newmesh);
+                    do_write (md->level[2].fd, "mesh/L2", newmesh);
                     free (newmesh);
 
-                    do_write (md->level[1].fd, "dpot/L1", newfield);
+                    do_write (md->level[2].fd, "dpot/L2", newfield);
                     free (newfield);
 #if 1
-                    do_write (md->level[2].fd, "R/L2", r_reduced);
+                    do_write (md->level[1].fd, "R/L1", r_reduced);
                     free (r_reduced);
 
-                    do_write (md->level[2].fd, "Z/L2", z_reduced);
+                    do_write (md->level[1].fd, "Z/L1", z_reduced);
                     free (z_reduced);
 
-                    do_write (md->level[2].fd, "mesh/L2", mesh_reduced);
+                    do_write (md->level[1].fd, "mesh/L1", mesh_reduced);
                     free (mesh_reduced);
 
-                    do_write (md->level[2].fd, "dpot/L2", data_reduced);
+                    do_write (md->level[1].fd, "dpot/L1", data_reduced);
                     free (data_reduced);
 #endif
                 }
