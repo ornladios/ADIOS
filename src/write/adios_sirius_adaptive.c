@@ -2299,7 +2299,11 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                 if (l == 0)
                 {
                     //only in level 0 do we need to store this variable
-                    var->name = strdup (v->name);
+                    int len = 5 + strlen (v->name);
+
+                    var->name = (char *) malloc (len);
+                    sprintf (var->name, "%s/L%d", v->name, l);
+
                     var->path = strdup (v->path);
                     var->type = v->type;
                     var->size = varsize;
