@@ -889,7 +889,8 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
     ${SRCDIR}/configure --prefix=/home/qliu/ADIOS.install \
         --enable-dependency-tracking \
         --with-glib=/home/qliu/glib \
-        --with-mxml=/home/qliu/mxml
+        --with-mxml=/home/qliu/mxml \
+        --with-zfp=/home/qliu/zfp
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
