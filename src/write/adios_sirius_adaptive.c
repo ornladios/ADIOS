@@ -32,6 +32,7 @@
 
 #define MAXLEVEL 10
 #define MAX_NODE_DEGREE 100
+//#define DUMP_FEATURE
 
 static char *io_method[MAXLEVEL]; //the IO methods for data output for each level
 static char *io_parameters[MAXLEVEL]; //the IO method parameters
@@ -1460,19 +1461,183 @@ void free_cost_matrix (edge_cost_t ** cost_matrix, int nvertices)
 
     free (cost_matrix);
 }
-   
-void decimate (double * r, double * z, double * field, 
+
+double sign (double p1x, double p1y,
+             double p2x, double p2y,
+             double p3x, double p3y)
+{
+    return (p1x - p3x) * (p2y - p3y) - (p2x - p3x) * (p1y - p3y);
+}
+
+int PointInTriangle (double px, double py,
+                     double v1x, double v1y,
+                     double v2x, double v2y,
+                     double v3x, double v3y)
+{
+    int b1, b2, b3;
+
+    b1 = sign(px, py, v1x, v1y, v2x, v2y) <= 0.0f;
+    b2 = sign(px, py, v2x, v2y, v3x, v3y) <= 0.0f;
+    b3 = sign(px, py, v3x, v3y, v1x, v1y) <= 0.0f;
+
+    return ((b1 == b2) && (b2 == b3));
+}
+
+void find_clst (double * r, double * z, int node,
+                double * r_reduced, double * z_reduced,
+                int n1, int n2, int n3,
+                int * n_clst)
+{
+    double d1 = sqrt (pow (r[node] - r_reduced[n1], 2)
+                    + pow (z[node] - z_reduced[n1], 2));
+    double d2 = sqrt (pow (r[node] - r_reduced[n2], 2)
+                    + pow (z[node] - z_reduced[n2], 2));
+    double d3 = sqrt (pow (r[node] - r_reduced[n3], 2)
+                    + pow (z[node] - z_reduced[n3], 2));
+
+    if (d1 <= d2)
+    {
+        if (d1 <= d3)
+        {
+            * n_clst = n1;
+        }
+        else
+        {
+            * n_clst = n3;
+        }
+    }
+    else
+    {
+        if (d2 <= d3)
+        {
+            * n_clst = n2;
+        }
+        else
+        {
+            * n_clst = n3;
+        }
+    }
+}
+
+void test_delta (double * r, double * z, double * field,
+                int nvertices, int * mesh, int nmesh,
+                double * r_reduced, double * z_reduced,
+                double * field_reduced, int nvertices_new,
+                int * mesh_reduced, int nmesh_new,
+                double * field_delta, double ** pfield_full
+               )
+{
+
+    double * field_full = (double *) malloc (nvertices * 8);
+    assert (field_full);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        for (int m = 0; m < nmesh_new; m++)
+        {
+            int n1 = * (mesh_reduced + m * 3);
+            int n2 = * (mesh_reduced + m * 3 + 1);
+            int n3 = * (mesh_reduced + m * 3 + 2);
+
+            int in = PointInTriangle (r[i], z[i],
+                                      r_reduced[n1], z_reduced[n1],
+                                      r_reduced[n2], z_reduced[n2],
+                                      r_reduced[n3], z_reduced[n3]);
+#if 0
+            find_clst (r, z, i
+                       r_reduced, z_reduced,
+                       n1, n2, n3,
+                       &n_clst);
+#endif
+            if (in)
+            {
+                double estimate = (field_reduced[n1] + field_reduced[n2] + field_reduced[n3]) / 3.0;
+                field_full[i] = estimate + field_delta[i];
+                break;
+            }
+            else if (m == nmesh_new - 1)
+            {
+//                double estimate  = field_reduce[n_clst];
+                field_full[i] = 0.0;
+            }
+        }
+    }
+
+    * pfield_full = field_full;
+}
+
+void get_delta (double * r, double * z, double * field,
+                int nvertices, int * mesh, int nmesh,
+                double * r_reduced, double * z_reduced,
+                double * field_reduced, int nvertices_new,
+                int * mesh_reduced, int nmesh_new,
+                double ** pfield_delta
+               )
+{
+
+    double * delta = (double *) malloc (nvertices * 8);
+    assert (delta);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        delta[i] = - DBL_MAX;
+        int n_clst;
+
+        for (int m = 0; m < nmesh_new; m++)
+        {
+            int n1 = * (mesh_reduced + m * 3);
+            int n2 = * (mesh_reduced + m * 3 + 1);
+            int n3 = * (mesh_reduced + m * 3 + 2);
+
+            int in = PointInTriangle (r[i], z[i],
+                                      r_reduced[n1], z_reduced[n1],
+                                      r_reduced[n2], z_reduced[n2],
+                                      r_reduced[n3], z_reduced[n3]);
+#if 0
+            find_clst (r, z, i
+                       r_reduced, z_reduced,
+                       n1, n2, n3,
+                       &n_clst);
+#endif
+            if (in)
+            {
+                double estimate = (field_reduced[n1] + field_reduced[n2] + field_reduced[n3]) / 3.0;
+                delta[i] = field[i] - estimate;
+                break;
+            }
+            else if (m == nmesh_new - 1)
+            {
+//                double estimate  = field_reduce[n_clst];
+                delta[i] = 0.0;
+            }
+        }
+    }
+
+    * pfield_delta = delta;
+}
+
+void decimate (double * rorg, double * zorg, double * fieldorg, 
                int nvertices, int * mesh, int nmesh,
                double ** r_reduced, double ** z_reduced, 
                double ** field_reduced, int * nvertices_new,
                int ** mesh_reduced, int * nmesh_new
               )
 {
+    double * r, * z, * field;
     double * r_new, * z_new, * field_new;
     int * mesh_new;
     int vertices_cut = 0, min_idx, pq_v1;
     edge_cost_t ** cost_matrix;
 
+    r = (double *) malloc (nvertices * 8);
+    z = (double *) malloc (nvertices * 8);
+    field = (double *) malloc (nvertices * 8);
+    assert (r && z && field);
+
+    memcpy (r, rorg, nvertices * 8);
+    memcpy (z, zorg, nvertices * 8);
+    memcpy (field, fieldorg, nvertices * 8);
+    
     int ** conn = build_conn (nvertices, mesh, nmesh);
     pqueue_t * pq = build_pq (conn, &cost_matrix, nvertices, r, z);
 #if 0
@@ -1862,6 +2027,10 @@ printf ("time = %f\n", t2 - t0);
     }
 
     free (nodes_ght);
+
+    free (r);
+    free (z);
+    free (field);
 printf ("nmesh_new = %d\n", * nmesh_new);
 }
 
@@ -2064,7 +2233,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
     double * newz, * newr, * newfield;
     int * newmesh;
     int newsize = 0, cell_cnt = 0;
-    double * r_reduced = 0, * z_reduced = 0, * data_reduced = 0;
+    double * r_reduced = 0, * z_reduced = 0;
+    double * data_reduced = 0, * data_delta = 0;
+    double * test_field = 0;
     int nvertices_new;
     int * mesh_reduced = 0, nmesh_reduced;
 
@@ -2203,6 +2374,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                  );
 #endif
 
+#ifdef DUMP_FEATURE 
                         extract_features ((double *) R->data, 
                                           (double *) Z->data, 
                                           (double *) data, 
@@ -2210,6 +2382,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                           mesh_ldims[0],
                                           &newr, &newz, &newfield, &newmesh,
                                           &newsize, &ntaggedCells);
+#endif
 #if 0
                         for (int m = 0; m < mesh_ldims[0]; m++)
                         {
@@ -2284,6 +2457,27 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                   &nvertices_new, &mesh_reduced, 
                                   &nmesh_reduced
                                  );
+#if 1
+                        get_delta ((double *) R->data, 
+                                   (double *) Z->data, 
+                                   (double *) data,
+                                   nelems, (int *) mesh->data, mesh_ldims[0],
+                                   r_reduced, z_reduced, data_reduced,
+                                   nvertices_new, mesh_reduced, nmesh_reduced,
+                                   &data_delta
+                                  ); 
+#if 0
+                        test_delta ((double *) R->data,
+                                   (double *) Z->data,
+                                   (double *) data,
+                                   nelems, (int *) mesh->data, mesh_ldims[0],
+                                   r_reduced, z_reduced, data_reduced,
+                                   nvertices_new, mesh_reduced, nmesh_reduced,
+                                   data_delta, &test_field
+                                  );
+#endif
+
+#endif
                     }
                     else if (l == 1)
                     {
@@ -2338,7 +2532,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     uint64_t new_gdims[16];
                     uint64_t new_ldims[16];
                     uint64_t new_offsets[16];
-
+#ifdef DUMP_FEATURE
                     new_gdims[0] = newsize;
                     new_ldims[0] = newsize;
                     new_offsets[0] = 0;
@@ -2360,6 +2554,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_global_dimensions = "";
 
                     DEFINE_VAR_LEVEL("mesh/L2",2,adios_integer);
+#endif
 ///////////
                     new_gdims[0] = nvertices_new;
                     new_ldims[0] = nvertices_new;
@@ -2382,6 +2577,19 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_global_dimensions = "";
 
                     DEFINE_VAR_LEVEL("mesh/L1",1,adios_integer);
+
+                    new_gdims[0] = nelems;
+                    new_ldims[0] = nelems;
+                    new_offsets[0] = 0;
+
+                    new_global_dimensions = print_dimensions (1, new_gdims);
+                    new_local_dimensions = print_dimensions (1, new_ldims);
+                    new_local_offsets = print_dimensions (1, new_offsets);
+
+                    DEFINE_VAR_LEVEL("delta/L0",0,adios_double);
+#if 0
+                    DEFINE_VAR_LEVEL("full_field/L1",1,adios_double);
+#endif
                 }
             }
 
@@ -2400,10 +2608,14 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
             // write it out
             if (md->level[l].vars->size > 0)
             {
-                do_write (md->level[l].fd, var->name, var->data);
+                if (strcmp (v->name, "dpot"))
+                {
+                    do_write (md->level[l].fd, var->name, var->data);
+                }
 
                 if (!strcmp (v->name, "dpot") && l == 0)
                 {
+#ifdef DUMP_FEATURE
                     do_write (md->level[2].fd, "R/L2", newr);
                     free (newr);
 
@@ -2415,6 +2627,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     do_write (md->level[2].fd, "dpot/L2", newfield);
                     free (newfield);
+#endif
 #if 1
                     do_write (md->level[1].fd, "R/L1", r_reduced);
                     free (r_reduced);
@@ -2427,6 +2640,12 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     do_write (md->level[1].fd, "dpot/L1", data_reduced);
                     free (data_reduced);
+
+                    do_write (md->level[0].fd, "delta/L0", data_delta);
+                    free (data_delta);
+
+//                    do_write (md->level[1].fd, "full_field/L1", test_field);
+//                    free (test_field);
 #endif
                 }
             }
