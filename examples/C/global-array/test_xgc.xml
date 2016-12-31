@@ -17,6 +17,8 @@
 
     <!--method group="temperature" method="SIRIUS_ADAPTIVE">method=MPI;path=data1;parameters;method=MPI;path=data2;parameters</method-->
     <method group="field" method="SIRIUS_ADAPTIVE">
+        save-delta=1;
+        compression-tolerance=0.001;
         thresh_type=absolute;
         thresh=40;
         method=MPI;path=data0;parameters;
@@ -25,7 +27,7 @@
   <!--method group="temperature" method="MPI_AGGREGATE">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0;num_ost=2</method-->
   <!--method group="temperature" method="PHDF5"/-->
  
-  <buffer max-size-MB="1"/>
+  <buffer max-size-MB="10"/>
 
 </adios-config>
 

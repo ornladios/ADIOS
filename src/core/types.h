@@ -5,8 +5,8 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef ADIOS_CORE_TYPES_H
+#define ADIOS_CORE_TYPES_H
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,5 +1,3 @@
-//passed the test for 1024 cores and level-3 spatial aggregation
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -12,6 +10,7 @@
 // xml parser
 #include <mxml.h>
 #include <glib.h>
+#include <zfp.h>
 
 // see if we have MPI or other tools
 #include "config.h"
@@ -40,6 +39,8 @@ static char *io_paths[MAXLEVEL]; //the IO method output paths (prefix to filenam
 static int nlevels=2; // Number of levels
 
 double threshold = 0.1;
+double compression_tolerance = 0.1;
+int save_delta = 1;
 
 GHashTable ** nodes_ght = 0;
 
@@ -59,6 +60,87 @@ typedef struct edge_cost_t
 typedef enum {NONE = 0, ABSOLUTE = 1, GRAD} op_type;
 
 op_type thresh_type = NONE;
+
+int
+decompress (double * array, int nx, double tolerance,
+            double * array_compressed, size_t array_size_compressed)
+{
+    zfp_type type;     /* array scalar type */
+    zfp_field* field;  /* array meta data */
+    zfp_stream* zfp;   /* compressed stream */
+    bitstream * stream; /* bit stream to write to or read from */
+    size_t zfpsize;    /* byte size of compressed stream */
+
+    /* allocate meta data for the 3D array a[nz][ny][nx] */
+    type = zfp_type_double;
+    field = zfp_field_1d (array, type, nx);
+
+    /* allocate meta data for a compressed stream */
+    zfp = zfp_stream_open (NULL);
+    zfp_stream_set_accuracy (zfp, tolerance, type);
+
+    /* associate bit stream with allocated buffer */
+    stream = stream_open (array_compressed, array_size_compressed);
+    zfp_stream_set_bit_stream (zfp, stream);
+    zfp_stream_rewind (zfp);
+
+    assert (zfp_decompress(zfp, field));
+
+    /* clean up */
+    zfp_field_free (field);
+    zfp_stream_close (zfp);
+    stream_close (stream);
+
+    return 0;
+}
+
+int
+compress (double * array, int nx, double tolerance,
+          double ** array_compressed)
+{
+    zfp_type type;     /* array scalar type */
+    zfp_field* field;  /* array meta data */
+    zfp_stream* zfp;   /* compressed stream */
+    void* buffer;      /* storage for compressed stream */
+    size_t bufsize;    /* byte size of compressed buffer */
+    bitstream * stream; /* bit stream to write to or read from */
+    size_t zfpsize;    /* byte size of compressed stream */
+
+    /* allocate meta data for the 3D array a[nz][ny][nx] */
+    type = zfp_type_double;
+    field = zfp_field_1d (array, type, nx);
+
+    /* allocate meta data for a compressed stream */
+    zfp = zfp_stream_open (NULL);
+
+    /* set compression mode and parameters via one of three functions */
+    /*  zfp_stream_set_rate(zfp, rate, type, 3, 0); */
+    /*  zfp_stream_set_precision(zfp, precision, type); */
+    zfp_stream_set_accuracy (zfp, tolerance, type);
+
+    /* allocate buffer for compressed data */
+    bufsize = zfp_stream_maximum_size (zfp, field);
+    buffer = malloc (bufsize);
+    assert (buffer);
+
+    /* associate bit stream with allocated buffer */
+    stream = stream_open (buffer, bufsize);
+    zfp_stream_set_bit_stream (zfp, stream);
+    zfp_stream_rewind (zfp);
+
+    /* compress array and output compressed stream */
+    zfpsize = zfp_compress (zfp, field);
+    assert (zfpsize);
+
+    /* clean up */
+    zfp_field_free (field);
+    zfp_stream_close (zfp);
+    stream_close (stream);
+
+    * array_compressed = (double *) buffer;
+
+    return zfpsize;
+}
 
 static int
 cmp_pri(pqueue_pri_t next, pqueue_pri_t curr)
@@ -551,11 +633,15 @@ static void init_output_parameters(const PairStruct *params)
             {
                 thresh_type = GRAD;
             }
-
         } else if (!strcasecmp (p->name, "thresh"))
         {
             threshold = atof (p->value);
-
+        } else if (!strcasecmp (p->name, "save-delta"))
+        {
+            save_delta = atoi (p->value);
+        } else if (!strcasecmp (p->name, "compression-tolerance"))
+        {
+            compression_tolerance = atof (p->value);
         } else {
             log_error ("Parameter name %s is not recognized by the SIRIUS "
                        "method\n", p->name);
@@ -2234,10 +2320,12 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
     int * newmesh;
     int newsize = 0, cell_cnt = 0;
     double * r_reduced = 0, * z_reduced = 0;
-    double * data_reduced = 0, * data_delta = 0;
+    double * data_reduced = 0, * delta = 0;
+    double * delta_compressed = 0;
     double * test_field = 0;
     int nvertices_new;
     int * mesh_reduced = 0, nmesh_reduced;
+    int compressed_size = 0;
 
     for (l = 0; l < nlevels; l++)
     {
@@ -2457,26 +2545,37 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                   &nvertices_new, &mesh_reduced, 
                                   &nmesh_reduced
                                  );
-#if 1
-                        get_delta ((double *) R->data, 
-                                   (double *) Z->data, 
-                                   (double *) data,
-                                   nelems, (int *) mesh->data, mesh_ldims[0],
-                                   r_reduced, z_reduced, data_reduced,
-                                   nvertices_new, mesh_reduced, nmesh_reduced,
-                                   &data_delta
-                                  ); 
+
+                        if (save_delta)
+                        {
+                            get_delta ((double *) R->data, 
+                                       (double *) Z->data, 
+                                       (double *) data,
+                                       nelems, (int *) mesh->data, 
+                                       mesh_ldims[0],
+                                       r_reduced, z_reduced, data_reduced,
+                                       nvertices_new, mesh_reduced, 
+                                       nmesh_reduced, &delta
+                                      );
+
+                            compressed_size = compress (delta, 
+                                                        nelems, 
+                                                        compression_tolerance, 
+                                                        &delta_compressed
+                                                       );
+                        }
 #if 0
+                        decompress (delta, nelems, 1e-3,
+                                    delta_compressed, compressed_size);
+
                         test_delta ((double *) R->data,
                                    (double *) Z->data,
                                    (double *) data,
                                    nelems, (int *) mesh->data, mesh_ldims[0],
                                    r_reduced, z_reduced, data_reduced,
                                    nvertices_new, mesh_reduced, nmesh_reduced,
-                                   data_delta, &test_field
+                                   delta, &test_field
                                   );
-#endif
-
 #endif
                     }
                     else if (l == 1)
@@ -2578,15 +2677,15 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     DEFINE_VAR_LEVEL("mesh/L1",1,adios_integer);
 
-                    new_gdims[0] = nelems;
-                    new_ldims[0] = nelems;
+                    new_gdims[0] = compressed_size;
+                    new_ldims[0] = compressed_size;
                     new_offsets[0] = 0;
 
                     new_global_dimensions = print_dimensions (1, new_gdims);
                     new_local_dimensions = print_dimensions (1, new_ldims);
                     new_local_offsets = print_dimensions (1, new_offsets);
 
-                    DEFINE_VAR_LEVEL("delta/L0",0,adios_double);
+                    DEFINE_VAR_LEVEL("delta/L0",0,adios_byte);
 #if 0
                     DEFINE_VAR_LEVEL("full_field/L1",1,adios_double);
 #endif
@@ -2628,7 +2727,6 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     do_write (md->level[2].fd, "dpot/L2", newfield);
                     free (newfield);
 #endif
-#if 1
                     do_write (md->level[1].fd, "R/L1", r_reduced);
                     free (r_reduced);
 
@@ -2641,12 +2739,20 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     do_write (md->level[1].fd, "dpot/L1", data_reduced);
                     free (data_reduced);
 
-                    do_write (md->level[0].fd, "delta/L0", data_delta);
-                    free (data_delta);
+                    if (save_delta)
+                    {
+                        do_write (md->level[0].fd, "delta/L0", delta);
+                        free (delta);
+                    }
+                    else
+                    {
+                        // write the full dpot data.
+                        do_write (md->level[l].fd, var->name, var->data);
+                    }
 
+                    free (delta_compressed);
 //                    do_write (md->level[1].fd, "full_field/L1", test_field);
 //                    free (test_field);
-#endif
                 }
             }
         } // if
