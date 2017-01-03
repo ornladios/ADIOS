@@ -2346,7 +2346,7 @@ printf ("time = %f\n", t2 - t0);
 #endif
 
     * nvertices_new = nvertices - vertices_cut;
-    printf ("nvertices_old = %d, nvertices_new = %d\n", nvertices, * nvertices_new);
+    //printf ("nvertices_old = %d, nvertices_new = %d\n", nvertices, * nvertices_new);
 
     prep_mesh (conn, nvertices, * nvertices_new);
 
