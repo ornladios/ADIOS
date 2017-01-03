@@ -41,6 +41,7 @@ static int nlevels=2; // Number of levels
 double threshold = 0.1;
 double compression_tolerance = 0.1;
 int save_delta = 1;
+int compress_delta = 1;
 
 GHashTable ** nodes_ght = 0;
 
@@ -639,6 +640,10 @@ static void init_output_parameters(const PairStruct *params)
         } else if (!strcasecmp (p->name, "save-delta"))
         {
             save_delta = atoi (p->value);
+        } else if (!strcasecmp (p->name, "compress-delta"))
+        {
+            compress_delta = atoi (p->value);
+
         } else if (!strcasecmp (p->name, "compression-tolerance"))
         {
             compression_tolerance = atof (p->value);
@@ -1652,6 +1657,272 @@ void test_delta (double * r, double * z, double * field,
     * pfield_full = field_full;
 }
 
+void sort_by_x (double * x, int nvertices,
+                double ** px_sorted, int ** px_idx)
+{
+
+    double * x_sorted = (double *) malloc (nvertices * 8);
+    assert (x_sorted);
+
+    memcpy (x_sorted, x, nvertices * 8);
+
+    int * x_idx = (int *) malloc (nvertices * 4);
+    assert (x_idx);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        x_idx[i] = i;
+    }
+
+    for (int i = 0; i < nvertices - 1; i++)
+    {
+        for (int j = 0; j < nvertices - i - 1; j++)
+        {
+            if (x_sorted[j] > x_sorted[j + 1])
+            {
+                double temp_v = x_sorted[j];
+                int temp_idx = x_idx[j];
+
+                x_sorted[j] = x_sorted[j + 1];
+                x_idx[j] = x_idx[j + 1];
+
+                x_sorted[j + 1] = temp_v;
+                x_idx[j + 1] = temp_idx;
+            }
+        } 
+    }
+
+    * px_sorted = x_sorted;
+    * px_idx = x_idx;
+}
+
+void sort_by_rz (double * r, double * z, int nvertices,
+                 double ** pr_sorted, double ** pz_sorted,
+                 int ** pr_idx, int ** pz_idx)
+{
+double time1 = MPI_Wtime ();
+    sort_by_x (r, nvertices,
+               pr_sorted, pr_idx
+              );
+
+double time2 = MPI_Wtime ();
+    sort_by_x (z, nvertices,
+               pz_sorted, pz_idx
+              );
+double time3 = MPI_Wtime ();
+printf ("sort time: %f, %f\n", time2 - time1, time3 - time2);
+}
+
+double min (double x, double y, double z)
+{
+    if (x <= y)
+    {
+        if (x <= z) 
+            return x;
+        else
+            return z;
+    }
+    else
+    {
+        if (y <= z)
+            return y;
+         else
+            return z;
+    }
+}
+
+double max (double x, double y, double z)
+{
+    if (x <= y)
+    {
+        if (y <= z)
+            return z;
+        else
+            return y;
+    }
+    else
+    {
+        if (x <= z)
+            return z;
+         else
+            return x;
+    }
+}
+
+int find_low (double * sorted, int nvertices, double min)
+{
+    int i = 0;
+
+    while (i < nvertices)
+    {
+        if (min <= sorted[i]) break;
+        i++;
+    }
+
+    assert (i < nvertices);
+
+    return i;
+}
+
+int find_low1 (double * sorted, int nvertices, double min)
+{
+    int low = 0, high = nvertices - 1, mid;
+   
+    while (1)
+    {
+        mid = (low + high) / 2;
+
+        if (mid == 0) return 0;
+
+        if (sorted[mid] == min) return mid;
+        if (sorted[mid - 1] == min) return mid - 1;
+
+        if (sorted[mid] > min && sorted[mid - 1] < min) return mid;
+
+        if (sorted[mid] > min && sorted[mid - 1] > min)
+        {
+            high = mid;
+        }
+        else if (sorted[mid] < min && sorted[mid - 1] < min)
+        {
+            low = mid;
+        }
+    }
+}
+
+int find_high (double * sorted, int nvertices, double max)
+{
+    int i = nvertices - 1;
+
+    while (i >= 0)
+    {
+        if (max >= sorted[i]) break;
+        i--;
+    }
+
+    assert (i >= 0);
+
+    return i;
+}
+
+int find_high1 (double * sorted, int nvertices, double max)
+{
+    int low = 0, high = nvertices - 1, mid;
+
+    while (1)
+    {
+        mid = (low + high) / 2;
+
+        if (sorted[mid] == max) return mid;
+        if (sorted[mid + 1] == max) return mid + 1;
+
+        if (sorted[mid] < max && sorted[mid + 1] > max) return mid;
+
+        if (sorted[mid] < max && sorted[mid + 1] < max)
+        {
+            low = mid;
+        }
+        else if (sorted[mid] > max && sorted[mid + 1] > max)
+        {
+            high = mid;
+        }
+    }
+}
+
+int find_possible_nodes (double min_r, double max_r, 
+                         double min_z, double max_z,
+                         double * r_sorted, double * z_sorted,
+                         int nvertices, int * r_idx, int * z_idx, 
+                         int ** plist)
+{
+    int r_low, r_high, z_low, z_high;
+
+    r_low = find_low1 (r_sorted, nvertices, min_r);
+    r_high = find_high1 (r_sorted, nvertices, max_r);
+    z_low = find_low1 (z_sorted, nvertices, min_z);
+    z_high = find_high1 (z_sorted, nvertices, max_z);
+
+    int * list = (int *) malloc ( (r_high - r_low + 1) * 4);
+    int next_node = 0;
+
+    for (int i = r_low; i <= r_high; i++)
+    {
+        int node_id = r_idx[i];
+
+        int found = 0;
+        for (int j = z_low; j <= z_high; j++)
+        {
+            if (z_idx[j] == node_id)
+            {
+                found = 1;
+                break;
+            }
+        }
+
+        if (found) list[next_node++] = node_id;
+    }
+
+    * plist = list;
+
+    return next_node;
+}
+
+void get_delta1 (double * r, double * z, double * field,
+                int nvertices, int * mesh, int nmesh,
+                double * r_reduced, double * z_reduced,
+                double * field_reduced, int nvertices_new,
+                int * mesh_reduced, int nmesh_new,
+                double ** pfield_delta
+               )
+{
+    double * delta = (double *) malloc (nvertices * 8);
+    assert (delta);
+
+    double * r_sorted = 0, * z_sorted = 0;
+    int * r_idx = 0, * z_idx = 0;
+
+double time1 = MPI_Wtime();
+    sort_by_rz (r, z, nvertices,
+                &r_sorted, &z_sorted,
+                &r_idx, &z_idx);
+
+double time2 = MPI_Wtime();
+    for (int m = 0; m < nmesh_new; m++)
+    {
+        int n1 = * (mesh_reduced + m * 3);
+        int n2 = * (mesh_reduced + m * 3 + 1);
+        int n3 = * (mesh_reduced + m * 3 + 2);
+
+        double min_r = min (r_reduced[n1], r_reduced[n2], r_reduced[n3]);
+        double min_z = min (z_reduced[n1], z_reduced[n2], z_reduced[n3]);
+        double max_r = max (r_reduced[n1], r_reduced[n2], r_reduced[n3]);
+        double max_z = max (z_reduced[n1], z_reduced[n2], z_reduced[n3]);
+
+        int * plist = 0;
+        int nlist = find_possible_nodes (min_r, max_r, min_z, max_z,
+                                         r_sorted, z_sorted, nvertices, 
+                                         r_idx, z_idx, &plist);
+        for (int i = 0; i < nlist; i++) 
+        {
+            int in = PointInTriangle (r[plist[i]], z[plist[i]],
+                                      r_reduced[n1], z_reduced[n1],
+                                      r_reduced[n2], z_reduced[n2],
+                                      r_reduced[n3], z_reduced[n3]);
+            if (in)
+            {
+                double estimate = (field_reduced[n1] + field_reduced[n2] + field_reduced[n3]) / 3.0;
+                delta[plist[i]] = field[plist[i]] - estimate;
+            }
+//          double estimate  = field_reduce[n_clst];
+//            delta[plist[i]] = 0.0;
+        }
+    }
+double time3 = MPI_Wtime ();
+printf ("get delta time = %f\n", time3 - time1);
+
+    * pfield_delta = delta;
+}
+
 void get_delta (double * r, double * z, double * field,
                 int nvertices, int * mesh, int nmesh,
                 double * r_reduced, double * z_reduced,
@@ -2558,11 +2829,14 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                        nmesh_reduced, &delta
                                       );
 
-                            compressed_size = compress (delta, 
-                                                        nelems, 
-                                                        compression_tolerance, 
-                                                        &delta_compressed
-                                                       );
+                            if (compress_delta)
+                            {
+                                compressed_size = compress (delta, 
+                                                            nelems, 
+                                                            compression_tolerance, 
+                                                            &delta_compressed
+                                                           );
+                            }
                         }
 #if 0
                         decompress (delta, nelems, 1e-3,
@@ -2677,15 +2951,31 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     DEFINE_VAR_LEVEL("mesh/L1",1,adios_integer);
 
-                    new_gdims[0] = compressed_size;
-                    new_ldims[0] = compressed_size;
-                    new_offsets[0] = 0;
+                    if (compress_delta)
+                    {
+                        new_gdims[0] = compressed_size;
+                        new_ldims[0] = compressed_size;
+                        new_offsets[0] = 0;
+                    }
+                    else
+                    {
+                        new_gdims[0] = nelems;
+                        new_ldims[0] = nelems;
+                        new_offsets[0] = 0;
+                    }
 
                     new_global_dimensions = print_dimensions (1, new_gdims);
                     new_local_dimensions = print_dimensions (1, new_ldims);
                     new_local_offsets = print_dimensions (1, new_offsets);
 
-                    DEFINE_VAR_LEVEL("delta/L0",0,adios_byte);
+                    if (compress_delta)
+                    {
+                        DEFINE_VAR_LEVEL("delta/L0",0,adios_byte);
+                    }
+                    else
+                    {
+                        DEFINE_VAR_LEVEL("delta/L0",0,adios_double);
+                    }
 #if 0
                     DEFINE_VAR_LEVEL("full_field/L1",1,adios_double);
 #endif
@@ -2741,7 +3031,17 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     if (save_delta)
                     {
-                        do_write (md->level[0].fd, "delta/L0", delta);
+                        if (!compress_delta)
+                        {
+                            do_write (md->level[0].fd, "delta/L0", delta);
+                        }
+                        else
+                        {
+                            do_write (md->level[0].fd, "delta/L0", 
+                                      delta_compressed);
+                            free (delta_compressed);
+                        }
+
                         free (delta);
                     }
                     else
@@ -2750,7 +3050,6 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         do_write (md->level[l].fd, var->name, var->data);
                     }
 
-                    free (delta_compressed);
 //                    do_write (md->level[1].fd, "full_field/L1", test_field);
 //                    free (test_field);
                 }
