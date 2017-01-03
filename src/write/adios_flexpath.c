@@ -1860,7 +1860,7 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
     while (pg) {
         struct adios_var_struct * list = pg->vars_written;
         while (list) {
-            int ndims = get_dim_count(list);
+            int i, ndims = get_dim_count(list);
             uint64_t *all_offsets = malloc(ndims*commsize*sizeof(uint64_t));
             uint64_t *all_local_dims = malloc(ndims*commsize*sizeof(uint64_t));
                 
@@ -1870,7 +1870,7 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
             }
 
             // extract dimensions for rank i from comm block
-            for (int i = 0; i < commsize; i++) {
+            for (i = 0; i < commsize; i++) {
                 memcpy(&all_local_dims[i*ndims], &comm_block[i*send_count + block_index], ndims * sizeof(send_block[0]));
                 memcpy(&all_offsets[i*ndims], &comm_block[i*send_count + block_index + ndims], ndims * sizeof(send_block[0]));
             }
