@@ -39,9 +39,10 @@ static char *io_paths[MAXLEVEL]; //the IO method output paths (prefix to filenam
 static int nlevels=2; // Number of levels
 
 double threshold = 0.1;
-double compression_tolerance = 0.1;
+double compr_tolerance = 0.1;
 int save_delta = 1;
 int compress_delta = 1;
+int dec_ratio = 10;
 
 GHashTable ** nodes_ght = 0;
 
@@ -646,7 +647,10 @@ static void init_output_parameters(const PairStruct *params)
 
         } else if (!strcasecmp (p->name, "compression-tolerance"))
         {
-            compression_tolerance = atof (p->value);
+            compr_tolerance = atof (p->value);
+        } else if (!strcasecmp (p->name, "decimation-ratio"))
+        {
+            dec_ratio = atoi (p->value);
         } else {
             log_error ("Parameter name %s is not recognized by the SIRIUS "
                        "method\n", p->name);
@@ -1868,12 +1872,12 @@ int find_possible_nodes (double min_r, double max_r,
 }
 
 void get_delta1 (double * r, double * z, double * field,
-                int nvertices, int * mesh, int nmesh,
-                double * r_reduced, double * z_reduced,
-                double * field_reduced, int nvertices_new,
-                int * mesh_reduced, int nmesh_new,
-                double ** pfield_delta
-               )
+                 int nvertices, int * mesh, int nmesh,
+                 double * r_reduced, double * z_reduced,
+                 double * field_reduced, int nvertices_new,
+                 int * mesh_reduced, int nmesh_new,
+                 double ** pfield_delta
+                )
 {
     double * delta = (double *) malloc (nvertices * 8);
     assert (delta);
@@ -1938,7 +1942,6 @@ void get_delta (double * r, double * z, double * field,
     for (int i = 0; i < nvertices; i++)
     {
         delta[i] = - DBL_MAX;
-        int n_clst;
 
         for (int m = 0; m < nmesh_new; m++)
         {
@@ -1950,21 +1953,16 @@ void get_delta (double * r, double * z, double * field,
                                       r_reduced[n1], z_reduced[n1],
                                       r_reduced[n2], z_reduced[n2],
                                       r_reduced[n3], z_reduced[n3]);
-#if 0
-            find_clst (r, z, i
-                       r_reduced, z_reduced,
-                       n1, n2, n3,
-                       &n_clst);
-#endif
+
             if (in)
             {
-                double estimate = (field_reduced[n1] + field_reduced[n2] + field_reduced[n3]) / 3.0;
+                double estimate = (field_reduced[n1] + field_reduced[n2]
+                                 + field_reduced[n3]) / 3.0;
                 delta[i] = field[i] - estimate;
                 break;
             }
             else if (m == nmesh_new - 1)
             {
-//                double estimate  = field_reduce[n_clst];
                 delta[i] = 0.0;
             }
         }
@@ -2010,7 +2008,7 @@ void decimate (double * rorg, double * zorg, double * fieldorg,
     cost_matrix[pq_v1][min_idx % MAX_NODE_DEGREE].pq_node = 0;
 
 double t0 = MPI_Wtime();
-    while ((double)vertices_cut / (double)nvertices < 0.9)
+    while ((double)vertices_cut / (double)nvertices < (1.0 - 1.0 / dec_ratio))
 //    while (vertices_cut < 10000)
     {
         int v1 = min_idx / MAX_NODE_DEGREE;
@@ -2388,7 +2386,6 @@ printf ("time = %f\n", t2 - t0);
     free (r);
     free (z);
     free (field);
-printf ("nmesh_new = %d\n", * nmesh_new);
 }
 
 void thresholding (double * r, double * z, double * field,
@@ -2592,11 +2589,11 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
     int newsize = 0, cell_cnt = 0;
     double * r_reduced = 0, * z_reduced = 0;
     double * data_reduced = 0, * delta = 0;
-    double * delta_compressed = 0;
+    double * delta_compr = 0;
     double * test_field = 0;
     int nvertices_new;
     int * mesh_reduced = 0, nmesh_reduced;
-    int compressed_size = 0;
+    int compr_size = 0;
 
     for (l = 0; l < nlevels; l++)
     {
@@ -2831,16 +2828,16 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                             if (compress_delta)
                             {
-                                compressed_size = compress (delta, 
-                                                            nelems, 
-                                                            compression_tolerance, 
-                                                            &delta_compressed
-                                                           );
+                                compr_size = compress (delta, 
+                                                       nelems, 
+                                                       compr_tolerance, 
+                                                       &delta_compr
+                                                      );
                             }
                         }
 #if 0
                         decompress (delta, nelems, 1e-3,
-                                    delta_compressed, compressed_size);
+                                    delta_compr, compr_size);
 
                         test_delta ((double *) R->data,
                                    (double *) Z->data,
@@ -2953,8 +2950,8 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     if (compress_delta)
                     {
-                        new_gdims[0] = compressed_size;
-                        new_ldims[0] = compressed_size;
+                        new_gdims[0] = compr_size;
+                        new_ldims[0] = compr_size;
                         new_offsets[0] = 0;
                     }
                     else
@@ -3038,8 +3035,8 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         else
                         {
                             do_write (md->level[0].fd, "delta/L0", 
-                                      delta_compressed);
-                            free (delta_compressed);
+                                      delta_compr);
+                            free (delta_compr);
                         }
 
                         free (delta);
