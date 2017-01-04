@@ -328,7 +328,7 @@ int write_index (struct adios_index_struct_v1 * index, char * fname)
             buffer_offset, to_write, bytes_written);
         }
 
-        ssize_t wrote = write (f, buffer, to_write);
+        ssize_t wrote = write (f, buffer+bytes_written, to_write);
         bytes_written += wrote;
 
         if (verbose>2) {
