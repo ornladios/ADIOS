@@ -49,12 +49,12 @@ int main (int argc, char ** argv)
 
     ADIOS_VARINFO * v = adios_inq_var (f, "dpot");
 
-    printf ("%lu, %lu\n", v->dims[0], v->dims[1]);
+//    printf ("%lu, %lu\n", v->dims[0], v->dims[1]);
 
     start[0] = 0;
     count[0] = v->dims[0];
 
-    start[1] = 0;
+    start[1] = rank;
     count[1] = 1;
        
 
@@ -77,7 +77,7 @@ int main (int argc, char ** argv)
             printf (" %e", * ((double *)data + i ));
     }
 */
-    printf ("\n");
+//    printf ("\n");
 
     adios_read_close (f);
     MPI_Barrier (comm);
@@ -95,7 +95,7 @@ int main (int argc, char ** argv)
 
     ADIOS_VARINFO * conn = adios_inq_var (fmesh, "/cell_set[0]/node_connect_list");
 
-    printf ("conn: %lu, %lu\n", conn->dims[0], conn->dims[1]);
+//    printf ("conn: %lu, %lu\n", conn->dims[0], conn->dims[1]);
 
 
     start[0] = 0;
