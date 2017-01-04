@@ -181,6 +181,7 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
+    unset EXTRA_CFLAGS
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
         export CXX=pgCC
@@ -193,6 +194,7 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
+        export EXTRA_CFLAGS="-std=c99"
         WITHFLEX=""
     else
         echo "TARGET must be pgi or gnu or intel"
@@ -200,7 +202,7 @@ elif [ `hostname | cut -c 1-4` == "rhea" ]; then
     fi
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
-    export CFLAGS="-g -fPIC" 
+    export CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" 
     $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/rhea.$TARGET \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
