@@ -36,6 +36,7 @@
 #include "core/buffer.h"
 #include "core/util.h"
 #include "core/adios_logger.h"
+#include "core/globals.h"
 
 #if HAVE_FLEXPATH==1
 
@@ -193,14 +194,14 @@ reverse_dims(uint64_t *dims, int len)
     }
 }
 
-char*
-resolve_path_name(char *path, char *name)
+static char*
+append_path_name(char *path, char *name)
 {
     char *fullname = NULL;
     if (name) {
         if (path) {
             if (strcmp(path, "")) {
-                fullname = malloc(strlen(path) + strlen(name) + 2);
+                fullname = malloc(strlen(path) + strlen(name) + 8);
                 strcpy(fullname, path);
                 strcat(fullname, "/");
                 strcat(fullname, name);
@@ -212,29 +213,6 @@ resolve_path_name(char *path, char *name)
         return fullname;
     }
     return NULL;
-}
-
-// add an attr for each dimension to an attr_list
-void 
-set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) 
-{
-    char atomName[200] = "";
-    char dimNum[10];
-    strcat(atomName, FP_DIM_ATTR_NAME);
-    strcat(atomName, "_");
-    strcat(atomName, varName);
-    strcat(atomName, "_");
-    sprintf(dimNum, "%d", numDims);
-    strcat(atomName, dimNum);
-    atom_t dimAtom = attr_atom_from_string(atomName);
-    add_string_attr(attrs, dimAtom, altName);
-    atomName[0] = '\0';
-    strcat(atomName, FP_NDIMS_ATTR_NAME);
-    strcat(atomName, "_");
-    strcat(atomName, altName);
-
-    atom_t ndimsAtom = attr_atom_from_string(atomName);
-    add_int_attr(attrs, ndimsAtom, 0);
 }
 
 
@@ -434,16 +412,20 @@ threaded_peek(FlexpathQueueNode** queue,
 FlexpathVarNode* 
 add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank)
 {
+    FlexpathVarNode *tmp = queue;
+    FlexpathVarNode *new;
+
+    new = (FlexpathVarNode*) malloc(sizeof(FlexpathVarNode));
+    new->varName = strdup(varName);
+    new->dimensions = dims;
+    new->next = NULL;
+    new->rank = rank;
     if (queue) {
-        queue->next=add_var(queue->next, varName, dims, rank);
+	while (tmp->next != NULL) tmp = tmp->next;
+	tmp->next = new;
         return queue;
     } else {
-        queue = (FlexpathVarNode*) malloc(sizeof(FlexpathVarNode));
-        queue->varName = strdup(varName);
-        queue->dimensions = dims;
-        queue->next = NULL;
-        queue->rank = rank;
-        return queue;
+        return new;
     }
 }
 
@@ -486,12 +468,15 @@ queue_contains(FlexpathVarNode* queue, const char* name, int rank)
 static char*
 get_alt_name(char *name, char *dimName) 
 {
+    /* 
+     *  Formerly, this created an alternative dimension name for each variable, so that transformation code 
+     *  might modify it without affecting other vars.  This facility is deprecated, so simplifying.
+     *  Just return a new copy of the original name.
+     */
+
     int len = strlen(name) + strlen(dimName) + strlen("FPDIM_") + 2;
     char *newName = malloc(sizeof(char) * len);
-    strcpy(newName, "FPDIM_");
-    strcat(newName, dimName);
-    strcat(newName, "_");
-    strcat(newName, name);
+    strcpy(newName, dimName);
     return newName;
 }
 
@@ -523,12 +508,24 @@ find_alt_name(FlexpathFMStructure *currentFm, char *dimName, char *varName)
     FMField *field = (FMField *) malloc(sizeof(FMField));
     a->field = field;
     field->field_name = strdup(altName);
-    // TO FIX: Should really check datatype (another paramater?)
+    // TO FIX: Should really check datatype (another parameter?)
     field->field_type = strdup("integer");
     field->field_size = sizeof(int);
     field->field_offset = -1;
     LIST_INSERT_HEAD(&d->altList, a, entries);
     return a;
+}
+
+static int
+get_dim_count(struct adios_var_struct *v)
+{
+    struct adios_dimension_struct * dim_list = v->dimensions;
+    int ndims = 0;
+    while (dim_list) {
+        ndims++;
+        dim_list = dim_list->next;
+    }
+    return ndims;
 }
 
 // populates offsets array
@@ -750,7 +747,7 @@ get_dim_name (struct adios_dimension_item_struct *d)
 {
     char *vname = NULL;
     if (d->var) {	
-        vname = resolve_path_name(d->var->path, d->var->name);
+        vname = append_path_name(d->var->path, d->var->name);
     } else if (d->attr) {
         if (d->attr->var) 
             vname = d->attr->var->name;
@@ -779,7 +776,7 @@ set_format(struct adios_group_struct *t,
 	return NULL;
     }
 
-    FMFieldList field_list = malloc(sizeof(FMField) * ((int)t->hashtbl_vars->size(t->hashtbl_vars) + 1));
+    FMFieldList field_list = malloc(sizeof(FMField) * 2);
     if (field_list == NULL) {
 	adios_error(err_invalid_group, 
 		    "set_format: Field List Memory Allocation Failed. t->hashtbl_vars->size: %d\n", 
@@ -793,10 +790,17 @@ set_format(struct adios_group_struct *t,
     // for each type look through all the fields
     struct adios_var_struct *adios_var;
     for (adios_var = t->vars; adios_var != NULL; adios_var = adios_var->next, fieldNo++) {
-	char *fullname = resolve_path_name(adios_var->path, adios_var->name);
+	char *fullname = append_path_name(adios_var->path, adios_var->name);
+	char *mangle_name = flexpath_mangle(fullname);
 
+	for (int i = 0; i < fieldNo; i++) {
+	    if (strcmp(mangle_name, field_list[i].field_name) == 0) {
+		adios_error(err_invalid_group, "set_format:  The Flexpath transport does not allow multiple writes using the same name in a single group, variable %s is disallowed\n", fullname);
+		return NULL;
+	    }
+	}
 	// use the mangled name for the field.
-	field_list[fieldNo].field_name = fullname;
+	field_list[fieldNo].field_name = mangle_name;
         if (fullname!=NULL) {
             int num_dims = 0;
             char atom_name[200] = "";
@@ -813,30 +817,23 @@ set_format(struct adios_group_struct *t,
 			//printf("vname: %s\n", vname);
 			//char *name = find_fixed_name(currentFm, vname);
 			char *aname = get_alt_name(fullname, vname);
+			char *mangle_dim = flexpath_mangle(aname);
 			//printf("aname: %s\n", aname);
-			dims=add_var(dims, strdup(aname), NULL, 0);
-			set_attr_dimensions(fullname, aname, num_dims, fileData->attrs);
+			dims=add_var(dims, mangle_dim, NULL, 0);
 		    }
                     char *gname = get_dim_name(&adim->global_dimension);
 		    if (gname) {
 			fileData->globalCount++;
 			//char *name = find_fixed_name(currentFm, gname);
 			char *aname = get_alt_name(fullname, gname);
-			dims=add_var(dims, strdup(aname), NULL, 0);
-			set_attr_dimensions(fullname, aname, num_dims, fileData->attrs);
+			char *mangle_dim = flexpath_mangle(aname);
+			dims=add_var(dims, mangle_dim, NULL, 0);
 		    }
 		    if (adim->global_dimension.rank > 0) {
 			fileData->globalCount++;
 		    }
                 }
             }
-            // attach ndims attr
-            strcat(atom_name, FP_NDIMS_ATTR_NAME);
-            strcat(atom_name, "_");
-            strcat(atom_name, fullname);
-            atom_t ndims_atom = attr_atom_from_string(strdup(atom_name));
-            add_int_attr(fileData->attrs, ndims_atom, num_dims);
-            fileData->formatVars = add_var(fileData->formatVars, fullname, dims, 0);
         }
 	// if its a single field
 	if (!adios_var->dimensions) {
@@ -850,17 +847,17 @@ set_format(struct adios_group_struct *t,
             char dims[DIMSIZE] = "";
 	    char el[ELSIZE] = "";
 	    int v_offset=-1;
+	    int all_static = 1;
 		  
 	    //create the textual representation of the dimensions
 	    for (; d != NULL; d = d->next) {
                 char *vname = get_dim_name(&d->dimension);
                 if (vname) {
-		    
-		    //char *name = find_fixed_name(currentFm, vname);
-		    FlexpathAltName *a = find_alt_name(currentFm, vname, (char*)field_list[fieldNo].field_name);
-		    altvarcount++;
-		    snprintf(el, ELSIZE, "[%s]", a->name);
+		    vname = flexpath_mangle(vname);
+		    snprintf(el, ELSIZE, "[%s]", vname);
+		    free(vname);
 		    v_offset = 0;
+		    all_static = 0;
 		} else {
 		    snprintf(el, ELSIZE, "[%" PRIu64 "]", d->dimension.rank);
 		    v_offset *= d->dimension.rank;
@@ -882,42 +879,48 @@ set_format(struct adios_group_struct *t,
 	    case adios_integer:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255,
-			 "integer%s", dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "*(integer%s)", dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "integer%s", dims);
+		}
 		field_list[fieldNo].field_size = sizeof(int);
 		      
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(int));  } 
+		currentFm->size += sizeof(void *);
 		break;
 		      
 	    case adios_unsigned_integer:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255,
-			 "unsigned integer%s", dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "*(unsigned integer%s)", dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "unsigned integer%s", dims);
+		}
 		field_list[fieldNo].field_size = sizeof(unsigned int);
 		      
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(unsigned int));  } 
+		currentFm->size += sizeof(void *);
 		break;
 
 	    case adios_real:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255,
-			 "float%s", dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "*(float%s)", dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "float%s", dims);
+		}
 		field_list[fieldNo].field_size = sizeof(float);
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(float));  } 
+		currentFm->size += sizeof(void *);
 		break;
 
 	    case adios_string:
@@ -930,99 +933,114 @@ set_format(struct adios_group_struct *t,
 	    case adios_double:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255,
-			 "double%s", dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "*(double%s)", dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "double%s", dims);
+		}
 		field_list[fieldNo].field_size = sizeof(double);
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(double));  } 
+		currentFm->size += sizeof(void *);
 		break;
 		
 	    case adios_long_double:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255,
-			 "double%s", dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "*(double%s)", dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "double%s", dims);
+		}		    
 		field_list[fieldNo].field_size = sizeof(long double);
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(long double));  } 
+		currentFm->size += sizeof(void *);
 		break;
 
 	    case adios_byte:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255, "char%s",
-			 dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
+			     dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
+			     dims);
+		}
 		field_list[fieldNo].field_size = sizeof(char);
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(char));  } 
+		currentFm->size += sizeof(void *);
 		break;
 
 	    case adios_long: // needs to be unsigned integer in ffs
                 // to distinguish on reader_side, I have to look at the size also
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255,
-			 "integer%s", dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "*(integer%s)", dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "integer%s", dims);
+		}
 		field_list[fieldNo].field_size = sizeof(long);
 		      
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(long));  } 
+		currentFm->size += sizeof(void *);
 		break;
 		
 	    case adios_unsigned_long: // needs to be unsigned integer in ffs
                 // to distinguish on reader_side, I have to look at the size also
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255,
-			 "unsigned integer%s", dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "*(unsigned integer%s)", dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255,
+			     "unsigned integer%s", dims);
+		}		    
 		field_list[fieldNo].field_size = sizeof(unsigned long);
 		      
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(unsigned long));  } 
+		currentFm->size += sizeof(void *);
 		break;
 
 	    case adios_complex:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255, "complex%s",
-			 dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255, "*(complex%s)",
+			     dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255, "complex%s",
+			     dims);
+		}
 		field_list[fieldNo].field_size = sizeof(complex_dummy);
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(complex_dummy));  } 
+		currentFm->size += sizeof(void *);
 		break;
 
             case adios_double_complex:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255, "double_complex%s",
-			 dims);
+		if (all_static) {
+		    snprintf((char *) field_list[fieldNo].field_type, 255, "*(double_complex%s)",
+			     dims);
+		} else {
+		    snprintf((char *) field_list[fieldNo].field_type, 255, "double_complex%s",
+			     dims);
+		}
 		field_list[fieldNo].field_size = sizeof(double_complex_dummy);
 		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(double_complex_dummy)); } 
+		currentFm->size += sizeof(void *);
 		break;
 
 	    default:
+		fprintf(stderr, "Rejecting field %d, name %s\n", fieldNo, field_list[fieldNo].field_name);
 		adios_error(err_invalid_group, 
 			    "set_format: Unknown Type Error %d: name: %s\n", 
 			    adios_var->type, field_list[fieldNo].field_name);
@@ -1032,6 +1050,8 @@ set_format(struct adios_group_struct *t,
 	    }
 	}
 
+	field_list = (FMFieldList) realloc(field_list, sizeof(FMField) * (fieldNo + 2));
+
 	fp_verbose(fileData, "field: %s, %s, %d, %d\n", 
 		     field_list[fieldNo].field_name, 
 		     field_list[fieldNo].field_type,
@@ -1040,7 +1060,7 @@ set_format(struct adios_group_struct *t,
     }
 
     FlexpathDimNames *d = NULL;
-    field_list = (FMFieldList) realloc(field_list, sizeof(FMField) * (altvarcount + (int)t->hashtbl_vars->size(t->hashtbl_vars) + 1));
+    field_list = (FMFieldList) realloc(field_list, sizeof(FMField) * (altvarcount + fieldNo + 1));
 
     for (d = currentFm->dimList.lh_first; d != NULL; d = d->entries.le_next) {
 	FlexpathAltName *a = NULL;
@@ -1052,12 +1072,11 @@ set_format(struct adios_group_struct *t,
 	}
     }
 
-    for (; fieldNo < (t->hashtbl_vars->size(t->hashtbl_vars) + 1+altvarcount); fieldNo++) {
-	field_list[fieldNo].field_type = NULL;
-	field_list[fieldNo].field_name = NULL;
-	field_list[fieldNo].field_offset = 0;
-	field_list[fieldNo].field_size = 0;
-    }
+    field_list[fieldNo].field_type = NULL;
+    field_list[fieldNo].field_name = NULL;
+    field_list[fieldNo].field_offset = 0;
+    field_list[fieldNo].field_size = 0;
+
 
     format[0].field_list = field_list;
     format[1].format_name = strdup("complex");
@@ -1468,7 +1487,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     // fork communications thread
     int forked = CMfork_comm_thread(flexpathWriteData.cm);   
     if (!forked) {
-	fprintf(stderr, "Wrtier error forking comm thread\n");
+	fprintf(stderr, "Writer error forking comm thread\n");
     }
 
     EVregister_close_handler(flexpathWriteData.cm, stone_close_handler, &flexpathWriteData);
@@ -1702,8 +1721,9 @@ adios_flexpath_write(
     
     FMFieldList flist = fm->format[0].field_list;
     FMField *field = NULL;
-    char *fullname = resolve_path_name(f->path, f->name);
-    field = internal_find_field(fullname, flist);
+    char *fullname = append_path_name(f->path, f->name);
+    char *mangle_name = flexpath_mangle(fullname);
+    field = internal_find_field(mangle_name, flist);
 
     if (field != NULL) {
 	//scalar quantity
@@ -1712,7 +1732,8 @@ adios_flexpath_write(
 		//why wouldn't it have data?
 		if (f->type == adios_string) {
 		    char *tmpstr = strdup((char*)data);
-		    set_FMPtrField_by_name(flist, fullname, fm->buffer, tmpstr);
+		    if (!set_FMPtrField_by_name(flist, mangle_name, fm->buffer, tmpstr)) 
+			fprintf(stderr, "Set fmprtfield by name failed, name %s\n", mangle_name);
 		} else {
 		    memcpy(&fm->buffer[field->field_offset], data, field->field_size);
 		}
@@ -1729,7 +1750,9 @@ adios_flexpath_write(
 			    for (a = d->altList.lh_first; a != NULL; a = a->entries.le_next) {
 				if (f->type == adios_string) {
 				    char *tmpstr = strdup((char*)data);
-				    set_FMPtrField_by_name(flist, fullname, fm->buffer, tmpstr);
+				    if (!set_FMPtrField_by_name(flist, mangle_name, fm->buffer, tmpstr)) 
+					fprintf(stderr, "Set2 fmprtfield by name failed, name %s\n", mangle_name);
+
 				    //(strcpy(&fm->buffer[a->field->field_offset], (char*)data));
 				} else {
 				    memcpy(&fm->buffer[a->field->field_offset], 
@@ -1747,26 +1770,130 @@ adios_flexpath_write(
 	    //vector quantity
 	    if (data) {	    
                 struct adios_dimension_struct *dims = f->dimensions;
-                int arraysize = 0;
+                int arraysize = field->field_size;
                 while (dims) {
                     int size = adios_get_dim_value(&dims->dimension);
-                    if (arraysize) {
-                        arraysize *= size;
-                    }
-                    else
-                        arraysize = size;
+		    arraysize *= size;
                     dims = dims->next;
                 }
-                arraysize *= field->field_size;
                 void *datacpy = malloc(arraysize);
                 //void *temp = get_FMPtrField_by_name(flist, fullname, fm->buffer, 0);
                 memcpy(datacpy, data, arraysize);
-                set_FMPtrField_by_name(flist, fullname, fm->buffer, datacpy);
+                if (!set_FMPtrField_by_name(flist, mangle_name, fm->buffer, datacpy)) 
+		    fprintf(stderr, "Set3 fmprtfield by name failed, name %s\n", mangle_name);
+
 	    } else {
 		log_error("adios_flexpath_write: no array data found for var: %s. Bad.\n", f->name);	
 	    }
 	}
     }
+}
+
+static void 
+exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWriteFileData *fileData)
+{
+    // process local offsets here       
+    struct adios_pg_struct * pg = fd->pgs_written;
+    struct adios_group_struct * g = fd->group;
+    int num_gbl_vars = 0;
+    global_var * gbl_vars = malloc(sizeof(global_var));
+    int num_vars = 0;
+    int myrank = fileData->rank;
+    int commsize = fileData->size;
+    int send_count = 0;   /* dimension count, sending size and offset per */
+    uint64_t *send_block = malloc(1);
+    
+    while (pg) {
+        struct adios_var_struct * list = pg->vars_written;
+        while (list) {
+            char *fullname = append_path_name(list->path, list->name);
+            //int num_local_offsets = 0;
+            uint64_t *local_offsets = NULL;
+            uint64_t *local_dimensions = NULL;
+            uint64_t *global_dimensions = NULL; // same at each rank.
+            int ndims = get_var_offsets(list, g, &local_offsets, 
+                                        &local_dimensions, &global_dimensions);
+
+            if (ndims == 0) {
+                list=list->next;
+                continue;
+            }
+
+            // flip for fortran here.
+            if (fileData->host_language == FP_FORTRAN_MODE) {
+                reverse_dims(local_offsets, ndims);
+                reverse_dims(local_dimensions, ndims);
+                reverse_dims(global_dimensions, ndims);
+            }
+            
+            send_block = realloc(send_block, (send_count + ndims * 2) * sizeof(send_block[0]));
+            memcpy(&send_block[send_count], local_dimensions, ndims * sizeof(send_block[0]));
+            memcpy(&send_block[send_count+ndims], local_offsets, ndims * sizeof(send_block[0]));
+            
+            
+            offset_struct *ostruct = malloc(sizeof(offset_struct));
+            ostruct->offsets_per_rank = ndims;
+            ostruct->total_offsets = ndims * commsize;
+            ostruct->global_dimensions = global_dimensions;
+                
+            num_gbl_vars++;
+            gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
+            gbl_vars[num_gbl_vars - 1].name = fullname;
+            gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
+            gbl_vars[num_gbl_vars - 1].offsets = ostruct;
+
+            send_count += ndims * 2;
+            list=list->next;
+        }
+        pg = pg->next;
+    }
+    int buf_size = send_count * commsize * sizeof(uint64_t);                
+    uint64_t *comm_block = malloc(buf_size);
+
+    MPI_Allgather(send_block, send_count, MPI_UINT64_T,
+                  comm_block, send_count, MPI_UINT64_T,
+                  fileData->mpiComm);
+
+    pg = fd->pgs_written;
+    int block_index = 0;
+    int gbl_var_index = 0;
+    while (pg) {
+        struct adios_var_struct * list = pg->vars_written;
+        while (list) {
+            int i, ndims = get_dim_count(list);
+            uint64_t *all_offsets = malloc(ndims*commsize*sizeof(uint64_t));
+            uint64_t *all_local_dims = malloc(ndims*commsize*sizeof(uint64_t));
+                
+            if (ndims == 0) {
+                list=list->next;
+                continue;
+            }
+
+            // extract dimensions for rank i from comm block
+            for (i = 0; i < commsize; i++) {
+                memcpy(&all_local_dims[i*ndims], &comm_block[i*send_count + block_index], ndims * sizeof(send_block[0]));
+                memcpy(&all_offsets[i*ndims], &comm_block[i*send_count + block_index + ndims], ndims * sizeof(send_block[0]));
+            }
+            gbl_vars[gbl_var_index].offsets->local_offsets = all_offsets;
+            gbl_vars[gbl_var_index].offsets->local_dimensions = all_local_dims;
+
+            gbl_var_index++;
+            block_index += ndims * 2;
+            list=list->next;
+        }
+        
+        pg = pg->next;
+    }
+    
+    free(comm_block);
+    if (num_gbl_vars == 0) {
+        free(gbl_vars);
+        gbl_vars = NULL;
+    }
+    gp->num_vars = num_gbl_vars;
+    gp->step = fileData->writerStep;
+    gp->vars = gbl_vars;
+    //fileData->gp = gp;       
 }
 
 extern void 
@@ -1784,8 +1911,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		     fileData->maxQueueSize);
     
     // now gather offsets and send them via MPI to root
-    struct adios_group_struct * g = fd->group;
-    struct adios_pg_struct * pg = fd->pgs_written;
     evgroup *gp = malloc(sizeof(evgroup));    
     gp->group_name = strdup(method->group->name);
     gp->process_id = fileData->rank;
@@ -1795,77 +1920,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	gp->step = fileData->writerStep;
 	gp->vars = NULL;
 	EVsubmit_general(fileData->offsetSource, gp, evgroup_msg_free, fileData->attrs);
-    }
-
-    else {	
-        // process local offsets here	
-	int num_gbl_vars = 0;
-        global_var * gbl_vars = NULL;
-	int num_vars = 0;
-	int myrank = fileData->rank;
-	int commsize = fileData->size;
-
-        while (pg) {
-            struct adios_var_struct * list = pg->vars_written;
-            while (list) {
-                char *fullname = resolve_path_name(list->path, list->name);
-                //int num_local_offsets = 0;
-                uint64_t *local_offsets = NULL;
-                uint64_t *local_dimensions = NULL;
-                uint64_t *global_dimensions = NULL; // same at each rank.
-                int num_local_offsets = get_var_offsets(list, g, 
-                        &local_offsets, 
-                        &local_dimensions, 
-                        &global_dimensions);
-                // flip for fortran here.
-                if (fileData->host_language == FP_FORTRAN_MODE) {
-                    reverse_dims(local_offsets, num_local_offsets);
-                    reverse_dims(local_dimensions, num_local_offsets);
-                    reverse_dims(global_dimensions, num_local_offsets);
-                }
-
-                if (num_local_offsets > 0) {
-                    uint64_t *all_offsets = NULL;
-                    uint64_t *all_local_dims = NULL;
-
-                    int buf_size = num_local_offsets * commsize * sizeof(uint64_t);		    
-                    all_offsets = malloc(buf_size);		
-                    all_local_dims = malloc(buf_size);
-
-                    int arr_size = num_local_offsets * sizeof(uint64_t);
-                    MPI_Allgather(local_offsets, arr_size, MPI_BYTE, 
-                            all_offsets, arr_size, MPI_BYTE,
-                            fileData->mpiComm);
-
-                    MPI_Allgather(local_dimensions, arr_size, MPI_BYTE, 
-                            all_local_dims, arr_size, MPI_BYTE,
-                            fileData->mpiComm);
-
-                    num_gbl_vars++;
-                    offset_struct *ostruct = malloc(sizeof(offset_struct));
-                    ostruct->offsets_per_rank = num_local_offsets;
-                    ostruct->total_offsets = num_local_offsets * commsize;
-                    ostruct->local_offsets = all_offsets;
-                    ostruct->local_dimensions = all_local_dims;
-                    ostruct->global_dimensions = global_dimensions;
-
-                    gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
-                    gbl_vars[num_gbl_vars - 1].name = fullname;
-                    gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
-                    gbl_vars[num_gbl_vars - 1].offsets = ostruct;
-
-                }
-                list=list->next;
-            }
-
-            pg = pg->next;
-        }
-
-	gp->num_vars = num_gbl_vars;
-	gp->step = fileData->writerStep;
-	gp->vars = gbl_vars;
-	//fileData->gp = gp;       
-    }
+    } else {    
+        exchange_dimension_data(fd, gp, fileData);
+    }   
     
     update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
     stepmsg->finalized = 0;

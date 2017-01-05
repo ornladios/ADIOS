@@ -1,12 +1,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include "public/adios_transform_methods.h"
-#include "core/transforms/adios_transforms_hooks.h" 
+#include "core/transforms/adios_transforms_hooks.h"
 #include "core/transforms/adios_transforms_hooks_read.h"
 #include "core/transforms/adios_transforms_read.h"
 
 ADIOS_AVAILABLE_TRANSFORM_METHODS * adios_available_transform_methods()
 {
+    /* Ensure the transforms are initialized before accessing */
+    adios_transform_read_init();
+
     int i, n;
     n = 0;
     for (i = (int)adios_transform_none; i < num_adios_transform_types; i++) {

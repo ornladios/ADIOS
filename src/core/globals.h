@@ -82,4 +82,8 @@ void icee_fileinfo_print(const void* item);
 void icee_contactinfo_print(const icee_contactinfo_rec_ptr_t cp);
 #endif
 
+#ifdef HAVE_FLEXPATH
+extern char *flexpath_unmangle(const char*name);
+extern char *flexpath_mangle(const char*name);
+#endif
 #endif  /*__GLOBALS_H__*/

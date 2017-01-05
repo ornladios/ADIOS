@@ -23,6 +23,7 @@
 #include <mxml.h>
 
 #include "public/adios_mpi.h" // MPI or dummy MPI for seq. build
+#include "public/adios_error.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
@@ -669,30 +670,33 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
 
     lseek (p->b.f, offset, SEEK_SET);
 
-    if (fd->bytes_written > MAX_MPIWRITE_SIZE)
-    {
-        to_write = MAX_MPIWRITE_SIZE;
-    }
-    else
-    {
-        to_write = (int32_t) fd->bytes_written;
-    }
-
     while (bytes_written < fd->bytes_written)
     {
-        write (p->b.f, fd->buffer, to_write);
-        bytes_written += to_write;
-        if (fd->bytes_written > bytes_written)
+        if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
         {
-            if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
-            {
-                to_write = MAX_MPIWRITE_SIZE;
-            }
-            else
-            {
-                to_write = fd->bytes_written - bytes_written;
-            }
+            to_write = MAX_MPIWRITE_SIZE;
         }
+        else
+        {
+            to_write = fd->bytes_written - bytes_written;
+        }
+
+        ssize_t wrote = write (p->b.f, fd->buffer+bytes_written, to_write);
+        bytes_written += to_write;
+
+        if (wrote == -1)
+        {
+            adios_error (err_write_error, "Failure to write data to file %s by rank %d: %s\n",
+                    fd->name, p->rank, strerror(errno));
+            break;
+        }
+        else if (wrote != to_write)
+        {
+            adios_error (err_write_error, "Failure to write data completely to file %s by rank %d: "
+                    "Wanted to write %ld bytes to file at once but only %ld was written\n",
+                    fd->name, p->rank, to_write, wrote);
+        }
+
     }
 
     p->total_bytes_written += bytes_written;

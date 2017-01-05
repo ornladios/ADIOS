@@ -56,6 +56,7 @@ typedef enum mpi_operation MPI_Op;
 #define MPI_INT                     1
 #define MPI_CHAR                    2
 #define MPI_DOUBLE                  3
+#define MPI_UINT64_T                4
 
 #define MPI_ANY_SOURCE              0
 #define MPI_ANY_TAG                 0

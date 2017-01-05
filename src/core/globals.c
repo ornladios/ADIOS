@@ -11,7 +11,9 @@
 
 #include "globals.h"
 #include <inttypes.h>
-
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 
 static int globals_adios_appid = -1;
 static int globals_adios_was_set = 0;
@@ -340,4 +342,104 @@ void icee_contactinfo_print(const icee_contactinfo_rec_ptr_t cp)
     }
 }
 
+#endif
+
+#ifdef HAVE_FLEXPATH
+
+static char ascii_array[128];
+static char reverse_array[128];
+
+static void init_arrays()
+{
+    int i;
+    char translate = 'A';
+    memset(reverse_array, 0, 128);
+    for (i=0; i < sizeof(ascii_array) ; i++) {
+	if (!isprint((char)i)) {
+	    ascii_array[i] = 0;
+	} else {
+	    /* printable character */
+	    if (isalnum((char)i)) {
+		ascii_array[i] = 1;
+	    } else {
+		ascii_array[i] = translate;
+		reverse_array[translate] = i;
+		translate++;
+		if (translate == '[') {
+		    translate = 'a';
+		}
+	    }
+	}
+    }
+}
+
+char*
+flexpath_mangle(const char *name)
+{
+    char *mangle = NULL;
+    const char *tmp = name;
+    int len = 0;
+    int bad = 0;
+    static int first = 1;
+
+    if (first) {
+	first = 0;
+	init_arrays();
+    }
+    if (!name) return NULL;
+    while (*tmp) {
+	if (!isalnum(*tmp) && (*tmp != '_')) {
+	    bad++;
+	}
+	tmp++;
+    }
+    if (!bad) {
+	return strdup(name);
+    }
+    mangle = malloc(2*strlen(name) + 4);  /* worst case */
+    memset(mangle, 0, 2*strlen(name) + 4);
+    strcpy(mangle, "Z__");
+    int end = strlen(mangle);
+    while (name[0]) {
+	if (ascii_array[name[0]] > 1) {
+	    mangle[end++] = '_';
+	    mangle[end++] = ascii_array[name[0]];
+	} else {
+	    mangle[end++] = name[0];
+	}
+	name++;
+    }
+    return mangle;
+}
+
+char*
+flexpath_unmangle(const char *name)
+{
+    static int first = 1;
+    char *unmangle = NULL;
+    int end = 0;
+
+    if (first) {
+	first = 0;
+	init_arrays();
+    }
+    if (!name) return NULL;
+    if (strncmp(name, "Z__", 3)) {
+	return strdup(name);
+    }
+    unmangle = malloc(strlen(name));  /* worst case */
+    memset(unmangle, 0, strlen(name));
+    name += 3;
+    end = 0;
+    while (name[0]) {
+	if (name[0] == '_') {
+	    name++;
+	    unmangle[end++] = reverse_array[name[0]];
+	} else {
+	    unmangle[end++] = name[0];
+	}
+	name++;
+    }
+    return unmangle;
+}
 #endif
