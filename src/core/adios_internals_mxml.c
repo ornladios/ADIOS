@@ -2032,7 +2032,6 @@ static int parseBuffer (mxml_node_t * node)
         else
             sizestr = size_MB;
 
-        size = atoi (sizestr);
         errno = 0;
         size = strtol(sizestr, &end, 10);
         if (errno || (end != 0 && *end != '\0')) {
@@ -2076,8 +2075,15 @@ static int parseTimeAggregation (mxml_node_t * node, int rank)
 
     if (!buffersize)
         bufsize = 0;
-    else
-        bufsize = atoi (buffersize);
+    else {
+        char *end;
+        errno = 0;
+        bufsize = strtol(buffersize, &end, 10);
+        if (errno || (end != 0 && *end != '\0')) {
+            adios_error (err_invalid_buffer_size, "config.xml: time-aggregation buffer size cannot be parsed: %s\n", buffersize);
+            return 0;
+        }
+    }
 
     if (!group)
     {
