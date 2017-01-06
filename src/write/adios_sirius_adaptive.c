@@ -2332,7 +2332,7 @@ double t1 = MPI_Wtime();
     }
 
 double t2 = MPI_Wtime();
-printf ("time = %f\n", t2 - t0);
+//printf ("time = %f\n", t2 - t0);
 #if 0
     for (int i = 0; i < nvertices; i++)
     {

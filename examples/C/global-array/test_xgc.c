@@ -38,9 +38,17 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
+    int step;
+    double iotime = 0.0;
+
+    for (step = 0; step < 20; step++)
+    {
+    char fname[64];
+
+    sprintf (fname, "xgc.3d.080%02d.bp", step);
     adios_read_init_method (method, comm, "verbose=3");
 
-    ADIOS_FILE * f = adios_read_open_file ("xgc.3d.08000.bp", method, comm);
+    ADIOS_FILE * f = adios_read_open_file (fname, method, comm);
     if (f == NULL)
     {
         printf ("%s\n", adios_errmsg());
@@ -157,9 +165,10 @@ int main (int argc, char ** argv)
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
 
+    double start_io_time = MPI_Wtime ();
     adios_init ("test_xgc.xml", comm);
 
-    adios_open (&adios_handle, "field", "dpot.bp", "w", comm);
+    adios_open (&adios_handle, "field", fname, "w", comm);
     adios_groupsize = 6 * 4 + 3 * 8 * NX + 4 * MX * MY;
     adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 
@@ -181,6 +190,12 @@ int main (int argc, char ** argv)
 
     adios_finalize (rank);
 
+    double end_io_time = MPI_Wtime ();
+    
+    iotime += end_io_time - start_io_time;
+    }
+
+    printf ("io time = %f\n", iotime);
     MPI_Finalize ();
     return 0;
 }
