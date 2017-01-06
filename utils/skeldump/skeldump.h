@@ -15,6 +15,7 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 #include "adios_read.h"
+#include "config.h"
 
 /* definitions for skeldump.c */
 #define myfree(p) if (p) { free(p); p=NULL; }
