@@ -8,7 +8,7 @@ set (PROGS 1_nonadios_example 2_adios_write 3_adios_read 4_adios_nfiles)
 
 foreach (PROG ${PROGS} )
   add_executable(${PROG} ${PROG}.c)
-  if(MPI_COMPILE_FLAGS)
+  if(MPI_C_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
   endif()
   if(MPI_LINK_FLAGS)

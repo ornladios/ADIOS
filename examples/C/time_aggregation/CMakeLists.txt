@@ -12,7 +12,7 @@ target_link_libraries(time_aggregation_no_xml adios ${ADIOSLIB_LDADD})
 
 set (PROGS time_aggregation time_aggregation_no_xml)
 foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
+  if(MPI_C_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
   endif()
   if(MPI_LINK_FLAGS)

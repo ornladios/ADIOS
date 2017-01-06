@@ -36,7 +36,7 @@ target_link_libraries(global_array_read_byid_noxml_C adiosread ${ADIOSREADLIB_LD
 set (PROGS global_array_write_C global_array_read_C global_array_write_noxml_C global_array_read_noxml_C)
 
 foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
+  if(MPI_C_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
   endif()
   if(MPI_LINK_FLAGS)

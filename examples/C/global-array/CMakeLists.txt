@@ -41,7 +41,7 @@ set (PROGS adios_global adios_global_2files adios_read_global
   adios_read_global_no_xml no_xml_write_byid read_no_xml_write_byid)
 
 foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
+  if(MPI_C_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
   endif()
   if(MPI_LINK_FLAGS)

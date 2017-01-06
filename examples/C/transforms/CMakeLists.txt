@@ -18,7 +18,7 @@ target_link_libraries(adios_read_wb_subpg adiosread ${ADIOSREADLIB_LDADD})
 
 set (PROGS transforms_adios_global adios_read_subv adios_read_points adios_read_wb_subpg)
 foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
+  if(MPI_C_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
   endif()
   if(MPI_LINK_FLAGS)

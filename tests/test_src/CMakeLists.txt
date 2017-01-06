@@ -24,12 +24,14 @@ endif(BUILD_FORTRAN)
 
 foreach (PROG ${C_PROGS_READONLY} )
     add_executable(${PROG} ${PROG}.c)
-    target_link_libraries(${PROG} adiosread_nompi ${ADIOSREADLIB_SEQ_LDADD})
+    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+    target_link_libraries(${PROG} adiosread ${ADIOSREADLIB_LDADD})
 endforeach()
 
 foreach (PROG ${C_PROGS_WRITE} )
     add_executable(${PROG} ${PROG}.c)
-    target_link_libraries(${PROG} adios_nompi ${ADIOSLIB_SEQ_LDADD})
+    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+    target_link_libraries(${PROG} adios ${ADIOSLIB_LDADD})
 endforeach()
 
 foreach (PROG ${F_PROGS_READONLY} )

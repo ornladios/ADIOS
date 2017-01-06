@@ -19,7 +19,7 @@ target_link_libraries(adios_read_globaltime_streaming adiosread ${ADIOSREADLIB_L
 
 set (PROGS adios_read_globaltime_streaming adios_read_globaltime adios_globaltime_no_xml adios_globaltime)
 foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
+  if(MPI_C_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
   endif()
   if(MPI_LINK_FLAGS)

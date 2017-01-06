@@ -6,7 +6,7 @@ include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/test/suite/programs/examples/scalars)
 
 add_executable(scalars_write_C scalars_write_C.c gwrite_scalars.ch)
-if(MPI_COMPILE_FLAGS)
+if(MPI_C_COMPILE_FLAGS)
   set_target_properties(scalars_write_C PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 endif()
 if(MPI_LINK_FLAGS)
@@ -20,7 +20,7 @@ add_custom_command(
 	)
 
 add_executable(scalars_read_C scalars_read_C.c)
-if(MPI_COMPILE_FLAGS)
+if(MPI_C_COMPILE_FLAGS)
   set_target_properties(scalars_read_C PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 endif()
 if(MPI_LINK_FLAGS)

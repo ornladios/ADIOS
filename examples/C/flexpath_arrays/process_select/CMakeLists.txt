@@ -9,7 +9,7 @@ add_executable(select_arrays_read arrays_read.c)
 
 set (PROGS select_arrays_write select_arrays_read)
 foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
+  if(MPI_C_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
   endif()
   if(MPI_LINK_FLAGS)

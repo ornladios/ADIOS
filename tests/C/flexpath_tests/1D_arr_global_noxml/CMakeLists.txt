@@ -7,9 +7,11 @@ link_directories(${PROJECT_BINARY_DIR}/src)
 
 
 add_executable(writer_global_noxml writer.c ../common/utils.c)
+set_target_properties(writer_global_noxml PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 target_link_libraries(writer_global_noxml adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES}) 
 
 add_executable(reader_global_noxml reader.c ../common/utils.c)
+set_target_properties(reader_global_noxml PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 target_link_libraries(reader_global_noxml adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
 
 file(COPY readme.txt DESTINATION ${PROJECT_BINARY_DIR}/tests/C/flexpath_tests/1D_arr_global_noxml)
