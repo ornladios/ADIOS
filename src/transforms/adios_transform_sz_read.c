@@ -8,9 +8,9 @@
 #include "adios_transforms_hooks_read.h"
 #include "adios_transforms_reqgroup.h"
 
-#include "sz.h"
-
 #ifdef HAVE_SZ
+
+#include "sz.h"
 
 int adios_transform_sz_is_implemented (void) {return 1;}
 
@@ -41,7 +41,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     //log_debug("function: %s\n", __FUNCTION__);
     int raw_size = (int) completed_pg_reqgroup->raw_var_length;
     unsigned char *raw_buff = completed_pg_reqgroup->subreqs->data;
-    
+
     // Decompress into orig_buff
     sz_params sz = {0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0.0, 0.0};
     sz.dataEndianType = LITTLE_ENDIAN_DATA;
@@ -57,9 +57,9 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     sz.errorBoundMode = REL;
     sz.absErrBound = 1E-6;
     sz.relBoundRatio = 1E-5;
-    
+
     SZ_Init_Params(&sz);
-    
+
     // Get type info
     int dtype;
     switch (reqgroup->transinfo->orig_type)
@@ -75,7 +75,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
             return NULL;
             break;
     }
-    
+
     // Get dimension info
     int ndims = reqgroup->transinfo->orig_ndim;
     if (ndims > 5)
@@ -83,7 +83,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
         adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
         return NULL;
     }
-    
+
     int r[5] = {0,0,0,0,0};
     int i = 0;
     for(i = 0; i < ndims; i++)
@@ -91,10 +91,10 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
         uint64_t dsize = (uint64_t)(completed_pg_reqgroup->orig_varblock->count[i]);
         r[i] = dsize;
     }
-    
+
     void* orig_buff;
     orig_buff = SZ_decompress(dtype, raw_buff, raw_size, r[4], r[3], r[2], r[1], r[0]);
-    
+
     if (dtype == SZ_FLOAT)
     {
         log_debug("%10s: %g %g %g %g %g ... \n", "out",
@@ -121,7 +121,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
      */
     log_debug("%s: %d %d %d %d %d\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
     //log_debug("=====================\n");
-    
+
     SZ_Finalize();
     return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, orig_buff);
 }

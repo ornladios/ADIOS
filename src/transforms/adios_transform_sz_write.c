@@ -16,9 +16,11 @@
 #include "adios_transforms_hooks_write.h"
 #include "adios_transforms_util.h"
 
+#ifdef HAVE_SZ
+
 #include "sz.h"
 
-#ifdef HAVE_SZ
+typedef unsigned int uint;
 
 typedef struct
 {
@@ -45,11 +47,11 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 {
     //log_debug("function: %s\n", __FUNCTION__);
     //log_debug("use_shared_buffer: %d\n", use_shared_buffer);
-    
+
     // Get the input data and data length
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff = var->data;
-    
+
     sz_params sz = {0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0.0, 0.0};
     sz.dataEndianType = LITTLE_ENDIAN_DATA;
     sz.sysEndianType = LITTLE_ENDIAN_DATA;
@@ -64,17 +66,17 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     sz.errorBoundMode = REL;
     sz.absErrBound = 1E-6;
     sz.relBoundRatio = 1E-5;
-    
+
     SZ_Init_Params(&sz);
-    
+
     unsigned char *bytes;
     int outsize;
     int r[5] = {0,0,0,0,0};
-    
+
     int  errorBoundMode = REL;
     double absErrBound = 1E-6;
     double relBoundRatio = 1E-5;
-    
+
     // Get type info
     int dtype;
     switch (var->pre_transform_type)
@@ -90,7 +92,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             return NULL;
             break;
     }
-    
+
     // Get dimension info
     struct adios_dimension_struct* d = var->pre_transform_dimensions;
     int ndims = (uint) count_dimensions(d);
@@ -100,7 +102,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
         return NULL;
     }
-    
+
     int i = 0, ii = 0;
     for (i=0; i<ndims; i++)
     {
@@ -112,7 +114,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         r[ii] = dsize;
         d = d->next;
     }
-    
+
     /* SZ parameters */
     struct adios_transform_spec_kv_pair* param;
     for (i=0; i<var->transform_spec->param_count; i++)
@@ -135,14 +137,14 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             log_warn("An unknown SZ parameter: %s\n", param->key);
         }
     }
-    
-    
+
+
     bytes = SZ_compress_args (dtype, (void *) input_buff, &outsize,
                               errorBoundMode, absErrBound, relBoundRatio,
                               r[4], r[3], r[2], r[1], r[0]);
-    
+
     unsigned char *raw_buff = (unsigned char*) bytes;
-    
+
     int raw_size = outsize;
     //log_debug("=== SZ compress ===\n");
     log_debug("%s: %d\n", "SZ dtype", dtype);
@@ -160,15 +162,15 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
      */
     log_debug("%s: %d %d %d %d %d\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
     //log_debug("===================\n");
-    
+
     // Output
     uint64_t output_size = outsize/* Compute how much output size we need */;
     void* output_buff;
-    
+
     if (use_shared_buffer) {
         // If shared buffer is permitted, serialize to there
         assert(shared_buffer_reserve(fd, output_size));
-        
+
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
         memcpy(output_buff, bytes, outsize);
@@ -177,9 +179,9 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         //assert(output_buff);
     }
     *wrote_to_shared_buffer = use_shared_buffer;
-    
+
     // Do transform from input_buff into output_buff, and update output_size to the true output size
-    
+
     // Wrap up, depending on buffer mode
     if (*wrote_to_shared_buffer) {
         shared_buffer_mark_written(fd, output_size);
@@ -188,7 +190,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         var->data_size = output_size;
         var->free_data = adios_flag_yes;
     }
-    
+
     *transformed_len = output_size; // Return the size of the data buffer
     SZ_Finalize();
     return 1;
