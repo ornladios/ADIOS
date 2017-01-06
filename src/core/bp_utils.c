@@ -236,7 +236,6 @@ int bp_open (const char * fname,
              BP_FILE * fh)
 {
     int rank;
-    uint64_t header_size;
 
     MPI_Comm_rank (comm, &rank);
 
@@ -259,22 +258,41 @@ int bp_open (const char * fname,
     /* Broadcast to all other processors */
     MPI_Bcast (&fh->mfooter, sizeof (struct bp_minifooter), MPI_BYTE, 0, comm);
 
-    header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
+    uint64_t footer_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
     if (rank != 0)
     {
         if (!fh->b->buff)
         {
-            bp_alloc_aligned (fh->b, header_size);
+            bp_alloc_aligned (fh->b, footer_size);
             assert (fh->b->buff);
 
-            memset (fh->b->buff, 0, header_size);
+            memset (fh->b->buff, 0, footer_size);
             fh->b->offset = 0;
         }
     }
 
     MPI_Barrier (comm);
-    MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset, MPI_BYTE, 0, comm);
+    // Broadcast the index which may be bigger than 2GB, so do it in chunks
+    uint64_t bytes_sent = 0;
+    int32_t to_send = 0;
+    int r, err;
+
+    while (bytes_sent < footer_size)
+    {
+        if (footer_size - bytes_sent > MAX_MPIWRITE_SIZE)
+        {
+            to_send = MAX_MPIWRITE_SIZE;
+        }
+        else
+        {
+            to_send = footer_size - bytes_sent;
+        }
+
+        MPI_Bcast (fh->b->buff + bytes_sent, to_send, MPI_BYTE, 0, comm);
+        bytes_sent += to_send;
+    }
+
 
     /* Everyone parses the index on its own */
     bp_parse_pgs (fh);
