@@ -12,7 +12,7 @@ endif()
 if(MPI_LINK_FLAGS)
   set_target_properties(scalars_write_C PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
 endif()
-target_link_libraries(scalars_write_C adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+target_link_libraries(scalars_write_C adios ${ADIOSLIB_LDADD})
 add_custom_command(
 	OUTPUT gwrite_scalars.ch
 	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/scalars/scalars_C.xml
@@ -26,7 +26,7 @@ endif()
 if(MPI_LINK_FLAGS)
   set_target_properties(scalars_read_C PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
 endif()
-target_link_libraries(scalars_read_C adiosread ${ADIOSREADLIB_LDADD} ${MPI_C_LIBRARIES})
+target_link_libraries(scalars_read_C adiosread ${ADIOSREADLIB_LDADD})
 
 if(BUILD_FORTRAN)
     add_executable(scalars_write_F scalars_write_F.F90 gwrite_scalars.fh)

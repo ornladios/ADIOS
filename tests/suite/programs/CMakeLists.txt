@@ -39,20 +39,15 @@ set(WRITE_PROGS ${WRITE_PROGS1}
 if(BUILD_WRITE)
   foreach (PROG ${WRITE_PROGS} )
     add_executable(${PROG} ${PROG}.c)
-    if(MPI_COMPILE_FLAGS)
-      set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
-    endif()
-    if(MPI_LINK_FLAGS)
-      set_target_properties(${PROG} PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
-    endif()
+    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${ADIOSLIB_CFLAGS}")
   endforeach()
 
   foreach (PROG ${WRITE_PROGS1} )
-    target_link_libraries(${PROG} adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
-  endforeach()  
+    target_link_libraries(${PROG} adios ${ADIOSLIB_LDADD})
+  endforeach()
 
   foreach (PROG ${WRITE_PROGS2} )
-    target_link_libraries(${PROG} adiosread ${ADIOSREADLIB_LDADD} ${MPI_C_LIBRARIES})
+    target_link_libraries(${PROG} adiosread ${ADIOSREADLIB_LDADD})
   endforeach()
 
 endif(BUILD_WRITE)
@@ -60,7 +55,7 @@ endif(BUILD_WRITE)
 if(BUILD_FORTRAN)
   if(BUILD_WRITE)
     add_executable(posix_method posix_method.F90 gwrite_posix_method.fh)
-    target_link_libraries(posix_method adiosf ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+    target_link_libraries(posix_method adiosf ${ADIOSLIB_LDADD})
     include_directories(${PROJECT_BINARY_DIR}/src)
     add_custom_command(
 	OUTPUT gwrite_posix_method.fh

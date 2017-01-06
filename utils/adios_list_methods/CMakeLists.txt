@@ -6,7 +6,7 @@ link_directories(${PROJECT_BINARY_DIR}/utils/adios_list_methods)
 
 if(BUILD_WRITE)
   add_executable(adios_list_methods adios_list_methods.c)
-  target_link_libraries(adios_list_methods adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+  target_link_libraries(adios_list_methods adios ${ADIOSLIB_LDADD})
   set_target_properties(adios_list_methods PROPERTIES COMPILE_FLAGS "${MACRODEFFLAG}WRITE ${ADIOSLIB_CPPFLAGS} ${ADIOSLIB_CFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${MPI_C_COMPILE_FLAGS}")
 
   if(MPI_LINK_FLAGS)
@@ -17,7 +17,7 @@ if(BUILD_WRITE)
 endif(BUILD_WRITE)
 
 add_executable(adios_list_methods_readonly adios_list_methods.c)
-target_link_libraries(adios_list_methods_readonly adiosread ${ADIOSREADLIB_LDADD} ${MPI_C_LIBRARIES})
+target_link_libraries(adios_list_methods_readonly adiosread ${ADIOSREADLIB_LDADD})
 set_target_properties(adios_list_methods_readonly PROPERTIES COMPILE_FLAGS
 "${ADIOSREADLIB_CPPFLAGS} ${ADIOSREADLIB_CFLAGS} ${ADIOSREADLIB_EXTRA_CPPFLAGS} ${MPI_C_COMPILE_FLAGS}")
 

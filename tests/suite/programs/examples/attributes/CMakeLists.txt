@@ -12,7 +12,7 @@ endif()
 if(MPI_LINK_FLAGS)
   set_target_properties(attributes_write_C PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
 endif()
-target_link_libraries(attributes_write_C adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+target_link_libraries(attributes_write_C adios ${ADIOSLIB_LDADD})
 add_custom_command(
 	OUTPUT gwrite_temperature.ch
 	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/attributes/attributes_C.xml
@@ -27,7 +27,7 @@ endif()
 if(MPI_LINK_FLAGS)
   set_target_properties(attributes_read_C PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
 endif()
-target_link_libraries(attributes_read_C adiosread ${ADIOSREADLIB_LDADD} ${MPI_C_LIBRARIES})
+target_link_libraries(attributes_read_C adiosread ${ADIOSREADLIB_LDADD})
 #set_target_properties(attributes_read PROPERTIES COMPILE_FLAGS "-DADIOS_USE_READ_API_1")
 
 #install(FILES attributes.xml gwrite_temperature.ch gread_temperature.ch DESTINATION ${PROJECT_BINARY_DIR}/examples/C/attributes)

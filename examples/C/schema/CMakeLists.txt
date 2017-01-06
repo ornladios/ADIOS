@@ -31,15 +31,12 @@ target_link_libraries(structured2d_noxml adios ${ADIOSLIB_LDADD})
 add_executable(tri2d_noxml tri2d_noxml.c)
 target_link_libraries(tri2d_noxml adios ${ADIOSLIB_LDADD})
 
-set (PROGS uniform2d rectilinear2d structured2d tri2d triangle2d)
-foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
-    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
-  endif()
-  if(MPI_LINK_FLAGS)
-    set_target_properties(${PROG} PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
-  endif()
-  target_link_libraries(${PROG} adios ${MPI_C_LIBRARIES})
+set (PROGS uniform2d rectilinear2d structured2d_noxml structured2d tri2d triangle2d rectilinear2d_noxml
+           tri2d_noxml uniform2d_noxml)
+
+foreach (PROG ${PROGS})
+    set_property(TARGET ${PROG} PROPERTY COMPILE_FLAGS "${ADIOSLIB_CFLAGS}")
+    target_link_libraries(${PROG} adios)
 endforeach()
 
 file(COPY triangle2d.readme triangle2d.xml triangle2d.n4.png 
