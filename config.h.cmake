@@ -11,7 +11,7 @@
 
 /* Define to a macro mangling the given C identifier (in lower and upper
    case), which must not contain underscores, for linking with Fortran. */
-#cmakedefine FC_FUNC ${FC_FUNC} 
+#cmakedefine FC_FUNC ${FC_FUNC}
 
 /* As FC_FUNC, but for C identifiers containing underscores. */
 #cmakedefine FC_FUNC_ ${FC_FUNC_}
@@ -207,7 +207,7 @@
 #cmakedefine HAVE_PTLERRORSTR 1
 
 /* Define to 1 if you have the `PtlEventKindStr' function. */
-#cmakedefine HAVE_PTLEVENTKINDSTR 1 
+#cmakedefine HAVE_PTLEVENTKINDSTR 1
 
 /* Define to 1 if you have the `PtlGetJid' function. */
 #cmakedefine HAVE_PTLGETJID 1
@@ -275,6 +275,12 @@
 
 /* Define to 1 if you have the <szlib.h> header file. */
 #cmakedefine HAVE_SZLIB_H 1
+
+/* Define if you have SZ. */
+#cmakedefine HAVE_SZ 1
+
+/* Define to 1 if you have the <sz.h> header file. */
+#cmakedefine HAVE_SZ_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
