@@ -19,6 +19,8 @@ cimport mpi4py.MPI as MPI
 import cython
 cimport cython
 
+import tempfile
+
 from libc.stdlib cimport malloc, free
 from cpython.string cimport PyString_AsString
 from cpython.bytes cimport PyBytes_AsString, PyBytes_AS_STRING
@@ -1968,11 +1970,13 @@ cdef class writer(object):
                  bint is_noxml = True,
                  str mode = "w",
                  int stats = adios_stat_default,
-                 MPI.Comm comm = MPI.COMM_WORLD):
+                 MPI.Comm comm = MPI.COMM_WORLD,
+                 str method = "POSIX1",
+                 str method_params = ""):
         self.gid = 0
         self.fname = fname
-        self.method = ""
-        self.method_params = ""
+        self.method = method
+        self.method_params = method_params
         self.is_noxml = is_noxml
         self.mode = mode
         self.comm = comm
@@ -2010,7 +2014,8 @@ cdef class writer(object):
             self.gname = gname
 
         if self.gname is None:
-            self.gname = "group"
+            ftmp = tempfile.NamedTemporaryFile()
+            self.gname = 'group'+ftmp.name;
 
         self.gid = declare_group(self.gname, "", stats)
         self.method = method
@@ -2095,7 +2100,7 @@ cdef class writer(object):
         Write variables and attributes to a file and close the writer.
         """
         if self.gid == 0:
-            self.declare_group(stats=self.stats)
+            self.declare_group(method=self.method, method_params=self.method_params, stats=self.stats)
 
         fd = open(self.gname, self.fname, self.mode, comm=self.comm)
 

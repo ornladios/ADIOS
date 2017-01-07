@@ -19,6 +19,8 @@ cimport numpy as np
 import cython
 cimport cython
 
+import tempfile
+
 from libc.stdlib cimport malloc, free
 from cpython.string cimport PyString_AsString
 from cpython.bytes cimport PyBytes_AsString, PyBytes_AS_STRING
@@ -1969,11 +1971,13 @@ cdef class writer(object):
                  bint is_noxml = True,
                  str mode = "w",
                  int stats = adios_stat_default,
-                 MPI_Comm comm = MPI_COMM_WORLD):
+                 MPI_Comm comm = MPI_COMM_WORLD,
+                 str method = "POSIX1",
+                 str method_params = ""):
         self.gid = 0
         self.fname = fname
-        self.method = ""
-        self.method_params = ""
+        self.method = method
+        self.method_params = method_params
         self.is_noxml = is_noxml
         self.mode = mode
         self.comm = comm
@@ -2000,6 +2004,7 @@ cdef class writer(object):
             gname (str): group name.
             method (str, optional): Adios write method (default: 'POSIX1')
             method_params (str, optional): parameters for the write method (default: '')
+            stats (int, optional): statistics (default: 'DEFAULT')
 
         Example:
 
@@ -2010,7 +2015,8 @@ cdef class writer(object):
             self.gname = gname
 
         if self.gname is None:
-            self.gname = "group"
+            ftmp = tempfile.NamedTemporaryFile()
+            self.gname = 'group'+ftmp.name;
 
         self.gid = declare_group(self.gname, "", stats)
         self.method = method
@@ -2095,7 +2101,7 @@ cdef class writer(object):
         Write variables and attributes to a file and close the writer.
         """
         if self.gid == 0:
-            self.declare_group(stats=self.stats)
+            self.declare_group(method=self.method, method_params=self.method_params, stats=self.stats)
 
         fd = open(self.gname, self.fname, self.mode, comm=self.comm)
 
