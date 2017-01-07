@@ -295,13 +295,15 @@ int main (int argc, char **argv){
 		TEST_INT_EQUAL(i, level, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
-		TEST_INT_EQUAL(i%2, carpet_mglevel, error_counts.test, test_result.result);
+		int j = i%2;
+		TEST_INT_EQUAL(j, carpet_mglevel, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
 		TEST_INT_EQUAL(26, timestep, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
-		TEST_INT_EQUAL(i%3, grp_tl, error_counts.test, test_result.result);
+		j=i%3;
+		TEST_INT_EQUAL(j, grp_tl, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
 		TEST_DOUBLE_EQUAL(13.0, time_attr, error_counts.test, test_result.result);
@@ -350,21 +352,25 @@ int main (int argc, char **argv){
 		// this is assumed that the data are in this patch - we have to know
 		// how it was written out i-th grid function was outputted in i-th patch
 		// e.g., bpls -d test.bp -s"1,0,0,0" -c"1,shape[0],shape[1],shape[2] /data/maya_gf_var1 -n 12
-		uint64_t start_4D[] = {i, 0, 0, 0};
+		uint64_t start_4D[] = {rank, 0, 0, 0};
 
 		sel = adios_selection_boundingbox(4, start_4D, count_4D );
 		READ_FULLPATH(datapath, data);
 		adios_selection_delete(sel);
 		sel = NULL;
 
+		if( !(ref_data) || (set_value(ref_data, shape_max_dims[0] * shape_max_dims[1] *shape_max_dims[2], (double) 2*i + rank) != DIAG_OK) ){
+		    free(data);
+		    RET_IF_ERROR(1, rank);
+		}
 		SET_ERROR_IF_NOT_ZERO(adios_perform_reads(adios_handle, 1), error_counts.adios);
 		RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
 		// now compare what I got
-		for(k = 0 ; k < shape[0] *shape[1] *shape[2]; ++k){
-			TEST_DOUBLE_EQUAL(ref_data[k], data[k], error_counts.test, test_result.result);
-			BREAK_IF_ERROR(error_counts.test);
-		}
+                for(k = 0 ; k < shape[0] *shape[1] *shape[2]; k++){
+                    TEST_DOUBLE_EQUAL(ref_data[k], data[k], error_counts.test, test_result.result);
+                    BREAK_IF_ERROR(error_counts.test);
+                }
 		BREAK_IF_ERROR(error_counts.test);
 	}
 
@@ -373,8 +379,11 @@ int main (int argc, char **argv){
 	adios_free_varinfo(avi);
 	avi = NULL;
 
-	if (TEST_PASSED == test_result.result)
-		p_test_passed("%s: rank %d\n", test_result.name, rank);
+        if (TEST_PASSED == test_result.result) {
+            p_test_passed("%s: rank %d\n", test_result.name, rank);
+        } else {
+            diag = DIAG_ERR;
+        }
 
 	CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
 

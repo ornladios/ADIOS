@@ -236,7 +236,6 @@ int bp_open (const char * fname,
              BP_FILE * fh)
 {
     int rank;
-    uint64_t header_size;
 
     MPI_Comm_rank (comm, &rank);
 
@@ -259,22 +258,41 @@ int bp_open (const char * fname,
     /* Broadcast to all other processors */
     MPI_Bcast (&fh->mfooter, sizeof (struct bp_minifooter), MPI_BYTE, 0, comm);
 
-    header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
+    uint64_t footer_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
     if (rank != 0)
     {
         if (!fh->b->buff)
         {
-            bp_alloc_aligned (fh->b, header_size);
+            bp_alloc_aligned (fh->b, footer_size);
             assert (fh->b->buff);
 
-            memset (fh->b->buff, 0, header_size);
+            memset (fh->b->buff, 0, footer_size);
             fh->b->offset = 0;
         }
     }
 
     MPI_Barrier (comm);
-    MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset, MPI_BYTE, 0, comm);
+    // Broadcast the index which may be bigger than 2GB, so do it in chunks
+    uint64_t bytes_sent = 0;
+    int32_t to_send = 0;
+    int r, err;
+
+    while (bytes_sent < footer_size)
+    {
+        if (footer_size - bytes_sent > MAX_MPIWRITE_SIZE)
+        {
+            to_send = MAX_MPIWRITE_SIZE;
+        }
+        else
+        {
+            to_send = footer_size - bytes_sent;
+        }
+
+        MPI_Bcast (fh->b->buff + bytes_sent, to_send, MPI_BYTE, 0, comm);
+        bytes_sent += to_send;
+    }
+
 
     /* Everyone parses the index on its own */
     bp_parse_pgs (fh);
@@ -704,7 +722,6 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
     struct bp_minifooter * mh = &bp_struct->mfooter;
     uint64_t attrs_end = b->file_size - MINIFOOTER_SIZE;
-    int r;
 
     MPI_Status status;
 
@@ -796,12 +813,56 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     uint64_t footer_size = mh->file_size - mh->pgs_index_offset;
     bp_realloc_aligned (b, footer_size);
     MPI_File_seek (bp_struct->mpi_fh,
-                        (MPI_Offset)  mh->pgs_index_offset,
-                        MPI_SEEK_SET);
-    MPI_File_read (bp_struct->mpi_fh, b->buff, footer_size,
-            MPI_BYTE, &status);
+            (MPI_Offset)  mh->pgs_index_offset,
+            MPI_SEEK_SET);
 
-    MPI_Get_count (&status, MPI_BYTE, &r);
+    // if we need to read > 2 GB, need to do it in parts
+    // since count is limited to MAX_MPIWRITE_SIZE (signed 32-bit max).
+    uint64_t bytes_read = 0;
+    int32_t to_read = 0;
+    int r, err;
+   
+    while (bytes_read < footer_size)
+    {
+        if (footer_size - bytes_read > MAX_MPIWRITE_SIZE)
+        {
+            to_read = MAX_MPIWRITE_SIZE;
+        }
+        else
+        {
+            to_read = footer_size - bytes_read;
+        }
+
+        err = MPI_File_read (bp_struct->mpi_fh, b->buff+bytes_read, to_read, MPI_BYTE, &status); 
+        if (err != MPI_SUCCESS) 
+        {
+            char e [MPI_MAX_ERROR_STRING];
+            int len = 0;
+            memset (e, 0, MPI_MAX_ERROR_STRING);
+            MPI_Error_string (err, e, &len);
+            adios_error (err_file_open_error,
+                "Error while reading BP index, %" PRIu64 " bytes from file offset %" PRIu64 ": MPI_File_read error: '%s'\n",
+                to_read, mh->pgs_index_offset, e);
+        }
+        err = MPI_Get_count (&status, MPI_BYTE, &r);
+        if (err != MPI_SUCCESS) 
+        {
+            char e [MPI_MAX_ERROR_STRING];
+            int len = 0;
+            memset (e, 0, MPI_MAX_ERROR_STRING);
+            MPI_Error_string (err, e, &len);
+            adios_error (err_file_open_error,
+                "Error while reading BP index, %" PRIu64 " bytes from file offset %" PRIu64 ": MPI_Get_count error: '%s'\n",
+                to_read, mh->pgs_index_offset, e);
+        } 
+        else if (r != to_read) 
+        {
+            adios_error (err_file_open_error,
+                "Error while reading BP index, tried to read %" PRIu64 " bytes from file offset %" PRIu64 " but only got %" PRIu64 " bytes\n",
+                to_read, mh->pgs_index_offset);
+        }
+        bytes_read += to_read;
+    }
 
     // reset the pointer to the beginning of buffer
     b->offset = 0;
@@ -826,9 +887,9 @@ int bp_parse_pgs (BP_FILE * fh)
     b->change_endianness = (enum ADIOS_FLAG) mh->change_endianness;
 
     BUFREAD64(b, mh->pgs_count)
-    BUFREAD64(b, mh->pgs_length)
+        BUFREAD64(b, mh->pgs_length)
 
-    int j;
+        int j;
     uint64_t group_count = 0;
     char ** namelist;
     char fortran_flag;

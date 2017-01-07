@@ -223,7 +223,7 @@
 #define TEST_INT_EQUAL(value_ref, value, err_count, test_res) \
 	if (value != value_ref ){ \
 		test_res = TEST_FAILED; \
-		p_test_failed("(expected=%d, got=%d)\n", value_ref, value); \
+		p_test_failed("("#value_ref" != "#value"  -> expected=%d, got=%d)\n", value_ref, value); \
 		err_count++; \
 	}
 
@@ -238,7 +238,7 @@
 #define TEST_LONG_EQUAL(value_ref, value, err_count, test_res) \
 	if (value != value_ref ){ \
 		test_res = TEST_FAILED; \
-		p_test_failed("(expected=%" PRIu64 ", got=%" PRIu64 ")\n", value_ref, value); \
+		p_test_failed("("#value_ref" != "#value"  -> expected=%" PRIu64 ", got=%" PRIu64 ")\n", value_ref, value); \
 		err_count++; \
 	}
 
@@ -253,7 +253,7 @@
 #define TEST_DOUBLE_EQUAL(value_ref, value, err_count, test_res) \
 	if (value != value_ref ){ \
 		test_res = TEST_FAILED; \
-		p_test_failed("(expected=%0.2f, got=%0.2f)\n", value_ref, value); \
+		p_test_failed("("#value_ref" != "#value"  -> expected=%g, got=%g)\n", value_ref, value); \
 		err_count++; \
 	}
 

@@ -216,33 +216,6 @@ append_path_name(char *path, char *name)
 }
 
 
-// add an attr for each dimension to an attr_list
-static void 
-set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) 
-{
-    char atomName[200] = "";
-    char dimNum[10];
-    int junk;
-    strcat(atomName, FP_DIM_ATTR_NAME);
-    strcat(atomName, "_");
-    strcat(atomName, varName);
-    strcat(atomName, "_");
-    sprintf(dimNum, "%d", numDims);
-    strcat(atomName, dimNum);
-    atom_t dimAtom = attr_atom_from_string(atomName);
-    add_string_attr(attrs, dimAtom, altName);
-    atomName[0] = '\0';
-    strcat(atomName, FP_NDIMS_ATTR_NAME);
-    strcat(atomName, "_");
-    strcat(atomName, altName);
-
-    atom_t ndimsAtom = attr_atom_from_string(atomName);
-    if (!get_int_attr(attrs, ndimsAtom, &junk)) {
-        add_int_attr(attrs, ndimsAtom, 0);
-    }
-}
-
-
 attr_list 
 set_flush_id_atom(attr_list attrs, int value) 
 {
@@ -495,12 +468,15 @@ queue_contains(FlexpathVarNode* queue, const char* name, int rank)
 static char*
 get_alt_name(char *name, char *dimName) 
 {
+    /* 
+     *  Formerly, this created an alternative dimension name for each variable, so that transformation code 
+     *  might modify it without affecting other vars.  This facility is deprecated, so simplifying.
+     *  Just return a new copy of the original name.
+     */
+
     int len = strlen(name) + strlen(dimName) + strlen("FPDIM_") + 2;
     char *newName = malloc(sizeof(char) * len);
-    strcpy(newName, "FPDIM_");
-    strcat(newName, dimName);
-    strcat(newName, "_");
-    strcat(newName, name);
+    strcpy(newName, dimName);
     return newName;
 }
 
@@ -538,6 +514,18 @@ find_alt_name(FlexpathFMStructure *currentFm, char *dimName, char *varName)
     field->field_offset = -1;
     LIST_INSERT_HEAD(&d->altList, a, entries);
     return a;
+}
+
+static int
+get_dim_count(struct adios_var_struct *v)
+{
+    struct adios_dimension_struct * dim_list = v->dimensions;
+    int ndims = 0;
+    while (dim_list) {
+        ndims++;
+        dim_list = dim_list->next;
+    }
+    return ndims;
 }
 
 // populates offsets array
@@ -832,7 +820,6 @@ set_format(struct adios_group_struct *t,
 			char *mangle_dim = flexpath_mangle(aname);
 			//printf("aname: %s\n", aname);
 			dims=add_var(dims, mangle_dim, NULL, 0);
-//			set_attr_dimensions(mangle_name, mangle_dim, num_dims, fileData->attrs);
 		    }
                     char *gname = get_dim_name(&adim->global_dimension);
 		    if (gname) {
@@ -841,7 +828,6 @@ set_format(struct adios_group_struct *t,
 			char *aname = get_alt_name(fullname, gname);
 			char *mangle_dim = flexpath_mangle(aname);
 			dims=add_var(dims, mangle_dim, NULL, 0);
-//			set_attr_dimensions(mangle_name, mangle_dim, num_dims, fileData->attrs);
 		    }
 		    if (adim->global_dimension.rank > 0) {
 			fileData->globalCount++;
@@ -867,12 +853,9 @@ set_format(struct adios_group_struct *t,
 	    for (; d != NULL; d = d->next) {
                 char *vname = get_dim_name(&d->dimension);
                 if (vname) {
-		    
-		    //char *name = find_fixed_name(currentFm, vname);
-		    FlexpathAltName *a = find_alt_name(currentFm, vname, (char*)field_list[fieldNo].field_name);
-		    altvarcount++;
-		    snprintf(el, ELSIZE, "[%s]", a->name);
-//		    snprintf(el, ELSIZE, "[%s]", vname);
+		    vname = flexpath_mangle(vname);
+		    snprintf(el, ELSIZE, "[%s]", vname);
+		    free(vname);
 		    v_offset = 0;
 		    all_static = 0;
 		} else {
@@ -1806,6 +1789,113 @@ adios_flexpath_write(
     }
 }
 
+static void 
+exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWriteFileData *fileData)
+{
+    // process local offsets here       
+    struct adios_pg_struct * pg = fd->pgs_written;
+    struct adios_group_struct * g = fd->group;
+    int num_gbl_vars = 0;
+    global_var * gbl_vars = malloc(sizeof(global_var));
+    int num_vars = 0;
+    int myrank = fileData->rank;
+    int commsize = fileData->size;
+    int send_count = 0;   /* dimension count, sending size and offset per */
+    uint64_t *send_block = malloc(1);
+    
+    while (pg) {
+        struct adios_var_struct * list = pg->vars_written;
+        while (list) {
+            char *fullname = append_path_name(list->path, list->name);
+            //int num_local_offsets = 0;
+            uint64_t *local_offsets = NULL;
+            uint64_t *local_dimensions = NULL;
+            uint64_t *global_dimensions = NULL; // same at each rank.
+            int ndims = get_var_offsets(list, g, &local_offsets, 
+                                        &local_dimensions, &global_dimensions);
+
+            if (ndims == 0) {
+                list=list->next;
+                continue;
+            }
+
+            // flip for fortran here.
+            if (fileData->host_language == FP_FORTRAN_MODE) {
+                reverse_dims(local_offsets, ndims);
+                reverse_dims(local_dimensions, ndims);
+                reverse_dims(global_dimensions, ndims);
+            }
+            
+            send_block = realloc(send_block, (send_count + ndims * 2) * sizeof(send_block[0]));
+            memcpy(&send_block[send_count], local_dimensions, ndims * sizeof(send_block[0]));
+            memcpy(&send_block[send_count+ndims], local_offsets, ndims * sizeof(send_block[0]));
+            
+            
+            offset_struct *ostruct = malloc(sizeof(offset_struct));
+            ostruct->offsets_per_rank = ndims;
+            ostruct->total_offsets = ndims * commsize;
+            ostruct->global_dimensions = global_dimensions;
+                
+            num_gbl_vars++;
+            gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
+            gbl_vars[num_gbl_vars - 1].name = fullname;
+            gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
+            gbl_vars[num_gbl_vars - 1].offsets = ostruct;
+
+            send_count += ndims * 2;
+            list=list->next;
+        }
+        pg = pg->next;
+    }
+    int buf_size = send_count * commsize * sizeof(uint64_t);                
+    uint64_t *comm_block = malloc(buf_size);
+
+    MPI_Allgather(send_block, send_count, MPI_UINT64_T,
+                  comm_block, send_count, MPI_UINT64_T,
+                  fileData->mpiComm);
+
+    pg = fd->pgs_written;
+    int block_index = 0;
+    int gbl_var_index = 0;
+    while (pg) {
+        struct adios_var_struct * list = pg->vars_written;
+        while (list) {
+            int i, ndims = get_dim_count(list);
+            uint64_t *all_offsets = malloc(ndims*commsize*sizeof(uint64_t));
+            uint64_t *all_local_dims = malloc(ndims*commsize*sizeof(uint64_t));
+                
+            if (ndims == 0) {
+                list=list->next;
+                continue;
+            }
+
+            // extract dimensions for rank i from comm block
+            for (i = 0; i < commsize; i++) {
+                memcpy(&all_local_dims[i*ndims], &comm_block[i*send_count + block_index], ndims * sizeof(send_block[0]));
+                memcpy(&all_offsets[i*ndims], &comm_block[i*send_count + block_index + ndims], ndims * sizeof(send_block[0]));
+            }
+            gbl_vars[gbl_var_index].offsets->local_offsets = all_offsets;
+            gbl_vars[gbl_var_index].offsets->local_dimensions = all_local_dims;
+
+            gbl_var_index++;
+            block_index += ndims * 2;
+            list=list->next;
+        }
+        
+        pg = pg->next;
+    }
+    
+    free(comm_block);
+    if (num_gbl_vars == 0) {
+        free(gbl_vars);
+        gbl_vars = NULL;
+    }
+    gp->num_vars = num_gbl_vars;
+    gp->step = fileData->writerStep;
+    gp->vars = gbl_vars;
+    //fileData->gp = gp;       
+}
+
 extern void 
 adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) 
 {
@@ -1821,8 +1911,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		     fileData->maxQueueSize);
     
     // now gather offsets and send them via MPI to root
-    struct adios_group_struct * g = fd->group;
-    struct adios_pg_struct * pg = fd->pgs_written;
     evgroup *gp = malloc(sizeof(evgroup));    
     gp->group_name = strdup(method->group->name);
     gp->process_id = fileData->rank;
@@ -1832,77 +1920,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	gp->step = fileData->writerStep;
 	gp->vars = NULL;
 	EVsubmit_general(fileData->offsetSource, gp, evgroup_msg_free, fileData->attrs);
-    }
-
-    else {	
-        // process local offsets here	
-	int num_gbl_vars = 0;
-        global_var * gbl_vars = NULL;
-	int num_vars = 0;
-	int myrank = fileData->rank;
-	int commsize = fileData->size;
-
-        while (pg) {
-            struct adios_var_struct * list = pg->vars_written;
-            while (list) {
-                char *fullname = append_path_name(list->path, list->name);
-                //int num_local_offsets = 0;
-                uint64_t *local_offsets = NULL;
-                uint64_t *local_dimensions = NULL;
-                uint64_t *global_dimensions = NULL; // same at each rank.
-                int num_local_offsets = get_var_offsets(list, g, 
-                        &local_offsets, 
-                        &local_dimensions, 
-                        &global_dimensions);
-                // flip for fortran here.
-                if (fileData->host_language == FP_FORTRAN_MODE) {
-                    reverse_dims(local_offsets, num_local_offsets);
-                    reverse_dims(local_dimensions, num_local_offsets);
-                    reverse_dims(global_dimensions, num_local_offsets);
-                }
-
-                if (num_local_offsets > 0) {
-                    uint64_t *all_offsets = NULL;
-                    uint64_t *all_local_dims = NULL;
-
-                    int buf_size = num_local_offsets * commsize * sizeof(uint64_t);		    
-                    all_offsets = malloc(buf_size);		
-                    all_local_dims = malloc(buf_size);
-
-                    int arr_size = num_local_offsets * sizeof(uint64_t);
-                    MPI_Allgather(local_offsets, arr_size, MPI_BYTE, 
-                            all_offsets, arr_size, MPI_BYTE,
-                            fileData->mpiComm);
-
-                    MPI_Allgather(local_dimensions, arr_size, MPI_BYTE, 
-                            all_local_dims, arr_size, MPI_BYTE,
-                            fileData->mpiComm);
-
-                    num_gbl_vars++;
-                    offset_struct *ostruct = malloc(sizeof(offset_struct));
-                    ostruct->offsets_per_rank = num_local_offsets;
-                    ostruct->total_offsets = num_local_offsets * commsize;
-                    ostruct->local_offsets = all_offsets;
-                    ostruct->local_dimensions = all_local_dims;
-                    ostruct->global_dimensions = global_dimensions;
-
-                    gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
-                    gbl_vars[num_gbl_vars - 1].name = fullname;
-                    gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
-                    gbl_vars[num_gbl_vars - 1].offsets = ostruct;
-
-                }
-                list=list->next;
-            }
-
-            pg = pg->next;
-        }
-
-	gp->num_vars = num_gbl_vars;
-	gp->step = fileData->writerStep;
-	gp->vars = gbl_vars;
-	//fileData->gp = gp;       
-    }
+    } else {    
+        exchange_dimension_data(fd, gp, fileData);
+    }   
     
     update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
     stepmsg->finalized = 0;

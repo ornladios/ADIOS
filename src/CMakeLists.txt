@@ -10,7 +10,7 @@ if (BUILD_MXML)
   set(EXTRA_OBJECTS ${EXTRA_OBJECTS} $<TARGET_OBJECTS:mxml>)
 endif(BUILD_MXML)
 
-# Build the zfp library in src/zfp 
+# Build the zfp library in src/zfp
 if (BUILD_ZFP)
   add_subdirectory(zfp)
   set(ZFP_BUILDDIR "zfp/zfp-0.5.0")
@@ -29,11 +29,11 @@ link_directories(${PROJECT_BINARY_DIR}/src)
 
 if(HAVE_NSSI)
   add_executable(nssi-staging-server nssi/nssi_staging_server.cpp nssi/aggregation.cpp)
-  set_target_properties(nssi-staging-server PROPERTIES COMPILE_FLAGS "${ADIOSLIB_CFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS} ${MACRODEFFLAG}PTL_IFACE_CLIENT=CRAY_USER_NAL ${MACRODEFFLAG}PTL_IFACE_SERVER=CRAY_USER_NAL") 
+  set_target_properties(nssi-staging-server PROPERTIES COMPILE_FLAGS "${ADIOSLIB_CFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS} ${MACRODEFFLAG}PTL_IFACE_CLIENT=CRAY_USER_NAL ${MACRODEFFLAG}PTL_IFACE_SERVER=CRAY_USER_NAL")
   target_link_libraries(nssi-staging-server adios.a ${ADIOSLIB_LDADD} ${NSSI_SERVER_LIBS})
 
   add_executable(nssi-coupling-server nssi/nssi_coupling_server.cpp)
-  set_target_properties(nssi-coupling-server PROPERTIES COMPILE_FLAGS "${ADIOSLIB_CFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS} ${MACRODEFFLAG}PTL_IFACE_CLIENT=CRAY_USER_NAL ${MACRODEFFLAG}PTL_IFACE_SERVER=CRAY_USER_NAL") 
+  set_target_properties(nssi-coupling-server PROPERTIES COMPILE_FLAGS "${ADIOSLIB_CFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS} ${MACRODEFFLAG}PTL_IFACE_CLIENT=CRAY_USER_NAL ${MACRODEFFLAG}PTL_IFACE_SERVER=CRAY_USER_NAL")
   target_link_libraries(nssi-coupling-server adios.a ${ADIOSLIB_LDADD} ${NSSI_SERVER_LIBS})
 endif(HAVE_NSSI)
 
@@ -61,61 +61,62 @@ set(transforms_read_method_SOURCES "")
 ##
 ## Core transform framework source files
 ##
-set (transforms_common_HDRS core/adios_copyspec.h 
-                         core/adios_subvolume.h 
-                         core/adios_selection_util.h 
-                         core/transforms/adios_transforms_common.h 
-                         core/transforms/adios_transforms_hooks.h 
-                         core/transforms/adios_transforms_util.h 
+set (transforms_common_HDRS core/adios_copyspec.h
+                         core/adios_subvolume.h
+                         core/adios_selection_util.h
+                         core/transforms/adios_transforms_common.h
+                         core/transforms/adios_transforms_hooks.h
+                         core/transforms/adios_transforms_util.h
                          core/adios_subvolume.h
                          public/adios_transform_methods.h)
 
-set (transforms_read_HDRS core/transforms/adios_transforms_read.h 
-                       core/transforms/adios_transforms_hooks_read.h 
-                       core/transforms/adios_transforms_reqgroup.h 
+set (transforms_read_HDRS core/transforms/adios_transforms_read.h
+                       core/transforms/adios_transforms_hooks_read.h
+                       core/transforms/adios_transforms_reqgroup.h
                        core/transforms/adios_transforms_datablock.h
                        core/transforms/adios_transforms_transinfo.h
                        core/transforms/adios_patchdata.h)
 
-set (transforms_write_HDRS  core/transforms/adios_transforms_write.h 
-                        core/transforms/adios_transforms_hooks_write.h 
+set (transforms_write_HDRS  core/transforms/adios_transforms_write.h
+                        core/transforms/adios_transforms_hooks_write.h
                         core/transforms/adios_transforms_specparse.h)
 
-set (transforms_common_SOURCES  ${transforms_common_HDRS} 
-                            core/transforms/adios_transforms_common.c 
-                            core/transforms/adios_transforms_hooks.c 
-                            core/adios_copyspec.c 
-                            core/adios_subvolume.c 
-                            core/transforms/plugindetect/detect_plugin_infos.h 
-                            core/transforms/plugindetect/detect_plugin_types.h 
+set (transforms_common_SOURCES  ${transforms_common_HDRS}
+                            core/transforms/adios_transforms_common.c
+                            core/transforms/adios_transforms_hooks.c
+                            core/adios_copyspec.c
+                            core/adios_subvolume.c
+                            core/transforms/plugindetect/detect_plugin_infos.h
+                            core/transforms/plugindetect/detect_plugin_types.h
                             core/transforms/plugindetect/plugin_info_types.h
                             core/adios_transform_methods.c)
 
-set (transforms_read_SOURCES ${transforms_read_HDRS} 
-                          core/transforms/adios_transforms_read.c 
-                          core/transforms/adios_transforms_hooks_read.c 
-                          core/transforms/adios_transforms_reqgroup.c 
-                          core/transforms/adios_transforms_datablock.c 
-                          core/transforms/adios_patchdata.c 
+set (transforms_read_SOURCES ${transforms_read_HDRS}
+                          core/transforms/adios_transforms_read.c
+                          core/transforms/adios_transforms_hooks_read.c
+                          core/transforms/adios_transforms_reqgroup.c
+                          core/transforms/adios_transforms_datablock.c
+                          core/transforms/adios_patchdata.c
                           transforms/adios_transform_alacrity_read.c
                           transforms/adios_transform_isobar_read.c
                           transforms/adios_transform_aplod_read.c
-                          transforms/adios_transform_szip_read.c 
+                          transforms/adios_transform_szip_read.c
                           transforms/adios_transform_bzip2_read.c
                           transforms/adios_transform_identity_read.c
                           transforms/adios_transform_zlib_read.c
                           transforms/adios_transform_zfp_read.c
-                          core/adios_selection_util.c 
+                          transforms/adios_transform_sz_read.c
+                          core/adios_selection_util.c
                           core/transforms/plugindetect/detect_plugin_read_hook_decls.h
                           core/transforms/plugindetect/detect_plugin_read_hook_reg.h
                           core/adios_read_ext.c
                           ${transforms_read_method_SOURCES})
 
-set (transforms_write_SOURCES ${transforms_write_HDRS} 
-                           core/transforms/adios_transforms_write.c 
-                           core/transforms/adios_transforms_hooks_write.c 
-                           core/transforms/adios_transforms_util.c 
-                           core/transforms/adios_transforms_specparse.c 
+set (transforms_write_SOURCES ${transforms_write_HDRS}
+                           core/transforms/adios_transforms_write.c
+                           core/transforms/adios_transforms_hooks_write.c
+                           core/transforms/adios_transforms_util.c
+                           core/transforms/adios_transforms_specparse.c
                            transforms/adios_transform_alacrity_write.c
                            transforms/adios_transform_aplod_write.c
                            transforms/adios_transform_bzip2_write.c
@@ -124,6 +125,7 @@ set (transforms_write_SOURCES ${transforms_write_HDRS}
                            transforms/adios_transform_szip_write.c
                            transforms/adios_transform_zlib_write.c
                            transforms/adios_transform_zfp_write.c
+                           transforms/adios_transform_sz_write.c
                            ${transforms_write_method_SOURCES})
 
 #######Query source files
@@ -151,39 +153,39 @@ set(query_F_SOURCES ${query_SOURCES} query/adiosf_query.c)
 
 #start adios.a and adios_nompi.a
 if(BUILD_WRITE)
-    set(libadios_a_SOURCES core/adios.c 
+    set(libadios_a_SOURCES core/adios.c
                      core/common_adios.c
                      core/adios_internals.c
-                     core/adios_internals_mxml.c 
-                     core/buffer.c 
-                     core/adios_bp_v1.c  
-                     core/adios_endianness.c 
-                     core/bp_utils.c 
-                     core/futils.c 
-                     core/adios_error.c 
-                     core/adios_read.c 
-                     core/adios_read_v1.c 
-                     core/common_read.c 
+                     core/adios_internals_mxml.c
+                     core/buffer.c
+                     core/adios_bp_v1.c
+                     core/adios_endianness.c
+                     core/bp_utils.c
+                     core/futils.c
+                     core/adios_error.c
+                     core/adios_read.c
+                     core/adios_read_v1.c
+                     core/common_read.c
                      core/adios_infocache.c
                      core/adios_read_ext.c
-                     core/globals.c 
-                     core/adios_timing.c 
-                     core/adios_read_hooks.c 
-                     core/adios_transport_hooks.c 
-                     core/adios_socket.c 
-                     core/adios_logger.c 
-                     core/qhashtbl.c 
-                     ${transforms_common_SOURCES} 
-                     ${transforms_read_SOURCES} 
-                     ${transforms_write_SOURCES} 
+                     core/globals.c
+                     core/adios_timing.c
+                     core/adios_read_hooks.c
+                     core/adios_transport_hooks.c
+                     core/adios_socket.c
+                     core/adios_logger.c
+                     core/qhashtbl.c
+                     ${transforms_common_SOURCES}
+                     ${transforms_read_SOURCES}
+                     ${transforms_write_SOURCES}
                      ${query_C_SOURCES}
-                     core/util.c 
-                     core/strutil.c 
-                     core/a2sel.c 
-                     core/adios_clock.c 
-                     core/qhashtbl.c 
-                     read/read_bp.c 
-                     read/read_bp_staged.c 
+                     core/util.c
+                     core/strutil.c
+                     core/a2sel.c
+                     core/adios_clock.c
+                     core/qhashtbl.c
+                     read/read_bp.c
+                     read/read_bp_staged.c
                      read/read_bp_staged1.c
                      write/adios_mpi.c
                      write/adios_mpi_lustre.c
@@ -195,75 +197,75 @@ if(BUILD_WRITE)
         set(libadios_a_SOURCES ${libadios_a_SOURCES} write/adios_mpi_bgq.c)
     endif()
 
-    set(libadios_nompi_a_SOURCES core/adios.c 
-                     core/common_adios.c 
-                     core/adios_internals.c 
-                     core/adios_internals_mxml.c 
-                     ${transforms_common_SOURCES} 
-                     ${transforms_read_SOURCES} 
-                     ${transforms_write_SOURCES} 
+    set(libadios_nompi_a_SOURCES core/adios.c
+                     core/common_adios.c
+                     core/adios_internals.c
+                     core/adios_internals_mxml.c
+                     ${transforms_common_SOURCES}
+                     ${transforms_read_SOURCES}
+                     ${transforms_write_SOURCES}
                      ${query_C_SOURCES}
-                     core/buffer.c 
-                     core/adios_bp_v1.c  
-                     core/adios_endianness.c 
-                     core/bp_utils.c 
-                     core/futils.c 
-                     core/adios_error.c 
-                     core/adios_read.c 
-                     core/adios_read_v1.c 
-                     core/common_read.c 
+                     core/buffer.c
+                     core/adios_bp_v1.c
+                     core/adios_endianness.c
+                     core/bp_utils.c
+                     core/futils.c
+                     core/adios_error.c
+                     core/adios_read.c
+                     core/adios_read_v1.c
+                     core/common_read.c
                      core/adios_infocache.c
                      core/adios_read_ext.c
-                     core/globals.c 
-                     core/mpidummy.c 
-                     core/adios_timing.c 
-                     core/adios_read_hooks.c 
-                     core/adios_transport_hooks.c 
-                     core/adios_socket.c 
-                     core/adios_logger.c 
-                     core/util.c 
-                     core/strutil.c 
-                     core/a2sel.c 
-                     core/adios_clock.c 
-                     core/qhashtbl.c 
-                     read/read_bp.c 
-                     read/read_bp_staged.c 
-                     read/read_bp_staged1.c 
+                     core/globals.c
+                     core/mpidummy.c
+                     core/adios_timing.c
+                     core/adios_read_hooks.c
+                     core/adios_transport_hooks.c
+                     core/adios_socket.c
+                     core/adios_logger.c
+                     core/util.c
+                     core/strutil.c
+                     core/a2sel.c
+                     core/adios_clock.c
+                     core/qhashtbl.c
+                     read/read_bp.c
+                     read/read_bp_staged.c
+                     read/read_bp_staged1.c
                      write/adios_posix.c)
 
 #start adiosf.a and adiosf_v1.a
     if(BUILD_FORTRAN)
-        set(FortranLibSources core/adiosf.c 
-                       core/common_adios.c 
-                       core/adios_internals.c 
+        set(FortranLibSources core/adiosf.c
+                       core/common_adios.c
+                       core/adios_internals.c
                        core/adios_internals_mxml.c
-                       ${transforms_common_SOURCES} 
-                       ${transforms_read_SOURCES} 
-                       ${transforms_write_SOURCES} 
+                       ${transforms_common_SOURCES}
+                       ${transforms_read_SOURCES}
+                       ${transforms_write_SOURCES}
                        ${query_F_SOURCES}
-                       core/buffer.c 
-                       core/adios_bp_v1.c  
+                       core/buffer.c
+                       core/adios_bp_v1.c
                        core/adios_endianness.c
-                       core/futils.c 
-                       core/adios_error.c 
-                       core/bp_utils.c                
-                       core/common_read.c 
+                       core/futils.c
+                       core/adios_error.c
+                       core/bp_utils.c
+                       core/common_read.c
                        core/adios_infocache.c
                        core/adios_read_ext.c
-                       core/globals.c 
-                       core/adios_timing.c 
-                       core/adios_read_hooks.c 
-                       core/adios_transport_hooks.c 
-                       core/adios_socket.c 
-                       core/adios_logger.c 
-                       core/util.c 
-                       core/strutil.c 
-                       core/a2sel.c 
-                       core/adios_clock.c 
-                       core/qhashtbl.c 
-                       read/read_bp.c 
-                       read/read_bp_staged.c 
-                       read/read_bp_staged1.c 
+                       core/globals.c
+                       core/adios_timing.c
+                       core/adios_read_hooks.c
+                       core/adios_transport_hooks.c
+                       core/adios_socket.c
+                       core/adios_logger.c
+                       core/util.c
+                       core/strutil.c
+                       core/a2sel.c
+                       core/adios_clock.c
+                       core/qhashtbl.c
+                       read/read_bp.c
+                       read/read_bp_staged.c
+                       read/read_bp_staged1.c
                        write/adios_posix.c)
 
         set(FortranLibMPISources write/adios_mpi.c
@@ -278,7 +280,7 @@ if(BUILD_WRITE)
 
     set(libadios_a_CPPFLAGS "${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS}")
     set(libadios_a_CFLAGS "${ADIOSLIB_CFLAGS}")
-    set(libadios_nompi_a_CPPFLAGS "${MACRODEFFLAG}_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_SEQ_CPPFLAGS}") 
+    set(libadios_nompi_a_CPPFLAGS "${MACRODEFFLAG}_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_SEQ_CPPFLAGS}")
     set(libadios_nompi_a_CFLAGS "${MACRODEFFLAG}_NOMPI ${ADIOSLIB_SEQ_CFLAGS}")
     set(libadiosf_a_CPPFLAGS "${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS}")
     set(libadiosf_a_CFLAGS "${ADIOSLIB_CFLAGS}")
@@ -288,15 +290,15 @@ if(BUILD_WRITE)
     if(HAVE_DATASPACES)
         set(libadios_a_SOURCES ${libadios_a_SOURCES} write/adios_dataspaces.c read/read_dataspaces.c)
         set(libadios_nompi_a_SOURCES ${libadios_nompi_a_SOURCES} write/adios_dataspaces.c read/read_dataspaces.c)
-        if(BUILD_FORTRAN)  
+        if(BUILD_FORTRAN)
             set(FortranLibSources ${FortranLibSources} write/adios_dataspaces.c read/read_dataspaces.c)
-        endif(BUILD_FORTRAN) 
+        endif(BUILD_FORTRAN)
     endif(HAVE_DATASPACES)
 
     if(HAVE_DIMES)
         set(libadios_a_SOURCES ${libadios_a_SOURCES} write/adios_dimes.c read/read_dimes.c)
         set(libadios_nompi_a_SOURCES ${libadios_nompi_a_SOURCES} write/adios_dimes.c read/read_dimes.c)
-        if(BUILD_FORTRAN)  
+        if(BUILD_FORTRAN)
             set(FortranLibSources ${FortranLibSources} write/adios_dimes.c read/read_dimes.c)
         endif(BUILD_FORTRAN)
     endif(HAVE_DIMES)
@@ -316,7 +318,7 @@ if(BUILD_WRITE)
         if(BUILD_FORTRAN)
             set(FortranLibMPISources ${FortranLibMPISources} write/adios_phdf5.c)
             set(libadiosf_a_CPPFLAGS "${libadiosf_a_CPPFLAGS} ${PHDF5_FLAGS}")
-        endif(BUILD_FORTRAN) 
+        endif(BUILD_FORTRAN)
     endif(HAVE_PHDF5)
 
     if(HAVE_NC4PAR)
@@ -373,7 +375,7 @@ if(BUILD_WRITE)
             COMMAND rpcgen -c ${PROJECT_SOURCE_DIR}/src/nssi/adios_nssi_args.x | grep -v "include \"\.\." > adios_nssi_args.c
             DEPENDS ${PROJECT_SOURCE_DIR}/src/nssi/adios_nssi_args.h
             )
-    
+
         set(CLEANFILES ${CLEANFILES} adios_nssi_args.c adios_nssi_args.h)
 
     endif(HAVE_NSSI)
@@ -381,12 +383,12 @@ if(BUILD_WRITE)
 
     if(RESEARCH_TRANSPORTS)
 #        set(libadios_a_SOURCES ${libadios_a_SOURCES}
-#                      write/adios_mpi_stagger.c 
-#                      write/adios_mpi_aggregate.c 
-#                      write/adios_provenance.c 
-#                      write/adios_mpi_cio.c 
-#                      write/adios_mpi_stripe.c 
-#                      write/adios_mpi_amr1.c 
+#                      write/adios_mpi_stagger.c
+#                      write/adios_mpi_aggregate.c
+#                      write/adios_provenance.c
+#                      write/adios_mpi_cio.c
+#                      write/adios_mpi_stripe.c
+#                      write/adios_mpi_amr1.c
 #                      write/adios_adaptive.c)
         if(BUILD_FORTRAN)
 #            set(FortranLibMPISources ${FortranLibMPISources}
@@ -394,8 +396,8 @@ if(BUILD_WRITE)
 #                          write/adios_mpi_aggregate.c
 #                          write/adios_provenance.c
 #                          write/adios_mpi_cio.c
-#                          write/adios_mpi_stripe.c 
-#                          write/adios_mpi_amr1.c 
+#                          write/adios_mpi_stripe.c
+#                          write/adios_mpi_amr1.c
 #                          write/adios_adaptive.c)
         endif(BUILD_FORTRAN)
     else(RESEARCH_TRANSPORTS)
@@ -427,17 +429,17 @@ if(BUILD_WRITE)
 
         set(libadiosf_a_SOURCES ${libadiosf_a_SOURCES}
                          core/adiosf_defs_mod.f90
-                         core/adiosf_write_mod.f90 
+                         core/adiosf_write_mod.f90
                          core/adiosf_read_mod.f90
                          query/adios_query_mod.f90)
-   
+
         set(libadiosf_nompi_a_SOURCES ${libadiosf_nompi_a_SOURCES}
                               core/adiosf_defs_mod.f90
                               core/adiosf_write_mod.f90
                               core/adiosf_read_mod.f90
                               query/adios_query_mod.f90)
 
-        set(libadiosf_v1_a_SOURCES ${libadiosf_v1_a_SOURCES} 
+        set(libadiosf_v1_a_SOURCES ${libadiosf_v1_a_SOURCES}
                          core/adiosf_defs_mod.f90
                          core/adiosf_write_mod.f90)
 
@@ -465,7 +467,7 @@ if(BUILD_WRITE)
             DEPENDS adios_defs_mod.o
         )
 
-        
+
         add_custom_command(
             OUTPUT adios_write_mod.mod
             DEPENDS adios_defs_mod.o
@@ -483,7 +485,7 @@ if(BUILD_WRITE)
         install(FILES ${PROJECT_BINARY_DIR}/src/adios_write_mod.mod ${PROJECT_BINARY_DIR}/src/adios_defs_mod.mod DESTINATION ${includedir})
         ##add library adiosf and adiosf_v1
         add_library(adiosf STATIC ${libadiosf_a_SOURCES} ${EXTRA_OBJECTS})
-        add_library(adiosf_v1 STATIC ${libadiosf_v1_a_SOURCES} ${EXTRA_OBJECTS}) 
+        add_library(adiosf_v1 STATIC ${libadiosf_v1_a_SOURCES} ${EXTRA_OBJECTS})
         add_library(adiosf_nompi STATIC ${libadiosf_nompi_a_SOURCES} ${EXTRA_OBJECTS})
         add_library(adiosf_nompi_v1 STATIC ${libadiosf_nompi_v1_a_SOURCES} ${EXTRA_OBJECTS})
         set_target_properties(adiosf PROPERTIES COMPILE_FLAGS "${libadiosf_a_CPPFLAGS} ${libadiosf_a_CFLAGS}")
@@ -495,19 +497,19 @@ if(BUILD_WRITE)
     endif(BUILD_FORTRAN)
 
 endif(BUILD_WRITE)
- 
+
 
 #start libadiosread.a
-set(include_HEADERS ${include_HEADERS} public/adios.h 
-                   public/adios_types.h 
-                   public/adios_read.h 
+set(include_HEADERS ${include_HEADERS} public/adios.h
+                   public/adios_types.h
+                   public/adios_read.h
                    public/adios_error.h
-                   public/adios_mpi.h 
-                   public/mpidummy.h 
-                   public/adios_read_v1.h 
-                   public/adios_read_v1_defs.h 
-                   public/adios_read_v2.h 
-                   public/adios_read_v2_fwd.h 
+                   public/adios_mpi.h
+                   public/mpidummy.h
+                   public/adios_read_v1.h
+                   public/adios_read_v1_defs.h
+                   public/adios_read_v2.h
+                   public/adios_read_v2_fwd.h
                    public/adios_selection.h
                    public/adios_schema.h
                    public/adios_link.h
@@ -516,28 +518,28 @@ set(include_HEADERS ${include_HEADERS} public/adios.h
                    public/adios_transform_methods.h)
 
 set(libadiosread_a_SOURCES core/adios_bp_v1.c
-                      core/adios_endianness.c 
-                      core/bp_utils.c 
-                      core/futils.c 
-                      core/adios_error.c 
-                      core/adios_read.c 
-                      core/adios_read_v1.c 
-                      core/common_read.c 
+                      core/adios_endianness.c
+                      core/bp_utils.c
+                      core/futils.c
+                      core/adios_error.c
+                      core/adios_read.c
+                      core/adios_read_v1.c
+                      core/common_read.c
                       core/adios_infocache.c
                       core/adios_read_ext.c
-                      ${transforms_common_SOURCES} 
-                      ${transforms_read_SOURCES} 
+                      ${transforms_common_SOURCES}
+                      ${transforms_read_SOURCES}
                       ${query_C_SOURCES}
-                      core/globals.c 
-                      core/adios_read_hooks.c 
-                      core/adios_logger.c 
-                      core/util.c 
-                      core/strutil.c 
+                      core/globals.c
+                      core/adios_read_hooks.c
+                      core/adios_logger.c
+                      core/util.c
+                      core/strutil.c
                       core/a2sel.c
-                      core/adios_clock.c 
-                      core/qhashtbl.c 
-                      read/read_bp.c 
-                      read/read_bp_staged.c 
+                      core/adios_clock.c
+                      core/qhashtbl.c
+                      read/read_bp.c
+                      read/read_bp_staged.c
                       read/read_bp_staged1.c)
 
 if(HAVE_DMALLOC)
@@ -585,27 +587,27 @@ set_target_properties(adiosread PROPERTIES COMPILE_FLAGS "${libadiosread_a_CPPFL
 
 #start libadiosreadf.a libadiosreadf_v1.a
 if(BUILD_FORTRAN)
-    set(FortranReadLibSource core/adios_bp_v1.c 
-                      core/adios_endianness.c 
-                      core/bp_utils.c 
-                      core/futils.c 
-                      core/adios_error.c 
-                      core/common_read.c 
+    set(FortranReadLibSource core/adios_bp_v1.c
+                      core/adios_endianness.c
+                      core/bp_utils.c
+                      core/futils.c
+                      core/adios_error.c
+                      core/common_read.c
                       core/adios_infocache.c
                       core/adios_read_ext.c
-                      ${transforms_common_SOURCES} 
-                      ${transforms_read_SOURCES} 
+                      ${transforms_common_SOURCES}
+                      ${transforms_read_SOURCES}
                       ${query_F_SOURCES}
-                      core/globals.c 
-                      core/adios_read_hooks.c 
-                      core/adios_logger.c 
-                      core/util.c 
-                      core/strutil.c 
+                      core/globals.c
+                      core/adios_read_hooks.c
+                      core/adios_logger.c
+                      core/util.c
+                      core/strutil.c
                       core/a2sel.c
-                      core/adios_clock.c 
-                      core/qhashtbl.c 
-                      read/read_bp.c 
-                      read/read_bp_staged.c 
+                      core/adios_clock.c
+                      core/qhashtbl.c
+                      read/read_bp.c
+                      read/read_bp_staged.c
                       read/read_bp_staged1.c)
     if(HAVE_DATASPACES)
         set(FortranReadLibSource ${FortranReadLibSource} read/read_dataspaces.c)
@@ -622,7 +624,7 @@ if(BUILD_FORTRAN)
     if(HAVE_FLEXPATH)
         set(FortranReadLibSource ${FortranReadLibSource} read/read_flexpath.c)
     endif(HAVE_FLEXPATH)
-  
+
     if(HAVE_ICEE)
         set(FortranReadLibSource ${FortranReadLibSource} read/read_icee.c)
     endif()
@@ -642,17 +644,17 @@ if(BUILD_FORTRAN)
     set(libadiosreadf_v1_a_CPPFLAGS "${libadiosreadf_a_CPPFLAGS}")
     set(libadiosreadf_v1_a_CFLAGS "${libadiosreadf_a_CFLAGS}")
     set(libadiosreadf_a_SOURCES ${libadiosreadf_a_SOURCES}
-                                core/adiosf_defs_mod.f90 
+                                core/adiosf_defs_mod.f90
                                 core/adiosf_read_mod.f90
                                 query/adios_query_mod.f90)
     set(nodist_include_HEADERS ${nodist_include_HEADERS} adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod)
     set(CLEANFILES ${CLEANFILES} adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod)
-  
+
     add_custom_command(
         OUTPUT adios_read_mod.o
 #        COMMAND $(FC) -c core/adiosf_read_mod.f90
         DEPENDS adios_defs_mod.o
-        )  
+        )
     add_custom_command(
         OUTPUT adios_read_mod.mod
         DEPENDS adios_read_mod.o
@@ -675,7 +677,7 @@ if(BUILD_FORTRAN)
         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/adios_query_mod.mod
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/adios_query_mod.mod ${CMAKE_CURRENT_SOURCE_DIR}
         DEPENDS adios_query_mod.mod
-        ) 
+        )
 
     add_custom_command(
         OUTPUT adios_defs_mod.mod
@@ -693,7 +695,7 @@ if(BUILD_FORTRAN)
     install(FILES ${PROJECT_BINARY_DIR}/src/adios_read_mod.mod ${PROJECT_BINARY_DIR}/src/adios_defs_mod.mod ${PROJECT_BINARY_DIR}/src/adios_query_mod.mod DESTINATION ${includedir})
     add_library(adiosreadf ${libadiosreadf_a_SOURCES} ${EXTRA_READ_OBJECTS})
     set_target_properties(adiosreadf PROPERTIES COMPILE_FLAGS "${libadiosreadf_a_CPPFLAGS} ${libadiosreadf_a_CFLAGS}")
-  
+
 #  message(STATUS "${nodist_include_HEADERS}")
 #  message(STATUS "${libadiosreadf_v1_a_SOURCES}")
     add_library(adiosreadf_v1 ${libadiosreadf_v1_a_SOURCES} ${EXTRA_READ_OBJECTS})
@@ -704,30 +706,30 @@ endif(BUILD_FORTRAN)
 
 #start libadiosread_nompi.a
 set(libadiosread_nompi_a_SOURCES core/mpidummy.c
-                      core/adios_bp_v1.c 
-                      core/adios_endianness.c 
-                      core/bp_utils.c 
-                      core/futils.c 
-                      core/adios_error.c 
-                      core/adios_read.c 
-                      core/adios_read_v1.c 
-                      core/common_read.c 
+                      core/adios_bp_v1.c
+                      core/adios_endianness.c
+                      core/bp_utils.c
+                      core/futils.c
+                      core/adios_error.c
+                      core/adios_read.c
+                      core/adios_read_v1.c
+                      core/common_read.c
                       core/adios_infocache.c
                       core/adios_read_ext.c
-                      ${transforms_common_SOURCES} 
-                      ${transforms_read_SOURCES} 
+                      ${transforms_common_SOURCES}
+                      ${transforms_read_SOURCES}
                       ${query_C_SOURCES}
-#                      core/adios_internals.c 
-                      core/adios_logger.c 
-                      core/buffer.c 
-                      core/globals.c 
-                      core/adios_read_hooks.c 
-#                      core/adios_transport_hooks.c 
-                      core/util.c 
-                      core/strutil.c 
+#                      core/adios_internals.c
+                      core/adios_logger.c
+                      core/buffer.c
+                      core/globals.c
+                      core/adios_read_hooks.c
+#                      core/adios_transport_hooks.c
+                      core/util.c
+                      core/strutil.c
                       core/a2sel.c
-                      core/adios_clock.c 
-                      core/qhashtbl.c 
+                      core/adios_clock.c
+                      core/qhashtbl.c
                       read/read_bp.c)
 
 if(HAVE_DMALLOC)
@@ -772,25 +774,25 @@ set_target_properties(adiosread_nompi PROPERTIES COMPILE_FLAGS "${libadiosread_n
 #start libadiosreadf_nompi.a libadiosreadf_nompi_v1.a
 if(BUILD_FORTRAN)
     set(FortranReadSeqLibSource core/mpidummy.c
-                          core/adios_bp_v1.c 
-                          core/adios_endianness.c 
-                          core/bp_utils.c 
-                          core/futils.c 
-                          core/adios_error.c 
-                          core/adios_logger.c 
-                          core/common_read.c 
+                          core/adios_bp_v1.c
+                          core/adios_endianness.c
+                          core/bp_utils.c
+                          core/futils.c
+                          core/adios_error.c
+                          core/adios_logger.c
+                          core/common_read.c
                           core/adios_infocache.c
                           core/adios_read_ext.c
-                          ${transforms_common_SOURCES} 
-                          ${transforms_read_SOURCES} 
+                          ${transforms_common_SOURCES}
+                          ${transforms_read_SOURCES}
                           ${query_F_SOURCES}
-                          core/globals.c 
-                          core/adios_read_hooks.c 
-                          core/util.c 
-                          core/strutil.c 
+                          core/globals.c
+                          core/adios_read_hooks.c
+                          core/util.c
+                          core/strutil.c
                           core/a2sel.c
-                          core/adios_clock.c 
-                          core/qhashtbl.c 
+                          core/adios_clock.c
+                          core/qhashtbl.c
                           read/read_bp.c)
     if(HAVE_DATASPACES)
         set(FortranReadSeqLibSource ${FortranReadSeqLibSource} read/read_dataspaces.c)
@@ -839,24 +841,24 @@ endif(BUILD_FORTRAN)
 
 
 #start libadios_internal_nompi.a
-set(libadios_internal_nompi_a_SOURCES core/mpidummy.c 
-                                    core/adios_bp_v1.c 
-                                    core/adios_endianness.c 
-                                    core/bp_utils.c 
-                                    core/adios_internals.c 
-                                    ${transforms_common_SOURCES} 
-                                    ${transforms_write_SOURCES} 
+set(libadios_internal_nompi_a_SOURCES core/mpidummy.c
+                                    core/adios_bp_v1.c
+                                    core/adios_endianness.c
+                                    core/bp_utils.c
+                                    core/adios_internals.c
+                                    ${transforms_common_SOURCES}
+                                    ${transforms_write_SOURCES}
                                     ${query_C_SOURCES}
-                                    core/buffer.c 
-                                    core/adios_error.c 
-                                    core/adios_logger.c 
-                                    core/adios_timing.c 
-                                    core/util.c 
-                                    core/strutil.c 
+                                    core/buffer.c
+                                    core/adios_error.c
+                                    core/adios_logger.c
+                                    core/adios_timing.c
+                                    core/util.c
+                                    core/strutil.c
                                     core/a2sel.c
-                                    core/adios_clock.c 
-                                    core/qhashtbl.c 
-                                    core/futils.c 
+                                    core/adios_clock.c
+                                    core/qhashtbl.c
+                                    core/futils.c
                                     core/adios_transport_hooks.c)
 
 if(BUILD_WRITE)

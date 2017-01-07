@@ -569,21 +569,16 @@ need_writer(
         uint64_t rank_offset = var_offsets.local_offsets[pos];
         uint64_t rank_size = var_offsets.local_dimensions[pos];
 
-	/* printf("need writer rank: %d writer: %d sel_start: %d sel_count: %d rank_offset: %d rank_size: %d\n", */
-	/*        fp->rank, writer, (int)sel_offset, (int)sel_size, (int)rank_offset, (int)rank_size); */
+	/* fprintf(stderr, "need writer rank: %d writer: %d sel_start: %d sel_count: %d rank_offset: %d rank_size: %d\n",
+           fp->rank, writer, (int)sel_offset, (int)sel_size, (int)rank_offset, (int)rank_size); */
 
         if ((rank_size == 0) || (sel_size == 0)) return 0;
 
-        if ((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
-	     log_debug("matched overlap type 1\n");
-        }
-
-        else if ((rank_offset <= sel_offset + sel_size - 1) && \
-		(rank_offset+rank_size>=sel_offset+sel_size-1)) {
-        } else if ((sel_offset <= rank_offset) && (rank_offset+rank_size<= sel_offset+sel_size-1)) {
-        } else {
+        if (!((rank_offset <= sel_offset+sel_size) && (sel_offset <= rank_offset+rank_size))) {
+            /* fprintf(stderr, "Didn't overlap\n"); */
             return 0;
         }
+
     }
     return 1;
 }
@@ -1424,6 +1419,8 @@ adios_read_flexpath_open(const char * fname,
 
 int adios_read_flexpath_finalize_method ()
 {
+    /* oddly, ADIOS doesn't let us close a single file.  Instead, this finalizes all operations.  Commented out below is the body that we should have when we can close a file. */
+
     /* flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh; */
     /* int i; */
     /* for (i=0; i<fp->num_bridges; i++) { */
@@ -1432,7 +1429,7 @@ int adios_read_flexpath_finalize_method ()
     /* 	    send_finalize_msg(fp, i); */
     /*     } */
     /* } */
-    /* return 1; */
+    return 1;
 }
 
 void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
@@ -1766,7 +1763,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
             for (j=0; j<fp->num_bridges; j++) {
                 int destination=0;
                 if (need_writer(fp, j, fpvar->sel, fp->gp, fpvar->varname)==1) {
-		    //printf("\t\trank: %d need_writer: %d\n", fp->rank, j);
+		    /* fprintf(stderr, "\t\trank: %d need_writer: %d\n", fp->rank, j); */
                     uint64_t _pos = 0;
                     need_count++;
                     destination = j;

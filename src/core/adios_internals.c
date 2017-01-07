@@ -267,6 +267,8 @@ int adios_parse_dimension (const char * dimension
         return 0;
     }
 
+    char * end;
+
     /* Get the local dimension */
     // one of the three fields below will be set, the other two remain 0
     dim->dimension.rank = 0;
@@ -383,7 +385,15 @@ int adios_parse_dimension (const char * dimension
     }
     else
     {
-        dim->dimension.rank = atoi (dimension);
+        int errno_save = errno;
+        long t = strtol (dimension, &end, 10);
+        if (errno != errno_save || (end != 0 && *end != '\0'))
+        {
+            adios_error (err_invalid_argument,
+                    "invalid integer value for local dimension of a variable: '%s'\n",dimension);
+            return 0;
+        }
+        dim->dimension.rank = t;
     }
 
     if (!global_dimension)
@@ -509,7 +519,15 @@ int adios_parse_dimension (const char * dimension
     }
     else
     {
-        dim->global_dimension.rank = strtol (global_dimension, NULL, 10);
+        int errno_save = errno;
+        long t = strtol (global_dimension, &end, 10);
+        if (errno != errno_save || (end != 0 && *end != '\0'))
+        {
+            adios_error (err_invalid_argument,
+                    "invalid integer value for global dimension of a variable: '%s'\n",global_dimension);
+            return 0;
+        }
+        dim->global_dimension.rank = t;
     }
 
     if (!local_offset)
@@ -635,7 +653,15 @@ int adios_parse_dimension (const char * dimension
     }
     else
     {
-        dim->local_offset.rank = strtol (local_offset, NULL, 10);
+        int errno_save = errno;
+        long t = strtol (local_offset, &end, 10);
+        if (errno != errno_save || (end != 0 && *end != '\0'))
+        {
+            adios_error (err_invalid_argument,
+                    "invalid integer value for offset of a variable: '%s'\n",local_offset);
+            return 0;
+        }
+        dim->local_offset.rank = t;
     }
 
     return 1;
