@@ -886,7 +886,7 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
     #########################
     echo "Configure on UBUNTU"
     export CC=mpicc
-    export CFLAGS="-g -O0 -fPIC"
+    export CFLAGS="-g -O0 -fPIC -fopenmp"
     ${SRCDIR}/configure --prefix=/home/qliu/ADIOS.install \
         --enable-dependency-tracking \
         --with-glib=/home/qliu/glib \

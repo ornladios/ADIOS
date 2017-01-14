@@ -11,6 +11,7 @@
 #include <mxml.h>
 #include <glib.h>
 #include <zfp.h>
+#include <omp.h>
 
 // see if we have MPI or other tools
 #include "config.h"
@@ -1661,6 +1662,63 @@ void test_delta (double * r, double * z, double * field,
     * pfield_full = field_full;
 }
 
+int partition (double * x, int * idx, int l, int r)
+{
+    double t;
+    double pivot = x[l];
+    int i = l; 
+    int j = r + 1;
+    int t_id;
+		
+    while(1)
+    {
+        do ++i; while (x[i] <= pivot && i <= r);
+   	do --j; while (x[j] > pivot);
+   	if(i >= j) break;
+   	t = x[i]; x[i] = x[j]; x[j] = t;
+        t_id = idx[i]; idx[i] = idx[j]; idx[j] = t_id;
+    }
+
+    t = x[l]; x[l] = x[j]; x[j] = t;
+    t_id = idx[l]; idx[l] = idx[j]; idx[j] = t_id;
+
+    return j;
+}
+
+void quickSort (double * a, int * idx, int l, int r)
+{
+    int j;
+
+    if (l < r)
+    {
+        j = partition (a, idx, l, r);
+        quickSort (a, idx, l, j-1);
+        quickSort (a, idx, j+1, r);
+    }
+}
+
+void sort_by_x1 (double * x, int nvertices,
+                 double ** px_sorted, int ** px_idx)
+{
+    double * x_sorted = (double *) malloc (nvertices * 8);
+    assert (x_sorted);
+
+    memcpy (x_sorted, x, nvertices * 8);
+
+    int * x_idx = (int *) malloc (nvertices * 4);
+    assert (x_idx);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        x_idx[i] = i;
+    }
+
+    quickSort (x_sorted, x_idx, 0, nvertices - 1);
+
+    * px_sorted = x_sorted;
+    * px_idx = x_idx;
+}
+
 void sort_by_x (double * x, int nvertices,
                 double ** px_sorted, int ** px_idx)
 {
@@ -1705,12 +1763,12 @@ void sort_by_rz (double * r, double * z, int nvertices,
                  int ** pr_idx, int ** pz_idx)
 {
 double time1 = MPI_Wtime ();
-    sort_by_x (r, nvertices,
+    sort_by_x1 (r, nvertices,
                pr_sorted, pr_idx
               );
 
 double time2 = MPI_Wtime ();
-    sort_by_x (z, nvertices,
+    sort_by_x1 (z, nvertices,
                pz_sorted, pz_idx
               );
 double time3 = MPI_Wtime ();
@@ -1891,6 +1949,9 @@ double time1 = MPI_Wtime();
                 &r_idx, &z_idx);
 
 double time2 = MPI_Wtime();
+#pragma omp parallel
+{
+#pragma omp for
     for (int m = 0; m < nmesh_new; m++)
     {
         int n1 = * (mesh_reduced + m * 3);
@@ -1903,9 +1964,11 @@ double time2 = MPI_Wtime();
         double max_z = max (z_reduced[n1], z_reduced[n2], z_reduced[n3]);
 
         int * plist = 0;
+double time_find0 = MPI_Wtime ();
         int nlist = find_possible_nodes (min_r, max_r, min_z, max_z,
                                          r_sorted, z_sorted, nvertices, 
                                          r_idx, z_idx, &plist);
+double time_find1 = MPI_Wtime ();
         for (int i = 0; i < nlist; i++) 
         {
             int in = PointInTriangle (r[plist[i]], z[plist[i]],
@@ -1921,6 +1984,7 @@ double time2 = MPI_Wtime();
 //            delta[plist[i]] = 0.0;
         }
     }
+}
 double time3 = MPI_Wtime ();
 printf ("get delta time = %f\n", time3 - time1);
 
@@ -1935,10 +1999,12 @@ void get_delta (double * r, double * z, double * field,
                 double ** pfield_delta
                )
 {
-
+    double start_time = MPI_Wtime ();
     double * delta = (double *) malloc (nvertices * 8);
     assert (delta);
-
+#pragma omp parallel 
+{
+#pragma omp for
     for (int i = 0; i < nvertices; i++)
     {
         delta[i] = - DBL_MAX;
@@ -1967,8 +2033,42 @@ void get_delta (double * r, double * z, double * field,
             }
         }
     }
-
+}
     * pfield_delta = delta;
+    double end_time = MPI_Wtime ();
+    printf ("get delta time = %f\n", end_time - start_time);
+}
+
+double calc_area (double * r, double * z, double * data,
+                  int nvertices, int * mesh, int nmesh
+                 )
+{
+    int ntaggedCells = 0;
+    double surface_size = 0.0;
+
+    for (int m = 0; m < nmesh; m++)
+    {
+        int n1 = * (mesh + m * 3);
+        int n2 = * (mesh + m * 3 + 1);
+        int n3 = * (mesh + m * 3 + 2);
+
+        double avg_mag = (data[n1] + data[n2] + data[n3]) / 3;
+
+        if (avg_mag > threshold)
+        {
+            ntaggedCells++;
+
+            double a = sqrt (pow (r[n1] - r[n2], 2) + pow (z[n1] - z[n2], 2));
+            double b = sqrt (pow (r[n1] - r[n3], 2) + pow (z[n1] - z[n3], 2));
+            double c = sqrt (pow (r[n2] - r[n3], 2) + pow (z[n2] - z[n3], 2));
+            double p = (a + b + c) / 2;
+
+            surface_size += sqrt (p * (p - a) * (p - b) * (p - c));
+        }
+    }  // loop through the node connectivity array
+
+    printf ("ntaggedCells = %d, new surface = %f\n", ntaggedCells, surface_size);
+
 }
 
 void decimate (double * rorg, double * zorg, double * fieldorg, 
@@ -2395,6 +2495,7 @@ void thresholding (double * r, double * z, double * field,
                    int * pnewsize, int * pntaggedCells)
 {
     int ntaggedCells = 0, cell_cnt = 0, newsize = 0;
+    double surface_size = 0.0;
 
     for (int m = 0; m < nmesh; m++)
     {
@@ -2413,10 +2514,17 @@ void thresholding (double * r, double * z, double * field,
         if (avg_mag > threshold)
         {
             ntaggedCells++;
+
+            double a = sqrt (pow (r[n1] - r[n2], 2) + pow (z[n1] - z[n2], 2));
+            double b = sqrt (pow (r[n1] - r[n3], 2) + pow (z[n1] - z[n3], 2));
+            double c = sqrt (pow (r[n2] - r[n3], 2) + pow (z[n2] - z[n3], 2));
+            double p = (a + b + c) / 2;
+
+            surface_size += sqrt (p * (p - a) * (p - b) * (p - c));
         }
     }  // loop through the node connectivity array
 
-//  printf ("level = %d, ntaggedCells = %d\n", l, ntaggedCells);
+    printf ("ntaggedCells = %d, orginal surface = %f\n", ntaggedCells, surface_size);
 
     double * newz = (double *) malloc (ntaggedCells * 3 * 8);
     double * newr = (double *) malloc (ntaggedCells * 3 * 8);
@@ -2814,9 +2922,14 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                   &nmesh_reduced
                                  );
 
+                        calc_area (r_reduced, z_reduced, data_reduced,
+                                   nvertices_new, mesh_reduced,
+                                   nmesh_reduced
+                                  );
+
                         if (save_delta)
                         {
-                            get_delta ((double *) R->data, 
+                            get_delta1 ((double *) R->data, 
                                        (double *) Z->data, 
                                        (double *) data,
                                        nelems, (int *) mesh->data, 

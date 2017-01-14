@@ -18,8 +18,8 @@
     <!--method group="temperature" method="SIRIUS_ADAPTIVE">method=MPI;path=data1;parameters;method=MPI;path=data2;parameters</method-->
     <method group="field" method="SIRIUS_ADAPTIVE">
         decimation-ratio=32;
-        save-delta=0;
-        compress-delta=0;
+        save-delta=1;
+        compress-delta=1;
         compression-tolerance=0.001;
         thresh_type=absolute;
         thresh=40;

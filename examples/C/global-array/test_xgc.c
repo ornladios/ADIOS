@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
     int step;
     double iotime = 0.0;
 
-    for (step = 0; step < 20; step++)
+    for (step = 0; step < 1; step++)
     {
     char fname[64];
 
