@@ -43,106 +43,106 @@ int main (int argc, char ** argv)
 
     for (step = 0; step < 1; step++)
     {
-    char fname[64];
+        char fname[64];
 
-    sprintf (fname, "xgc.3d.080%02d.bp", step);
-    adios_read_init_method (method, comm, "verbose=3");
+        sprintf (fname, "xgc.3d.080%02d.bp", step);
+        adios_read_init_method (method, comm, "verbose=3");
 
-    ADIOS_FILE * f = adios_read_open_file (fname, method, comm);
-    if (f == NULL)
-    {
-        printf ("%s\n", adios_errmsg());
-        return -1;
-    }
+        ADIOS_FILE * f = adios_read_open_file (fname, method, comm);
+        if (f == NULL)
+        {
+            printf ("%s\n", adios_errmsg());
+            return -1;
+        }
 
-    ADIOS_VARINFO * v = adios_inq_var (f, "dpot");
+        ADIOS_VARINFO * v = adios_inq_var (f, "dpot");
 
 //    printf ("%lu, %lu\n", v->dims[0], v->dims[1]);
 
-    start[0] = 0;
-    count[0] = v->dims[0];
+        start[0] = 0;
+        count[0] = v->dims[0];
 
-    start[1] = rank;
-    count[1] = 1;
+        start[1] = rank;
+        count[1] = 1;
        
 
-    data = malloc (count[0] * count[1] * sizeof (double));
-    grad = malloc (count[0] * count[1] * sizeof (double));
-    R = malloc (count[0] * count[1] * sizeof (double));
-    Z = malloc (count[0] * count[1] * sizeof (double));
-    if (data == NULL || grad == NULL || R == NULL || Z == NULL)
-    {
-        fprintf (stderr, "malloc failed.\n");
-        return -1;
-    }
+        data = malloc (count[0] * count[1] * sizeof (double));
+        grad = malloc (count[0] * count[1] * sizeof (double));
+        R = malloc (count[0] * count[1] * sizeof (double));
+        Z = malloc (count[0] * count[1] * sizeof (double));
+        if (data == NULL || grad == NULL || R == NULL || Z == NULL)
+        {
+            fprintf (stderr, "malloc failed.\n");
+            return -1;
+        }
 
-    /* Read a subset of the temperature array */
-    sel = adios_selection_boundingbox (v->ndim, start, count);
-    adios_schedule_read (f, sel, "dpot", 0, 1, data);
-    adios_perform_reads (f, 1);
-/*
-    for (i = 0; i < count[0] * count[1]; i++) {
+        /* Read a subset of the temperature array */
+        sel = adios_selection_boundingbox (v->ndim, start, count);
+        adios_schedule_read (f, sel, "dpot", 0, 1, data);
+        adios_perform_reads (f, 1);
+        /*
+        for (i = 0; i < count[0] * count[1]; i++) {
             printf (" %e", * ((double *)data + i ));
-    }
-*/
+        }
+        */
 //    printf ("\n");
 
-    adios_read_close (f);
-    MPI_Barrier (comm);
-    adios_read_finalize_method (method);
+        adios_read_close (f);
+        MPI_Barrier (comm);
+        adios_read_finalize_method (method);
 
-    // read mesh
-    adios_read_init_method (method, comm, "verbose=3");
+        // read mesh
+        adios_read_init_method (method, comm, "verbose=3");
 
-    ADIOS_FILE * fmesh = adios_read_open_file ("xgc.mesh.bp", method, comm);
-    if (fmesh == NULL)
-    {
-        printf ("%s\n", adios_errmsg());
-        return -1;
-    }
+        ADIOS_FILE * fmesh = adios_read_open_file ("xgc.mesh.bp", method, comm);
+        if (fmesh == NULL)
+        {
+            printf ("%s\n", adios_errmsg());
+            return -1;
+        }
 
-    ADIOS_VARINFO * conn = adios_inq_var (fmesh, "/cell_set[0]/node_connect_list");
+        ADIOS_VARINFO * conn = adios_inq_var (fmesh, "/cell_set[0]/node_connect_list");
 
 //    printf ("conn: %lu, %lu\n", conn->dims[0], conn->dims[1]);
 
 
-    start[0] = 0;
-    count[0] = conn->dims[0];
+        start[0] = 0;
+        count[0] = conn->dims[0];
 
-    start[1] = 0;
-    count[1] = conn->dims[1];
-
-
-    mesh = malloc (count[0] * count[1] * sizeof (int));
-    if (mesh == NULL)
-    {
-        fprintf (stderr, "malloc failed.\n");
-        return -1;
-    }
-
-    /* Read a subset of the temperature array */
-    sel = adios_selection_boundingbox (conn->ndim, start, count);
-    adios_schedule_read (fmesh, sel, "/cell_set[0]/node_connect_list", 0, 1, mesh);
-    start[0] = 0;
-    start[1] = 0;
-
-    count[0] = v->dims[0];
-    count[1] = 1;
-
-    sel = adios_selection_boundingbox (v->ndim, start, count);
-    adios_schedule_read (fmesh, sel, "/coordinates/values", 0, 1, R);
+        start[1] = 0;
+        count[1] = conn->dims[1];
 
 
-    start[0] = 0;
-    start[1] = 1;
+        mesh = malloc (count[0] * count[1] * sizeof (int));
+        if (mesh == NULL)
+        {
+            fprintf (stderr, "malloc failed.\n");
+            return -1;
+        }
 
-    count[0] = v->dims[0];
-    count[1] = 1;
+        /* Read a subset of the temperature array */
+        sel = adios_selection_boundingbox (conn->ndim, start, count);
+        adios_schedule_read (fmesh, sel, "/cell_set[0]/node_connect_list", 0, 1, mesh);
+        start[0] = 0;
+        start[1] = 0;
 
-    sel = adios_selection_boundingbox (v->ndim, start, count);
-    adios_schedule_read (fmesh, sel, "/coordinates/values", 0, 1, Z);
+        count[0] = v->dims[0];
+        count[1] = 1;
 
-    adios_perform_reads (fmesh, 1);
+        sel = adios_selection_boundingbox (v->ndim, start, count);
+        adios_schedule_read (fmesh, sel, "/coordinates/values", 0, 1, R);
+
+
+        start[0] = 0;
+        start[1] = 1;
+
+        count[0] = v->dims[0];
+        count[1] = 1;
+
+        sel = adios_selection_boundingbox (v->ndim, start, count);
+        adios_schedule_read (fmesh, sel, "/coordinates/values", 0, 1, Z);
+
+        adios_perform_reads (fmesh, 1);
 
 /*
     for (i = 0; i < count[0]; i++) {
@@ -154,48 +154,53 @@ int main (int argc, char ** argv)
               (double)(abs (data[n1] - data[n2]) + abs(data[n1] - data[n3]) + abs(data[n2] - data[n3])) / 3;
     }
 */
-    adios_read_close (fmesh);
-    MPI_Barrier (comm);
-    adios_read_finalize_method (method);
+        adios_read_close (fmesh);
+        MPI_Barrier (comm);
+        adios_read_finalize_method (method);
 
 
-    int NX = v->dims[0], GX = v->dims[0], OX = 0;
-    int MY = conn->dims[0], MX = conn->dims[1];
+        int NX = v->dims[0], GX = v->dims[0], OX = 0;
+        int MY = conn->dims[0], MX = conn->dims[1];
 
-    uint64_t    adios_groupsize, adios_totalsize;
-    int64_t     adios_handle;
+        uint64_t    adios_groupsize, adios_totalsize;
+        int64_t     adios_handle;
 
-    double start_io_time = MPI_Wtime ();
-    adios_init ("test_xgc.xml", comm);
+        MPI_Barrier (MPI_COMM_WORLD);
+        double start_io_time = MPI_Wtime ();
 
-    adios_open (&adios_handle, "field", fname, "w", comm);
-    adios_groupsize = 6 * 4 + 3 * 8 * NX + 4 * MX * MY;
-    adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+        adios_init ("test_xgc.xml", comm);
 
-    adios_write (adios_handle, "NX", &NX);
-    adios_write (adios_handle, "GX", &GX);
-    adios_write (adios_handle, "OX", &OX);
-    adios_write (adios_handle, "MX", &MX);
-    adios_write (adios_handle, "MY", &MY);
-    adios_write (adios_handle, "mesh", mesh);
-    adios_write (adios_handle, "R", R);
-    adios_write (adios_handle, "Z", Z);
-    adios_write (adios_handle, "dpot", data);
+        sprintf (fname, "dpot.3d.080%02d.bp", step);
 
-    adios_close (adios_handle);
+        adios_open (&adios_handle, "field", fname, "w", comm);
+        adios_groupsize = 6 * 4 + 3 * 8 * NX + 4 * MX * MY;
+        adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 
-    free (data);
-    free (grad);
-    free (mesh);
+        adios_write (adios_handle, "NX", &NX);
+        adios_write (adios_handle, "GX", &GX);
+        adios_write (adios_handle, "OX", &OX);
+        adios_write (adios_handle, "MX", &MX);
+        adios_write (adios_handle, "MY", &MY);
+        adios_write (adios_handle, "mesh", mesh);
+        adios_write (adios_handle, "R", R);
+        adios_write (adios_handle, "Z", Z);
+        adios_write (adios_handle, "dpot", data);
 
-    adios_finalize (rank);
+        adios_close (adios_handle);
 
-    double end_io_time = MPI_Wtime ();
+        free (data);
+        free (grad);
+        free (mesh);
+
+        adios_finalize (rank);
+
+        MPI_Barrier (MPI_COMM_WORLD);
+        double end_io_time = MPI_Wtime ();
     
-    iotime += end_io_time - start_io_time;
+        iotime += end_io_time - start_io_time;
     }
 
-    printf ("io time = %f\n", iotime);
+    if (rank == 0) printf ("io time = %f\n", iotime);
     MPI_Finalize ();
     return 0;
 }

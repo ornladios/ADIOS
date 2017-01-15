@@ -1772,7 +1772,7 @@ double time2 = MPI_Wtime ();
                pz_sorted, pz_idx
               );
 double time3 = MPI_Wtime ();
-printf ("sort time: %f, %f\n", time2 - time1, time3 - time2);
+//printf ("sort time: %f, %f\n", time2 - time1, time3 - time2);
 }
 
 double min (double x, double y, double z)
@@ -2068,7 +2068,7 @@ double calc_area (double * r, double * z, double * data,
         }
     }  // loop through the node connectivity array
 
-    printf ("ntaggedCells = %d, new surface = %f\n", ntaggedCells, surface_size);
+    //printf ("ntaggedCells = %d, new surface = %f\n", ntaggedCells, surface_size);
 
 }
 
