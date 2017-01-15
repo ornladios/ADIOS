@@ -33,6 +33,7 @@
 #define MAXLEVEL 10
 #define MAX_NODE_DEGREE 100
 //#define DUMP_FEATURE
+//#define TEST_REDUCTION
 
 static char *io_method[MAXLEVEL]; //the IO methods for data output for each level
 static char *io_parameters[MAXLEVEL]; //the IO method parameters
@@ -2699,7 +2700,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
     double * r_reduced = 0, * z_reduced = 0;
     double * data_reduced = 0, * delta = 0;
     double * delta_compr = 0;
+#ifdef TEST_REDUCTION
     double * test_field = 0;
+#endif
     int nvertices_new;
     int * mesh_reduced = 0, nmesh_reduced;
     int compr_size = 0;
@@ -2930,7 +2933,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                         if (save_delta)
                         {
-                            get_delta1 ((double *) R->data, 
+                            get_delta ((double *) R->data, 
                                        (double *) Z->data, 
                                        (double *) data,
                                        nelems, (int *) mesh->data, 
@@ -2949,18 +2952,24 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                                       );
                             }
                         }
-#if 0
-                        decompress (delta, nelems, 1e-3,
-                                    delta_compr, compr_size);
+#ifdef TEST_REDUCTION
+                        if (save_delta)
+                        {
+                            if (compress_delta)
+                            {
+                                decompress (delta, nelems, 1e-3,
+                                            delta_compr, compr_size);
+                            }
 
-                        test_delta ((double *) R->data,
-                                   (double *) Z->data,
-                                   (double *) data,
-                                   nelems, (int *) mesh->data, mesh_ldims[0],
-                                   r_reduced, z_reduced, data_reduced,
-                                   nvertices_new, mesh_reduced, nmesh_reduced,
-                                   delta, &test_field
-                                  );
+                            test_delta ((double *) R->data,
+                                       (double *) Z->data,
+                                       (double *) data,
+                                       nelems, (int *) mesh->data, mesh_ldims[0],
+                                       r_reduced, z_reduced, data_reduced,
+                                       nvertices_new, mesh_reduced, nmesh_reduced,
+                                       delta, &test_field
+                                      );
+                        }
 #endif
                     }
                     else if (l == 1)
@@ -3087,7 +3096,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     {
                         DEFINE_VAR_LEVEL("delta/L0",0,adios_double);
                     }
-#if 0
+#ifdef TEST_REDUCTION
                     DEFINE_VAR_LEVEL("full_field/L1",1,adios_double);
 #endif
                 }
@@ -3160,9 +3169,10 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         // write the full dpot data.
                         do_write (md->level[l].fd, var->name, var->data);
                     }
-
-//                    do_write (md->level[1].fd, "full_field/L1", test_field);
-//                    free (test_field);
+#ifdef TEST_REDUCTION
+                    do_write (md->level[1].fd, "full_field/L1", test_field);
+                    free (test_field);
+#endif
                 }
             }
         } // if
