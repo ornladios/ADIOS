@@ -334,7 +334,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export CC=mpicc
         #export FC=mpif90
         #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
-        CFLAGS="-g -fPIC -O0 -std=c99" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
+        CFLAGS="-g -fPIC -O0 -std=c99 -fopenmp" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
             --enable-dependency-tracking \
             --with-glib=/ccs/proj/e2e/qliu/glib \
             --with-zfp=/ccs/proj/e2e/qliu/zfp

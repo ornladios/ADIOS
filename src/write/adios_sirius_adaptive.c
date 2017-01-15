@@ -1949,9 +1949,7 @@ double time1 = MPI_Wtime();
                 &r_idx, &z_idx);
 
 double time2 = MPI_Wtime();
-#pragma omp parallel
-{
-#pragma omp for
+#pragma omp parallel for
     for (int m = 0; m < nmesh_new; m++)
     {
         int n1 = * (mesh_reduced + m * 3);
@@ -1984,7 +1982,7 @@ double time_find1 = MPI_Wtime ();
 //            delta[plist[i]] = 0.0;
         }
     }
-}
+
 double time3 = MPI_Wtime ();
 printf ("get delta time = %f\n", time3 - time1);
 
@@ -2002,11 +2000,14 @@ void get_delta (double * r, double * z, double * field,
     double start_time = MPI_Wtime ();
     double * delta = (double *) malloc (nvertices * 8);
     assert (delta);
-#pragma omp parallel 
-{
-#pragma omp for
+    int tid;
+
+#pragma omp parallel for
     for (int i = 0; i < nvertices; i++)
     {
+//        tid = omp_get_thread_num();
+//        printf("from thread = %d\n", tid);
+
         delta[i] = - DBL_MAX;
 
         for (int m = 0; m < nmesh_new; m++)
@@ -2033,7 +2034,7 @@ void get_delta (double * r, double * z, double * field,
             }
         }
     }
-}
+
     * pfield_delta = delta;
     double end_time = MPI_Wtime ();
     printf ("get delta time = %f\n", end_time - start_time);
