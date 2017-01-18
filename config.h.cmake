@@ -46,6 +46,9 @@
 /* Define to 1 if you have the `clock_get_time' function. */
 #cmakedefine HAVE_CLOCK_GET_TIME 1
 
+/* Define to 1 if the system has the type `clockid_t'. */
+#cmakedefine HAVE_CLOCKID_T 1
+
 /* Define if you have CRAY_PMI. */
 #cmakedefine HAVE_CRAY_PMI 1
 

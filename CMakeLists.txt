@@ -622,6 +622,10 @@ CHECK_FUNCTION_EXISTS(clock_gettime HAVE_CLOCK_GETTIME)
 # Define to 1 if you have the `clock_get_time' function. On OSX.
 CHECK_FUNCTION_EXISTS(clock_get_time HAVE_CLOCK_GET_TIME)
 
+# Check if clockid_t type exist
+include(CheckTypeSize)
+CHECK_TYPE_SIZE("clockid_t" CLOCKID_T)
+
 # Define if you have CRAY_PMI.
 set(HAVE_CRAY_PMI 0)
 if(CRAY_PMI)
