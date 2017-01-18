@@ -1,3 +1,7 @@
+1.11.1 Release January 2017
+    - fix: able to read from a BP file when the index itself is > 2GB
+    - fix: bpmeta, bpdump works correctly with index size > 2GB
+
 1.11.0 Release November 2016
     - Time aggregation (temporal aggregation of an output in memory)
       see adios_set_time_aggregation() or the <time-aggregation> element in the XML syntax.

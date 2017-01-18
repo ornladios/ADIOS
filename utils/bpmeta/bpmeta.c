@@ -296,7 +296,7 @@ int write_index (struct adios_index_struct_v1 * index, char * fname)
         printf ("buffer=%p size=%" PRId64 " offset=%" PRId64 "\n", buffer, buffer_size, buffer_offset);
     }
 
-    f = open (fname, O_CREAT | O_RDWR, 0644);
+    f = open (fname, O_CREAT | O_WRONLY | O_TRUNC, 0644);
     if (f == -1)
     {
         fprintf (stderr, "Failed to create metadata file %s: %s\n", 
@@ -308,30 +308,34 @@ int write_index (struct adios_index_struct_v1 * index, char * fname)
     size_t to_write;
     const size_t MAX_WRITE_SIZE = 0x7ffff000; // = 2,147,479,552
 
-    if (buffer_offset > MAX_WRITE_SIZE)
-    {
-        to_write = MAX_WRITE_SIZE;
-    }
-    else
-    {
-        to_write = (size_t) buffer_offset;
+    if (verbose) {
+        printf ("Total size of metadata to write = %" PRIu64 " bytes\n", buffer_offset);
     }
 
     while (bytes_written < buffer_offset)
     {
-    	if (buffer_offset - bytes_written > MAX_WRITE_SIZE)
-    	{
-    		to_write = MAX_WRITE_SIZE;
-    	}
-    	else
-    	{
-    		to_write = (size_t) (buffer_offset - bytes_written);
-    	}
+        if (buffer_offset - bytes_written > MAX_WRITE_SIZE)
+        {
+            to_write = MAX_WRITE_SIZE;
+        }
+        else
+        {
+            to_write = (size_t) (buffer_offset - bytes_written);
+        }
+    
+        if (verbose>2) {
+            printf ("total to write=%" PRIu64 " write now =%ld written so far=%" PRId64 "\n", 
+            buffer_offset, to_write, bytes_written);
+        }
 
-    	ssize_t wrote = write (f, buffer, to_write);
-    	bytes_written += wrote;
+        ssize_t wrote = write (f, buffer+bytes_written, to_write);
+        bytes_written += wrote;
 
-    	if (wrote == -1)
+        if (verbose>2) {
+            printf ("wrote=%ld bytes to file\n", wrote);
+        }
+
+        if (wrote == -1)
         {
             fprintf (stderr, "Failed to write metadata to file %s: %s\n",
                      fname, strerror(errno));
@@ -419,10 +423,10 @@ int process_subfiles (int tid, int startidx, int endidx)
 
         if (idx == 0)
         {
-        	// only read attributes from the very first file. we don't merge attributes any more
-        	adios_posix_read_attributes_index (b[idx]);
-        	adios_parse_attributes_index_v1 (b[idx], &new_attrs_root);
-        	print_attribute_index (tid, new_attrs_root);
+            // only read attributes from the very first file. we don't merge attributes any more
+            adios_posix_read_attributes_index (b[idx]);
+            adios_parse_attributes_index_v1 (b[idx], &new_attrs_root);
+            print_attribute_index (tid, new_attrs_root);
         }
 
         adios_merge_index_v1 (subindex[tid], new_pg_root, new_vars_root, new_attrs_root, 1); 
