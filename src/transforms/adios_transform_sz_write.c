@@ -52,75 +52,45 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff = var->data;
 
-    sz_params sz = {0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0.0, 0.0};
+    sz_params sz;
+    memset(&sz, 0, sizeof(sz_params));
+    sz.max_quant_intervals = 32768;
+    sz.quantization_intervals = 0;
     sz.dataEndianType = LITTLE_ENDIAN_DATA;
     sz.sysEndianType = LITTLE_ENDIAN_DATA;
     sz.sol_ID = SZ;
     sz.layers = 1;
-    sz.sampleDistance = 50;
-    sz.quantization_intervals = 0;
-    sz.predThreshold = 0.98;
+    sz.sampleDistance = 100;
+    sz.predThreshold = 0.99;
     sz.offset = 0;
-    sz.szMode = SZ_DEFAULT_COMPRESSION;
+    sz.szMode = SZ_BEST_SPEED;
     sz.gzipMode = 1;
-    sz.errorBoundMode = REL;
+    sz.errorBoundMode = ABS;
     sz.absErrBound = 1E-6;
-    sz.relBoundRatio = 1E-5;
-
-    SZ_Init_Params(&sz);
+    sz.relBoundRatio = 1E-3;
 
     unsigned char *bytes;
     int outsize;
     int r[5] = {0,0,0,0,0};
 
-    int  errorBoundMode = REL;
-    double absErrBound = 1E-6;
-    double relBoundRatio = 1E-5;
-
-    // Get type info
-    int dtype;
-    switch (var->pre_transform_type)
-    {
-        case adios_double:
-            dtype = SZ_DOUBLE;
-            break;
-        case adios_real:
-            dtype = SZ_FLOAT;
-            break;
-        default:
-            adios_error(err_transform_failure, "No supported data type\n");
-            return NULL;
-            break;
-    }
-
-    // Get dimension info
-    struct adios_dimension_struct* d = var->pre_transform_dimensions;
-    int ndims = (uint) count_dimensions(d);
-    //log_debug("ndims: %d\n", ndims);
-    if (ndims > 5)
-    {
-        adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
-        return NULL;
-    }
-
-    int i = 0, ii = 0;
-    for (i=0; i<ndims; i++)
-    {
-        uint dsize = (uint) adios_get_dim_value(&d->dimension);
-        if (fd->group->adios_host_language_fortran == adios_flag_yes)
-            ii = ndims - 1 - i;
-        else
-            ii = i;
-        r[ii] = dsize;
-        d = d->next;
-    }
+    int i, ii;
+    int  errorBoundMode = sz.errorBoundMode;
+    double absErrBound = sz.absErrBound;
+    double relBoundRatio = sz.relBoundRatio;
 
     /* SZ parameters */
+    int use_configfile = 0;
+    char *sz_configfile = NULL;
     struct adios_transform_spec_kv_pair* param;
     for (i=0; i<var->transform_spec->param_count; i++)
     {
         param = &(var->transform_spec->params[i]);
-        if (strcmp(param->key, "errorboundmode") == 0)
+        if (strcmp(param->key, "init") == 0)
+        {
+            use_configfile = 1;
+            sz_configfile = strdup(param->value);
+        }
+        else if (strcmp(param->key, "errorboundmode") == 0)
         {
             errorBoundMode = atoi(param->value);
         }
@@ -138,6 +108,52 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         }
     }
 
+    if (use_configfile)
+    {
+        log_debug("%s: %s\n", "SZ config", sz_configfile);
+        SZ_Init(sz_configfile);
+        free(sz_configfile);
+    }
+    else
+        SZ_Init_Params(&sz);
+
+    // Get type info
+    int dtype;
+    switch (var->pre_transform_type)
+    {
+        case adios_double:
+            dtype = SZ_DOUBLE;
+            break;
+        case adios_real:
+            dtype = SZ_FLOAT;
+            break;
+        default:
+            adios_error(err_transform_failure, "No supported data type\n");
+            return -1;
+            break;
+    }
+
+    // Get dimension info
+    struct adios_dimension_struct* d = var->pre_transform_dimensions;
+    int ndims = (uint) count_dimensions(d);
+    //log_debug("ndims: %d\n", ndims);
+    if (ndims > 5)
+    {
+        adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
+        return -1;
+    }
+
+    i = 0, ii = 0;
+    for (i=0; i<ndims; i++)
+    {
+        uint dsize = (uint) adios_get_dim_value(&d->dimension);
+        if (fd->group->adios_host_language_fortran == adios_flag_yes)
+            ii = ndims - 1 - i;
+        else
+            ii = i;
+        r[ii] = dsize;
+        d = d->next;
+    }
 
     bytes = SZ_compress_args (dtype, (void *) input_buff, &outsize,
                               errorBoundMode, absErrBound, relBoundRatio,

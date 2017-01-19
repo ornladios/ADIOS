@@ -43,20 +43,22 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     unsigned char *raw_buff = completed_pg_reqgroup->subreqs->data;
 
     // Decompress into orig_buff
-    sz_params sz = {0, 0, 0, 0, 0, 0, 0.0, 0, 0, 0, 0, 0.0, 0.0};
+    sz_params sz;
+    memset(&sz, 0, sizeof(sz_params));
+    sz.max_quant_intervals = 32768;
+    sz.quantization_intervals = 0;
     sz.dataEndianType = LITTLE_ENDIAN_DATA;
     sz.sysEndianType = LITTLE_ENDIAN_DATA;
     sz.sol_ID = SZ;
     sz.layers = 1;
-    sz.sampleDistance = 50;
-    sz.quantization_intervals = 0;
-    sz.predThreshold = 0.98;
+    sz.sampleDistance = 100;
+    sz.predThreshold = 0.99;
     sz.offset = 0;
-    sz.szMode = SZ_DEFAULT_COMPRESSION;
+    sz.szMode = SZ_BEST_SPEED;
     sz.gzipMode = 1;
-    sz.errorBoundMode = REL;
+    sz.errorBoundMode = ABS;
     sz.absErrBound = 1E-6;
-    sz.relBoundRatio = 1E-5;
+    sz.relBoundRatio = 1E-3;
 
     SZ_Init_Params(&sz);
 
