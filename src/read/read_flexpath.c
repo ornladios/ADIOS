@@ -983,7 +983,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     FMStructDescList struct_list =
 	FMcopy_struct_list(format_list_of_FMFormat(format));
     FMField *f = struct_list[0].field_list;
-
 #if 0
     uint64_t packet_size = calc_ffspacket_size(f, attrs, base_data);
     fp->data_read += packet_size;
@@ -1058,7 +1057,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 			int i;
 			for (i=0; i<num_dims; i++) {
 			    char *dim = dims[i];
-			    FMField *temp_field = find_field_by_name(dim, f);
+			    FMField *temp_field = find_field_by_name(dim, struct_list[0].field_list);
 			    if (!temp_field) {
 				adios_error(err_corrupted_variable,
 					    "Could not find fieldname: %s\n",

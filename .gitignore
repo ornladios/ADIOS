@@ -198,6 +198,8 @@ tests/C/flexpath_tests/global_range_select/reader_range
 tests/C/flexpath_tests/global_range_select/writer_range
 tests/C/flexpath_tests/global_range_select/arrays_read
 tests/C/flexpath_tests/global_range_select/arrays_write
+tests/C/flexpath_tests/local_arrays/reader_local
+tests/C/flexpath_tests/local_arrays/writer_local
 tests/C/query/common/adios_query_test
 tests/C/query/common/compute_expected_query_results
 utils/adios_lint/adios_lint
