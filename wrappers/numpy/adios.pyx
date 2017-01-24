@@ -19,6 +19,8 @@ cimport numpy as np
 import cython
 cimport cython
 
+import tempfile
+
 from libc.stdlib cimport malloc, free
 from cpython.string cimport PyString_AsString
 from cpython.bytes cimport PyBytes_AsString, PyBytes_AS_STRING
@@ -178,22 +180,22 @@ cdef extern from "adios.h":
 
     cdef int adios_define_var_timescale (const char * timescale , int64_t group_id ,
                                          const char * name)
-    
+
     cdef int adios_define_var_timeseriesformat (const char * timeseries , int64_t group_id ,
                                                 const char * name)
-    
+
     cdef int adios_define_var_hyperslab (const char * hyperslab , int64_t group_id ,
                                          const char * name)
-    
+
     cdef int adios_define_mesh_timevarying (const char * timevarying , int64_t group_id ,
                                             const char * name)
-    
+
     cdef int adios_define_mesh_timesteps (const char * timesteps , int64_t group_id ,
                                           const char * name)
-    
+
     cdef int adios_define_mesh_timescale (const char * timescale , int64_t group_id ,
                                          const char * name)
-    
+
     cdef int adios_define_mesh_timeseriesformat (const char * timeseries , int64_t group_id ,
                                                  const char * name)
 
@@ -205,21 +207,21 @@ cdef extern from "adios.h":
                                    int64_t group_id,
                                    const char * name
                                   )
-    
+
     cdef int adios_define_mesh_rectilinear (char * dimensions,
                                        char * coordinates,
                                        char * nspace,
                                        int64_t group_id,
                                        const char * name
-                                      ) 
-    
+                                      )
+
     cdef int adios_define_mesh_structured (char * dimensions,
                                       char * points,
                                       char * nspace,
                                       int64_t group_id,
                                       const char * name
                                      )
-    
+
     cdef int adios_define_mesh_unstructured (char * points,
                                         char * data,
                                         char * count,
@@ -230,7 +232,7 @@ cdef extern from "adios.h":
                                         const char * name
                                        )
 
-    ### Bis hier 
+    ### Bis hier
 
     cdef int adios_define_attribute (int64_t group,
                                      char * name,
@@ -430,6 +432,12 @@ class LOCKMODE:
     CURRENT = 1
     ALL =2
 
+class STATISTICS:
+    NONE = adios_stat_no
+    MINMAX = adios_stat_minmax
+    FULL = adios_stat_full
+    DEFAULT = adios_stat_default
+
 cpdef __parse_index(index, ndim):
     # Fix index, handling ellipsis and incomplete slices.
     if not isinstance(index, tuple):
@@ -578,25 +586,25 @@ cpdef int define_var_timesteps (str timesteps, int64_t group_id, str name):
 
 cpdef int define_var_timescale (str timescale , int64_t group_id ,str name):
     return adios_define_var_timescale (s2b(timescale) , group_id ,s2b(name))
-                                         
+
 cpdef int define_var_timeseriesformat (str timeseries , int64_t group_id ,str name):
     return adios_define_var_timeseriesformat (s2b(timeseries) , group_id ,s2b(name))
-                                                
+
 cpdef int define_var_hyperslab (str hyperslab , int64_t group_id ,str name):
     return adios_define_var_hyperslab (s2b(hyperslab) , group_id ,s2b(name))
-                                         
+
 cpdef int define_mesh_timevarying (str timevarying , int64_t group_id ,str name):
     return adios_define_mesh_timevarying (s2b(timevarying) , group_id ,s2b(name))
-                                            
+
 cpdef int define_mesh_timesteps (str timesteps , int64_t group_id ,str name):
     return adios_define_mesh_timesteps (s2b(timesteps) , group_id ,s2b(name))
-                                          
+
 cpdef int define_mesh_timescale (str timescale , int64_t group_id ,str name):
     return adios_define_mesh_timescale (s2b(timescale) , group_id ,s2b(name))
-                                         
+
 cpdef int define_mesh_timeseriesformat (str timeseries , int64_t group_id ,str name):
     return adios_define_mesh_timeseriesformat (s2b(timeseries) , group_id ,s2b(name))
-                                                 
+
 cpdef int define_mesh_uniform (str dimensions,
                                    str origin,
                                    str spacing,
@@ -613,20 +621,20 @@ cpdef int define_mesh_uniform (str dimensions,
                                    group_id,
                                    s2b(name)
                                   )
-    
+
 cpdef int define_mesh_rectilinear (str dimensions,
                                        str coordinates,
                                        str nspace,
                                        int64_t group_id,
                                        str name
-                                      ): 
+                                      ):
     return adios_define_mesh_rectilinear (s2b(dimensions),
                                        s2b(coordinates),
                                        s2b(nspace),
                                        group_id,
                                        s2b(name)
-                                      ) 
-    
+                                      )
+
 cpdef int define_mesh_structured (str dimensions,
                                       str points,
                                       str nspace,
@@ -639,7 +647,7 @@ cpdef int define_mesh_structured (str dimensions,
                                       group_id,
                                       s2b(name)
                                      )
-    
+
 cpdef int define_mesh_unstructured (str points,
                                         str data,
                                         str count,
@@ -1917,6 +1925,7 @@ cdef class writer(object):
     cpdef bint is_noxml
     cpdef str mode
     cpdef MPI_Comm comm
+    cpdef int stats
 
     cpdef dict vars
     cpdef dict attrs
@@ -1961,17 +1970,21 @@ cdef class writer(object):
     def __init__(self, str fname,
                  bint is_noxml = True,
                  str mode = "w",
-                 MPI_Comm comm = MPI_COMM_WORLD):
+                 int stats = adios_stat_default,
+                 MPI_Comm comm = MPI_COMM_WORLD,
+                 str method = "POSIX1",
+                 str method_params = ""):
         self.gid = 0
         self.fname = fname
-        self.method = ""
-        self.method_params = ""
+        self.method = method
+        self.method_params = method_params
         self.is_noxml = is_noxml
         self.mode = mode
         self.comm = comm
         self.vars = dict()
         self.attrs = dict()
         self.timeaggregation_buffersize = 0
+        self.stats = stats
 
         init_noxml(comm)
     ##def __var_factory__(self, name, value):
@@ -1982,7 +1995,8 @@ cdef class writer(object):
 
     def declare_group(self, str gname = None,
                       str method = "POSIX1",
-                      str method_params = ""):
+                      str method_params = "",
+                      int stats = adios_stat_default):
         """
         Define a group associated with the file.
 
@@ -1990,6 +2004,7 @@ cdef class writer(object):
             gname (str): group name.
             method (str, optional): Adios write method (default: 'POSIX1')
             method_params (str, optional): parameters for the write method (default: '')
+            stats (int, optional): statistics (default: 'DEFAULT')
 
         Example:
 
@@ -2000,9 +2015,10 @@ cdef class writer(object):
             self.gname = gname
 
         if self.gname is None:
-            self.gname = "group"
+            ftmp = tempfile.NamedTemporaryFile()
+            self.gname = 'group'+ftmp.name;
 
-        self.gid = declare_group(self.gname, "", adios_stat_default)
+        self.gid = declare_group(self.gname, "", stats)
         self.method = method
         self.method_params = method_params
         select_method(self.gid, self.method, self.method_params, "")
@@ -2085,9 +2101,9 @@ cdef class writer(object):
         Write variables and attributes to a file and close the writer.
         """
         if self.gid == 0:
-            self.declare_group()
+            self.declare_group(method=self.method, method_params=self.method_params, stats=self.stats)
 
-        fd = open(self.gname, self.fname, self.mode)
+        fd = open(self.gname, self.fname, self.mode, comm=self.comm)
 
         extra_vars = dict()
         extra_attrs = dict()
