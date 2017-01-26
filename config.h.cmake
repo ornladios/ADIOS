@@ -285,6 +285,12 @@
 /* Define to 1 if you have the <sz.h> header file. */
 #cmakedefine HAVE_SZ_H 1
 
+/* Define if you have LZ4. */
+#cmakedefine HAVE_LZ4 1
+
+/* Define to 1 if you have the <lz4.h> header file. */
+#cmakedefine HAVE_LZ4_H 1
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
 
