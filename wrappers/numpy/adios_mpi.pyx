@@ -2245,7 +2245,8 @@ cdef class varinfo(object):
 
     def define(self, int64_t gid):
         if self.value is None:
-            raise TypeError("Value is none")
+            print ("Warning: skipping defining var(%r) with None value" %(self.name))
+            return
 
         ldim_ = self.ldim
         if isinstance(self.ldim, (tuple, list)):
@@ -2283,6 +2284,10 @@ cdef class varinfo(object):
 
     def write(self, int64_t fd):
         val_ = self.value
+
+        if val_ is None:
+            return
+
         if not isinstance(self.value, (np.ndarray)):
             val_ = np.array(self.value)
 

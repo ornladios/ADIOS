@@ -21,8 +21,7 @@ class AdiosTestCase(ut.TestCase):
         val1 = np.array(list(range(NX)), dtype=np.int32)
         val2 = np.array(list(range(5)), dtype='f8')
 
-        fw = ad.writer(self.temp.path)
-        fw.declare_group("group", method="POSIX1")
+        fw = ad.writer(self.temp.path, method="POSIX1")
 
         fw.define_var("NX")
         fw.define_var("val1", "NX")
@@ -54,8 +53,7 @@ class AdiosTestCase(ut.TestCase):
         unicode_string = u"unicode"
         bytes_string = u"bytes"
 
-        fw = ad.writer(self.temp.path)
-        fw.declare_group("group", method="POSIX1")
+        fw = ad.writer(self.temp.path, method="POSIX1")
 
         fw.define_attr("single_string")
         fw.define_attr("three_string")
@@ -96,8 +94,7 @@ class AdiosTestCase(ut.TestCase):
         val1 = np.array(list(range(NX)), dtype=np.int32)
         val2 = np.array(list(range(5)), dtype='f8')
 
-        fw = ad.writer(self.temp.path)
-        fw.declare_group("group", method="POSIX1")
+        fw = ad.writer(self.temp.path, method="POSIX1")
 
         fw['NX'] = NX
         fw['val1'] = val1
@@ -116,8 +113,7 @@ class AdiosTestCase(ut.TestCase):
         val1 = np.array(list(range(NX)), dtype=np.int32)
         val2 = np.array(list(range(5)), dtype='f8')
 
-        fw = ad.writer(self.temp.path)
-        fw.declare_group("group", method="POSIX1")
+        fw = ad.writer(self.temp.path, method="POSIX1")
 
         fw.vars['NX'] = NX
         fw.vars['val1'] = val1
@@ -131,7 +127,7 @@ class AdiosTestCase(ut.TestCase):
 
     def test_writer_default_group(self):
         self.temp = TempFile()
-        fw = ad.writer(self.temp.path)
+        fw = ad.writer(self.temp.path, method="POSIX1")
         fw.close()
 
         f = ad.file(self.temp.path)
@@ -140,8 +136,7 @@ class AdiosTestCase(ut.TestCase):
     def test_writer_varname(self):
         self.temp = TempFile()
 
-        fw = ad.writer(self.temp.path)
-        fw.declare_group("group", method="POSIX1")
+        fw = ad.writer(self.temp.path, method="POSIX1")
 
         NVARS = 99
         fw.vars['nvars'] = NVARS
@@ -160,8 +155,7 @@ class AdiosTestCase(ut.TestCase):
         val1 = np.array(list(range(NX)), dtype=np.int32)
         val2 = np.array(list(range(5)), dtype='f8')
 
-        fw = ad.writer(self.temp.path)
-        fw.declare_group("group", method="POSIX1")
+        fw = ad.writer(self.temp.path, method="POSIX1")
 
         fw['NX'] = NX
         fw['val1'] = val1
@@ -181,8 +175,7 @@ class AdiosTestCase(ut.TestCase):
         val1 = np.array(list(range(NX)), dtype=np.int32)
         val2 = np.array(list(range(5)), dtype='f8')
 
-        fw = ad.writer(self.temp.path)
-        fw.declare_group("group", method="POSIX1")
+        fw = ad.writer(self.temp.path, method="POSIX1")
         fw.set_time_aggregation(3200)
 
         fw['NX'] = NX
@@ -190,6 +183,30 @@ class AdiosTestCase(ut.TestCase):
         fw['val2'] = val2
         fw.close()
         ad.finalize()
+
+        f = ad.file(self.temp.path)
+        self.assertEqual(f['NX'][...], NX)
+        self.assertTrue((f['val1'][:] == val1).all())
+        self.assertTrue((f['val2'][:] == val2).all())
+
+    def test_writer_empty_define_(self):
+        self.temp = TempFile()
+
+        NX = 10
+        val1 = np.array(list(range(NX)), dtype=np.int32)
+        val2 = np.array(list(range(5)), dtype='f8')
+
+        fw = ad.writer(self.temp.path, method="POSIX1")
+
+        fw.define_var("NX")
+        fw.define_var("val1", "NX")
+        fw.define_var("val2", val2.shape)
+        fw.define_var("extra")
+
+        fw['NX'] = NX
+        fw['val1'] = val1
+        fw['val2'] = val2
+        fw.close()
 
         f = ad.file(self.temp.path)
         self.assertEqual(f['NX'][...], NX)
