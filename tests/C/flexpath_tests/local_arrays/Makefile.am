@@ -3,10 +3,6 @@ AM_CPPFLAGS += -I$(top_builddir)/src/public -I$(top_srcdir)/src -I$(top_srcdir)/
 
 AUTOMAKE_OPTIONS = no-dependencies subdir-objects
 
-all-local:
-	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
-	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/run_tests.pl $(builddir)
-
 noinst_PROGRAMS = writer_local reader_local
 
 writer_local_SOURCES = writer.c ../common/utils.c
@@ -18,4 +14,5 @@ reader_local_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = arrays.xml run_tests.pl
+
+EXTRA_DIST=cfg.h
