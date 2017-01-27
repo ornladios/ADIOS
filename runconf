@@ -623,7 +623,7 @@ elif [ `hostname | cut -c 1-4` == "cori" ]; then
 
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
-    ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/1.11.0/cori/$TARGET \
+    ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/1.11.1/cori/$TARGET \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --with-lustre=/usr \

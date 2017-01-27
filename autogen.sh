@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 aclocal -I config
-libtoolize --force --copy
+case `uname` in Darwin*) glibtoolize --copy ;;
+  *) libtoolize --copy ;; esac
 autoconf
 autoheader
 automake --add-missing --copy

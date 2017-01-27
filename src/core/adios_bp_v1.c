@@ -2238,12 +2238,52 @@ void adios_init_buffer_read_process_group_index (
     b->offset = 0;
 }
 
+static uint64_t read64(int f, char *buff, uint64_t readsize)
+{
+    // if we need to read > 2 GB, need to do it in parts
+    // since count is limited to MAX_MPIWRITE_SIZE (signed 32-bit max).
+    uint64_t bytes_read = 0;
+    int32_t to_read = 0;
+    int err = 0;
+    const size_t MAX_READ_SIZE = 0x7ffff000; // = 2,147,479,552
+
+    while (bytes_read < readsize && !err)
+    {
+        if (readsize - bytes_read > MAX_READ_SIZE)
+        {
+            to_read = MAX_READ_SIZE;
+        }
+        else
+        {
+            to_read = readsize - bytes_read;
+        }
+
+        ssize_t actual_read_bytes = read (f, buff+bytes_read, to_read);
+        if (actual_read_bytes == -1)
+        {
+            adios_error (err_file_read_error,
+                "Error while reading from file %d bytes: '%s'\n",
+                to_read, strerror(errno));
+            err = 1;
+        }
+        if (actual_read_bytes != to_read)
+        {
+            adios_error (err_file_read_error,
+                "Error while reading from file tried to read %d bytes but only got %d bytes\n",
+                to_read, actual_read_bytes);
+            err = 1;
+        }
+        bytes_read += actual_read_bytes;
+    }
+    return bytes_read;
+}
+
 void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b)
 {
     adios_init_buffer_read_process_group_index (b);
 
     lseek (b->f, b->pg_index_offset, SEEK_SET);
-    read (b->f, b->buff, b->pg_size);
+    read64 (b->f, b->buff, b->pg_size);
 }
 
 void adios_init_buffer_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
@@ -2259,7 +2299,7 @@ void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
     uint64_t r;
 
     lseek (b->f, b->vars_index_offset, SEEK_SET);
-    r = read (b->f, b->buff, b->vars_size);
+    r = read64 (b->f, b->buff, b->vars_size);
 
     if (r != b->vars_size)
         log_warn("reading vars_index: wanted %" PRIu64 ", read: %" PRIu64 "\n"
@@ -2281,7 +2321,7 @@ void adios_posix_read_attributes_index (struct adios_bp_buffer_struct_v1 * b)
     uint64_t r;
 
     lseek (b->f, b->attrs_index_offset, SEEK_SET);
-    r = read (b->f, b->buff, b->attrs_size);
+    r = read64 (b->f, b->buff, b->attrs_size);
 
     if (r != b->attrs_size)
         log_warn("reading attributess_index: wanted %" PRIu64 ", read: %" PRIu64 "\n",
