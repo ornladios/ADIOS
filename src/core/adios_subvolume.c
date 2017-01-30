@@ -36,13 +36,13 @@ uint64_t compute_volume(int ndim, const uint64_t *dims) {
 
 int intersect_segments(uint64_t start1, uint64_t len1, uint64_t start2, uint64_t len2,
                        uint64_t *inter_start, uint64_t *inter_len) {
-    int end1, end2;
-    int inter_end;
+    uint64_t end1, end2;
+    uint64_t inter_end;
 
     // Swap the segments if segment 1 starts after segment 2, to simplify calculations
     if (start1 > start2) {
-        int tmps = start1;
-        int tmpl = len1;
+        uint64_t tmps = start1;
+        uint64_t tmpl = len1;
         start1 = start2;
         len1 = len2;
         start2 = tmps;
