@@ -36,7 +36,7 @@
  * @param compress_level LZ4 compression level
  * @return zero (0) if something goes wrong else non zero
  */
-int adios_transform_lz4_compress_lz4_compress(LZ4_stream_t* stream,
+static int adios_transform_lz4_compress(LZ4_stream_t* stream,
                                               const char* input_data,
                                               const adiosLz4Size_t input_len,
                                               char* output_data,
@@ -216,11 +216,11 @@ int adios_transform_lz4_apply(struct adios_file_struct *fd,
         char* out_ptr = output_buff + actual_output_size;
 
         adiosLz4Size_t compressed_size = 0;
-        disable_compression = adios_transform_lz4_compress_lz4_compress(lz4Stream, in_ptr,
-                                                                        max_intput_size,
-                                                                        out_ptr, max_chunk_size,
-                                                                        &compressed_size,
-                                                                        compress_level);
+        disable_compression = adios_transform_lz4_compress(lz4Stream, in_ptr,
+                                                           max_intput_size,
+                                                           out_ptr, max_chunk_size,
+                                                           &compressed_size,
+                                                           compress_level);
 
         if (chunk >= num_chunks)
             compressed_size_last_chunk = compressed_size;
