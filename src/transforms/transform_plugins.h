@@ -13,3 +13,4 @@ REGISTER_TRANSFORM_PLUGIN(aplod, "aplod", "ncsu-aplod", "APLOD byte-columnar pre
 REGISTER_TRANSFORM_PLUGIN(alacrity, "alacrity", "ncsu-alacrity", "ALACRITY indexing")
 REGISTER_TRANSFORM_PLUGIN(zfp, "zfp", "zfp", "zfp compression")
 REGISTER_TRANSFORM_PLUGIN(sz, "sz", "sz", "sz compression")
+REGISTER_TRANSFORM_PLUGIN(lz4, "lz4", "lz4", "lz4 compression")
