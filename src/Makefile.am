@@ -844,6 +844,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              transforms/adios_transform_zfp_common.h \
              transforms/adios_transform_template_read.c \
              transforms/adios_transform_template_write.c \
+             transforms/adios_transform_lz4_common.h \
              query/Makefile.plugins.cmake 
 #             nssi/adios_nssi_config.h nssi/aggregation.h nssi/io_timer.h 
 

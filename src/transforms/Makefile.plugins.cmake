@@ -29,3 +29,7 @@ set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/
 # zfp plugin:
 set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_zfp_write.c)
 set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_zfp_read.c)
+
+# LZ4 plugin:
+set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_lz4_write.c)
+set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_lz4_read.c)
