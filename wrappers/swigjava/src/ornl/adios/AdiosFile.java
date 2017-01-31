@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 import java.util.*;
 
-import ornl.adios.adioslib.*;
+import ornl.adios.ext.*;
 
 public class AdiosFile {
 	static {
@@ -68,7 +68,7 @@ public class AdiosFile {
 		}
 	}
 
-	public java.math.BigInteger getFh() {
+	public long getFh() {
 		return f.getFh();
 	}
 

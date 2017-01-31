@@ -39,10 +39,11 @@ target_link_libraries (adiosjava
 set (CMAKE_JNI_TARGET TRUE)
 set (CMAKE_JAVA_TARGET_VERSION 1.8)
 
-file (GLOB SWIG_JAVA_SRC ornl/adios/adioslib/*.java)
+file (GLOB SWIG_JAVA_SRC ornl/adios/ext/*.java)
 add_jar (ornl-adiosjava
   ornl/adios/AdiosFile.java
   ornl/adios/AdiosVar.java
+  ornl/adios/AdiosWriter.java
   ${SWIG_JAVA_SRC})
 
 add_custom_target (

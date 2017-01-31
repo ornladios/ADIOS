@@ -1,8 +1,6 @@
 package ornl.adios;
 
-import java.math.BigInteger;
-
-import ornl.adios.adioslib.*;
+import ornl.adios.ext.*;
 
 public class AdiosVar {
 	static {
@@ -17,13 +15,13 @@ public class AdiosVar {
 	protected ADIOS_FILE f;
 	protected ADIOS_VARINFO v;
 	protected String name;
-	protected BigInteger[] dims;
+	protected long[] dims;
 
 	public AdiosVar(ADIOS_FILE f, String vname) {
 		this.f = f;
 		name = vname;
 		v = adioslib.adios_inq_var(f, vname);
-		dims = new BigInteger[v.getNdim()];
+		dims = new long[v.getNdim()];
 		for (int i = 0; i < v.getNdim(); i++) {
 			dims[i] = v.getDims(i);
 		}
@@ -45,7 +43,7 @@ public class AdiosVar {
 		System.out.println("getGlobal: " + getGlobal());
 	}
 
-	public java.math.BigInteger getFh() {
+	public long getFh() {
 		return f.getFh();
 	}
 
@@ -65,7 +63,7 @@ public class AdiosVar {
 		return v.getNdim();
 	}
 
-	public java.math.BigInteger[] getDims() {
+	public long[] getDims() {
 		return dims;
 	}
 
@@ -77,14 +75,16 @@ public class AdiosVar {
 		return v.getGlobal();
 	}
 
-	public int getValue(double[] out) {
-		// adioslib.read_test(f, getVarid(), out);
-		long[] start = { 0, 0 };
-		long[] count = { 2, 10 };
-		return adioslib.readvar_double(f, 3, start, count, out);
-	}
-	
-	public int read(Object value) {
-		return 0;
-	}
+	public int read(double[] out) {
+		long[] start = new long[this.getNdim()];
+		long[] count = new long[this.getNdim()];
+		
+		for (int i=0; i<start.length; i++)
+			start[i] = 0;
+		
+		for (int i=0; i<count.length; i++)
+			count[i] = this.dims[i];
+
+		return adioslib.readvar_double(f, 2, start, count, out);
+	}	
 }

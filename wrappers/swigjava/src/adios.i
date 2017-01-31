@@ -1,9 +1,12 @@
 %module adioslib
 %include "stdint.i"
+%include "typemaps.i"
 %include "arrays_java.i"
 %include "m_adios_namelist.i"
 %include "m_adios_dims.i"
+%include "m_adios_fh.i"
 
+%apply int64_t *OUTPUT { int64_t *fd };
 %apply char **STRING_ARRAY { char **var_namelist }
 %apply char **STRING_ARRAY { char **attr_namelist }
 
@@ -16,6 +19,7 @@
 */
 
 %{
+#include "adios.h"
 #include "adios_read_v2.h"
 %}
 
@@ -44,5 +48,7 @@
 %include "mpidummy.h"
 %include "adios_types.h"
 %include "adios_read_v2.h"
+%include "adios.h"
 
 %include "m_adios_read.i"
+%include "m_adios_write.i"

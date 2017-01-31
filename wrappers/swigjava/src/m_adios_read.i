@@ -19,7 +19,7 @@
 }
 
 %inline %{
-int readvar_##CTYPE(ADIOS_FILE *fh, int varid, const unsigned long start[], const unsigned long count[], void* CTYPE##_arr) {
+int readvar_##CTYPE(ADIOS_FILE *fh, int varid, const int64_t start[], const int64_t count[], void* CTYPE##_arr) {
   int result, i;
   ADIOS_VARINFO * v;
   ADIOS_SELECTION * sel;
@@ -31,11 +31,11 @@ int readvar_##CTYPE(ADIOS_FILE *fh, int varid, const unsigned long start[], cons
   printf("varid: %d\n", varid);
   printf("start: ");
   for (i=0; i<v->ndim; i++)
-    printf("%lu ", start[i]);
+    printf("%lld ", start[i]);
   printf("\n");
   printf("count: ");
   for (i=0; i<v->ndim; i++)
-    printf("%lu ", count[i]);
+    printf("%lld ", count[i]);
   printf("\n");
 
   sel = adios_selection_boundingbox (v->ndim, (const uint64_t *)start, (const uint64_t *)count);
