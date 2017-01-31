@@ -41,6 +41,7 @@ set (CMAKE_JAVA_TARGET_VERSION 1.8)
 
 file (GLOB SWIG_JAVA_SRC ornl/adios/ext/*.java)
 add_jar (ornl-adiosjava
+  ornl/adios/Adios.java
   ornl/adios/AdiosFile.java
   ornl/adios/AdiosVar.java
   ornl/adios/AdiosWriter.java
