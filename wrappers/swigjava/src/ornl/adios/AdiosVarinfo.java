@@ -2,6 +2,12 @@ package ornl.adios;
 
 import ornl.adios.ext.*;
 
+/**
+ * Class for variables to be written through Adios write APIs. 
+ * 
+ * @author jyc
+ *
+ */
 public class AdiosVarinfo {
 	static {
 		try {

@@ -2,6 +2,12 @@ package ornl.adios;
 
 import ornl.adios.ext.*;
 
+/**
+ * Class for holding variable information reading through Adios read APIs.  
+ * 
+ * @author jyc
+ *
+ */
 public class AdiosVar {
 	static {
 		try {

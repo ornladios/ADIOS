@@ -5,6 +5,12 @@ import java.util.Map;
 
 import ornl.adios.ext.*;
 
+/**
+ * Class for Adios writing.
+ * 
+ * @author jyc
+ *
+ */
 public class AdiosWriter {
 	static {
 		try {

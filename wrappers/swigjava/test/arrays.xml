@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+
+    <adios-group name="arrays">
+        <var name="NX" type="integer"/>
+        <var name="NY" type="integer"/>
+        <var name="double_arr"  type="double"  dimensions="NX,NY"/>
+    </adios-group>
+
+    <method group="arrays"  method="POSIX"/>
+
+    <buffer max-size-MB="20"/>
+
+</adios-config>
+

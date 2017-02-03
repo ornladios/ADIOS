@@ -6,6 +6,12 @@ import java.util.*;
 
 import ornl.adios.ext.*;
 
+/**
+ * This class is for Adios reading.
+ *  
+ * @author jyc
+ *
+ */
 public class AdiosFile {
 	static {
 		try {
@@ -16,12 +22,20 @@ public class AdiosFile {
 		}
 	}
 
+	/**
+	 * f hold the ADIOS_FILE pointer in C.
+	 */
 	protected ADIOS_FILE f;
 	private int comm;
 	private int comm_rank;
 
 	protected Map<String, AdiosVar> vars = new HashMap<String, AdiosVar>();
 
+	/**
+	 * Sole constructor. It needs a filename and opens the file with the Adios read method. 
+	 * 
+	 * @param fname
+	 */
 	public AdiosFile(String fname) {
 		comm = 1; // MPI_COMM_WORLD
 		comm_rank = 0;

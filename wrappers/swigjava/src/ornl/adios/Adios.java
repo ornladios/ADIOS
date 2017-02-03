@@ -2,6 +2,12 @@ package ornl.adios;
 
 import ornl.adios.ext.*;
 
+/**
+ * Class for static functions not related with reading nor writing.
+ * 
+ * @author jyc
+ *
+ */
 public class Adios {
 
 	static {
