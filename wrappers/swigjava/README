@@ -1,5 +1,13 @@
 ADIOS Java wrapper
------------------
+==================
 
 This directory contains the codes for the ADIOS java wrapper,
 developed with SWIG.
+
+Build
+-----
+
+$ mkdir build && cd build
+$ cmake ..
+$ make
+$ make test
