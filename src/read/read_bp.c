@@ -18,6 +18,7 @@
 #include "public/adios_read.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
+#include "core/adios_internals.h"
 #include "core/util.h"
 #include "core/bp_utils.h"
 #include "core/bp_types.h"
@@ -66,6 +67,37 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
     }\
 }\
 
+/* emulate MPI_File_read with support for data >2GiB */
+#define MPI_FILE_READ64(fh, buff, size, type, status)                               \
+    {                                                                               \
+        int read_len = 0;                                                           \
+        uint64_t total_read = 0;                                                    \
+        uint64_t to_read = size;                                                    \
+        int count;                                                                  \
+        while (to_read > 0)                                                         \
+        {                                                                           \
+            read_len = (to_read > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_read; \
+            MPI_File_read (fh                                                       \
+                          ,(char*)buff + total_read                                 \
+                          ,read_len                                                 \
+                          ,type                                                     \
+                          ,status                                                   \
+                          );                                                        \
+            MPI_Get_count (status, type, &count);                                   \
+            int err;                                                                \
+            if (count != read_len)                                                  \
+            {                                                                       \
+                log_error ("Need to do multi-read (tried: "                         \
+                        "%d read: %d) errno %d\n",                                  \
+                        read_len, count, errno);                                    \
+                err = count;                                                        \
+                break;                                                              \
+            }                                                                       \
+            total_read += count;                                                    \
+            to_read -= count;                                                       \
+        }                                                                           \
+    }
+
 #define MPI_FILE_READ_OPS1                          \
         bp_realloc_aligned(fh->b, slice_size);      \
         fh->b->offset = 0;                          \
@@ -74,13 +106,12 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
                       ,(MPI_Offset)slice_offset     \
                       ,MPI_SEEK_SET                 \
                       );                            \
-                                                    \
-        MPI_File_read (fh->mpi_fh                   \
-                      ,fh->b->buff                  \
-                      ,slice_size                   \
-                      ,MPI_BYTE                     \
-                      ,&status                      \
-                      );                            \
+        MPI_FILE_READ64 (fh->mpi_fh                 \
+                        ,fh->b->buff                \
+                        ,slice_size                 \
+                        ,MPI_BYTE                   \
+                        ,&status                    \
+                        );                          \
         fh->b->offset = 0;                          \
 
 // To read subfiles
@@ -135,12 +166,12 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
                       ,(MPI_Offset)slice_offset                                             \
                       ,MPI_SEEK_SET                                                         \
                       );                                                                    \
-        MPI_File_read (*sfh                                                                 \
-                      ,fh->b->buff                                                          \
-                      ,slice_size                                                           \
-                      ,MPI_BYTE                                                             \
-                      ,&status                                                              \
-                      );                                                                    \
+        MPI_FILE_READ64 (*sfh                                                               \
+                        ,fh->b->buff                                                        \
+                        ,slice_size                                                         \
+                        ,MPI_BYTE                                                           \
+                        ,&status                                                            \
+                        );                                                                  \
         fh->b->offset = 0;                                                                  \
 
 //We also need to be able to read old .bp which doesn't have 'payload_offset'
@@ -157,7 +188,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
         MPI_File_seek (fh->mpi_fh                                                           \
                       ,(MPI_Offset) (v->characteristics[start_idx + idx].offset)     \
                       ,MPI_SEEK_SET);                                                       \
-        MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount + 8, MPI_BYTE, &status);           \
+        MPI_FILE_READ64 (fh->mpi_fh, fh->b->buff, tmpcount + 8, MPI_BYTE, &status);         \
         fh->b->offset = 0;                                                                  \
         adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
 
@@ -168,13 +199,12 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
                       ,(MPI_Offset)slice_offset     \
                       ,MPI_SEEK_SET                 \
                       );                            \
-                                                    \
-        MPI_File_read (fh->mpi_fh                   \
-                      ,(buf)                        \
-                      ,slice_size                   \
-                      ,MPI_BYTE                     \
-                      ,&status                      \
-                      );
+        MPI_FILE_READ64 (fh->mpi_fh                 \
+                        ,(buf)                      \
+                        ,slice_size                 \
+                        ,MPI_BYTE                   \
+                        ,&status                    \
+                        );
 
 // To read subfiles
 #define MPI_FILE_READ_OPS2_BUF(buf)                                                         \
@@ -225,12 +255,12 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
                       ,(MPI_Offset)slice_offset                                             \
                       ,MPI_SEEK_SET                                                         \
                       );                                                                    \
-        MPI_File_read (*sfh                                                                 \
-                      ,(buf)                                                                \
-                      ,slice_size                                                           \
-                      ,MPI_BYTE                                                             \
-                      ,&status                                                              \
-                      );
+        MPI_FILE_READ64 (*sfh                                                               \
+                        ,(buf)                                                              \
+                        ,slice_size                                                         \
+                        ,MPI_BYTE                                                           \
+                        ,&status                                                            \
+                        );
 
 
 /* This routine release one step. It only frees the var/attr namelist. */
