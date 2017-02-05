@@ -66,8 +66,8 @@ do
     (--nr) nr="$2"; shift;;
     (-t) transport="$2"; shift;;
     (--timeout) timeout="$2"; shift;;
-    (--debug_reader)  reader_mode="debug";;
-    (--debug_writer)  writer_mode="debug";;
+    (--debug_reader)  reader_mode="debug";timeout="600";;
+    (--debug_writer)  writer_mode="debug";timeout="600";;
     (--valgrind_reader)  reader_mode="valgrind";;
     (--valgrind_writer)  writer_mode="valgrind";;
     (--) shift; break;;
