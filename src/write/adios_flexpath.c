@@ -793,7 +793,8 @@ set_format(struct adios_group_struct *t,
 	char *fullname = append_path_name(adios_var->path, adios_var->name);
 	char *mangle_name = flexpath_mangle(fullname);
 
-	for (int i = 0; i < fieldNo; i++) {
+	int i = 0;
+	for (i = 0; i < fieldNo; i++) {
 	    if (strcmp(mangle_name, field_list[i].field_name) == 0) {
 		adios_error(err_invalid_group, "set_format:  The Flexpath transport does not allow multiple writes using the same name in a single group, variable %s is disallowed\n", fullname);
 		return NULL;

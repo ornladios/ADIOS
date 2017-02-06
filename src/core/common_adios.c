@@ -43,6 +43,8 @@
 #include "dmalloc.h"
 #endif
 
+#include "adiost_callback_internal.h"
+
 extern struct adios_transport_struct * adios_transports;
 extern int adios_errno;
 
@@ -53,7 +55,9 @@ int common_adios_init (const char * config, MPI_Comm comm)
     if (comm == MPI_COMM_NULL)
         comm = MPI_COMM_SELF;
     adios_errno = err_no_error;
+    adiost_pre_init();
     adios_parse_config (config, comm);
+    adiost_post_init();
     return adios_errno;
 }
 
@@ -64,7 +68,9 @@ int common_adios_init_noxml (MPI_Comm comm)
     if (comm == MPI_COMM_NULL)
         comm = MPI_COMM_SELF;
     adios_errno = err_no_error;
+    adiost_pre_init();
     adios_local_config (comm);
+    adiost_post_init();
     return adios_errno;
 }
 
@@ -111,6 +117,8 @@ int common_adios_finalize (int mype)
     timer_finalize ();
 #endif
 
+    adiost_finalize();
+
     return adios_errno;
 }
 
@@ -147,6 +155,11 @@ int common_adios_open (int64_t * fd_p, const char * group_name
     timer_start ("adios_open_to_close");
     timer_start ("adios_open");
 #endif
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_open_begin)) {
+            adiost_callbacks.adiost_callback(adiost_event_open_begin)(
+                *fd_p, group_name, name, file_mode);
+    }
 
     struct adios_group_struct * g = NULL;
     struct adios_method_list_struct * methods = NULL;
@@ -424,6 +437,11 @@ int common_adios_open (int64_t * fd_p, const char * group_name
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_open");
 #endif
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_open_end)) {
+            adiost_callbacks.adiost_callback(adiost_event_open_end)(*fd_p);
+    }
+
     return adios_errno;
 }
 
@@ -454,11 +472,19 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
         timer_stop ("adios_group_size");
 #endif
+        if (adios_tool_enabled &&
+            adiost_callbacks.adiost_callback(adiost_event_group_size)) {
+                adiost_callbacks.adiost_callback(adiost_event_group_size)(fd_p, 0ULL, 0ULL);
+        }
         return err_no_error;
     }
 
     if (fd->buffer_size == 0) {
         *total_size = 0; 
+        if (adios_tool_enabled &&
+            adiost_callbacks.adiost_callback(adiost_event_group_size)) {
+                adiost_callbacks.adiost_callback(adiost_event_group_size)(fd_p, 0ULL, 0ULL);
+        }
         return err_no_error;
     }
 
@@ -497,7 +523,10 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
         }
     }
 
-
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_group_size)) {
+            adiost_callbacks.adiost_callback(adiost_event_group_size)(fd_p, data_size, *total_size);
+    }
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_group_size");
@@ -606,6 +635,11 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
 #endif
     adios_errno = err_no_error;
     struct adios_method_list_struct * m = fd->group->methods;
+
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_write_begin)) {
+            adiost_callbacks.adiost_callback(adiost_event_write_begin)((int64_t)fd);
+    }
 
     // First, before doing any transformation, compute variable statistics,
     // as we can't do this after the data is transformed
@@ -772,6 +806,12 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_write");
 #endif
+
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_write_end)) {
+            adiost_callbacks.adiost_callback(adiost_event_write_end)((int64_t)fd);
+    }
+
     // printf ("var: %s written %d\n", v->name, v->write_count);
     return adios_errno;
 }
@@ -786,6 +826,11 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
         return adios_errno;
+    }
+
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_write_begin)) {
+            adiost_callbacks.adiost_callback(adiost_event_write_begin)((int64_t)fd);
     }
 
     if (v->adata)
@@ -861,6 +906,11 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
         adios_copy_var_written (fd, v);
     }
 
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_write_end)) {
+            adiost_callbacks.adiost_callback(adiost_event_write_end)((int64_t)fd);
+    }
+
     return adios_errno;
 }
 
@@ -923,6 +973,11 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
                        ,uint64_t buffer_size
 )
 {
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_read_begin)) {
+            adiost_callbacks.adiost_callback(adiost_event_read_begin)(fd_p);
+    }
+
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     adios_errno = err_no_error;
     if (!fd)
@@ -975,6 +1030,11 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
                      name, fd->name);
 
         return adios_errno;
+    }
+
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_read_end)) {
+            adiost_callbacks.adiost_callback(adiost_event_read_end)(fd_p);
     }
 
     return adios_errno;
@@ -1159,6 +1219,11 @@ int common_adios_close (struct adios_file_struct * fd)
     timer_start ("adios_close");
 #endif
     adios_errno = err_no_error;
+
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_close_begin)) {
+            adiost_callbacks.adiost_callback(adiost_event_close_begin)((int64_t)fd);
+    }
 
     if (!fd)
     {
@@ -1491,6 +1556,11 @@ int common_adios_close (struct adios_file_struct * fd)
 
     //timer_reset_timers ();
 #endif
+
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_close_end)) {
+            adiost_callbacks.adiost_callback(adiost_event_close_end)((int64_t)fd);
+    }
 
 
     return adios_errno;
