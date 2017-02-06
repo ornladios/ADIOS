@@ -33,16 +33,18 @@
 
 /* For each event, specify the callback type and the enumeration value. */
 #define FOREACH_ADIOST_EVENT(macro) \
-macro(adiost_event_open_begin,       adiost_open_callback_t,        1) \
-macro(adiost_event_open_end,         adiost_file_callback_t,        2) \
-macro(adiost_event_close_begin,      adiost_file_callback_t,        3) \
-macro(adiost_event_close_end,        adiost_file_callback_t,        4) \
-macro(adiost_event_write_begin,      adiost_file_callback_t,        10) \
-macro(adiost_event_write_end,        adiost_file_callback_t,        11) \
-macro(adiost_event_read_begin,       adiost_file_callback_t,        12) \
-macro(adiost_event_read_end,         adiost_file_callback_t,        13) \
-macro(adiost_event_group_size,       adiost_group_size_callback_t,  50) \
-macro(adiost_event_library_shutdown, adiost_callback_t,             99) \
+macro(adiost_event_open_begin,         adiost_open_callback_t,        1) \
+macro(adiost_event_open_end,           adiost_file_callback_t,        2) \
+macro(adiost_event_close_begin,        adiost_file_callback_t,        3) \
+macro(adiost_event_close_end,          adiost_file_callback_t,        4) \
+macro(adiost_event_write_begin,        adiost_file_callback_t,        10) \
+macro(adiost_event_write_end,          adiost_file_callback_t,        11) \
+macro(adiost_event_read_begin,         adiost_file_callback_t,        12) \
+macro(adiost_event_read_end,           adiost_file_callback_t,        13) \
+macro(adiost_event_advance_step_begin, adiost_file_callback_t,        14) \
+macro(adiost_event_advance_step_end,   adiost_file_callback_t,        15) \
+macro(adiost_event_group_size,         adiost_group_size_callback_t,  50) \
+macro(adiost_event_library_shutdown,   adiost_callback_t,             99) \
 
 #endif // #ifdef __ADIOST_CALLBACK_API_H__
 
