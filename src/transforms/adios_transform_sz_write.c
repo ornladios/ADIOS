@@ -54,7 +54,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
     sz_params sz;
     memset(&sz, 0, sizeof(sz_params));
-    sz.max_quant_intervals = 32768;
+    sz.max_quant_intervals = 65536;
     sz.quantization_intervals = 0;
     sz.dataEndianType = LITTLE_ENDIAN_DATA;
     sz.sysEndianType = LITTLE_ENDIAN_DATA;
@@ -63,7 +63,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     sz.sampleDistance = 100;
     sz.predThreshold = 0.99;
     sz.offset = 0;
-    sz.szMode = SZ_BEST_SPEED;
+    sz.szMode = SZ_BEST_COMPRESSION;
     sz.gzipMode = 1;
     sz.errorBoundMode = ABS;
     sz.absErrBound = 1E-6;
