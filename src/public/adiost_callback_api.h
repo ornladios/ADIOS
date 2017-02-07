@@ -43,7 +43,10 @@ macro(adiost_event_read_begin,         adiost_file_callback_t,        12) \
 macro(adiost_event_read_end,           adiost_file_callback_t,        13) \
 macro(adiost_event_advance_step_begin, adiost_file_callback_t,        14) \
 macro(adiost_event_advance_step_end,   adiost_file_callback_t,        15) \
-macro(adiost_event_group_size,         adiost_group_size_callback_t,  50) \
+macro(adiost_event_group_size_begin,   adiost_file_callback_t,        50) \
+macro(adiost_event_group_size_end,     adiost_group_size_callback_t,  51) \
+macro(adiost_event_transform_begin,    adiost_file_callback_t,        52) \
+macro(adiost_event_transform_end,      adiost_file_callback_t,        53) \
 macro(adiost_event_library_shutdown,   adiost_callback_t,             99) \
 
 #endif // #ifdef __ADIOST_CALLBACK_API_H__

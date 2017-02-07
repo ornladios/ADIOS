@@ -454,6 +454,10 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
     timer_start ("adios_group_size");
 #endif
     //printf("enter adios_group_size datasize= %llu\n", data_size);
+    if (adios_tool_enabled &&
+        adiost_callbacks.adiost_callback(adiost_event_group_size_begin)) {
+            adiost_callbacks.adiost_callback(adiost_event_group_size_begin)(fd_p);
+    }
 
     adios_errno = err_no_error;
     struct adios_file_struct * fd; 
@@ -473,8 +477,8 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
         timer_stop ("adios_group_size");
 #endif
         if (adios_tool_enabled &&
-            adiost_callbacks.adiost_callback(adiost_event_group_size)) {
-                adiost_callbacks.adiost_callback(adiost_event_group_size)(fd_p, 0ULL, 0ULL);
+            adiost_callbacks.adiost_callback(adiost_event_group_size_end)) {
+                adiost_callbacks.adiost_callback(adiost_event_group_size_end)(fd_p, data_size, *total_size);
         }
         return err_no_error;
     }
@@ -482,8 +486,8 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
     if (fd->buffer_size == 0) {
         *total_size = 0; 
         if (adios_tool_enabled &&
-            adiost_callbacks.adiost_callback(adiost_event_group_size)) {
-                adiost_callbacks.adiost_callback(adiost_event_group_size)(fd_p, 0ULL, 0ULL);
+            adiost_callbacks.adiost_callback(adiost_event_group_size_end)) {
+                adiost_callbacks.adiost_callback(adiost_event_group_size_end)(fd_p, data_size, *total_size);
         }
         return err_no_error;
     }
@@ -524,8 +528,8 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
     }
 
     if (adios_tool_enabled &&
-        adiost_callbacks.adiost_callback(adiost_event_group_size)) {
-            adiost_callbacks.adiost_callback(adiost_event_group_size)(fd_p, data_size, *total_size);
+        adiost_callbacks.adiost_callback(adiost_event_group_size_end)) {
+            adiost_callbacks.adiost_callback(adiost_event_group_size_end)(fd_p, data_size, *total_size);
     }
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
@@ -747,6 +751,11 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
         timer_start ("adios_transform");
 #endif
+        if (adios_tool_enabled &&
+            adiost_callbacks.adiost_callback(adiost_event_transform_begin)) {
+                adiost_callbacks.adiost_callback(adiost_event_transform_begin)((int64_t)fd);
+        }
+
         int success = common_adios_write_transform_helper(fd, v);
         if (success) {
             // Make it appear as if the user had supplied the transformed data
@@ -754,6 +763,10 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
         } else {
             log_error("Error: unable to apply transform %s to variable %s; likely ran out of memory, check previous error messages\n", adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
             // FIXME: Reverse the transform metadata and write raw data as usual
+        }
+        if (adios_tool_enabled &&
+            adiost_callbacks.adiost_callback(adiost_event_transform_end)) {
+                adiost_callbacks.adiost_callback(adiost_event_transform_end)((int64_t)fd);
         }
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
         timer_stop ("adios_transform");

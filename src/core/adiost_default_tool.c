@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <time.h>
 #define ADIOST_EXTERN 
-#define DEBUG_PRINT printf("In %s!\n", __func__); fflush(stdout);
-#define DEBUG_PRINT_FD printf("file_descriptor: %d!\n", file_descriptor); fflush(stdout);
+#define DEBUG_PRINT //printf("In %s!\n", __func__); fflush(stdout);
+#define DEBUG_PRINT_FD //printf("file_descriptor: %d!\n", file_descriptor); fflush(stdout);
 #define ONE_BILLION 1000000000
 #define ONE_BILLIONF 1000000000.0
 
@@ -36,10 +36,20 @@ extern char *program_invocation_short_name;
 enum adiost_timer_index {
     adiost_open_timer = 0,
     adiost_close_timer,
+    adiost_open_to_close_timer,
     adiost_read_timer,
     adiost_write_timer,
     adiost_advance_step_timer,
+    adiost_group_size_timer,
+    adiost_transform_timer,
     adiost_last_timer_unused
+};
+
+/* Enumeration of counter indices */
+enum adiost_counter_index {
+    adiost_data_bytes = 0,
+    adiost_total_bytes,
+    adiost_last_counter_unused
 };
 
 /* Array of timers for all timed events. This is a static
@@ -47,6 +57,8 @@ enum adiost_timer_index {
 static uint64_t adiost_timers_accumulated[adiost_last_timer_unused] = {0ULL};
 static uint64_t adiost_timers_count[adiost_last_timer_unused] = {0ULL};
 static struct timespec adiost_timers_start_time[adiost_last_timer_unused];
+static uint64_t adiost_counters_count[adiost_last_counter_unused] = {0ULL};
+static uint64_t adiost_counters_accumulated[adiost_last_counter_unused] = {0ULL};
 
 void __timer_start(enum adiost_timer_index index) {
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &(adiost_timers_start_time[index]));
@@ -93,6 +105,7 @@ ADIOST_EXTERN void my_adios_open_begin ( int64_t file_descriptor,
     printf("group_name: %s!\n", group_name); fflush(stdout);
     printf("file_name: %s!\n", file_name); fflush(stdout);
     printf("mode: %s!\n", mode); fflush(stdout);
+    __timer_start(adiost_open_to_close_timer);
     __timer_start(adiost_open_timer);
 }
 
@@ -112,6 +125,7 @@ ADIOST_EXTERN void my_adios_close_end(int64_t file_descriptor) {
     DEBUG_PRINT
     DEBUG_PRINT_FD
     __timer_stop(adiost_close_timer);
+    __timer_stop(adiost_open_to_close_timer);
 }
 
 ADIOST_EXTERN void my_adios_write_begin( int64_t file_descriptor) {
@@ -150,35 +164,98 @@ ADIOST_EXTERN void my_adios_advance_step_end(int64_t file_descriptor) {
     __timer_stop(adiost_advance_step_timer);
 } 
 
-ADIOST_EXTERN void my_adios_group_size(int64_t file_descriptor, 
+ADIOST_EXTERN void my_adios_group_size_begin(int64_t file_descriptor) { 
+    DEBUG_PRINT
+    DEBUG_PRINT_FD
+    __timer_start(adiost_group_size_timer);
+} 
+
+ADIOST_EXTERN void my_adios_group_size_end(int64_t file_descriptor, 
     uint64_t data_size, uint64_t total_size) {
     DEBUG_PRINT
     printf("data size: %d!\n", data_size); fflush(stdout);
+    adiost_counters_accumulated[adiost_data_bytes] = adiost_counters_accumulated[adiost_data_bytes] + data_size;
+    adiost_counters_count[adiost_data_bytes] = adiost_counters_count[adiost_data_bytes] + 1;
     printf("total size: %d!\n", total_size); fflush(stdout);
+    adiost_counters_accumulated[adiost_total_bytes] = adiost_counters_accumulated[adiost_total_bytes] + total_size;
+    adiost_counters_count[adiost_total_bytes] = adiost_counters_count[adiost_total_bytes] + 1;
+    __timer_stop(adiost_group_size_timer);
 }
+
+ADIOST_EXTERN void my_adios_transform_begin( int64_t file_descriptor) {
+    DEBUG_PRINT
+    DEBUG_PRINT_FD
+    __timer_start(adiost_transform_timer);
+}
+
+ADIOST_EXTERN void my_adios_transform_end(int64_t file_descriptor) { 
+    DEBUG_PRINT
+    DEBUG_PRINT_FD
+    __timer_stop(adiost_transform_timer);
+} 
 
 ADIOST_EXTERN void my_adios_finalize(void) {
     DEBUG_PRINT
-    printf("%s: Seconds spent in %03u adios_open() calls:  %3.6f\n", 
-        program_invocation_short_name,
-        adiost_timers_count[adiost_open_timer],
-        ((double)adiost_timers_accumulated[adiost_open_timer])/ONE_BILLIONF);
-    printf("%s: Seconds spent in %03u adios_close() calls: %3.6f\n", 
-        program_invocation_short_name,
-        adiost_timers_count[adiost_close_timer],
-        ((double)adiost_timers_accumulated[adiost_close_timer])/ONE_BILLIONF);
-    printf("%s: Seconds spent in %03u adios_advance_step() calls:  %3.6f\n", 
-        program_invocation_short_name,
-        adiost_timers_count[adiost_advance_step_timer],
-        ((double)adiost_timers_accumulated[adiost_advance_step_timer])/ONE_BILLIONF);
-    printf("%s: Seconds spent in %03u adios_read() calls:  %3.6f\n", 
-        program_invocation_short_name,
-        adiost_timers_count[adiost_read_timer],
-        ((double)adiost_timers_accumulated[adiost_read_timer])/ONE_BILLIONF);
-    printf("%s: Seconds spent in %03u adios_write() calls: %3.6f\n", 
-        program_invocation_short_name,
-        adiost_timers_count[adiost_write_timer],
-        ((double)adiost_timers_accumulated[adiost_write_timer])/ONE_BILLIONF);
+    if (adiost_timers_count[adiost_open_timer] > 0ULL) {
+        printf("%s: adios_open, %u calls, %3.9f seconds\n", 
+            program_invocation_short_name,
+            adiost_timers_count[adiost_open_timer],
+            ((double)adiost_timers_accumulated[adiost_open_timer])/ONE_BILLIONF);
+    }
+    if (adiost_timers_count[adiost_close_timer] > 0ULL) {
+        printf("%s: adios_close, %u calls, %3.9f seconds\n", 
+            program_invocation_short_name,
+            adiost_timers_count[adiost_close_timer],
+            ((double)adiost_timers_accumulated[adiost_close_timer])/ONE_BILLIONF);
+    }
+    if (adiost_timers_count[adiost_open_to_close_timer] > 0ULL) {
+        printf("%s: adios_open_to_close, %u calls, %3.9f seconds\n", 
+            program_invocation_short_name,
+            adiost_timers_count[adiost_open_to_close_timer],
+            ((double)adiost_timers_accumulated[adiost_open_to_close_timer])/ONE_BILLIONF);
+    }
+    if (adiost_timers_count[adiost_group_size_timer] > 0ULL) {
+        printf("%s: adios_group_size, %u calls, %3.9f seconds\n", 
+            program_invocation_short_name,
+            adiost_timers_count[adiost_group_size_timer],
+            ((double)adiost_timers_accumulated[adiost_group_size_timer])/ONE_BILLIONF);
+    }
+    if (adiost_timers_count[adiost_advance_step_timer] > 0ULL) {
+        printf("%s: adios_advance_step, %u calls, %3.9f seconds\n", 
+            program_invocation_short_name,
+            adiost_timers_count[adiost_advance_step_timer],
+            ((double)adiost_timers_accumulated[adiost_advance_step_timer])/ONE_BILLIONF);
+    }
+    if (adiost_timers_count[adiost_transform_timer] > 0ULL) {
+        printf("%s: adios_transform, %u calls, %3.9f seconds\n", 
+            program_invocation_short_name,
+            adiost_timers_count[adiost_transform_timer],
+            ((double)adiost_timers_accumulated[adiost_transform_timer])/ONE_BILLIONF);
+    }
+    if (adiost_timers_count[adiost_read_timer] > 0ULL) {
+        printf("%s: adios_read, %u calls, %3.9f seconds\n", 
+            program_invocation_short_name,
+            adiost_timers_count[adiost_read_timer],
+            ((double)adiost_timers_accumulated[adiost_read_timer])/ONE_BILLIONF);
+    }
+    if (adiost_timers_count[adiost_write_timer] > 0ULL) {
+        printf("%s: adios_write, %u calls, %3.9f seconds\n", 
+            program_invocation_short_name,
+            adiost_timers_count[adiost_write_timer],
+            ((double)adiost_timers_accumulated[adiost_write_timer])/ONE_BILLIONF);
+    }
+    if (adiost_counters_count[adiost_data_bytes] > 0ULL) {
+        printf("%s: adios data written, %u calls, %u bytes\n", 
+            program_invocation_short_name,
+            adiost_counters_count[adiost_data_bytes],
+            adiost_counters_accumulated[adiost_data_bytes]);
+    }
+    if (adiost_counters_count[adiost_total_bytes] > 0ULL) {
+        printf("%s: adios total written, %u calls, %u bytes\n", 
+            program_invocation_short_name,
+            adiost_counters_count[adiost_total_bytes],
+            adiost_counters_accumulated[adiost_total_bytes]);
+    }
 }
 
 // This macro is for checking that the function registration worked.
@@ -210,7 +287,10 @@ ADIOST_EXTERN void __default_adiost_initialize (adiost_function_lookup_t adiost_
     CHECK(adiost_event_read_end,           my_adios_read_end,            "adios_read_end");
     CHECK(adiost_event_advance_step_begin, my_adios_advance_step_begin,  "adios_advance_step_begin");
     CHECK(adiost_event_advance_step_end,   my_adios_advance_step_end,    "adios_advance_step_end");
-    CHECK(adiost_event_group_size,         my_adios_group_size,          "adios_group_size");
+    CHECK(adiost_event_group_size_begin,   my_adios_group_size_begin,    "adios_group_size_begin");
+    CHECK(adiost_event_group_size_end,     my_adios_group_size_end,      "adios_group_size_end");
+    CHECK(adiost_event_transform_begin,    my_adios_transform_begin,     "adios_transform_begin");
+    CHECK(adiost_event_transform_end,      my_adios_transform_end,       "adios_transform_end");
     CHECK(adiost_event_library_shutdown,   my_adios_finalize,            "adios_finalize");
 }
 
