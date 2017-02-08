@@ -375,7 +375,7 @@ ADIOST_EXTERN void my_finalize(void) {
         printf("success.\n"); \
     } \
 
-ADIOST_EXTERN void __default_adiost_initialize (adiost_function_lookup_t adiost_fn_lookup,
+ADIOST_EXTERN void default_adiost_initialize (adiost_function_lookup_t adiost_fn_lookup,
     const char *runtime_version, unsigned int adiost_version) {
 
     adiost_set_callback_t adiost_fn_set_callback = 
@@ -414,5 +414,8 @@ ADIOST_EXTERN void __default_adiost_initialize (adiost_function_lookup_t adiost_
     CHECK(adiost_event_library_shutdown, my_finalize, "adios_finalize");
 }
 
-adiost_initialize_t adiost_tool() { return __default_adiost_initialize; }
+/* Weak function definitions, declarations */
+
+extern __attribute__ (( weak )) adiost_initialize_t adiost_tool(void) { return default_adiost_initialize; }
+
 

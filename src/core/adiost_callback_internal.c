@@ -23,11 +23,10 @@ static adiost_interface_fn_t adiost_fn_lookup(const char *s);
 int adios_tool_enabled = 0;
 const char adiost_enabled_env_var[] = {"ADIOS_TOOL"};
 
-/* Weak function definitions */
+/* forward declaration of the weak (default) tool */
 
-__attribute__ (( weak )) adiost_initialize_t adiost_initialize() {
-    return NULL;
-}
+//extern __attribute__ (( weak )) adiost_initialize_t adiost_tool(void);
+extern adiost_initialize_t adiost_tool(void);
 
 /* Pre-initialization. */
 
