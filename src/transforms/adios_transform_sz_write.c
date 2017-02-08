@@ -63,44 +63,138 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     sz.sampleDistance = 100;
     sz.predThreshold = 0.99;
     sz.offset = 0;
-    sz.szMode = SZ_BEST_COMPRESSION;
+    sz.szMode = SZ_BEST_COMPRESSION; //SZ_BEST_SPEED; //SZ_BEST_COMPRESSION;
     sz.gzipMode = 1;
     sz.errorBoundMode = ABS;
-    sz.absErrBound = 1E-6;
+    sz.absErrBound = 1E-4;
     sz.relBoundRatio = 1E-3;
+    sz.pw_relBoundRatio = 1E-5;
+    sz.segment_size = 32;
 
     unsigned char *bytes;
     int outsize;
     int r[5] = {0,0,0,0,0};
 
-    int i, ii;
-    int  errorBoundMode = sz.errorBoundMode;
-    double absErrBound = sz.absErrBound;
-    double relBoundRatio = sz.relBoundRatio;
-
     /* SZ parameters */
     int use_configfile = 0;
     char *sz_configfile = NULL;
     struct adios_transform_spec_kv_pair* param;
+    int i = 0;
+    //log_debug("param_count: %d\n", var->transform_spec->param_count);
     for (i=0; i<var->transform_spec->param_count; i++)
     {
         param = &(var->transform_spec->params[i]);
+        //log_debug("param: %s\n", param->key);
         if (strcmp(param->key, "init") == 0)
         {
             use_configfile = 1;
             sz_configfile = strdup(param->value);
         }
-        else if (strcmp(param->key, "errorboundmode") == 0)
+        else if (strcmp(param->key, "max_quant_intervals") == 0)
         {
-            errorBoundMode = atoi(param->value);
+            sz.max_quant_intervals = atoi(param->value);
         }
-        else if (strcmp(param->key, "abserrbound") == 0)
+        else if (strcmp(param->key, "quantization_intervals") == 0)
         {
-            absErrBound = atof(param->value);
+            sz.quantization_intervals = atoi(param->value);
         }
-        else if (strcmp(param->key, "relboundratio") == 0)
+        else if (strcmp(param->key, "dataEndianType") == 0)
         {
-            relBoundRatio = atof(param->value);
+            sz.dataEndianType = atoi(param->value);
+        }
+        else if (strcmp(param->key, "sysEndianType") == 0)
+        {
+            sz.sysEndianType = atoi(param->value);
+        }
+        else if (strcmp(param->key, "sol_ID") == 0)
+        {
+            sz.sol_ID = atoi(param->value);
+        }
+        else if (strcmp(param->key, "layers") == 0)
+        {
+            sz.layers = atoi(param->value);
+        }
+        else if (strcmp(param->key, "sampleDistance") == 0)
+        {
+            sz.sampleDistance = atoi(param->value);
+        }
+        else if (strcmp(param->key, "predThreshold") == 0)
+        {
+            sz.predThreshold = atof(param->value);
+        }
+        else if (strcmp(param->key, "offset") == 0)
+        {
+            sz.offset = atoi(param->value);
+        }
+        else if (strcmp(param->key, "szMode") == 0)
+        {
+            int szMode = SZ_BEST_SPEED;
+            if (strcmp(param->value, "SZ_BEST_SPEED") == 0)
+            {
+              szMode = SZ_BEST_SPEED;
+            }
+            else if (strcmp(param->value, "SZ_BEST_COMPRESSION") == 0)
+            {
+              szMode = SZ_BEST_COMPRESSION;
+            }
+            else if (strcmp(param->value, "SZ_DEFAULT_COMPRESSION") == 0)
+            {
+              szMode = SZ_DEFAULT_COMPRESSION;
+            }
+            else
+            {
+              log_warn("An unknown szMode: %s\n", param->value);
+            }
+            sz.szMode = szMode;
+        }
+        else if (strcmp(param->key, "gzipMode") == 0)
+        {
+            sz.gzipMode = atoi(param->value);
+        }
+        else if (strcmp(param->key, "errorBoundMode") == 0)
+        {
+            int errorBoundMode = ABS;
+            if (strcmp(param->value, "ABS") == 0)
+            {
+              errorBoundMode = ABS;
+            }
+            else if (strcmp(param->value, "REL") == 0)
+            {
+              errorBoundMode = REL;
+            }
+            else if (strcmp(param->value, "ABS_AND_REL") == 0)
+            {
+              errorBoundMode = ABS_AND_REL;
+            }
+            else if (strcmp(param->value, "ABS_OR_REL") == 0)
+            {
+              errorBoundMode = ABS_OR_REL;
+            }
+            else if (strcmp(param->value, "PW_REL") == 0)
+            {
+              errorBoundMode = PW_REL;
+            }
+            else
+            {
+              log_warn("An unknown errorBoundMode: %s\n", param->value);
+            }
+            sz.errorBoundMode = errorBoundMode;
+        }
+        else if (strcmp(param->key, "absErrBound") == 0)
+        {
+            sz.absErrBound = atof(param->value);
+        }
+        else if (strcmp(param->key, "relBoundRatio") == 0)
+        {
+            sz.relBoundRatio = atof(param->value);
+        }
+        else if (strcmp(param->key, "pw_relBoundRatio") == 0)
+        {
+            sz.pw_relBoundRatio = atof(param->value);
+        }
+        else if (strcmp(param->key, "segment_size") == 0)
+        {
+            sz.segment_size = atoi(param->value);
         }
         else
         {
@@ -115,7 +209,27 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         free(sz_configfile);
     }
     else
-        SZ_Init_Params(&sz);
+    {
+      /*
+      log_debug("%s: %d\n", "sz.max_quant_intervals", sz.max_quant_intervals);
+      log_debug("%s: %d\n", "sz.quantization_intervals", sz.quantization_intervals);
+      log_debug("%s: %d\n", "sz.dataEndianType", sz.dataEndianType);
+      log_debug("%s: %d\n", "sz.sysEndianType", sz.sysEndianType);
+      log_debug("%s: %d\n", "sz.sol_ID", sz.sol_ID);
+      log_debug("%s: %d\n", "sz.layers", sz.layers);
+      log_debug("%s: %g\n", "sz.sampleDistance", sz.sampleDistance);
+      log_debug("%s: %g\n", "sz.predThreshold", sz.predThreshold);
+      log_debug("%s: %d\n", "sz.offset", sz.offset);
+      log_debug("%s: %d\n", "sz.szMode", sz.szMode);
+      log_debug("%s: %d\n", "sz.gzipMode", sz.gzipMode);
+      log_debug("%s: %d\n", "sz.errorBoundMode", sz.errorBoundMode);
+      log_debug("%s: %g\n", "sz.absErrBound", sz.absErrBound);
+      log_debug("%s: %g\n", "sz.relBoundRatio", sz.relBoundRatio);
+      log_debug("%s: %g\n", "sz.pw_relBoundRatio", sz.pw_relBoundRatio);
+      log_debug("%s: %d\n", "sz.segment_size", sz.segment_size);
+      */
+      SZ_Init_Params(&sz);
+    }
 
     // Get type info
     int dtype;
@@ -143,7 +257,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         return -1;
     }
 
-    i = 0, ii = 0;
+    int ii = 0;
     for (i=0; i<ndims; i++)
     {
         uint dsize = (uint) adios_get_dim_value(&d->dimension);
@@ -155,9 +269,8 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         d = d->next;
     }
 
-    bytes = SZ_compress_args (dtype, (void *) input_buff, &outsize,
-                              errorBoundMode, absErrBound, relBoundRatio,
-                              r[4], r[3], r[2], r[1], r[0]);
+    bytes = SZ_compress (dtype, (void *) input_buff, &outsize,
+                         r[4], r[3], r[2], r[1], r[0]);
 
     unsigned char *raw_buff = (unsigned char*) bytes;
 
