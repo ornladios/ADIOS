@@ -390,11 +390,7 @@ ADIOS_FILE * common_read_open (const char * fname,
         return NULL;
     }
 
-    if (adios_tool_enabled &&
-        adiost_callbacks.adiost_callback(adiost_event_open_begin)) {
-            adiost_callbacks.adiost_callback(adiost_event_open_begin)(
-                (int64_t)fp, "", "", "");
-    }
+    ADIOST_CALLBACK_ENTER(adiost_event_open, fp, "", "", "");
 
     adios_errno = err_no_error;
     internals = (struct common_read_internals_struct *)
@@ -408,10 +404,7 @@ ADIOS_FILE * common_read_open (const char * fname,
         adios_error (err_invalid_read_method, 
             "Read method (=%d) passed to adios_read_open() is not provided "
             "by this build of ADIOS.\n", (int)method);
-        if (adios_tool_enabled &&
-            adiost_callbacks.adiost_callback(adiost_event_open_end)) {
-                adiost_callbacks.adiost_callback(adiost_event_open_end)((int64_t)fp);
-        }
+        ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
         return NULL;
     }
 
@@ -426,10 +419,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     fp = adios_read_hooks[internals->method].adios_read_open_fn (fname, comm, lock_mode, timeout_sec);
     if (!fp) {
-        if (adios_tool_enabled &&
-            adiost_callbacks.adiost_callback(adiost_event_open_end)) {
-                adiost_callbacks.adiost_callback(adiost_event_open_end)((int64_t)fp);
-        }
+        ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
         return fp;
     }
 
@@ -459,11 +449,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     common_read_link (fp);
 
-    if (adios_tool_enabled &&
-        adiost_callbacks.adiost_callback(adiost_event_open_end)) {
-            adiost_callbacks.adiost_callback(adiost_event_open_end)((int64_t)fp);
-    }
-
+    ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
     return fp;
 }
 
@@ -554,10 +540,7 @@ int common_read_close (ADIOS_FILE *fp)
     struct common_read_internals_struct * internals;
     int retval;
 
-    if (adios_tool_enabled &&
-        adiost_callbacks.adiost_callback(adiost_event_close_begin)) {
-            adiost_callbacks.adiost_callback(adiost_event_close_begin)((int64_t)fp);
-    }
+    ADIOST_CALLBACK_ENTER(adiost_event_close, fp);
 
     adios_errno = err_no_error;
     if (fp) {
@@ -597,11 +580,7 @@ int common_read_close (ADIOS_FILE *fp)
         retval = err_invalid_file_pointer;
     }
 
-    if (adios_tool_enabled &&
-        adiost_callbacks.adiost_callback(adiost_event_close_end)) {
-            adiost_callbacks.adiost_callback(adiost_event_close_end)((int64_t)fp);
-    }
-
+    ADIOST_CALLBACK_EXIT(adiost_event_close, fp);
     return retval;
 }
 
@@ -662,10 +641,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
     int retval;
     long i;
     
-    if (adios_tool_enabled &&
-        adiost_callbacks.adiost_callback(adiost_event_advance_step_begin)) {
-            adiost_callbacks.adiost_callback(adiost_event_advance_step_begin)((int64_t)fp);
-    }
+    ADIOST_CALLBACK_ENTER(adiost_event_advance_step, fp);
 
     adios_errno = err_no_error;
     if (fp) {
@@ -711,11 +687,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
         retval = err_invalid_file_pointer;
     }
 
-    if (adios_tool_enabled &&
-        adiost_callbacks.adiost_callback(adiost_event_advance_step_end)) {
-            adiost_callbacks.adiost_callback(adiost_event_advance_step_end)((int64_t)fp);
-    }
-
+    ADIOST_CALLBACK_EXIT(adiost_event_advance_step, fp);
     return retval;
 }
 
@@ -3707,10 +3679,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
     struct common_read_internals_struct * internals;
     int retval;
 
-    if (adios_tool_enabled &&
-        adiost_callbacks.adiost_callback(adiost_event_read_begin)) {
-            adiost_callbacks.adiost_callback(adiost_event_read_begin)((int64_t)fp);
-    }
+    ADIOST_CALLBACK_ENTER(adiost_event_read, fp);
 
     adios_errno = err_no_error;
     if (fp) {
@@ -3730,11 +3699,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         retval = err_invalid_file_pointer;
     }
 
-    if (adios_tool_enabled &&
-        adiost_callbacks.adiost_callback(adiost_event_read_end)) {
-            adiost_callbacks.adiost_callback(adiost_event_read_end)((int64_t)fp);
-    }
-
+    ADIOST_CALLBACK_EXIT(adiost_event_read, fp);
     return retval;
 }
 

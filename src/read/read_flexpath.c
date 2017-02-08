@@ -45,6 +45,7 @@
 #include "core/flexpath.h"
 #include "core/futils.h"
 #include "core/globals.h"
+#include "core/adiost_callback_internal.h"
 
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
@@ -648,6 +649,7 @@ setup_flexpath_vars(FMField *f, int *num)
 void
 send_open_msg(flexpath_reader_file *fp, int destination)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_open_msg, fp);
     if (!fp->bridges[destination].created) {
 	build_bridge(&(fp->bridges[destination]));
     }
@@ -664,11 +666,13 @@ send_open_msg(flexpath_reader_file *fp, int destination)
     CMCondition_wait(fp_read_data->cm, cond);
     fp_verbose(fp, "WAIT finished, setting opened to 1, destination %d\n", destination);
     fp->bridges[destination].opened = 1;
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_open_msg, fp);
 }
 
 void
 send_close_msg(flexpath_reader_file *fp, int destination)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_close_msg, fp);
     if (!fp->bridges[destination].created) {
 	build_bridge(&(fp->bridges[destination]));
     }
@@ -685,11 +689,13 @@ send_close_msg(flexpath_reader_file *fp, int destination)
     CMCondition_wait(fp_read_data->cm, cond);
     fp_verbose(fp, "Done with WAIT\n");
     fp->bridges[destination].opened = 0;
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_close_msg, fp);
 }
 
 void
 send_finalize_msg(flexpath_reader_file *fp, int destination)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_finalize_msg, fp);
     if (!fp->bridges[destination].created) {
 	build_bridge(&(fp->bridges[destination]));
     }
@@ -706,11 +712,13 @@ send_finalize_msg(flexpath_reader_file *fp, int destination)
     CMCondition_wait(fp_read_data->cm, cond);
     fp_verbose(fp, "Done with WAIT\n");
     fp->bridges[destination].opened = 0;
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_finalize_msg, fp);
 }
 
 void
 send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type, int use_condition)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_flush_msg, fp);
     Flush_msg msg;
     msg.type = type;
     msg.process_id = fp->rank;
@@ -727,11 +735,13 @@ send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type, int u
 	CMCondition_wait(fp_read_data->cm, msg.condition);
 	fp_verbose(fp, "Done with WAIT\n");
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_flush_msg, fp);
 }
 
 void
 send_var_message(flexpath_reader_file *fp, int destination, char *varname)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_var_msg, fp);
         int i = 0;
         int found = 0;
         for (i=0; i<fp->num_sendees; i++) {
@@ -757,6 +767,7 @@ send_var_message(flexpath_reader_file *fp, int destination, char *varname)
 	var.process_id = fp->rank;
 	var.var_name = varname;
 	EVsubmit(fp->bridges[destination].var_source, &var, NULL);
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_var_msg, fp);
 }
 
 /********** EVPath Handlers **********/

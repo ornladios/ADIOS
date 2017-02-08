@@ -8,30 +8,20 @@
 #include "adiost_callback_internal.h"
 #include "adios_version.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define adiost_get_callback_success 1
 #define adiost_get_callback_failure 0
-
 #define no_tool_present 0
-
 #define ADIOST_API_ROUTINE static
-
-#ifndef ADIOST_STR_MATCH
-#define ADIOST_STR_MATCH(haystack, needle) (!strcasecmp(haystack, needle))
-#endif
 
 /* static/global variables for this file */
 adiost_callbacks_t adiost_callbacks;
 static adiost_initialize_t adiost_initialize_fn = NULL;
 static adiost_interface_fn_t adiost_fn_lookup(const char *s);
 int adios_tool_enabled = 0;
-const char adiost_enabled_env_var[] = {"ADIOS_TOOL_ENABLED"};
-
-adiost_state_info_t adiost_state_info[] = {
-#define adiost_state_macro(state, code) { # state, state },
-    FOREACH_ADIOST_STATE(adiost_state_macro)
-    #undef adiost_state_macro
-};
+const char adiost_enabled_env_var[] = {"ADIOS_TOOL"};
 
 /* Weak function definitions */
 
@@ -48,11 +38,11 @@ void adiost_pre_init(void) {
     adiost_pre_initialized = 1;
 
     // check whether we are enabled or disabled
-    const char *adiost_env_var = getenv(adiost_enabled_env_var);
+    char *adiost_env_var = (char *)getenv(adiost_enabled_env_var);
     enum adios_tool_setting_e tool_setting = adiost_error;
 
     // convert the input to our internal enumeration
-    if (adiost_env_var == NULL || strcmp(adiost_env_var, "")) {
+    if (adiost_env_var == NULL || strlen(adiost_env_var) == 0) {
         tool_setting = adiost_unset;
     } else if (strcmp(adiost_env_var, "disabled") == 0) {
         tool_setting = adiost_disabled;
@@ -82,6 +72,8 @@ void adiost_pre_init(void) {
     printf("%s: adiost_enabled = %d\n", __func__, adios_tool_enabled);
 }
 
+/* Post-initialization */
+
 void adiost_post_init(void) {
     // prevent calling this function more than once
     static int adiost_post_initialized = 0;
@@ -94,6 +86,8 @@ void adiost_post_init(void) {
     }
 }
 
+/* For shutting down the tool support */
+
 void adiost_finalize(void) {
     if (adios_tool_enabled) {
         // call the registered shutdown callback function
@@ -105,7 +99,12 @@ void adiost_finalize(void) {
     adios_tool_enabled = 0;
 }
 
-/* Define all callbacks using macro expansion */
+/* Create an array of state macros */
+adiost_state_info_t adiost_state_info[] = {
+#define adiost_state_macro(state, code) { # state, state },
+    FOREACH_ADIOST_STATE(adiost_state_macro)
+    #undef adiost_state_macro
+};
 
 /*****************************************************************************
  * interface operations
@@ -141,6 +140,8 @@ ADIOST_API_ROUTINE int adiost_set_callback(adiost_event_t evid, adiost_callback_
 {
     switch (evid) {
 
+/* Define all callbacks using macro expansion */
+
 #define adiost_event_macro(event_name, callback_type, event_id)                  \
     case event_name:                                                           \
         adiost_callbacks.adiost_callback(event_name) = (callback_type) cb;     \
@@ -157,6 +158,8 @@ ADIOST_API_ROUTINE int adiost_set_callback(adiost_event_t evid, adiost_callback_
 ADIOST_API_ROUTINE int adiost_get_callback(adiost_event_t evid, adiost_callback_t *cb)
 {
     switch (evid) {
+
+/* Define all callbacks using macro expansion */
 
 #define adiost_event_macro(event_name, callback_type, event_id)                  \
     case event_name:                                                           \
@@ -177,6 +180,9 @@ ADIOST_API_ROUTINE int adiost_get_callback(adiost_event_t evid, adiost_callback_
     default: return adiost_get_callback_failure;
     }
 }
+
+/* Currently undefined. If/When states are supported, this should query
+ * the active state and return it. */
 
 ADIOST_API_ROUTINE adiost_state_t adiost_get_state(void)
 {

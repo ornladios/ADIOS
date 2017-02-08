@@ -69,4 +69,28 @@ void adiost_pre_init(void);
 void adiost_post_init(void);
 void adiost_finalize(void);
 
+/* These variadic macros save us from having to add 4+ lines of source code
+ * each time that we want to make an event callback. */
+
+#define ADIOST_CALLBACK(__event, __fd, ...) \
+    if (adios_tool_enabled && \
+        adiost_callbacks.adiost_callback(__event)) { \
+          adiost_callbacks.adiost_callback(__event)((int64_t)__fd, \
+            adiost_event, ##__VA_ARGS__); \
+    } \
+
+#define ADIOST_CALLBACK_ENTER(__event, __fd, ...) \
+    if (adios_tool_enabled && \
+        adiost_callbacks.adiost_callback(__event)) { \
+          adiost_callbacks.adiost_callback(__event)((int64_t)__fd, \
+            adiost_event_enter, ##__VA_ARGS__); \
+    } \
+
+#define ADIOST_CALLBACK_EXIT(__event, __fd, ...) \
+    if (adios_tool_enabled && \
+        adiost_callbacks.adiost_callback(__event)) { \
+          adiost_callbacks.adiost_callback(__event)((int64_t)__fd, \
+            adiost_event_exit, ##__VA_ARGS__); \
+    } \
+
 #endif // #ifndef __ADIOST_CALLBACK_INTERNAL_H__

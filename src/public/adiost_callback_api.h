@@ -25,29 +25,33 @@
     macro (adiost_get_state)
 
 /* For each state, specify the state type and the enumeration value. */
-#define FOREACH_ADIOST_STATE(macro)                                                               \
-    macro (adiost_state_first, 0x71)          /* initial enumeration state */                     \
-    macro (adiost_state_idle, 0x10)            /* waiting for work */                             \
-    macro (adiost_state_overhead, 0x20)        /* overhead excluding wait states */               \
-    macro (adiost_state_undefined, 0x70)       /* undefined thread state */
+#define FOREACH_ADIOST_STATE(macro)       \
+    macro (adiost_state_first, 0x71)     /* initial enumeration state */     \
+    macro (adiost_state_idle, 0x10)      /* waiting for work */              \
+    macro (adiost_state_overhead, 0x20)  /* overhead excluding wait states */\
+    macro (adiost_state_undefined, 0x70) /* undefined thread state */
 
 /* For each event, specify the callback type and the enumeration value. */
 #define FOREACH_ADIOST_EVENT(macro) \
-macro(adiost_event_open_begin,         adiost_open_callback_t,        1) \
-macro(adiost_event_open_end,           adiost_file_callback_t,        2) \
-macro(adiost_event_close_begin,        adiost_file_callback_t,        3) \
-macro(adiost_event_close_end,          adiost_file_callback_t,        4) \
-macro(adiost_event_write_begin,        adiost_file_callback_t,        10) \
-macro(adiost_event_write_end,          adiost_file_callback_t,        11) \
-macro(adiost_event_read_begin,         adiost_file_callback_t,        12) \
-macro(adiost_event_read_end,           adiost_file_callback_t,        13) \
-macro(adiost_event_advance_step_begin, adiost_file_callback_t,        14) \
-macro(adiost_event_advance_step_end,   adiost_file_callback_t,        15) \
-macro(adiost_event_group_size_begin,   adiost_file_callback_t,        50) \
-macro(adiost_event_group_size_end,     adiost_group_size_callback_t,  51) \
-macro(adiost_event_transform_begin,    adiost_file_callback_t,        52) \
-macro(adiost_event_transform_end,      adiost_file_callback_t,        53) \
-macro(adiost_event_library_shutdown,   adiost_callback_t,             99) \
+macro(adiost_event_open,                    adiost_open_callback_t,        1) \
+macro(adiost_event_close,                   adiost_file_callback_t,        3) \
+macro(adiost_event_write,                   adiost_file_callback_t,        10) \
+macro(adiost_event_read,                    adiost_file_callback_t,        12) \
+macro(adiost_event_advance_step,            adiost_file_callback_t,        14) \
+macro(adiost_event_group_size,              adiost_group_size_callback_t,  51) \
+macro(adiost_event_transform,               adiost_file_callback_t,        52) \
+macro(adiost_event_fp_send_open_msg,        adiost_file_callback_t,       100) \
+macro(adiost_event_fp_send_close_msg,       adiost_file_callback_t,       101) \
+macro(adiost_event_fp_send_finalize_msg,    adiost_file_callback_t,       102) \
+macro(adiost_event_fp_send_flush_msg,       adiost_file_callback_t,       103) \
+macro(adiost_event_fp_send_var_msg,         adiost_file_callback_t,       104) \
+macro(adiost_event_fp_process_open_msg,     adiost_file_callback_t,       200) \
+macro(adiost_event_fp_process_close_msg,    adiost_file_callback_t,       201) \
+macro(adiost_event_fp_process_finalize_msg, adiost_file_callback_t,       202) \
+macro(adiost_event_fp_process_flush_msg,    adiost_file_callback_t,       203) \
+macro(adiost_event_fp_process_var_msg,      adiost_file_callback_t,       204) \
+macro(adiost_event_fp_copy_buffer,          adiost_file_callback_t,       205) \
+macro(adiost_event_library_shutdown,        adiost_callback_t,            999) \
 
 #endif // #ifdef __ADIOST_CALLBACK_API_H__
 
@@ -71,6 +75,12 @@ typedef enum {
     adiost_set_result_registration_error              = 1
 } adiost_set_result_t;
 
+typedef enum {
+    adiost_event_enter,
+    adiost_event_exit,
+    adiost_event
+} adiost_event_type_t;
+
 /****************************************************************************
  * Callback signature types
  ****************************************************************************/
@@ -85,17 +95,21 @@ typedef adiost_interface_fn_t (*adiost_function_lookup_t)(
 /* Events: adios_open */
 typedef void (*adiost_open_callback_t)(
     int64_t file_descriptor,
+    adiost_event_type_t type,
     const char * group_name,
     const char * file_name,
     const char * mode
 );
 
 /* Events: adios_close, adios_read_begin...adios_write_end */
-typedef void (*adiost_file_callback_t)(int64_t file_descriptor);
+typedef void (*adiost_file_callback_t)(
+    int64_t file_descriptor, 
+    adiost_event_type_t type);
 
 /* Events: adios_group_size */
 typedef void (*adiost_group_size_callback_t)(
     int64_t file_descriptor,
+    adiost_event_type_t type,
     uint64_t data_size,
     uint64_t total_size
 );

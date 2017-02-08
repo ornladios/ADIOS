@@ -37,6 +37,7 @@
 #include "core/util.h"
 #include "core/adios_logger.h"
 #include "core/globals.h"
+#include "core/adiost_callback_internal.h"
 
 #if HAVE_FLEXPATH==1
 
@@ -1096,6 +1097,7 @@ set_format(struct adios_group_struct *t,
 // copies buffer zeroing out arrays that havent been asked for
 void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_copy_buffer, fileData);
     char* temp = (char*)malloc(fileData->fm->size);
     memcpy(temp, buffer, fileData->fm->size);
     FMField *f = fileData->fm->format[0].field_list;
@@ -1125,6 +1127,7 @@ void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData)
         }   
         f++;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_copy_buffer, fileData);
     return temp;
 }
 
@@ -1133,6 +1136,7 @@ process_data_flush(FlexpathWriteFileData *fileData,
 		   Flush_msg *flushMsg, 
 		   FlexpathQueueNode *dataNode)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_process_flush_msg, fileData);
     //fprintf(stderr, "writer:%d:processing flush for reader:%d:reader_step:%d:writer_step:%d\n", fileData->rank, flushMsg->process_id, fileData->readerStep, fileData->writerStep);
     void* temp = copy_buffer(dataNode->data, flushMsg->process_id, fileData);
    
@@ -1146,16 +1150,19 @@ process_data_flush(FlexpathWriteFileData *fileData,
     //EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
     EVsubmit_general(fileData->dataSource, temp, NULL, fileData->attrs);
     //fprintf(stderr, "writer:%d:processed flush for reader:%d:reader_step:%d:writer_step:%d\n", fileData->rank, flushMsg->process_id, fileData->readerStep, fileData->writerStep);
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_process_flush_msg, fileData);
 }
 
 void
 process_var_msg(FlexpathWriteFileData *fileData, Var_msg *varMsg)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_process_var_msg, fileData);
     fp_verbose(fileData, "process Var msg for variable \"%s\"\n", varMsg->var_name);
     fileData->askedVars = add_var(fileData->askedVars, 
 				  strdup(varMsg->var_name), 
 				  NULL, 
 				  varMsg->process_id);
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_process_var_msg, fileData);
 }
 
 void
@@ -1182,6 +1189,7 @@ drop_queued_data(FlexpathWriteFileData *fileData, int timestep)
 void
 process_open_msg(FlexpathWriteFileData *fileData, op_msg *open)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_process_open_msg, fileData);
     fp_verbose(fileData, " Process Open msg, bridge %d, timestep %d\n", open->process_id, open->step);
     fileData->bridges[open->process_id].step = open->step;
     fileData->bridges[open->process_id].condition = open->condition;
@@ -1225,11 +1233,13 @@ process_open_msg(FlexpathWriteFileData *fileData, op_msg *open)
     else {
 	fp_verbose(fileData, "received op with future step\n");
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_process_open_msg, fileData);
 }
 
 void
 process_finalize_msg(FlexpathWriteFileData *fileData, op_msg *finalize)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_process_finalize_msg, fileData);
     fp_verbose(fileData, " Process Finalize msg, bridge %d, timestep %d\n", finalize->process_id, finalize->step);
 	
     FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue,
@@ -1246,11 +1256,13 @@ process_finalize_msg(FlexpathWriteFileData *fileData, op_msg *finalize)
     //EVsubmit_general(fileData->dropSource, dropMsg, NULL, fileData->attrs);
     // Will have to change when not using ctrl thread.
     CMCondition_wait(flexpathWriteData.cm,  wait);
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_process_finalize_msg, fileData);
 }
 
 void
 process_close_msg(FlexpathWriteFileData *fileData, op_msg *close)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_process_close_msg, fileData);
 
     fp_verbose(fileData, " process close msg, bridge %d\n", close->process_id);
     pthread_mutex_lock(&fileData->openMutex);
@@ -1289,6 +1301,7 @@ process_close_msg(FlexpathWriteFileData *fileData, op_msg *close)
 		     op_free, 
 		     fileData->attrs);		
 		
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_process_close_msg, fileData);
 }
 
 
