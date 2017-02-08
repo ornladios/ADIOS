@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <time.h>
 #define ADIOST_EXTERN 
-#define DEBUG_PRINT printf("In %s!\n", __func__); fflush(stdout);
+#define DEBUG_PRINT //printf("In %s!\n", __func__); fflush(stdout);
 #define DEBUG_PRINT_FD //printf("file_descriptor: %d!\n", file_descriptor); fflush(stdout);
 #define ONE_BILLION 1000000000
 #define ONE_BILLIONF 1000000000.0
