@@ -1469,6 +1469,12 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO})
 # svn revision number
 #set(VERSION_SVNREV 2007)
 
+# Define HAVE_MPI_FALSE because it is used in generating the adios_config script
+if(HAVE_MPI)
+    set(HAVE_MPI_FALSE "#")
+else(HAVE_MPI)
+    set(HAVE_MPI_FALSE "")
+endif(HAVE_MPI)
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
 ################################ end of generating config.h ###############################
