@@ -16,3 +16,5 @@ s/comm.Clone()/comm/g
     int MPI_COMM_SELF/
 }
 s/adios_mpi/adios/g
+s/self.comm.Get_rank()/0/g
+s/self.comm.bcast(ftmp, root=0)/ftmp/g
