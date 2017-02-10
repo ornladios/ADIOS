@@ -1611,7 +1611,7 @@ struct __pyx_obj_9adios_mpi_writer {
 };
 
 
-/* "adios_mpi.pyx":2165
+/* "adios_mpi.pyx":2170
  *         self.close()
  * 
  * cdef class attrinfo(object):             # <<<<<<<<<<<<<<
@@ -1627,7 +1627,7 @@ struct __pyx_obj_9adios_mpi_attrinfo {
 };
 
 
-/* "adios_mpi.pyx":2218
+/* "adios_mpi.pyx":2223
  *                  self.dtype)
  * 
  * cdef class varinfo(object):             # <<<<<<<<<<<<<<
@@ -2590,6 +2590,7 @@ static const char __pyx_k_prod[] = "prod";
 static const char __pyx_k_rank[] = "rank";
 static const char __pyx_k_read[] = "read";
 static const char __pyx_k_real[] = "real";
+static const char __pyx_k_root[] = "root";
 static const char __pyx_k_size[] = "size";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_type[] = "type";
@@ -2603,6 +2604,7 @@ static const char __pyx_k_LATER[] = "LATER";
 static const char __pyx_k_array[] = "array";
 static const char __pyx_k_attrs[] = "attrs";
 static const char __pyx_k_atype[] = "atype";
+static const char __pyx_k_bcast[] = "bcast";
 static const char __pyx_k_bytes[] = "(bytes)";
 static const char __pyx_k_close[] = "close";
 static const char __pyx_k_count[] = "count";
@@ -2693,6 +2695,7 @@ static const char __pyx_k_Attrinfo[] = "Attrinfo";
 static const char __pyx_k_DATATYPE[] = "DATATYPE";
 static const char __pyx_k_Ellipsis[] = "Ellipsis";
 static const char __pyx_k_FLEXPATH[] = "FLEXPATH";
+static const char __pyx_k_Get_rank[] = "Get_rank";
 static const char __pyx_k_KeyError[] = "KeyError";
 static const char __pyx_k_LOCKMODE[] = "LOCKMODE";
 static const char __pyx_k_asscalar[] = "asscalar";
@@ -2806,7 +2809,7 @@ static const char __pyx_k_set_time_aggregation[] = "set_time_aggregation";
 static const char __pyx_k_Use_default_BP_method[] = ". Use default BP method";
 static const char __pyx_k_AdiosGroup_vars_r_attrs_r[] = "AdiosGroup (vars=%r, attrs=%r)";
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
-static const char __pyx_k_writer_define_var_line_2035[] = "writer.define_var (line 2035)";
+static const char __pyx_k_writer_define_var_line_2040[] = "writer.define_var (line 2040)";
 static const char __pyx_k_Rank_is_out_of_range_nblock_r[] = "Rank is out of range (nblock=%r)";
 static const char __pyx_k_WARN_Invalid_read_method_name[] = "[WARN] Invalid read method name:";
 static const char __pyx_k_Data_type_is_not_supported_yet[] = "Data type is not supported yet";
@@ -2881,6 +2884,7 @@ static PyObject *__pyx_n_s_FancySelection;
 static PyObject *__pyx_n_s_File;
 static PyObject *__pyx_kp_u_Format_string_allocated_too_shor;
 static PyObject *__pyx_kp_u_Format_string_allocated_too_shor_2;
+static PyObject *__pyx_n_s_Get_rank;
 static PyObject *__pyx_n_s_ICEE;
 static PyObject *__pyx_n_s_ImportError;
 static PyObject *__pyx_n_s_IndexError;
@@ -2945,6 +2949,7 @@ static PyObject *__pyx_n_s_attrs;
 static PyObject *__pyx_n_s_atype;
 static PyObject *__pyx_n_s_axis;
 static PyObject *__pyx_n_s_base_path;
+static PyObject *__pyx_n_s_bcast;
 static PyObject *__pyx_n_s_bool;
 static PyObject *__pyx_n_s_bpls;
 static PyObject *__pyx_n_s_buffer_size;
@@ -3089,6 +3094,7 @@ static PyObject *__pyx_n_s_real;
 static PyObject *__pyx_n_s_release_step;
 static PyObject *__pyx_n_s_replace;
 static PyObject *__pyx_n_s_reshape;
+static PyObject *__pyx_n_s_root;
 static PyObject *__pyx_n_s_rstrip;
 static PyObject *__pyx_n_s_scalar;
 static PyObject *__pyx_n_s_schema_version;
@@ -3154,7 +3160,7 @@ static PyObject *__pyx_n_s_w;
 static PyObject *__pyx_n_s_when;
 static PyObject *__pyx_n_s_write;
 static PyObject *__pyx_kp_u_writer_declare_group_line_1995;
-static PyObject *__pyx_kp_u_writer_define_var_line_2035;
+static PyObject *__pyx_kp_u_writer_define_var_line_2040;
 static PyObject *__pyx_n_s_xrange;
 static PyObject *__pyx_n_s_zeros;
 static PyObject *__pyx_n_s_zip;
@@ -32913,6 +32919,7 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_3declare_group(PyObject *__pyx_v_se
 }
 
 static PyObject *__pyx_pf_9adios_mpi_6writer_2declare_group(struct __pyx_obj_9adios_mpi_writer *__pyx_v_self, PyObject *__pyx_v_gname, PyObject *__pyx_v_method, PyObject *__pyx_v_method_params, int __pyx_v_stats) {
+  PyObject *__pyx_v_rank = NULL;
   PyObject *__pyx_v_ftmp = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -32921,9 +32928,10 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_2declare_group(struct __pyx_obj_9ad
   PyObject *__pyx_t_3 = NULL;
   PyObject *__pyx_t_4 = NULL;
   PyObject *__pyx_t_5 = NULL;
-  int64_t __pyx_t_6;
-  struct __pyx_opt_args_9adios_mpi_declare_group __pyx_t_7;
-  struct __pyx_opt_args_9adios_mpi_select_method __pyx_t_8;
+  PyObject *__pyx_t_6 = NULL;
+  int64_t __pyx_t_7;
+  struct __pyx_opt_args_9adios_mpi_declare_group __pyx_t_8;
+  struct __pyx_opt_args_9adios_mpi_select_method __pyx_t_9;
   __Pyx_RefNannySetupContext("declare_group", 0);
 
   /* "adios_mpi.pyx":2013
@@ -32963,8 +32971,8 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_2declare_group(struct __pyx_obj_9ad
  *             self.gname = gname
  * 
  *         if self.gname is None:             # <<<<<<<<<<<<<<
- *             ftmp = tempfile.NamedTemporaryFile()
- *             self.gname = 'group'+ftmp.name;
+ *             rank = self.comm.Get_rank()
+ *             if rank == 0:
  */
   __pyx_t_2 = (__pyx_v_self->gname == ((PyObject*)Py_None));
   __pyx_t_1 = (__pyx_t_2 != 0);
@@ -32973,81 +32981,172 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_2declare_group(struct __pyx_obj_9ad
     /* "adios_mpi.pyx":2017
  * 
  *         if self.gname is None:
- *             ftmp = tempfile.NamedTemporaryFile()             # <<<<<<<<<<<<<<
- *             self.gname = 'group'+ftmp.name;
- * 
+ *             rank = self.comm.Get_rank()             # <<<<<<<<<<<<<<
+ *             if rank == 0:
+ *                 ftmp = tempfile.NamedTemporaryFile().name
  */
-    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_tempfile); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2017, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self->comm), __pyx_n_s_Get_rank); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2017, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_NamedTemporaryFile); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2017, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = NULL;
-    if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
-      __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
-      if (likely(__pyx_t_4)) {
-        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
-        __Pyx_INCREF(__pyx_t_4);
+    __pyx_t_5 = NULL;
+    if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
+      __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_4);
+      if (likely(__pyx_t_5)) {
+        PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_4);
+        __Pyx_INCREF(__pyx_t_5);
         __Pyx_INCREF(function);
-        __Pyx_DECREF_SET(__pyx_t_5, function);
+        __Pyx_DECREF_SET(__pyx_t_4, function);
       }
     }
-    if (__pyx_t_4) {
-      __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2017, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    if (__pyx_t_5) {
+      __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2017, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else {
-      __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2017, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2017, __pyx_L1_error)
     }
     __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __pyx_v_ftmp = __pyx_t_3;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_v_rank = __pyx_t_3;
     __pyx_t_3 = 0;
 
     /* "adios_mpi.pyx":2018
  *         if self.gname is None:
- *             ftmp = tempfile.NamedTemporaryFile()
- *             self.gname = 'group'+ftmp.name;             # <<<<<<<<<<<<<<
+ *             rank = self.comm.Get_rank()
+ *             if rank == 0:             # <<<<<<<<<<<<<<
+ *                 ftmp = tempfile.NamedTemporaryFile().name
+ *             else:
+ */
+    __pyx_t_3 = __Pyx_PyInt_EqObjC(__pyx_v_rank, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2018, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_1 = __Pyx_PyObject_IsTrue(__pyx_t_3); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 2018, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (__pyx_t_1) {
+
+      /* "adios_mpi.pyx":2019
+ *             rank = self.comm.Get_rank()
+ *             if rank == 0:
+ *                 ftmp = tempfile.NamedTemporaryFile().name             # <<<<<<<<<<<<<<
+ *             else:
+ *                 ftmp = ""
+ */
+      __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_tempfile); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2019, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_NamedTemporaryFile); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2019, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      __pyx_t_4 = NULL;
+      if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
+        __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
+        if (likely(__pyx_t_4)) {
+          PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
+          __Pyx_INCREF(__pyx_t_4);
+          __Pyx_INCREF(function);
+          __Pyx_DECREF_SET(__pyx_t_5, function);
+        }
+      }
+      if (__pyx_t_4) {
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2019, __pyx_L1_error)
+        __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+      } else {
+        __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2019, __pyx_L1_error)
+      }
+      __Pyx_GOTREF(__pyx_t_3);
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_name); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2019, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+      __pyx_v_ftmp = __pyx_t_5;
+      __pyx_t_5 = 0;
+
+      /* "adios_mpi.pyx":2018
+ *         if self.gname is None:
+ *             rank = self.comm.Get_rank()
+ *             if rank == 0:             # <<<<<<<<<<<<<<
+ *                 ftmp = tempfile.NamedTemporaryFile().name
+ *             else:
+ */
+      goto __pyx_L5;
+    }
+
+    /* "adios_mpi.pyx":2021
+ *                 ftmp = tempfile.NamedTemporaryFile().name
+ *             else:
+ *                 ftmp = ""             # <<<<<<<<<<<<<<
+ *             ftmp = self.comm.bcast(ftmp, root=0)
+ *             self.gname = 'group'+ftmp;
+ */
+    /*else*/ {
+      __Pyx_INCREF(__pyx_kp_s__10);
+      __pyx_v_ftmp = __pyx_kp_s__10;
+    }
+    __pyx_L5:;
+
+    /* "adios_mpi.pyx":2022
+ *             else:
+ *                 ftmp = ""
+ *             ftmp = self.comm.bcast(ftmp, root=0)             # <<<<<<<<<<<<<<
+ *             self.gname = 'group'+ftmp;
+ * 
+ */
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self->comm), __pyx_n_s_bcast); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2022, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2022, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_INCREF(__pyx_v_ftmp);
+    __Pyx_GIVEREF(__pyx_v_ftmp);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_ftmp);
+    __pyx_t_4 = PyDict_New(); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2022, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_root, __pyx_int_0) < 0) __PYX_ERR(0, 2022, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2022, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __Pyx_DECREF_SET(__pyx_v_ftmp, __pyx_t_6);
+    __pyx_t_6 = 0;
+
+    /* "adios_mpi.pyx":2023
+ *                 ftmp = ""
+ *             ftmp = self.comm.bcast(ftmp, root=0)
+ *             self.gname = 'group'+ftmp;             # <<<<<<<<<<<<<<
  * 
  *         self.gid = declare_group(self.gname, "", stats)
  */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_ftmp, __pyx_n_s_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2018, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_5 = PyNumber_Add(__pyx_n_s_group, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2018, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (!(likely(PyString_CheckExact(__pyx_t_5))||((__pyx_t_5) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_5)->tp_name), 0))) __PYX_ERR(0, 2018, __pyx_L1_error)
-    __Pyx_GIVEREF(__pyx_t_5);
+    __pyx_t_6 = PyNumber_Add(__pyx_n_s_group, __pyx_v_ftmp); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2023, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_6);
+    if (!(likely(PyString_CheckExact(__pyx_t_6))||((__pyx_t_6) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_6)->tp_name), 0))) __PYX_ERR(0, 2023, __pyx_L1_error)
+    __Pyx_GIVEREF(__pyx_t_6);
     __Pyx_GOTREF(__pyx_v_self->gname);
     __Pyx_DECREF(__pyx_v_self->gname);
-    __pyx_v_self->gname = ((PyObject*)__pyx_t_5);
-    __pyx_t_5 = 0;
+    __pyx_v_self->gname = ((PyObject*)__pyx_t_6);
+    __pyx_t_6 = 0;
 
     /* "adios_mpi.pyx":2016
  *             self.gname = gname
  * 
  *         if self.gname is None:             # <<<<<<<<<<<<<<
- *             ftmp = tempfile.NamedTemporaryFile()
- *             self.gname = 'group'+ftmp.name;
+ *             rank = self.comm.Get_rank()
+ *             if rank == 0:
  */
   }
 
-  /* "adios_mpi.pyx":2020
- *             self.gname = 'group'+ftmp.name;
+  /* "adios_mpi.pyx":2025
+ *             self.gname = 'group'+ftmp;
  * 
  *         self.gid = declare_group(self.gname, "", stats)             # <<<<<<<<<<<<<<
  *         self.method = method
  *         self.method_params = method_params
  */
-  __pyx_t_5 = __pyx_v_self->gname;
-  __Pyx_INCREF(__pyx_t_5);
-  __pyx_t_7.__pyx_n = 2;
-  __pyx_t_7.time_index = __pyx_kp_s__10;
-  __pyx_t_7.stats = __pyx_v_stats;
-  __pyx_t_6 = __pyx_f_9adios_mpi_declare_group(((PyObject*)__pyx_t_5), 0, &__pyx_t_7); 
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_v_self->gid = __pyx_t_6;
+  __pyx_t_6 = __pyx_v_self->gname;
+  __Pyx_INCREF(__pyx_t_6);
+  __pyx_t_8.__pyx_n = 2;
+  __pyx_t_8.time_index = __pyx_kp_s__10;
+  __pyx_t_8.stats = __pyx_v_stats;
+  __pyx_t_7 = __pyx_f_9adios_mpi_declare_group(((PyObject*)__pyx_t_6), 0, &__pyx_t_8); 
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __pyx_v_self->gid = __pyx_t_7;
 
-  /* "adios_mpi.pyx":2021
+  /* "adios_mpi.pyx":2026
  * 
  *         self.gid = declare_group(self.gname, "", stats)
  *         self.method = method             # <<<<<<<<<<<<<<
@@ -33060,7 +33159,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_2declare_group(struct __pyx_obj_9ad
   __Pyx_DECREF(__pyx_v_self->method);
   __pyx_v_self->method = __pyx_v_method;
 
-  /* "adios_mpi.pyx":2022
+  /* "adios_mpi.pyx":2027
  *         self.gid = declare_group(self.gname, "", stats)
  *         self.method = method
  *         self.method_params = method_params             # <<<<<<<<<<<<<<
@@ -33073,52 +33172,52 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_2declare_group(struct __pyx_obj_9ad
   __Pyx_DECREF(__pyx_v_self->method_params);
   __pyx_v_self->method_params = __pyx_v_method_params;
 
-  /* "adios_mpi.pyx":2023
+  /* "adios_mpi.pyx":2028
  *         self.method = method
  *         self.method_params = method_params
  *         select_method(self.gid, self.method, self.method_params, "")             # <<<<<<<<<<<<<<
  *         self.set_time_aggregation()
  * 
  */
-  __pyx_t_5 = __pyx_v_self->method;
-  __Pyx_INCREF(__pyx_t_5);
-  __pyx_t_3 = __pyx_v_self->method_params;
-  __Pyx_INCREF(__pyx_t_3);
-  __pyx_t_8.__pyx_n = 2;
-  __pyx_t_8.parameters = ((PyObject*)__pyx_t_3);
-  __pyx_t_8.base_path = __pyx_kp_s__10;
-  __pyx_f_9adios_mpi_select_method(__pyx_v_self->gid, ((PyObject*)__pyx_t_5), 0, &__pyx_t_8); 
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __pyx_t_6 = __pyx_v_self->method;
+  __Pyx_INCREF(__pyx_t_6);
+  __pyx_t_4 = __pyx_v_self->method_params;
+  __Pyx_INCREF(__pyx_t_4);
+  __pyx_t_9.__pyx_n = 2;
+  __pyx_t_9.parameters = ((PyObject*)__pyx_t_4);
+  __pyx_t_9.base_path = __pyx_kp_s__10;
+  __pyx_f_9adios_mpi_select_method(__pyx_v_self->gid, ((PyObject*)__pyx_t_6), 0, &__pyx_t_9); 
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "adios_mpi.pyx":2024
+  /* "adios_mpi.pyx":2029
  *         self.method_params = method_params
  *         select_method(self.gid, self.method, self.method_params, "")
  *         self.set_time_aggregation()             # <<<<<<<<<<<<<<
  * 
  *     def set_time_aggregation(self, buffer_size = None):
  */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_time_aggregation); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2024, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = NULL;
-  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_5))) {
-    __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
-    if (likely(__pyx_t_4)) {
-      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_5);
-      __Pyx_INCREF(__pyx_t_4);
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_set_time_aggregation); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2029, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_t_3 = NULL;
+  if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_6))) {
+    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_6);
+    if (likely(__pyx_t_3)) {
+      PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_6);
+      __Pyx_INCREF(__pyx_t_3);
       __Pyx_INCREF(function);
-      __Pyx_DECREF_SET(__pyx_t_5, function);
+      __Pyx_DECREF_SET(__pyx_t_6, function);
     }
   }
-  if (__pyx_t_4) {
-    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2024, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+  if (__pyx_t_3) {
+    __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2029, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
-    __pyx_t_3 = __Pyx_PyObject_CallNoArg(__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2024, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_CallNoArg(__pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2029, __pyx_L1_error)
   }
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+  __Pyx_GOTREF(__pyx_t_4);
+  __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
   /* "adios_mpi.pyx":1995
  *     ##    print "attr_factory:", name, value
@@ -33135,16 +33234,18 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_2declare_group(struct __pyx_obj_9ad
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_6);
   __Pyx_AddTraceback("adios_mpi.writer.declare_group", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
+  __Pyx_XDECREF(__pyx_v_rank);
   __Pyx_XDECREF(__pyx_v_ftmp);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2026
+/* "adios_mpi.pyx":2031
  *         self.set_time_aggregation()
  * 
  *     def set_time_aggregation(self, buffer_size = None):             # <<<<<<<<<<<<<<
@@ -33181,7 +33282,7 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_5set_time_aggregation(PyObject *__p
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "set_time_aggregation") < 0)) __PYX_ERR(0, 2026, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "set_time_aggregation") < 0)) __PYX_ERR(0, 2031, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -33194,7 +33295,7 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_5set_time_aggregation(PyObject *__p
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("set_time_aggregation", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2026, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("set_time_aggregation", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2031, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("adios_mpi.writer.set_time_aggregation", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -33215,7 +33316,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_4set_time_aggregation(struct __pyx_
   uint64_t __pyx_t_3;
   __Pyx_RefNannySetupContext("set_time_aggregation", 0);
 
-  /* "adios_mpi.pyx":2030
+  /* "adios_mpi.pyx":2035
  *         Set time-aggregation buffersize.
  *         """
  *         if buffer_size is not None:             # <<<<<<<<<<<<<<
@@ -33226,17 +33327,17 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_4set_time_aggregation(struct __pyx_
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "adios_mpi.pyx":2031
+    /* "adios_mpi.pyx":2036
  *         """
  *         if buffer_size is not None:
  *             self.timeaggregation_buffersize = buffer_size             # <<<<<<<<<<<<<<
  *         if self.gid > 0:
  *             set_time_aggregation (self.gid, self.timeaggregation_buffersize, 0);
  */
-    __pyx_t_3 = __Pyx_PyInt_As_uint64_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_3 == ((uint64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 2031, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_As_uint64_t(__pyx_v_buffer_size); if (unlikely((__pyx_t_3 == ((uint64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 2036, __pyx_L1_error)
     __pyx_v_self->timeaggregation_buffersize = __pyx_t_3;
 
-    /* "adios_mpi.pyx":2030
+    /* "adios_mpi.pyx":2035
  *         Set time-aggregation buffersize.
  *         """
  *         if buffer_size is not None:             # <<<<<<<<<<<<<<
@@ -33245,7 +33346,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_4set_time_aggregation(struct __pyx_
  */
   }
 
-  /* "adios_mpi.pyx":2032
+  /* "adios_mpi.pyx":2037
  *         if buffer_size is not None:
  *             self.timeaggregation_buffersize = buffer_size
  *         if self.gid > 0:             # <<<<<<<<<<<<<<
@@ -33255,7 +33356,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_4set_time_aggregation(struct __pyx_
   __pyx_t_2 = ((__pyx_v_self->gid > 0) != 0);
   if (__pyx_t_2) {
 
-    /* "adios_mpi.pyx":2033
+    /* "adios_mpi.pyx":2038
  *             self.timeaggregation_buffersize = buffer_size
  *         if self.gid > 0:
  *             set_time_aggregation (self.gid, self.timeaggregation_buffersize, 0);             # <<<<<<<<<<<<<<
@@ -33264,7 +33365,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_4set_time_aggregation(struct __pyx_
  */
     __pyx_f_9adios_mpi_set_time_aggregation(__pyx_v_self->gid, __pyx_v_self->timeaggregation_buffersize, 0, 0);
 
-    /* "adios_mpi.pyx":2032
+    /* "adios_mpi.pyx":2037
  *         if buffer_size is not None:
  *             self.timeaggregation_buffersize = buffer_size
  *         if self.gid > 0:             # <<<<<<<<<<<<<<
@@ -33273,7 +33374,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_4set_time_aggregation(struct __pyx_
  */
   }
 
-  /* "adios_mpi.pyx":2026
+  /* "adios_mpi.pyx":2031
  *         self.set_time_aggregation()
  * 
  *     def set_time_aggregation(self, buffer_size = None):             # <<<<<<<<<<<<<<
@@ -33293,7 +33394,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_4set_time_aggregation(struct __pyx_
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2035
+/* "adios_mpi.pyx":2040
  *             set_time_aggregation (self.gid, self.timeaggregation_buffersize, 0);
  * 
  *     def define_var(self, str varname,             # <<<<<<<<<<<<<<
@@ -33320,7 +33421,7 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_7define_var(PyObject *__pyx_v_self,
     values[2] = __pyx_k__58;
     values[3] = __pyx_k__59;
 
-    /* "adios_mpi.pyx":2039
+    /* "adios_mpi.pyx":2044
  *                    gdim = tuple(),
  *                    offset = tuple(),
  *                    transform = None):             # <<<<<<<<<<<<<<
@@ -33367,7 +33468,7 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_7define_var(PyObject *__pyx_v_self,
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "define_var") < 0)) __PYX_ERR(0, 2035, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "define_var") < 0)) __PYX_ERR(0, 2040, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -33388,16 +33489,16 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_7define_var(PyObject *__pyx_v_self,
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("define_var", 0, 1, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2035, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("define_var", 0, 1, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2040, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("adios_mpi.writer.define_var", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_varname), (&PyString_Type), 1, "varname", 1))) __PYX_ERR(0, 2035, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_varname), (&PyString_Type), 1, "varname", 1))) __PYX_ERR(0, 2040, __pyx_L1_error)
   __pyx_r = __pyx_pf_9adios_mpi_6writer_6define_var(((struct __pyx_obj_9adios_mpi_writer *)__pyx_v_self), __pyx_v_varname, __pyx_v_ldim, __pyx_v_gdim, __pyx_v_offset, __pyx_v_transform);
 
-  /* "adios_mpi.pyx":2035
+  /* "adios_mpi.pyx":2040
  *             set_time_aggregation (self.gid, self.timeaggregation_buffersize, 0);
  * 
  *     def define_var(self, str varname,             # <<<<<<<<<<<<<<
@@ -33422,14 +33523,14 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_6define_var(struct __pyx_obj_9adios
   PyObject *__pyx_t_3 = NULL;
   __Pyx_RefNannySetupContext("define_var", 0);
 
-  /* "adios_mpi.pyx":2057
+  /* "adios_mpi.pyx":2062
  * 
  *         """
  *         self.vars[varname] = varinfo(varname, ldim, gdim, offset, transform=transform)             # <<<<<<<<<<<<<<
  * 
  *     def define_attr(self, str attrname):
  */
-  __pyx_t_1 = PyTuple_New(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2057, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2062, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_varname);
   __Pyx_GIVEREF(__pyx_v_varname);
@@ -33443,21 +33544,21 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_6define_var(struct __pyx_obj_9adios
   __Pyx_INCREF(__pyx_v_offset);
   __Pyx_GIVEREF(__pyx_v_offset);
   PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_v_offset);
-  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2057, __pyx_L1_error)
+  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2062, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_transform, __pyx_v_transform) < 0) __PYX_ERR(0, 2057, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_varinfo), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2057, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_transform, __pyx_v_transform) < 0) __PYX_ERR(0, 2062, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_varinfo), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2062, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_v_self->vars == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 2057, __pyx_L1_error)
+    __PYX_ERR(0, 2062, __pyx_L1_error)
   }
-  if (unlikely(PyDict_SetItem(__pyx_v_self->vars, __pyx_v_varname, __pyx_t_3) < 0)) __PYX_ERR(0, 2057, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_self->vars, __pyx_v_varname, __pyx_t_3) < 0)) __PYX_ERR(0, 2062, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "adios_mpi.pyx":2035
+  /* "adios_mpi.pyx":2040
  *             set_time_aggregation (self.gid, self.timeaggregation_buffersize, 0);
  * 
  *     def define_var(self, str varname,             # <<<<<<<<<<<<<<
@@ -33480,7 +33581,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_6define_var(struct __pyx_obj_9adios
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2059
+/* "adios_mpi.pyx":2064
  *         self.vars[varname] = varinfo(varname, ldim, gdim, offset, transform=transform)
  * 
  *     def define_attr(self, str attrname):             # <<<<<<<<<<<<<<
@@ -33495,7 +33596,7 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_9define_attr(PyObject *__pyx_v_self
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("define_attr (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_attrname), (&PyString_Type), 1, "attrname", 1))) __PYX_ERR(0, 2059, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_attrname), (&PyString_Type), 1, "attrname", 1))) __PYX_ERR(0, 2064, __pyx_L1_error)
   __pyx_r = __pyx_pf_9adios_mpi_6writer_8define_attr(((struct __pyx_obj_9adios_mpi_writer *)__pyx_v_self), ((PyObject*)__pyx_v_attrname));
 
   /* function exit code */
@@ -33515,33 +33616,33 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_8define_attr(struct __pyx_obj_9adio
   PyObject *__pyx_t_3 = NULL;
   __Pyx_RefNannySetupContext("define_attr", 0);
 
-  /* "adios_mpi.pyx":2067
+  /* "adios_mpi.pyx":2072
  *         """
  * 
  *         self.attrs[attrname] = attrinfo(attrname, is_static=True)             # <<<<<<<<<<<<<<
  * 
  *     def define_dynamic_attr(self, str attrname,
  */
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2067, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2072, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_attrname);
   __Pyx_GIVEREF(__pyx_v_attrname);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_attrname);
-  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2067, __pyx_L1_error)
+  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2072, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_is_static, Py_True) < 0) __PYX_ERR(0, 2067, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_attrinfo), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2067, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_is_static, Py_True) < 0) __PYX_ERR(0, 2072, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_attrinfo), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2072, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_v_self->attrs == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 2067, __pyx_L1_error)
+    __PYX_ERR(0, 2072, __pyx_L1_error)
   }
-  if (unlikely(PyDict_SetItem(__pyx_v_self->attrs, __pyx_v_attrname, __pyx_t_3) < 0)) __PYX_ERR(0, 2067, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_self->attrs, __pyx_v_attrname, __pyx_t_3) < 0)) __PYX_ERR(0, 2072, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "adios_mpi.pyx":2059
+  /* "adios_mpi.pyx":2064
  *         self.vars[varname] = varinfo(varname, ldim, gdim, offset, transform=transform)
  * 
  *     def define_attr(self, str attrname):             # <<<<<<<<<<<<<<
@@ -33564,7 +33665,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_8define_attr(struct __pyx_obj_9adio
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2069
+/* "adios_mpi.pyx":2074
  *         self.attrs[attrname] = attrinfo(attrname, is_static=True)
  * 
  *     def define_dynamic_attr(self, str attrname,             # <<<<<<<<<<<<<<
@@ -33603,16 +33704,16 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_11define_dynamic_attr(PyObject *__p
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_varname)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("define_dynamic_attr", 1, 3, 3, 1); __PYX_ERR(0, 2069, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("define_dynamic_attr", 1, 3, 3, 1); __PYX_ERR(0, 2074, __pyx_L3_error)
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_dtype)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("define_dynamic_attr", 1, 3, 3, 2); __PYX_ERR(0, 2069, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("define_dynamic_attr", 1, 3, 3, 2); __PYX_ERR(0, 2074, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "define_dynamic_attr") < 0)) __PYX_ERR(0, 2069, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "define_dynamic_attr") < 0)) __PYX_ERR(0, 2074, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -33627,14 +33728,14 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_11define_dynamic_attr(PyObject *__p
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("define_dynamic_attr", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2069, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("define_dynamic_attr", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2074, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("adios_mpi.writer.define_dynamic_attr", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_attrname), (&PyString_Type), 1, "attrname", 1))) __PYX_ERR(0, 2069, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_varname), (&PyString_Type), 1, "varname", 1))) __PYX_ERR(0, 2070, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_attrname), (&PyString_Type), 1, "attrname", 1))) __PYX_ERR(0, 2074, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_varname), (&PyString_Type), 1, "varname", 1))) __PYX_ERR(0, 2075, __pyx_L1_error)
   __pyx_r = __pyx_pf_9adios_mpi_6writer_10define_dynamic_attr(((struct __pyx_obj_9adios_mpi_writer *)__pyx_v_self), __pyx_v_attrname, __pyx_v_varname, __pyx_v_dtype);
 
   /* function exit code */
@@ -33654,14 +33755,14 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_10define_dynamic_attr(struct __pyx_
   PyObject *__pyx_t_3 = NULL;
   __Pyx_RefNannySetupContext("define_dynamic_attr", 0);
 
-  /* "adios_mpi.pyx":2072
+  /* "adios_mpi.pyx":2077
  *                             str varname,
  *                             dtype):
  *         self.attrs[attrname] = attrinfo(attrname, varname, dtype, is_static=False)             # <<<<<<<<<<<<<<
  * 
  *     def __setitem__(self, name, val):
  */
-  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2072, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2077, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_attrname);
   __Pyx_GIVEREF(__pyx_v_attrname);
@@ -33672,21 +33773,21 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_10define_dynamic_attr(struct __pyx_
   __Pyx_INCREF(__pyx_v_dtype);
   __Pyx_GIVEREF(__pyx_v_dtype);
   PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_v_dtype);
-  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2072, __pyx_L1_error)
+  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2077, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_is_static, Py_False) < 0) __PYX_ERR(0, 2072, __pyx_L1_error)
-  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_attrinfo), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2072, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_is_static, Py_False) < 0) __PYX_ERR(0, 2077, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_attrinfo), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2077, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   if (unlikely(__pyx_v_self->attrs == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-    __PYX_ERR(0, 2072, __pyx_L1_error)
+    __PYX_ERR(0, 2077, __pyx_L1_error)
   }
-  if (unlikely(PyDict_SetItem(__pyx_v_self->attrs, __pyx_v_attrname, __pyx_t_3) < 0)) __PYX_ERR(0, 2072, __pyx_L1_error)
+  if (unlikely(PyDict_SetItem(__pyx_v_self->attrs, __pyx_v_attrname, __pyx_t_3) < 0)) __PYX_ERR(0, 2077, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "adios_mpi.pyx":2069
+  /* "adios_mpi.pyx":2074
  *         self.attrs[attrname] = attrinfo(attrname, is_static=True)
  * 
  *     def define_dynamic_attr(self, str attrname,             # <<<<<<<<<<<<<<
@@ -33709,7 +33810,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_10define_dynamic_attr(struct __pyx_
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2074
+/* "adios_mpi.pyx":2079
  *         self.attrs[attrname] = attrinfo(attrname, varname, dtype, is_static=False)
  * 
  *     def __setitem__(self, name, val):             # <<<<<<<<<<<<<<
@@ -33742,7 +33843,7 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
   PyObject *__pyx_t_6 = NULL;
   __Pyx_RefNannySetupContext("__setitem__", 0);
 
-  /* "adios_mpi.pyx":2075
+  /* "adios_mpi.pyx":2080
  * 
  *     def __setitem__(self, name, val):
  *         if self.vars.has_key(name):             # <<<<<<<<<<<<<<
@@ -33751,13 +33852,13 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
  */
   if (unlikely(__pyx_v_self->vars == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "has_key");
-    __PYX_ERR(0, 2075, __pyx_L1_error)
+    __PYX_ERR(0, 2080, __pyx_L1_error)
   }
-  __pyx_t_1 = PyDict_Contains(__pyx_v_self->vars, __pyx_v_name); if (unlikely(__pyx_t_1 == -1)) __PYX_ERR(0, 2075, __pyx_L1_error)
+  __pyx_t_1 = PyDict_Contains(__pyx_v_self->vars, __pyx_v_name); if (unlikely(__pyx_t_1 == -1)) __PYX_ERR(0, 2080, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "adios_mpi.pyx":2076
+    /* "adios_mpi.pyx":2081
  *     def __setitem__(self, name, val):
  *         if self.vars.has_key(name):
  *             if not isinstance(val, varinfo):             # <<<<<<<<<<<<<<
@@ -33768,7 +33869,7 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
     __pyx_t_1 = ((!(__pyx_t_2 != 0)) != 0);
     if (__pyx_t_1) {
 
-      /* "adios_mpi.pyx":2077
+      /* "adios_mpi.pyx":2082
  *         if self.vars.has_key(name):
  *             if not isinstance(val, varinfo):
  *                 self.vars[name].value = val             # <<<<<<<<<<<<<<
@@ -33777,14 +33878,14 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
  */
       if (unlikely(__pyx_v_self->vars == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2077, __pyx_L1_error)
+        __PYX_ERR(0, 2082, __pyx_L1_error)
       }
-      __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_self->vars, __pyx_v_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2077, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_self->vars, __pyx_v_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2082, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (__Pyx_PyObject_SetAttrStr(__pyx_t_3, __pyx_n_s_value, __pyx_v_val) < 0) __PYX_ERR(0, 2077, __pyx_L1_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_t_3, __pyx_n_s_value, __pyx_v_val) < 0) __PYX_ERR(0, 2082, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "adios_mpi.pyx":2076
+      /* "adios_mpi.pyx":2081
  *     def __setitem__(self, name, val):
  *         if self.vars.has_key(name):
  *             if not isinstance(val, varinfo):             # <<<<<<<<<<<<<<
@@ -33794,7 +33895,7 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
       goto __pyx_L4;
     }
 
-    /* "adios_mpi.pyx":2079
+    /* "adios_mpi.pyx":2084
  *                 self.vars[name].value = val
  *             else:
  *                 self.vars[name] = val             # <<<<<<<<<<<<<<
@@ -33804,13 +33905,13 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
     /*else*/ {
       if (unlikely(__pyx_v_self->vars == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2079, __pyx_L1_error)
+        __PYX_ERR(0, 2084, __pyx_L1_error)
       }
-      if (unlikely(PyDict_SetItem(__pyx_v_self->vars, __pyx_v_name, __pyx_v_val) < 0)) __PYX_ERR(0, 2079, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_self->vars, __pyx_v_name, __pyx_v_val) < 0)) __PYX_ERR(0, 2084, __pyx_L1_error)
     }
     __pyx_L4:;
 
-    /* "adios_mpi.pyx":2075
+    /* "adios_mpi.pyx":2080
  * 
  *     def __setitem__(self, name, val):
  *         if self.vars.has_key(name):             # <<<<<<<<<<<<<<
@@ -33820,7 +33921,7 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
     goto __pyx_L3;
   }
 
-  /* "adios_mpi.pyx":2080
+  /* "adios_mpi.pyx":2085
  *             else:
  *                 self.vars[name] = val
  *         elif self.attrs.has_key(name):             # <<<<<<<<<<<<<<
@@ -33829,13 +33930,13 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
  */
   if (unlikely(__pyx_v_self->attrs == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "has_key");
-    __PYX_ERR(0, 2080, __pyx_L1_error)
+    __PYX_ERR(0, 2085, __pyx_L1_error)
   }
-  __pyx_t_1 = PyDict_Contains(__pyx_v_self->attrs, __pyx_v_name); if (unlikely(__pyx_t_1 == -1)) __PYX_ERR(0, 2080, __pyx_L1_error)
+  __pyx_t_1 = PyDict_Contains(__pyx_v_self->attrs, __pyx_v_name); if (unlikely(__pyx_t_1 == -1)) __PYX_ERR(0, 2085, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "adios_mpi.pyx":2081
+    /* "adios_mpi.pyx":2086
  *                 self.vars[name] = val
  *         elif self.attrs.has_key(name):
  *             if not isinstance(val, attrinfo):             # <<<<<<<<<<<<<<
@@ -33846,16 +33947,16 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
     __pyx_t_1 = ((!(__pyx_t_2 != 0)) != 0);
     if (__pyx_t_1) {
 
-      /* "adios_mpi.pyx":2082
+      /* "adios_mpi.pyx":2087
  *         elif self.attrs.has_key(name):
  *             if not isinstance(val, attrinfo):
  *                 self.attrs[name] = attrinfo(name, val, np.array(val).dtype)             # <<<<<<<<<<<<<<
  *             else:
  *                 self.attrs[name].value = val
  */
-      __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2082, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2087, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2082, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2087, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_4 = NULL;
@@ -33869,13 +33970,13 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
         }
       }
       if (!__pyx_t_4) {
-        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_val); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2082, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_val); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2087, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
       } else {
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_5)) {
           PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_val};
-          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2082, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2087, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
@@ -33883,28 +33984,28 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
           PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_val};
-          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2082, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2087, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
         #endif
         {
-          __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2082, __pyx_L1_error)
+          __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2087, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_6);
           __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
           __Pyx_INCREF(__pyx_v_val);
           __Pyx_GIVEREF(__pyx_v_val);
           PyTuple_SET_ITEM(__pyx_t_6, 0+1, __pyx_v_val);
-          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_6, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2082, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_6, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2087, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         }
       }
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_dtype); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2082, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_dtype); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2087, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2082, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2087, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_v_name);
       __Pyx_GIVEREF(__pyx_v_name);
@@ -33915,17 +34016,17 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
       __Pyx_GIVEREF(__pyx_t_5);
       PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_t_5);
       __pyx_t_5 = 0;
-      __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_attrinfo), __pyx_t_3, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2082, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_attrinfo), __pyx_t_3, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2087, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
       if (unlikely(__pyx_v_self->attrs == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2082, __pyx_L1_error)
+        __PYX_ERR(0, 2087, __pyx_L1_error)
       }
-      if (unlikely(PyDict_SetItem(__pyx_v_self->attrs, __pyx_v_name, __pyx_t_5) < 0)) __PYX_ERR(0, 2082, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_self->attrs, __pyx_v_name, __pyx_t_5) < 0)) __PYX_ERR(0, 2087, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "adios_mpi.pyx":2081
+      /* "adios_mpi.pyx":2086
  *                 self.vars[name] = val
  *         elif self.attrs.has_key(name):
  *             if not isinstance(val, attrinfo):             # <<<<<<<<<<<<<<
@@ -33935,7 +34036,7 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
       goto __pyx_L5;
     }
 
-    /* "adios_mpi.pyx":2084
+    /* "adios_mpi.pyx":2089
  *                 self.attrs[name] = attrinfo(name, val, np.array(val).dtype)
  *             else:
  *                 self.attrs[name].value = val             # <<<<<<<<<<<<<<
@@ -33945,16 +34046,16 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
     /*else*/ {
       if (unlikely(__pyx_v_self->attrs == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 2084, __pyx_L1_error)
+        __PYX_ERR(0, 2089, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_self->attrs, __pyx_v_name); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2084, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_self->attrs, __pyx_v_name); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2089, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      if (__Pyx_PyObject_SetAttrStr(__pyx_t_5, __pyx_n_s_value, __pyx_v_val) < 0) __PYX_ERR(0, 2084, __pyx_L1_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_t_5, __pyx_n_s_value, __pyx_v_val) < 0) __PYX_ERR(0, 2089, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     }
     __pyx_L5:;
 
-    /* "adios_mpi.pyx":2080
+    /* "adios_mpi.pyx":2085
  *             else:
  *                 self.vars[name] = val
  *         elif self.attrs.has_key(name):             # <<<<<<<<<<<<<<
@@ -33964,7 +34065,7 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
     goto __pyx_L3;
   }
 
-  /* "adios_mpi.pyx":2086
+  /* "adios_mpi.pyx":2091
  *                 self.attrs[name].value = val
  *         else:
  *             n = np.array(val)             # <<<<<<<<<<<<<<
@@ -33972,9 +34073,9 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
  *             self.vars[name].value = val
  */
   /*else*/ {
-    __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2086, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2091, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_array); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2086, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_array); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2091, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_3 = NULL;
@@ -33988,13 +34089,13 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
       }
     }
     if (!__pyx_t_3) {
-      __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_v_val); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2086, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_v_val); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2091, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
     } else {
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_6)) {
         PyObject *__pyx_temp[2] = {__pyx_t_3, __pyx_v_val};
-        __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2086, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2091, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_GOTREF(__pyx_t_5);
       } else
@@ -34002,19 +34103,19 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
         PyObject *__pyx_temp[2] = {__pyx_t_3, __pyx_v_val};
-        __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2086, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2091, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
         __Pyx_GOTREF(__pyx_t_5);
       } else
       #endif
       {
-        __pyx_t_4 = PyTuple_New(1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2086, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_New(1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2091, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3); __pyx_t_3 = NULL;
         __Pyx_INCREF(__pyx_v_val);
         __Pyx_GIVEREF(__pyx_v_val);
         PyTuple_SET_ITEM(__pyx_t_4, 0+1, __pyx_v_val);
-        __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_4, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2086, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_4, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2091, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       }
@@ -34023,16 +34124,16 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
     __pyx_v_n = __pyx_t_5;
     __pyx_t_5 = 0;
 
-    /* "adios_mpi.pyx":2087
+    /* "adios_mpi.pyx":2092
  *         else:
  *             n = np.array(val)
  *             self.vars[name] = varinfo(name, n.shape)             # <<<<<<<<<<<<<<
  *             self.vars[name].value = val
  * 
  */
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_shape); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2087, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_shape); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2092, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = PyTuple_New(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2087, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2092, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_INCREF(__pyx_v_name);
     __Pyx_GIVEREF(__pyx_v_name);
@@ -34040,17 +34141,17 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
     __Pyx_GIVEREF(__pyx_t_5);
     PyTuple_SET_ITEM(__pyx_t_6, 1, __pyx_t_5);
     __pyx_t_5 = 0;
-    __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_varinfo), __pyx_t_6, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2087, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_varinfo), __pyx_t_6, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2092, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     if (unlikely(__pyx_v_self->vars == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 2087, __pyx_L1_error)
+      __PYX_ERR(0, 2092, __pyx_L1_error)
     }
-    if (unlikely(PyDict_SetItem(__pyx_v_self->vars, __pyx_v_name, __pyx_t_5) < 0)) __PYX_ERR(0, 2087, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_self->vars, __pyx_v_name, __pyx_t_5) < 0)) __PYX_ERR(0, 2092, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "adios_mpi.pyx":2088
+    /* "adios_mpi.pyx":2093
  *             n = np.array(val)
  *             self.vars[name] = varinfo(name, n.shape)
  *             self.vars[name].value = val             # <<<<<<<<<<<<<<
@@ -34059,16 +34160,16 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
  */
     if (unlikely(__pyx_v_self->vars == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 2088, __pyx_L1_error)
+      __PYX_ERR(0, 2093, __pyx_L1_error)
     }
-    __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_self->vars, __pyx_v_name); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2088, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyDict_GetItem(__pyx_v_self->vars, __pyx_v_name); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2093, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    if (__Pyx_PyObject_SetAttrStr(__pyx_t_5, __pyx_n_s_value, __pyx_v_val) < 0) __PYX_ERR(0, 2088, __pyx_L1_error)
+    if (__Pyx_PyObject_SetAttrStr(__pyx_t_5, __pyx_n_s_value, __pyx_v_val) < 0) __PYX_ERR(0, 2093, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
   __pyx_L3:;
 
-  /* "adios_mpi.pyx":2074
+  /* "adios_mpi.pyx":2079
  *         self.attrs[attrname] = attrinfo(attrname, varname, dtype, is_static=False)
  * 
  *     def __setitem__(self, name, val):             # <<<<<<<<<<<<<<
@@ -34092,7 +34193,7 @@ static int __pyx_pf_9adios_mpi_6writer_12__setitem__(struct __pyx_obj_9adios_mpi
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2090
+/* "adios_mpi.pyx":2095
  *             self.vars[name].value = val
  * 
  *     def __getitem__(self, name):             # <<<<<<<<<<<<<<
@@ -34122,7 +34223,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_14__getitem__(struct __pyx_obj_9adi
   PyObject *__pyx_t_4 = NULL;
   __Pyx_RefNannySetupContext("__getitem__", 0);
 
-  /* "adios_mpi.pyx":2091
+  /* "adios_mpi.pyx":2096
  * 
  *     def __getitem__(self, name):
  *         if self.vars.has_key(name):             # <<<<<<<<<<<<<<
@@ -34131,13 +34232,13 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_14__getitem__(struct __pyx_obj_9adi
  */
   if (unlikely(__pyx_v_self->vars == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "has_key");
-    __PYX_ERR(0, 2091, __pyx_L1_error)
+    __PYX_ERR(0, 2096, __pyx_L1_error)
   }
-  __pyx_t_1 = PyDict_Contains(__pyx_v_self->vars, __pyx_v_name); if (unlikely(__pyx_t_1 == -1)) __PYX_ERR(0, 2091, __pyx_L1_error)
+  __pyx_t_1 = PyDict_Contains(__pyx_v_self->vars, __pyx_v_name); if (unlikely(__pyx_t_1 == -1)) __PYX_ERR(0, 2096, __pyx_L1_error)
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "adios_mpi.pyx":2092
+    /* "adios_mpi.pyx":2097
  *     def __getitem__(self, name):
  *         if self.vars.has_key(name):
  *             return self.vars[name]             # <<<<<<<<<<<<<<
@@ -34147,15 +34248,15 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_14__getitem__(struct __pyx_obj_9adi
     __Pyx_XDECREF(__pyx_r);
     if (unlikely(__pyx_v_self->vars == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 2092, __pyx_L1_error)
+      __PYX_ERR(0, 2097, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_self->vars, __pyx_v_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2092, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_self->vars, __pyx_v_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2097, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
     goto __pyx_L0;
 
-    /* "adios_mpi.pyx":2091
+    /* "adios_mpi.pyx":2096
  * 
  *     def __getitem__(self, name):
  *         if self.vars.has_key(name):             # <<<<<<<<<<<<<<
@@ -34164,7 +34265,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_14__getitem__(struct __pyx_obj_9adi
  */
   }
 
-  /* "adios_mpi.pyx":2093
+  /* "adios_mpi.pyx":2098
  *         if self.vars.has_key(name):
  *             return self.vars[name]
  *         elif self.attrs.has_key(name):             # <<<<<<<<<<<<<<
@@ -34173,13 +34274,13 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_14__getitem__(struct __pyx_obj_9adi
  */
   if (unlikely(__pyx_v_self->attrs == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "has_key");
-    __PYX_ERR(0, 2093, __pyx_L1_error)
+    __PYX_ERR(0, 2098, __pyx_L1_error)
   }
-  __pyx_t_2 = PyDict_Contains(__pyx_v_self->attrs, __pyx_v_name); if (unlikely(__pyx_t_2 == -1)) __PYX_ERR(0, 2093, __pyx_L1_error)
+  __pyx_t_2 = PyDict_Contains(__pyx_v_self->attrs, __pyx_v_name); if (unlikely(__pyx_t_2 == -1)) __PYX_ERR(0, 2098, __pyx_L1_error)
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "adios_mpi.pyx":2094
+    /* "adios_mpi.pyx":2099
  *             return self.vars[name]
  *         elif self.attrs.has_key(name):
  *             return self.attrs[name]             # <<<<<<<<<<<<<<
@@ -34189,15 +34290,15 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_14__getitem__(struct __pyx_obj_9adi
     __Pyx_XDECREF(__pyx_r);
     if (unlikely(__pyx_v_self->attrs == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 2094, __pyx_L1_error)
+      __PYX_ERR(0, 2099, __pyx_L1_error)
     }
-    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_self->attrs, __pyx_v_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2094, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_self->attrs, __pyx_v_name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2099, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
     goto __pyx_L0;
 
-    /* "adios_mpi.pyx":2093
+    /* "adios_mpi.pyx":2098
  *         if self.vars.has_key(name):
  *             return self.vars[name]
  *         elif self.attrs.has_key(name):             # <<<<<<<<<<<<<<
@@ -34206,7 +34307,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_14__getitem__(struct __pyx_obj_9adi
  */
   }
 
-  /* "adios_mpi.pyx":2096
+  /* "adios_mpi.pyx":2101
  *             return self.attrs[name]
  *         else:
  *             raise KeyError(name)             # <<<<<<<<<<<<<<
@@ -34214,20 +34315,20 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_14__getitem__(struct __pyx_obj_9adi
  *     def close(self):
  */
   /*else*/ {
-    __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2096, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2101, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_INCREF(__pyx_v_name);
     __Pyx_GIVEREF(__pyx_v_name);
     PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_name);
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_KeyError, __pyx_t_3, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2096, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_KeyError, __pyx_t_3, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2101, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_Raise(__pyx_t_4, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __PYX_ERR(0, 2096, __pyx_L1_error)
+    __PYX_ERR(0, 2101, __pyx_L1_error)
   }
 
-  /* "adios_mpi.pyx":2090
+  /* "adios_mpi.pyx":2095
  *             self.vars[name].value = val
  * 
  *     def __getitem__(self, name):             # <<<<<<<<<<<<<<
@@ -34247,7 +34348,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_14__getitem__(struct __pyx_obj_9adi
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2098
+/* "adios_mpi.pyx":2103
  *             raise KeyError(name)
  * 
  *     def close(self):             # <<<<<<<<<<<<<<
@@ -34296,7 +34397,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   PyObject *(*__pyx_t_15)(PyObject *);
   __Pyx_RefNannySetupContext("close", 0);
 
-  /* "adios_mpi.pyx":2102
+  /* "adios_mpi.pyx":2107
  *         Write variables and attributes to a file and close the writer.
  *         """
  *         if self.gid == 0:             # <<<<<<<<<<<<<<
@@ -34306,30 +34407,30 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   __pyx_t_1 = ((__pyx_v_self->gid == 0) != 0);
   if (__pyx_t_1) {
 
-    /* "adios_mpi.pyx":2103
+    /* "adios_mpi.pyx":2108
  *         """
  *         if self.gid == 0:
  *             self.declare_group(method=self.method, method_params=self.method_params, stats=self.stats)             # <<<<<<<<<<<<<<
  * 
  *         fd = open(self.gname, self.fname, self.mode, comm=self.comm)
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_declare_group); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2103, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_declare_group); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2108, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = PyDict_New(); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2103, __pyx_L1_error)
+    __pyx_t_3 = PyDict_New(); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2108, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_method, __pyx_v_self->method) < 0) __PYX_ERR(0, 2103, __pyx_L1_error)
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_method_params, __pyx_v_self->method_params) < 0) __PYX_ERR(0, 2103, __pyx_L1_error)
-    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_self->stats); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2103, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_method, __pyx_v_self->method) < 0) __PYX_ERR(0, 2108, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_method_params, __pyx_v_self->method_params) < 0) __PYX_ERR(0, 2108, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_v_self->stats); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2108, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_stats, __pyx_t_4) < 0) __PYX_ERR(0, 2103, __pyx_L1_error)
+    if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_stats, __pyx_t_4) < 0) __PYX_ERR(0, 2108, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_empty_tuple, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2103, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_empty_tuple, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2108, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "adios_mpi.pyx":2102
+    /* "adios_mpi.pyx":2107
  *         Write variables and attributes to a file and close the writer.
  *         """
  *         if self.gid == 0:             # <<<<<<<<<<<<<<
@@ -34338,7 +34439,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
  */
   }
 
-  /* "adios_mpi.pyx":2105
+  /* "adios_mpi.pyx":2110
  *             self.declare_group(method=self.method, method_params=self.method_params, stats=self.stats)
  * 
  *         fd = open(self.gname, self.fname, self.mode, comm=self.comm)             # <<<<<<<<<<<<<<
@@ -34362,31 +34463,31 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_fd = __pyx_t_6;
 
-  /* "adios_mpi.pyx":2107
+  /* "adios_mpi.pyx":2112
  *         fd = open(self.gname, self.fname, self.mode, comm=self.comm)
  * 
  *         extra_vars = dict()             # <<<<<<<<<<<<<<
  *         extra_attrs = dict()
  * 
  */
-  __pyx_t_5 = PyDict_New(); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2107, __pyx_L1_error)
+  __pyx_t_5 = PyDict_New(); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2112, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_v_extra_vars = ((PyObject*)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "adios_mpi.pyx":2108
+  /* "adios_mpi.pyx":2113
  * 
  *         extra_vars = dict()
  *         extra_attrs = dict()             # <<<<<<<<<<<<<<
  * 
  *         for key, val in self.vars.iteritems():
  */
-  __pyx_t_5 = PyDict_New(); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2108, __pyx_L1_error)
+  __pyx_t_5 = PyDict_New(); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2113, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_v_extra_attrs = ((PyObject*)__pyx_t_5);
   __pyx_t_5 = 0;
 
-  /* "adios_mpi.pyx":2110
+  /* "adios_mpi.pyx":2115
  *         extra_attrs = dict()
  * 
  *         for key, val in self.vars.iteritems():             # <<<<<<<<<<<<<<
@@ -34396,9 +34497,9 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   __pyx_t_8 = 0;
   if (unlikely(__pyx_v_self->vars == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "iteritems");
-    __PYX_ERR(0, 2110, __pyx_L1_error)
+    __PYX_ERR(0, 2115, __pyx_L1_error)
   }
-  __pyx_t_2 = __Pyx_dict_iterator(__pyx_v_self->vars, 1, __pyx_n_s_iteritems, (&__pyx_t_9), (&__pyx_t_10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2110, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_dict_iterator(__pyx_v_self->vars, 1, __pyx_n_s_iteritems, (&__pyx_t_9), (&__pyx_t_10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_5);
   __pyx_t_5 = __pyx_t_2;
@@ -34406,7 +34507,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   while (1) {
     __pyx_t_11 = __Pyx_dict_iter_next(__pyx_t_5, __pyx_t_9, &__pyx_t_8, &__pyx_t_2, &__pyx_t_3, NULL, __pyx_t_10);
     if (unlikely(__pyx_t_11 == 0)) break;
-    if (unlikely(__pyx_t_11 == -1)) __PYX_ERR(0, 2110, __pyx_L1_error)
+    if (unlikely(__pyx_t_11 == -1)) __PYX_ERR(0, 2115, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_XDECREF_SET(__pyx_v_key, __pyx_t_2);
@@ -34414,7 +34515,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
     __Pyx_XDECREF_SET(__pyx_v_val, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "adios_mpi.pyx":2111
+    /* "adios_mpi.pyx":2116
  * 
  *         for key, val in self.vars.iteritems():
  *             if not isinstance(val, varinfo):             # <<<<<<<<<<<<<<
@@ -34425,16 +34526,16 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
     __pyx_t_12 = ((!(__pyx_t_1 != 0)) != 0);
     if (__pyx_t_12) {
 
-      /* "adios_mpi.pyx":2112
+      /* "adios_mpi.pyx":2117
  *         for key, val in self.vars.iteritems():
  *             if not isinstance(val, varinfo):
  *                 n = np.array(val)             # <<<<<<<<<<<<<<
  *                 extra_vars[key] = varinfo(key, n.shape)
  *                 extra_vars[key].value = val
  */
-      __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2112, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2117, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_array); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2112, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_array); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2117, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
       __pyx_t_2 = NULL;
@@ -34448,13 +34549,13 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         }
       }
       if (!__pyx_t_2) {
-        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_v_val); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2112, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_v_val); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2117, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
       } else {
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_4)) {
           PyObject *__pyx_temp[2] = {__pyx_t_2, __pyx_v_val};
-          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2112, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2117, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
@@ -34462,19 +34563,19 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
           PyObject *__pyx_temp[2] = {__pyx_t_2, __pyx_v_val};
-          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2112, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2117, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
         #endif
         {
-          __pyx_t_13 = PyTuple_New(1+1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2112, __pyx_L1_error)
+          __pyx_t_13 = PyTuple_New(1+1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2117, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_13);
           __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_2); __pyx_t_2 = NULL;
           __Pyx_INCREF(__pyx_v_val);
           __Pyx_GIVEREF(__pyx_v_val);
           PyTuple_SET_ITEM(__pyx_t_13, 0+1, __pyx_v_val);
-          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_13, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2112, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_13, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2117, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
         }
@@ -34483,16 +34584,16 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       __Pyx_XDECREF_SET(__pyx_v_n, __pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "adios_mpi.pyx":2113
+      /* "adios_mpi.pyx":2118
  *             if not isinstance(val, varinfo):
  *                 n = np.array(val)
  *                 extra_vars[key] = varinfo(key, n.shape)             # <<<<<<<<<<<<<<
  *                 extra_vars[key].value = val
  *             else:
  */
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_shape); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2113, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_n, __pyx_n_s_shape); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2118, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2113, __pyx_L1_error)
+      __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2118, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_INCREF(__pyx_v_key);
       __Pyx_GIVEREF(__pyx_v_key);
@@ -34500,25 +34601,25 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       __Pyx_GIVEREF(__pyx_t_3);
       PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_t_3);
       __pyx_t_3 = 0;
-      __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_varinfo), __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2113, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_varinfo), __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2118, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(PyDict_SetItem(__pyx_v_extra_vars, __pyx_v_key, __pyx_t_3) < 0)) __PYX_ERR(0, 2113, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_extra_vars, __pyx_v_key, __pyx_t_3) < 0)) __PYX_ERR(0, 2118, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "adios_mpi.pyx":2114
+      /* "adios_mpi.pyx":2119
  *                 n = np.array(val)
  *                 extra_vars[key] = varinfo(key, n.shape)
  *                 extra_vars[key].value = val             # <<<<<<<<<<<<<<
  *             else:
  *                 if self.is_noxml:
  */
-      __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_extra_vars, __pyx_v_key); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2114, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyDict_GetItem(__pyx_v_extra_vars, __pyx_v_key); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2119, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      if (__Pyx_PyObject_SetAttrStr(__pyx_t_3, __pyx_n_s_value, __pyx_v_val) < 0) __PYX_ERR(0, 2114, __pyx_L1_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_t_3, __pyx_n_s_value, __pyx_v_val) < 0) __PYX_ERR(0, 2119, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-      /* "adios_mpi.pyx":2111
+      /* "adios_mpi.pyx":2116
  * 
  *         for key, val in self.vars.iteritems():
  *             if not isinstance(val, varinfo):             # <<<<<<<<<<<<<<
@@ -34528,7 +34629,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       goto __pyx_L6;
     }
 
-    /* "adios_mpi.pyx":2116
+    /* "adios_mpi.pyx":2121
  *                 extra_vars[key].value = val
  *             else:
  *                 if self.is_noxml:             # <<<<<<<<<<<<<<
@@ -34539,16 +34640,16 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       __pyx_t_12 = (__pyx_v_self->is_noxml != 0);
       if (__pyx_t_12) {
 
-        /* "adios_mpi.pyx":2117
+        /* "adios_mpi.pyx":2122
  *             else:
  *                 if self.is_noxml:
  *                     val.define(self.gid)             # <<<<<<<<<<<<<<
  * 
  *         for key, val in extra_vars.iteritems():
  */
-        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_val, __pyx_n_s_define); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2117, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_val, __pyx_n_s_define); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2122, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_13 = __Pyx_PyInt_From_int64_t(__pyx_v_self->gid); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2117, __pyx_L1_error)
+        __pyx_t_13 = __Pyx_PyInt_From_int64_t(__pyx_v_self->gid); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2122, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_13);
         __pyx_t_2 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_4))) {
@@ -34561,14 +34662,14 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
           }
         }
         if (!__pyx_t_2) {
-          __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_13); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2117, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_13); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2122, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else {
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_4)) {
             PyObject *__pyx_temp[2] = {__pyx_t_2, __pyx_t_13};
-            __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2117, __pyx_L1_error)
+            __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2122, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_GOTREF(__pyx_t_3);
             __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
@@ -34577,20 +34678,20 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_4)) {
             PyObject *__pyx_temp[2] = {__pyx_t_2, __pyx_t_13};
-            __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2117, __pyx_L1_error)
+            __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_4, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2122, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_GOTREF(__pyx_t_3);
             __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
           } else
           #endif
           {
-            __pyx_t_14 = PyTuple_New(1+1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2117, __pyx_L1_error)
+            __pyx_t_14 = PyTuple_New(1+1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2122, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_14);
             __Pyx_GIVEREF(__pyx_t_2); PyTuple_SET_ITEM(__pyx_t_14, 0, __pyx_t_2); __pyx_t_2 = NULL;
             __Pyx_GIVEREF(__pyx_t_13);
             PyTuple_SET_ITEM(__pyx_t_14, 0+1, __pyx_t_13);
             __pyx_t_13 = 0;
-            __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_14, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2117, __pyx_L1_error)
+            __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_14, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2122, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
             __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
           }
@@ -34598,7 +34699,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-        /* "adios_mpi.pyx":2116
+        /* "adios_mpi.pyx":2121
  *                 extra_vars[key].value = val
  *             else:
  *                 if self.is_noxml:             # <<<<<<<<<<<<<<
@@ -34611,7 +34712,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   }
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "adios_mpi.pyx":2119
+  /* "adios_mpi.pyx":2124
  *                     val.define(self.gid)
  * 
  *         for key, val in extra_vars.iteritems():             # <<<<<<<<<<<<<<
@@ -34619,7 +34720,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
  *             self.vars[key] = val
  */
   __pyx_t_9 = 0;
-  __pyx_t_3 = __Pyx_dict_iterator(__pyx_v_extra_vars, 1, __pyx_n_s_iteritems, (&__pyx_t_8), (&__pyx_t_10)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2119, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_dict_iterator(__pyx_v_extra_vars, 1, __pyx_n_s_iteritems, (&__pyx_t_8), (&__pyx_t_10)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_5);
   __pyx_t_5 = __pyx_t_3;
@@ -34627,7 +34728,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   while (1) {
     __pyx_t_11 = __Pyx_dict_iter_next(__pyx_t_5, __pyx_t_8, &__pyx_t_9, &__pyx_t_3, &__pyx_t_4, NULL, __pyx_t_10);
     if (unlikely(__pyx_t_11 == 0)) break;
-    if (unlikely(__pyx_t_11 == -1)) __PYX_ERR(0, 2119, __pyx_L1_error)
+    if (unlikely(__pyx_t_11 == -1)) __PYX_ERR(0, 2124, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_XDECREF_SET(__pyx_v_key, __pyx_t_3);
@@ -34635,7 +34736,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
     __Pyx_XDECREF_SET(__pyx_v_val, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "adios_mpi.pyx":2120
+    /* "adios_mpi.pyx":2125
  * 
  *         for key, val in extra_vars.iteritems():
  *             if self.is_noxml: val.define(self.gid)             # <<<<<<<<<<<<<<
@@ -34644,9 +34745,9 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
  */
     __pyx_t_12 = (__pyx_v_self->is_noxml != 0);
     if (__pyx_t_12) {
-      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_val, __pyx_n_s_define); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2120, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_val, __pyx_n_s_define); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2125, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
-      __pyx_t_14 = __Pyx_PyInt_From_int64_t(__pyx_v_self->gid); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2120, __pyx_L1_error)
+      __pyx_t_14 = __Pyx_PyInt_From_int64_t(__pyx_v_self->gid); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2125, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_14);
       __pyx_t_13 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -34659,14 +34760,14 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         }
       }
       if (!__pyx_t_13) {
-        __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_14); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2120, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_14); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2125, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
         __Pyx_GOTREF(__pyx_t_4);
       } else {
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_3)) {
           PyObject *__pyx_temp[2] = {__pyx_t_13, __pyx_t_14};
-          __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2120, __pyx_L1_error)
+          __pyx_t_4 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2125, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
@@ -34675,20 +34776,20 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
           PyObject *__pyx_temp[2] = {__pyx_t_13, __pyx_t_14};
-          __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2120, __pyx_L1_error)
+          __pyx_t_4 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2125, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
         } else
         #endif
         {
-          __pyx_t_2 = PyTuple_New(1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2120, __pyx_L1_error)
+          __pyx_t_2 = PyTuple_New(1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2125, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_GIVEREF(__pyx_t_13); PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_13); __pyx_t_13 = NULL;
           __Pyx_GIVEREF(__pyx_t_14);
           PyTuple_SET_ITEM(__pyx_t_2, 0+1, __pyx_t_14);
           __pyx_t_14 = 0;
-          __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2120, __pyx_L1_error)
+          __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_2, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2125, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         }
@@ -34697,7 +34798,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     }
 
-    /* "adios_mpi.pyx":2121
+    /* "adios_mpi.pyx":2126
  *         for key, val in extra_vars.iteritems():
  *             if self.is_noxml: val.define(self.gid)
  *             self.vars[key] = val             # <<<<<<<<<<<<<<
@@ -34706,13 +34807,13 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
  */
     if (unlikely(__pyx_v_self->vars == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 2121, __pyx_L1_error)
+      __PYX_ERR(0, 2126, __pyx_L1_error)
     }
-    if (unlikely(PyDict_SetItem(__pyx_v_self->vars, __pyx_v_key, __pyx_v_val) < 0)) __PYX_ERR(0, 2121, __pyx_L1_error)
+    if (unlikely(PyDict_SetItem(__pyx_v_self->vars, __pyx_v_key, __pyx_v_val) < 0)) __PYX_ERR(0, 2126, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "adios_mpi.pyx":2123
+  /* "adios_mpi.pyx":2128
  *             self.vars[key] = val
  * 
  *         for key, val in self.attrs.iteritems():             # <<<<<<<<<<<<<<
@@ -34722,9 +34823,9 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   __pyx_t_8 = 0;
   if (unlikely(__pyx_v_self->attrs == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "iteritems");
-    __PYX_ERR(0, 2123, __pyx_L1_error)
+    __PYX_ERR(0, 2128, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_dict_iterator(__pyx_v_self->attrs, 1, __pyx_n_s_iteritems, (&__pyx_t_9), (&__pyx_t_10)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2123, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_dict_iterator(__pyx_v_self->attrs, 1, __pyx_n_s_iteritems, (&__pyx_t_9), (&__pyx_t_10)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2128, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __pyx_t_5 = __pyx_t_4;
@@ -34732,7 +34833,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   while (1) {
     __pyx_t_11 = __Pyx_dict_iter_next(__pyx_t_5, __pyx_t_9, &__pyx_t_8, &__pyx_t_4, &__pyx_t_3, NULL, __pyx_t_10);
     if (unlikely(__pyx_t_11 == 0)) break;
-    if (unlikely(__pyx_t_11 == -1)) __PYX_ERR(0, 2123, __pyx_L1_error)
+    if (unlikely(__pyx_t_11 == -1)) __PYX_ERR(0, 2128, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_XDECREF_SET(__pyx_v_key, __pyx_t_4);
@@ -34740,7 +34841,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
     __Pyx_XDECREF_SET(__pyx_v_val, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "adios_mpi.pyx":2124
+    /* "adios_mpi.pyx":2129
  * 
  *         for key, val in self.attrs.iteritems():
  *             if not isinstance(val, attrinfo):             # <<<<<<<<<<<<<<
@@ -34751,16 +34852,16 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
     __pyx_t_1 = ((!(__pyx_t_12 != 0)) != 0);
     if (__pyx_t_1) {
 
-      /* "adios_mpi.pyx":2125
+      /* "adios_mpi.pyx":2130
  *         for key, val in self.attrs.iteritems():
  *             if not isinstance(val, attrinfo):
  *                 extra_attrs[key] = attrinfo(key, val, np.array(val).dtype)             # <<<<<<<<<<<<<<
  *             else:
  *                 if self.is_noxml: val.define(self.gid)
  */
-      __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2125, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2125, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_t_4 = NULL;
@@ -34774,13 +34875,13 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         }
       }
       if (!__pyx_t_4) {
-        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_val); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2125, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_val); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2130, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
       } else {
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_2)) {
           PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_val};
-          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2125, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2130, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
@@ -34788,28 +34889,28 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
           PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_val};
-          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2125, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2130, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_GOTREF(__pyx_t_3);
         } else
         #endif
         {
-          __pyx_t_14 = PyTuple_New(1+1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2125, __pyx_L1_error)
+          __pyx_t_14 = PyTuple_New(1+1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2130, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_14);
           __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_14, 0, __pyx_t_4); __pyx_t_4 = NULL;
           __Pyx_INCREF(__pyx_v_val);
           __Pyx_GIVEREF(__pyx_v_val);
           PyTuple_SET_ITEM(__pyx_t_14, 0+1, __pyx_v_val);
-          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_14, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2125, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_14, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2130, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
         }
       }
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_dtype); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2125, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_dtype); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2125, __pyx_L1_error)
+      __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_INCREF(__pyx_v_key);
       __Pyx_GIVEREF(__pyx_v_key);
@@ -34820,13 +34921,13 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       __Pyx_GIVEREF(__pyx_t_2);
       PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_t_2);
       __pyx_t_2 = 0;
-      __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_attrinfo), __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2125, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_attrinfo), __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2130, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(PyDict_SetItem(__pyx_v_extra_attrs, __pyx_v_key, __pyx_t_2) < 0)) __PYX_ERR(0, 2125, __pyx_L1_error)
+      if (unlikely(PyDict_SetItem(__pyx_v_extra_attrs, __pyx_v_key, __pyx_t_2) < 0)) __PYX_ERR(0, 2130, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-      /* "adios_mpi.pyx":2124
+      /* "adios_mpi.pyx":2129
  * 
  *         for key, val in self.attrs.iteritems():
  *             if not isinstance(val, attrinfo):             # <<<<<<<<<<<<<<
@@ -34836,7 +34937,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       goto __pyx_L13;
     }
 
-    /* "adios_mpi.pyx":2127
+    /* "adios_mpi.pyx":2132
  *                 extra_attrs[key] = attrinfo(key, val, np.array(val).dtype)
  *             else:
  *                 if self.is_noxml: val.define(self.gid)             # <<<<<<<<<<<<<<
@@ -34846,9 +34947,9 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
     /*else*/ {
       __pyx_t_1 = (__pyx_v_self->is_noxml != 0);
       if (__pyx_t_1) {
-        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_val, __pyx_n_s_define); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2127, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_val, __pyx_n_s_define); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2132, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_14 = __Pyx_PyInt_From_int64_t(__pyx_v_self->gid); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2127, __pyx_L1_error)
+        __pyx_t_14 = __Pyx_PyInt_From_int64_t(__pyx_v_self->gid); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2132, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_14);
         __pyx_t_4 = NULL;
         if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_3))) {
@@ -34861,14 +34962,14 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
           }
         }
         if (!__pyx_t_4) {
-          __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_14); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2127, __pyx_L1_error)
+          __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_14); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2132, __pyx_L1_error)
           __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
           __Pyx_GOTREF(__pyx_t_2);
         } else {
           #if CYTHON_FAST_PYCALL
           if (PyFunction_Check(__pyx_t_3)) {
             PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_t_14};
-            __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2127, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2132, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
@@ -34877,20 +34978,20 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
           #if CYTHON_FAST_PYCCALL
           if (__Pyx_PyFastCFunction_Check(__pyx_t_3)) {
             PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_t_14};
-            __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2127, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyCFunction_FastCall(__pyx_t_3, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2132, __pyx_L1_error)
             __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
           } else
           #endif
           {
-            __pyx_t_13 = PyTuple_New(1+1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2127, __pyx_L1_error)
+            __pyx_t_13 = PyTuple_New(1+1); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2132, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_13);
             __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_4); __pyx_t_4 = NULL;
             __Pyx_GIVEREF(__pyx_t_14);
             PyTuple_SET_ITEM(__pyx_t_13, 0+1, __pyx_t_14);
             __pyx_t_14 = 0;
-            __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_13, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2127, __pyx_L1_error)
+            __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_t_13, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2132, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
           }
@@ -34903,7 +35004,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   }
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "adios_mpi.pyx":2129
+  /* "adios_mpi.pyx":2134
  *                 if self.is_noxml: val.define(self.gid)
  * 
  *         for key, val in extra_attrs.iteritems():             # <<<<<<<<<<<<<<
@@ -34911,7 +35012,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
  * 
  */
   __pyx_t_9 = 0;
-  __pyx_t_2 = __Pyx_dict_iterator(__pyx_v_extra_attrs, 1, __pyx_n_s_iteritems, (&__pyx_t_8), (&__pyx_t_10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2129, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_dict_iterator(__pyx_v_extra_attrs, 1, __pyx_n_s_iteritems, (&__pyx_t_8), (&__pyx_t_10)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2134, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_5);
   __pyx_t_5 = __pyx_t_2;
@@ -34919,7 +35020,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   while (1) {
     __pyx_t_11 = __Pyx_dict_iter_next(__pyx_t_5, __pyx_t_8, &__pyx_t_9, &__pyx_t_2, &__pyx_t_3, NULL, __pyx_t_10);
     if (unlikely(__pyx_t_11 == 0)) break;
-    if (unlikely(__pyx_t_11 == -1)) __PYX_ERR(0, 2129, __pyx_L1_error)
+    if (unlikely(__pyx_t_11 == -1)) __PYX_ERR(0, 2134, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_XDECREF_SET(__pyx_v_key, __pyx_t_2);
@@ -34927,7 +35028,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
     __Pyx_XDECREF_SET(__pyx_v_val, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "adios_mpi.pyx":2130
+    /* "adios_mpi.pyx":2135
  * 
  *         for key, val in extra_attrs.iteritems():
  *             if self.is_noxml: val.define(self.gid)             # <<<<<<<<<<<<<<
@@ -34936,9 +35037,9 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
  */
     __pyx_t_1 = (__pyx_v_self->is_noxml != 0);
     if (__pyx_t_1) {
-      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_val, __pyx_n_s_define); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2130, __pyx_L1_error)
+      __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_val, __pyx_n_s_define); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2135, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_13 = __Pyx_PyInt_From_int64_t(__pyx_v_self->gid); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2130, __pyx_L1_error)
+      __pyx_t_13 = __Pyx_PyInt_From_int64_t(__pyx_v_self->gid); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2135, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_13);
       __pyx_t_14 = NULL;
       if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -34951,14 +35052,14 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         }
       }
       if (!__pyx_t_14) {
-        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_13); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2130, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_13); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2135, __pyx_L1_error)
         __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
         __Pyx_GOTREF(__pyx_t_3);
       } else {
         #if CYTHON_FAST_PYCALL
         if (PyFunction_Check(__pyx_t_2)) {
           PyObject *__pyx_temp[2] = {__pyx_t_14, __pyx_t_13};
-          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2130, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2135, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
@@ -34967,20 +35068,20 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         #if CYTHON_FAST_PYCCALL
         if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
           PyObject *__pyx_temp[2] = {__pyx_t_14, __pyx_t_13};
-          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2130, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2135, __pyx_L1_error)
           __Pyx_XDECREF(__pyx_t_14); __pyx_t_14 = 0;
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
         } else
         #endif
         {
-          __pyx_t_4 = PyTuple_New(1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2130, __pyx_L1_error)
+          __pyx_t_4 = PyTuple_New(1+1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2135, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_GIVEREF(__pyx_t_14); PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_14); __pyx_t_14 = NULL;
           __Pyx_GIVEREF(__pyx_t_13);
           PyTuple_SET_ITEM(__pyx_t_4, 0+1, __pyx_t_13);
           __pyx_t_13 = 0;
-          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2130, __pyx_L1_error)
+          __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2135, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_3);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         }
@@ -34991,7 +35092,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   }
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "adios_mpi.pyx":2141
+  /* "adios_mpi.pyx":2146
  *         """
  * 
  *         for var in self.vars.values():             # <<<<<<<<<<<<<<
@@ -35000,17 +35101,17 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
  */
   if (unlikely(__pyx_v_self->vars == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "values");
-    __PYX_ERR(0, 2141, __pyx_L1_error)
+    __PYX_ERR(0, 2146, __pyx_L1_error)
   }
-  __pyx_t_5 = __Pyx_PyDict_Values(__pyx_v_self->vars); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2141, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_Values(__pyx_v_self->vars); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   if (likely(PyList_CheckExact(__pyx_t_5)) || PyTuple_CheckExact(__pyx_t_5)) {
     __pyx_t_3 = __pyx_t_5; __Pyx_INCREF(__pyx_t_3); __pyx_t_8 = 0;
     __pyx_t_15 = NULL;
   } else {
-    __pyx_t_8 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2141, __pyx_L1_error)
+    __pyx_t_8 = -1; __pyx_t_3 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_15 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 2141, __pyx_L1_error)
+    __pyx_t_15 = Py_TYPE(__pyx_t_3)->tp_iternext; if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 2146, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   for (;;) {
@@ -35018,17 +35119,17 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       if (likely(PyList_CheckExact(__pyx_t_3))) {
         if (__pyx_t_8 >= PyList_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 2141, __pyx_L1_error)
+        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_3, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 2146, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2141, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2146, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       } else {
         if (__pyx_t_8 >= PyTuple_GET_SIZE(__pyx_t_3)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 2141, __pyx_L1_error)
+        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_3, __pyx_t_8); __Pyx_INCREF(__pyx_t_5); __pyx_t_8++; if (unlikely(0 < 0)) __PYX_ERR(0, 2146, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2141, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_3, __pyx_t_8); __pyx_t_8++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2146, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       }
@@ -35038,7 +35139,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(exc_type == PyExc_StopIteration || PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 2141, __pyx_L1_error)
+          else __PYX_ERR(0, 2146, __pyx_L1_error)
         }
         break;
       }
@@ -35047,16 +35148,16 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
     __Pyx_XDECREF_SET(__pyx_v_var, __pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "adios_mpi.pyx":2142
+    /* "adios_mpi.pyx":2147
  * 
  *         for var in self.vars.values():
  *             var.write(fd)             # <<<<<<<<<<<<<<
  * 
  *         close(fd)
  */
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_var, __pyx_n_s_write); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2142, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_var, __pyx_n_s_write); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2147, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = __Pyx_PyInt_From_int64_t(__pyx_v_fd); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2142, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_From_int64_t(__pyx_v_fd); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2147, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_13 = NULL;
     if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -35069,14 +35170,14 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       }
     }
     if (!__pyx_t_13) {
-      __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2142, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2147, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_GOTREF(__pyx_t_5);
     } else {
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_2)) {
         PyObject *__pyx_temp[2] = {__pyx_t_13, __pyx_t_4};
-        __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2142, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2147, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -35085,20 +35186,20 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
         PyObject *__pyx_temp[2] = {__pyx_t_13, __pyx_t_4};
-        __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2142, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2147, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       } else
       #endif
       {
-        __pyx_t_14 = PyTuple_New(1+1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2142, __pyx_L1_error)
+        __pyx_t_14 = PyTuple_New(1+1); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 2147, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_14);
         __Pyx_GIVEREF(__pyx_t_13); PyTuple_SET_ITEM(__pyx_t_14, 0, __pyx_t_13); __pyx_t_13 = NULL;
         __Pyx_GIVEREF(__pyx_t_4);
         PyTuple_SET_ITEM(__pyx_t_14, 0+1, __pyx_t_4);
         __pyx_t_4 = 0;
-        __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_14, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2142, __pyx_L1_error)
+        __pyx_t_5 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_14, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2147, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
       }
@@ -35106,7 +35207,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "adios_mpi.pyx":2141
+    /* "adios_mpi.pyx":2146
  *         """
  * 
  *         for var in self.vars.values():             # <<<<<<<<<<<<<<
@@ -35116,7 +35217,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "adios_mpi.pyx":2144
+  /* "adios_mpi.pyx":2149
  *             var.write(fd)
  * 
  *         close(fd)             # <<<<<<<<<<<<<<
@@ -35125,7 +35226,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
  */
   __pyx_f_9adios_mpi_close(__pyx_v_fd, 0);
 
-  /* "adios_mpi.pyx":2098
+  /* "adios_mpi.pyx":2103
  *             raise KeyError(name)
  * 
  *     def close(self):             # <<<<<<<<<<<<<<
@@ -35157,7 +35258,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_16close(struct __pyx_obj_9adios_mpi
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2146
+/* "adios_mpi.pyx":2151
  *         close(fd)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -35186,7 +35287,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_18__repr__(struct __pyx_obj_9adios_
   PyObject *__pyx_t_3 = NULL;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "adios_mpi.pyx":2147
+  /* "adios_mpi.pyx":2152
  * 
  *     def __repr__(self):
  *         return ("AdiosWriter (fname=%r, gname=%r, "             # <<<<<<<<<<<<<<
@@ -35195,7 +35296,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_18__repr__(struct __pyx_obj_9adios_
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "adios_mpi.pyx":2153
+  /* "adios_mpi.pyx":2158
  *                  self.method,
  *                  self.method_params,
  *                  self.vars.keys(),             # <<<<<<<<<<<<<<
@@ -35204,12 +35305,12 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_18__repr__(struct __pyx_obj_9adios_
  */
   if (unlikely(__pyx_v_self->vars == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "keys");
-    __PYX_ERR(0, 2153, __pyx_L1_error)
+    __PYX_ERR(0, 2158, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_PyDict_Keys(__pyx_v_self->vars); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2153, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_Keys(__pyx_v_self->vars); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2158, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "adios_mpi.pyx":2154
+  /* "adios_mpi.pyx":2159
  *                  self.method_params,
  *                  self.vars.keys(),
  *                  self.attrs.keys(),             # <<<<<<<<<<<<<<
@@ -35218,19 +35319,19 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_18__repr__(struct __pyx_obj_9adios_
  */
   if (unlikely(__pyx_v_self->attrs == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "keys");
-    __PYX_ERR(0, 2154, __pyx_L1_error)
+    __PYX_ERR(0, 2159, __pyx_L1_error)
   }
-  __pyx_t_2 = __Pyx_PyDict_Keys(__pyx_v_self->attrs); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2154, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_Keys(__pyx_v_self->attrs); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2159, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "adios_mpi.pyx":2149
+  /* "adios_mpi.pyx":2154
  *         return ("AdiosWriter (fname=%r, gname=%r, "
  *                 "method=%r, method_params=%r, vars=%r, attrs=%r, mode=%r)") % \
  *                 (self.fname,             # <<<<<<<<<<<<<<
  *                  self.gname,
  *                  self.method,
  */
-  __pyx_t_3 = PyTuple_New(7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2149, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2154, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_v_self->fname);
   __Pyx_GIVEREF(__pyx_v_self->fname);
@@ -35254,21 +35355,21 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_18__repr__(struct __pyx_obj_9adios_
   __pyx_t_1 = 0;
   __pyx_t_2 = 0;
 
-  /* "adios_mpi.pyx":2148
+  /* "adios_mpi.pyx":2153
  *     def __repr__(self):
  *         return ("AdiosWriter (fname=%r, gname=%r, "
  *                 "method=%r, method_params=%r, vars=%r, attrs=%r, mode=%r)") % \             # <<<<<<<<<<<<<<
  *                 (self.fname,
  *                  self.gname,
  */
-  __pyx_t_2 = __Pyx_PyString_Format(__pyx_kp_s_AdiosWriter_fname_r_gname_r_meth, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2148, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyString_Format(__pyx_kp_s_AdiosWriter_fname_r_gname_r_meth, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2153, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2146
+  /* "adios_mpi.pyx":2151
  *         close(fd)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -35289,7 +35390,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_18__repr__(struct __pyx_obj_9adios_
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2157
+/* "adios_mpi.pyx":2162
  *                  self.mode)
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
@@ -35316,7 +35417,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_20__enter__(struct __pyx_obj_9adios
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__enter__", 0);
 
-  /* "adios_mpi.pyx":2159
+  /* "adios_mpi.pyx":2164
  *     def __enter__(self):
  *         """ Enter for with statement """
  *         return self             # <<<<<<<<<<<<<<
@@ -35328,7 +35429,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_20__enter__(struct __pyx_obj_9adios
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2157
+  /* "adios_mpi.pyx":2162
  *                  self.mode)
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
@@ -35343,7 +35444,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_20__enter__(struct __pyx_obj_9adios
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2161
+/* "adios_mpi.pyx":2166
  *         return self
  * 
  *     def __exit__(self, exception_type, exception_value, traceback):             # <<<<<<<<<<<<<<
@@ -35382,16 +35483,16 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_23__exit__(PyObject *__pyx_v_self, 
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_exception_value)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 1); __PYX_ERR(0, 2161, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 1); __PYX_ERR(0, 2166, __pyx_L3_error)
         }
         case  2:
         if (likely((values[2] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_traceback)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 2); __PYX_ERR(0, 2161, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 2); __PYX_ERR(0, 2166, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__exit__") < 0)) __PYX_ERR(0, 2161, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__exit__") < 0)) __PYX_ERR(0, 2166, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -35406,7 +35507,7 @@ static PyObject *__pyx_pw_9adios_mpi_6writer_23__exit__(PyObject *__pyx_v_self, 
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2161, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2166, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("adios_mpi.writer.__exit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -35427,14 +35528,14 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_22__exit__(struct __pyx_obj_9adios_
   PyObject *__pyx_t_3 = NULL;
   __Pyx_RefNannySetupContext("__exit__", 0);
 
-  /* "adios_mpi.pyx":2163
+  /* "adios_mpi.pyx":2168
  *     def __exit__(self, exception_type, exception_value, traceback):
  *         """ Close file on exit. """
  *         self.close()             # <<<<<<<<<<<<<<
  * 
  * cdef class attrinfo(object):
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_close); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2163, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_close); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2168, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -35447,16 +35548,16 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_22__exit__(struct __pyx_obj_9adios_
     }
   }
   if (__pyx_t_3) {
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2163, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2168, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
-    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2163, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_CallNoArg(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2168, __pyx_L1_error)
   }
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2161
+  /* "adios_mpi.pyx":2166
  *         return self
  * 
  *     def __exit__(self, exception_type, exception_value, traceback):             # <<<<<<<<<<<<<<
@@ -35479,7 +35580,7 @@ static PyObject *__pyx_pf_9adios_mpi_6writer_22__exit__(struct __pyx_obj_9adios_
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2172
+/* "adios_mpi.pyx":2177
  * 
  *     property name:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -35505,7 +35606,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_4name___get__(struct __pyx_obj_9a
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "adios_mpi.pyx":2173
+  /* "adios_mpi.pyx":2178
  *     property name:
  *         def __get__(self):
  *             return self.name             # <<<<<<<<<<<<<<
@@ -35517,7 +35618,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_4name___get__(struct __pyx_obj_9a
   __pyx_r = __pyx_v_self->name;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2172
+  /* "adios_mpi.pyx":2177
  * 
  *     property name:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -35532,7 +35633,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_4name___get__(struct __pyx_obj_9a
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2176
+/* "adios_mpi.pyx":2181
  * 
  *     property is_static:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -35559,7 +35660,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_9is_static___get__(struct __pyx_o
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "adios_mpi.pyx":2177
+  /* "adios_mpi.pyx":2182
  *     property is_static:
  *         def __get__(self):
  *             return self.is_static             # <<<<<<<<<<<<<<
@@ -35567,13 +35668,13 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_9is_static___get__(struct __pyx_o
  *     property dtype:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_self->is_static); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2177, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_self->is_static); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2176
+  /* "adios_mpi.pyx":2181
  * 
  *     property is_static:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -35592,7 +35693,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_9is_static___get__(struct __pyx_o
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2180
+/* "adios_mpi.pyx":2185
  * 
  *     property dtype:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -35618,7 +35719,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_5dtype___get__(struct __pyx_obj_9
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "adios_mpi.pyx":2181
+  /* "adios_mpi.pyx":2186
  *     property dtype:
  *         def __get__(self):
  *             return self.dtype             # <<<<<<<<<<<<<<
@@ -35630,7 +35731,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_5dtype___get__(struct __pyx_obj_9
   __pyx_r = __pyx_v_self->dtype;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2180
+  /* "adios_mpi.pyx":2185
  * 
  *     property dtype:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -35645,7 +35746,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_5dtype___get__(struct __pyx_obj_9
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2184
+/* "adios_mpi.pyx":2189
  * 
  *     property value:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -35671,7 +35772,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_5value___get__(struct __pyx_obj_9
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "adios_mpi.pyx":2185
+  /* "adios_mpi.pyx":2190
  *     property value:
  *         def __get__(self):
  *             return self.value             # <<<<<<<<<<<<<<
@@ -35683,7 +35784,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_5value___get__(struct __pyx_obj_9
   __pyx_r = __pyx_v_self->value;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2184
+  /* "adios_mpi.pyx":2189
  * 
  *     property value:
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -35698,7 +35799,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_5value___get__(struct __pyx_obj_9
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2187
+/* "adios_mpi.pyx":2192
  *             return self.value
  * 
  *         def __set__(self, value):             # <<<<<<<<<<<<<<
@@ -35724,7 +35825,7 @@ static int __pyx_pf_9adios_mpi_8attrinfo_5value_2__set__(struct __pyx_obj_9adios
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "adios_mpi.pyx":2188
+  /* "adios_mpi.pyx":2193
  * 
  *         def __set__(self, value):
  *             self.value = value             # <<<<<<<<<<<<<<
@@ -35737,7 +35838,7 @@ static int __pyx_pf_9adios_mpi_8attrinfo_5value_2__set__(struct __pyx_obj_9adios
   __Pyx_DECREF(__pyx_v_self->value);
   __pyx_v_self->value = __pyx_v_value;
 
-  /* "adios_mpi.pyx":2187
+  /* "adios_mpi.pyx":2192
  *             return self.value
  * 
  *         def __set__(self, value):             # <<<<<<<<<<<<<<
@@ -35751,7 +35852,7 @@ static int __pyx_pf_9adios_mpi_8attrinfo_5value_2__set__(struct __pyx_obj_9adios
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2190
+/* "adios_mpi.pyx":2195
  *             self.value = value
  * 
  *     def __init__(self, str name,             # <<<<<<<<<<<<<<
@@ -35773,7 +35874,7 @@ static int __pyx_pw_9adios_mpi_8attrinfo_1__init__(PyObject *__pyx_v_self, PyObj
     static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_name,&__pyx_n_s_value,&__pyx_n_s_dtype,&__pyx_n_s_is_static,0};
     PyObject* values[4] = {0,0,0,0};
 
-    /* "adios_mpi.pyx":2191
+    /* "adios_mpi.pyx":2196
  * 
  *     def __init__(self, str name,
  *                  value = None,             # <<<<<<<<<<<<<<
@@ -35782,7 +35883,7 @@ static int __pyx_pw_9adios_mpi_8attrinfo_1__init__(PyObject *__pyx_v_self, PyObj
  */
     values[1] = ((PyObject *)Py_None);
 
-    /* "adios_mpi.pyx":2192
+    /* "adios_mpi.pyx":2197
  *     def __init__(self, str name,
  *                  value = None,
  *                  dtype = None,             # <<<<<<<<<<<<<<
@@ -35823,7 +35924,7 @@ static int __pyx_pw_9adios_mpi_8attrinfo_1__init__(PyObject *__pyx_v_self, PyObj
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 2190, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 2195, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -35839,10 +35940,10 @@ static int __pyx_pw_9adios_mpi_8attrinfo_1__init__(PyObject *__pyx_v_self, PyObj
     __pyx_v_value = values[1];
     __pyx_v_dtype = values[2];
     if (values[3]) {
-      __pyx_v_is_static = __Pyx_PyObject_IsTrue(values[3]); if (unlikely((__pyx_v_is_static == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2193, __pyx_L3_error)
+      __pyx_v_is_static = __Pyx_PyObject_IsTrue(values[3]); if (unlikely((__pyx_v_is_static == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2198, __pyx_L3_error)
     } else {
 
-      /* "adios_mpi.pyx":2193
+      /* "adios_mpi.pyx":2198
  *                  value = None,
  *                  dtype = None,
  *                  bint is_static = True):             # <<<<<<<<<<<<<<
@@ -35854,16 +35955,16 @@ static int __pyx_pw_9adios_mpi_8attrinfo_1__init__(PyObject *__pyx_v_self, PyObj
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2190, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2195, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("adios_mpi.attrinfo.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyString_Type), 1, "name", 1))) __PYX_ERR(0, 2190, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyString_Type), 1, "name", 1))) __PYX_ERR(0, 2195, __pyx_L1_error)
   __pyx_r = __pyx_pf_9adios_mpi_8attrinfo___init__(((struct __pyx_obj_9adios_mpi_attrinfo *)__pyx_v_self), __pyx_v_name, __pyx_v_value, __pyx_v_dtype, __pyx_v_is_static);
 
-  /* "adios_mpi.pyx":2190
+  /* "adios_mpi.pyx":2195
  *             self.value = value
  * 
  *     def __init__(self, str name,             # <<<<<<<<<<<<<<
@@ -35885,7 +35986,7 @@ static int __pyx_pf_9adios_mpi_8attrinfo___init__(struct __pyx_obj_9adios_mpi_at
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "adios_mpi.pyx":2194
+  /* "adios_mpi.pyx":2199
  *                  dtype = None,
  *                  bint is_static = True):
  *         self.name = name             # <<<<<<<<<<<<<<
@@ -35898,7 +35999,7 @@ static int __pyx_pf_9adios_mpi_8attrinfo___init__(struct __pyx_obj_9adios_mpi_at
   __Pyx_DECREF(__pyx_v_self->name);
   __pyx_v_self->name = __pyx_v_name;
 
-  /* "adios_mpi.pyx":2195
+  /* "adios_mpi.pyx":2200
  *                  bint is_static = True):
  *         self.name = name
  *         self.value = value             # <<<<<<<<<<<<<<
@@ -35911,7 +36012,7 @@ static int __pyx_pf_9adios_mpi_8attrinfo___init__(struct __pyx_obj_9adios_mpi_at
   __Pyx_DECREF(__pyx_v_self->value);
   __pyx_v_self->value = __pyx_v_value;
 
-  /* "adios_mpi.pyx":2196
+  /* "adios_mpi.pyx":2201
  *         self.name = name
  *         self.value = value
  *         self.dtype = dtype             # <<<<<<<<<<<<<<
@@ -35924,7 +36025,7 @@ static int __pyx_pf_9adios_mpi_8attrinfo___init__(struct __pyx_obj_9adios_mpi_at
   __Pyx_DECREF(__pyx_v_self->dtype);
   __pyx_v_self->dtype = __pyx_v_dtype;
 
-  /* "adios_mpi.pyx":2197
+  /* "adios_mpi.pyx":2202
  *         self.value = value
  *         self.dtype = dtype
  *         self.is_static = is_static             # <<<<<<<<<<<<<<
@@ -35933,7 +36034,7 @@ static int __pyx_pf_9adios_mpi_8attrinfo___init__(struct __pyx_obj_9adios_mpi_at
  */
   __pyx_v_self->is_static = __pyx_v_is_static;
 
-  /* "adios_mpi.pyx":2190
+  /* "adios_mpi.pyx":2195
  *             self.value = value
  * 
  *     def __init__(self, str name,             # <<<<<<<<<<<<<<
@@ -35947,7 +36048,7 @@ static int __pyx_pf_9adios_mpi_8attrinfo___init__(struct __pyx_obj_9adios_mpi_at
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2199
+/* "adios_mpi.pyx":2204
  *         self.is_static = is_static
  * 
  *     def define(self, int64_t gid):             # <<<<<<<<<<<<<<
@@ -35964,7 +36065,7 @@ static PyObject *__pyx_pw_9adios_mpi_8attrinfo_3define(PyObject *__pyx_v_self, P
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("define (wrapper)", 0);
   assert(__pyx_arg_gid); {
-    __pyx_v_gid = __Pyx_PyInt_As_int64_t(__pyx_arg_gid); if (unlikely((__pyx_v_gid == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 2199, __pyx_L3_error)
+    __pyx_v_gid = __Pyx_PyInt_As_int64_t(__pyx_arg_gid); if (unlikely((__pyx_v_gid == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 2204, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -35988,7 +36089,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_2define(struct __pyx_obj_9adios_m
   PyObject *__pyx_t_4 = NULL;
   __Pyx_RefNannySetupContext("define", 0);
 
-  /* "adios_mpi.pyx":2200
+  /* "adios_mpi.pyx":2205
  * 
  *     def define(self, int64_t gid):
  *         if self.is_static:             # <<<<<<<<<<<<<<
@@ -35998,7 +36099,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_2define(struct __pyx_obj_9adios_m
   __pyx_t_1 = (__pyx_v_self->is_static != 0);
   if (__pyx_t_1) {
 
-    /* "adios_mpi.pyx":2201
+    /* "adios_mpi.pyx":2206
  *     def define(self, int64_t gid):
  *         if self.is_static:
  *             if self.value is None:             # <<<<<<<<<<<<<<
@@ -36009,20 +36110,20 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_2define(struct __pyx_obj_9adios_m
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (__pyx_t_2) {
 
-      /* "adios_mpi.pyx":2202
+      /* "adios_mpi.pyx":2207
  *         if self.is_static:
  *             if self.value is None:
  *                 raise TypeError("Value is none")             # <<<<<<<<<<<<<<
  * 
  *             define_attribute_byvalue(gid, self.name, "", self.value)
  */
-      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__60, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2202, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__60, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2207, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
       __Pyx_Raise(__pyx_t_3, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __PYX_ERR(0, 2202, __pyx_L1_error)
+      __PYX_ERR(0, 2207, __pyx_L1_error)
 
-      /* "adios_mpi.pyx":2201
+      /* "adios_mpi.pyx":2206
  *     def define(self, int64_t gid):
  *         if self.is_static:
  *             if self.value is None:             # <<<<<<<<<<<<<<
@@ -36031,7 +36132,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_2define(struct __pyx_obj_9adios_m
  */
     }
 
-    /* "adios_mpi.pyx":2204
+    /* "adios_mpi.pyx":2209
  *                 raise TypeError("Value is none")
  * 
  *             define_attribute_byvalue(gid, self.name, "", self.value)             # <<<<<<<<<<<<<<
@@ -36046,7 +36147,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_2define(struct __pyx_obj_9adios_m
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "adios_mpi.pyx":2200
+    /* "adios_mpi.pyx":2205
  * 
  *     def define(self, int64_t gid):
  *         if self.is_static:             # <<<<<<<<<<<<<<
@@ -36056,7 +36157,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_2define(struct __pyx_obj_9adios_m
     goto __pyx_L3;
   }
 
-  /* "adios_mpi.pyx":2209
+  /* "adios_mpi.pyx":2214
  *             ##define_attribute(gid, self.name, "",
  *             ##                 atype, "", str(self.value))
  *             raise NotImplementedError             # <<<<<<<<<<<<<<
@@ -36065,11 +36166,11 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_2define(struct __pyx_obj_9adios_m
  */
   /*else*/ {
     __Pyx_Raise(__pyx_builtin_NotImplementedError, 0, 0, 0);
-    __PYX_ERR(0, 2209, __pyx_L1_error)
+    __PYX_ERR(0, 2214, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "adios_mpi.pyx":2199
+  /* "adios_mpi.pyx":2204
  *         self.is_static = is_static
  * 
  *     def define(self, int64_t gid):             # <<<<<<<<<<<<<<
@@ -36091,7 +36192,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_2define(struct __pyx_obj_9adios_m
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2211
+/* "adios_mpi.pyx":2216
  *             raise NotImplementedError
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -36119,7 +36220,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_4__repr__(struct __pyx_obj_9adios
   PyObject *__pyx_t_2 = NULL;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "adios_mpi.pyx":2212
+  /* "adios_mpi.pyx":2217
  * 
  *     def __repr__(self):
  *         return ("AdiosAttrinfo (name=%r, is_static=%r, value=%r, dtype=%r)") % \             # <<<<<<<<<<<<<<
@@ -36128,24 +36229,24 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_4__repr__(struct __pyx_obj_9adios
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "adios_mpi.pyx":2214
+  /* "adios_mpi.pyx":2219
  *         return ("AdiosAttrinfo (name=%r, is_static=%r, value=%r, dtype=%r)") % \
  *                 (self.name,
  *                  self.is_static,             # <<<<<<<<<<<<<<
  *                  self.value,
  *                  self.dtype)
  */
-  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_self->is_static); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2214, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyBool_FromLong(__pyx_v_self->is_static); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2219, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "adios_mpi.pyx":2213
+  /* "adios_mpi.pyx":2218
  *     def __repr__(self):
  *         return ("AdiosAttrinfo (name=%r, is_static=%r, value=%r, dtype=%r)") % \
  *                 (self.name,             # <<<<<<<<<<<<<<
  *                  self.is_static,
  *                  self.value,
  */
-  __pyx_t_2 = PyTuple_New(4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2213, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2218, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_v_self->name);
   __Pyx_GIVEREF(__pyx_v_self->name);
@@ -36160,21 +36261,21 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_4__repr__(struct __pyx_obj_9adios
   PyTuple_SET_ITEM(__pyx_t_2, 3, __pyx_v_self->dtype);
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2212
+  /* "adios_mpi.pyx":2217
  * 
  *     def __repr__(self):
  *         return ("AdiosAttrinfo (name=%r, is_static=%r, value=%r, dtype=%r)") % \             # <<<<<<<<<<<<<<
  *                 (self.name,
  *                  self.is_static,
  */
-  __pyx_t_1 = __Pyx_PyString_Format(__pyx_kp_s_AdiosAttrinfo_name_r_is_static_r, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2212, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyString_Format(__pyx_kp_s_AdiosAttrinfo_name_r_is_static_r, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2217, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2211
+  /* "adios_mpi.pyx":2216
  *             raise NotImplementedError
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -36194,7 +36295,7 @@ static PyObject *__pyx_pf_9adios_mpi_8attrinfo_4__repr__(struct __pyx_obj_9adios
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2228
+/* "adios_mpi.pyx":2233
  *     property transform:
  *         """ Transform method """
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -36221,7 +36322,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_9transform___get__(struct __pyx_ob
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "adios_mpi.pyx":2229
+  /* "adios_mpi.pyx":2234
  *         """ Transform method """
  *         def __get__(self):
  *             return self.fname             # <<<<<<<<<<<<<<
@@ -36229,13 +36330,13 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_9transform___get__(struct __pyx_ob
  *             self.transform = value
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_fname); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2229, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_fname); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2234, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2228
+  /* "adios_mpi.pyx":2233
  *     property transform:
  *         """ Transform method """
  *         def __get__(self):             # <<<<<<<<<<<<<<
@@ -36254,7 +36355,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_9transform___get__(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2230
+/* "adios_mpi.pyx":2235
  *         def __get__(self):
  *             return self.fname
  *         def __set__(self, value):             # <<<<<<<<<<<<<<
@@ -36281,14 +36382,14 @@ static int __pyx_pf_9adios_mpi_7varinfo_9transform_2__set__(struct __pyx_obj_9ad
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "adios_mpi.pyx":2231
+  /* "adios_mpi.pyx":2236
  *             return self.fname
  *         def __set__(self, value):
  *             self.transform = value             # <<<<<<<<<<<<<<
  * 
  *     def __init__(self, str name,
  */
-  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) __PYX_ERR(0, 2231, __pyx_L1_error)
+  if (!(likely(PyString_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_value)->tp_name), 0))) __PYX_ERR(0, 2236, __pyx_L1_error)
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -36297,7 +36398,7 @@ static int __pyx_pf_9adios_mpi_7varinfo_9transform_2__set__(struct __pyx_obj_9ad
   __pyx_v_self->transform = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2230
+  /* "adios_mpi.pyx":2235
  *         def __get__(self):
  *             return self.fname
  *         def __set__(self, value):             # <<<<<<<<<<<<<<
@@ -36317,7 +36418,7 @@ static int __pyx_pf_9adios_mpi_7varinfo_9transform_2__set__(struct __pyx_obj_9ad
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2233
+/* "adios_mpi.pyx":2238
  *             self.transform = value
  * 
  *     def __init__(self, str name,             # <<<<<<<<<<<<<<
@@ -36344,7 +36445,7 @@ static int __pyx_pw_9adios_mpi_7varinfo_1__init__(PyObject *__pyx_v_self, PyObje
     values[2] = __pyx_k__62;
     values[3] = __pyx_k__63;
 
-    /* "adios_mpi.pyx":2237
+    /* "adios_mpi.pyx":2242
  *                  gdim = tuple(),
  *                  offset = tuple(),
  *                  value = None,             # <<<<<<<<<<<<<<
@@ -36353,7 +36454,7 @@ static int __pyx_pw_9adios_mpi_7varinfo_1__init__(PyObject *__pyx_v_self, PyObje
  */
     values[4] = ((PyObject *)Py_None);
 
-    /* "adios_mpi.pyx":2238
+    /* "adios_mpi.pyx":2243
  *                  offset = tuple(),
  *                  value = None,
  *                  transform = None):             # <<<<<<<<<<<<<<
@@ -36406,7 +36507,7 @@ static int __pyx_pw_9adios_mpi_7varinfo_1__init__(PyObject *__pyx_v_self, PyObje
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 2233, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 2238, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -36429,16 +36530,16 @@ static int __pyx_pw_9adios_mpi_7varinfo_1__init__(PyObject *__pyx_v_self, PyObje
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 1, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2233, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 1, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2238, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("adios_mpi.varinfo.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyString_Type), 1, "name", 1))) __PYX_ERR(0, 2233, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_name), (&PyString_Type), 1, "name", 1))) __PYX_ERR(0, 2238, __pyx_L1_error)
   __pyx_r = __pyx_pf_9adios_mpi_7varinfo___init__(((struct __pyx_obj_9adios_mpi_varinfo *)__pyx_v_self), __pyx_v_name, __pyx_v_ldim, __pyx_v_gdim, __pyx_v_offset, __pyx_v_value, __pyx_v_transform);
 
-  /* "adios_mpi.pyx":2233
+  /* "adios_mpi.pyx":2238
  *             self.transform = value
  * 
  *     def __init__(self, str name,             # <<<<<<<<<<<<<<
@@ -36461,7 +36562,7 @@ static int __pyx_pf_9adios_mpi_7varinfo___init__(struct __pyx_obj_9adios_mpi_var
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "adios_mpi.pyx":2239
+  /* "adios_mpi.pyx":2244
  *                  value = None,
  *                  transform = None):
  *         self.name = name             # <<<<<<<<<<<<<<
@@ -36474,7 +36575,7 @@ static int __pyx_pf_9adios_mpi_7varinfo___init__(struct __pyx_obj_9adios_mpi_var
   __Pyx_DECREF(__pyx_v_self->name);
   __pyx_v_self->name = __pyx_v_name;
 
-  /* "adios_mpi.pyx":2240
+  /* "adios_mpi.pyx":2245
  *                  transform = None):
  *         self.name = name
  *         self.ldim = ldim             # <<<<<<<<<<<<<<
@@ -36487,7 +36588,7 @@ static int __pyx_pf_9adios_mpi_7varinfo___init__(struct __pyx_obj_9adios_mpi_var
   __Pyx_DECREF(__pyx_v_self->ldim);
   __pyx_v_self->ldim = __pyx_v_ldim;
 
-  /* "adios_mpi.pyx":2241
+  /* "adios_mpi.pyx":2246
  *         self.name = name
  *         self.ldim = ldim
  *         self.gdim = gdim             # <<<<<<<<<<<<<<
@@ -36500,7 +36601,7 @@ static int __pyx_pf_9adios_mpi_7varinfo___init__(struct __pyx_obj_9adios_mpi_var
   __Pyx_DECREF(__pyx_v_self->gdim);
   __pyx_v_self->gdim = __pyx_v_gdim;
 
-  /* "adios_mpi.pyx":2242
+  /* "adios_mpi.pyx":2247
  *         self.ldim = ldim
  *         self.gdim = gdim
  *         self.offset = offset             # <<<<<<<<<<<<<<
@@ -36513,7 +36614,7 @@ static int __pyx_pf_9adios_mpi_7varinfo___init__(struct __pyx_obj_9adios_mpi_var
   __Pyx_DECREF(__pyx_v_self->offset);
   __pyx_v_self->offset = __pyx_v_offset;
 
-  /* "adios_mpi.pyx":2243
+  /* "adios_mpi.pyx":2248
  *         self.gdim = gdim
  *         self.offset = offset
  *         self.value = value             # <<<<<<<<<<<<<<
@@ -36526,14 +36627,14 @@ static int __pyx_pf_9adios_mpi_7varinfo___init__(struct __pyx_obj_9adios_mpi_var
   __Pyx_DECREF(__pyx_v_self->value);
   __pyx_v_self->value = __pyx_v_value;
 
-  /* "adios_mpi.pyx":2244
+  /* "adios_mpi.pyx":2249
  *         self.offset = offset
  *         self.value = value
  *         self.transform = transform             # <<<<<<<<<<<<<<
  * 
  *     def define(self, int64_t gid):
  */
-  if (!(likely(PyString_CheckExact(__pyx_v_transform))||((__pyx_v_transform) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_transform)->tp_name), 0))) __PYX_ERR(0, 2244, __pyx_L1_error)
+  if (!(likely(PyString_CheckExact(__pyx_v_transform))||((__pyx_v_transform) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_transform)->tp_name), 0))) __PYX_ERR(0, 2249, __pyx_L1_error)
   __pyx_t_1 = __pyx_v_transform;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -36542,7 +36643,7 @@ static int __pyx_pf_9adios_mpi_7varinfo___init__(struct __pyx_obj_9adios_mpi_var
   __pyx_v_self->transform = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2233
+  /* "adios_mpi.pyx":2238
  *             self.transform = value
  * 
  *     def __init__(self, str name,             # <<<<<<<<<<<<<<
@@ -36562,7 +36663,7 @@ static int __pyx_pf_9adios_mpi_7varinfo___init__(struct __pyx_obj_9adios_mpi_var
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2246
+/* "adios_mpi.pyx":2251
  *         self.transform = transform
  * 
  *     def define(self, int64_t gid):             # <<<<<<<<<<<<<<
@@ -36579,7 +36680,7 @@ static PyObject *__pyx_pw_9adios_mpi_7varinfo_3define(PyObject *__pyx_v_self, Py
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("define (wrapper)", 0);
   assert(__pyx_arg_gid); {
-    __pyx_v_gid = __Pyx_PyInt_As_int64_t(__pyx_arg_gid); if (unlikely((__pyx_v_gid == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 2246, __pyx_L3_error)
+    __pyx_v_gid = __Pyx_PyInt_As_int64_t(__pyx_arg_gid); if (unlikely((__pyx_v_gid == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 2251, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -36616,7 +36717,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   struct __pyx_opt_args_9adios_mpi_define_var __pyx_t_11;
   __Pyx_RefNannySetupContext("define", 0);
 
-  /* "adios_mpi.pyx":2247
+  /* "adios_mpi.pyx":2252
  * 
  *     def define(self, int64_t gid):
  *         if self.value is None:             # <<<<<<<<<<<<<<
@@ -36627,26 +36728,26 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "adios_mpi.pyx":2248
+    /* "adios_mpi.pyx":2253
  *     def define(self, int64_t gid):
  *         if self.value is None:
  *             print ("Warning: skipping defining var(%r) with None value" %(self.name))             # <<<<<<<<<<<<<<
  *             return
  * 
  */
-    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_Warning_skipping_defining_var_r, __pyx_v_self->name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2248, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyString_Format(__pyx_kp_s_Warning_skipping_defining_var_r, __pyx_v_self->name); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2253, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2248, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2253, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_GIVEREF(__pyx_t_3);
     PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
     __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_print, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2248, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_print, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2253, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-    /* "adios_mpi.pyx":2249
+    /* "adios_mpi.pyx":2254
  *         if self.value is None:
  *             print ("Warning: skipping defining var(%r) with None value" %(self.name))
  *             return             # <<<<<<<<<<<<<<
@@ -36657,7 +36758,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "adios_mpi.pyx":2247
+    /* "adios_mpi.pyx":2252
  * 
  *     def define(self, int64_t gid):
  *         if self.value is None:             # <<<<<<<<<<<<<<
@@ -36666,7 +36767,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
  */
   }
 
-  /* "adios_mpi.pyx":2251
+  /* "adios_mpi.pyx":2256
  *             return
  * 
  *         ldim_ = self.ldim             # <<<<<<<<<<<<<<
@@ -36678,7 +36779,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_v_ldim_ = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "adios_mpi.pyx":2252
+  /* "adios_mpi.pyx":2257
  * 
  *         ldim_ = self.ldim
  *         if isinstance(self.ldim, (tuple, list)):             # <<<<<<<<<<<<<<
@@ -36705,19 +36806,19 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "adios_mpi.pyx":2253
+    /* "adios_mpi.pyx":2258
  *         ldim_ = self.ldim
  *         if isinstance(self.ldim, (tuple, list)):
  *             ldim_ = tuple(self.ldim)             # <<<<<<<<<<<<<<
  * 
  *         gdim_ = self.gdim
  */
-    __pyx_t_3 = PySequence_Tuple(__pyx_v_self->ldim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2253, __pyx_L1_error)
+    __pyx_t_3 = PySequence_Tuple(__pyx_v_self->ldim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2258, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF_SET(__pyx_v_ldim_, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "adios_mpi.pyx":2252
+    /* "adios_mpi.pyx":2257
  * 
  *         ldim_ = self.ldim
  *         if isinstance(self.ldim, (tuple, list)):             # <<<<<<<<<<<<<<
@@ -36726,7 +36827,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
  */
   }
 
-  /* "adios_mpi.pyx":2255
+  /* "adios_mpi.pyx":2260
  *             ldim_ = tuple(self.ldim)
  * 
  *         gdim_ = self.gdim             # <<<<<<<<<<<<<<
@@ -36738,7 +36839,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_v_gdim_ = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "adios_mpi.pyx":2256
+  /* "adios_mpi.pyx":2261
  * 
  *         gdim_ = self.gdim
  *         if isinstance(self.gdim, (tuple, list)):             # <<<<<<<<<<<<<<
@@ -36765,19 +36866,19 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "adios_mpi.pyx":2257
+    /* "adios_mpi.pyx":2262
  *         gdim_ = self.gdim
  *         if isinstance(self.gdim, (tuple, list)):
  *             gdim_ = tuple(self.gdim)             # <<<<<<<<<<<<<<
  * 
  *         offset_ = self.offset
  */
-    __pyx_t_3 = PySequence_Tuple(__pyx_v_self->gdim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2257, __pyx_L1_error)
+    __pyx_t_3 = PySequence_Tuple(__pyx_v_self->gdim); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2262, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF_SET(__pyx_v_gdim_, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "adios_mpi.pyx":2256
+    /* "adios_mpi.pyx":2261
  * 
  *         gdim_ = self.gdim
  *         if isinstance(self.gdim, (tuple, list)):             # <<<<<<<<<<<<<<
@@ -36786,7 +36887,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
  */
   }
 
-  /* "adios_mpi.pyx":2259
+  /* "adios_mpi.pyx":2264
  *             gdim_ = tuple(self.gdim)
  * 
  *         offset_ = self.offset             # <<<<<<<<<<<<<<
@@ -36798,7 +36899,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_v_offset_ = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "adios_mpi.pyx":2260
+  /* "adios_mpi.pyx":2265
  * 
  *         offset_ = self.offset
  *         if isinstance(self.offset, (tuple, list)):             # <<<<<<<<<<<<<<
@@ -36825,19 +36926,19 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "adios_mpi.pyx":2261
+    /* "adios_mpi.pyx":2266
  *         offset_ = self.offset
  *         if isinstance(self.offset, (tuple, list)):
  *             offset_ = tuple(self.offset)             # <<<<<<<<<<<<<<
  * 
  *         val_ = self.value
  */
-    __pyx_t_3 = PySequence_Tuple(__pyx_v_self->offset); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2261, __pyx_L1_error)
+    __pyx_t_3 = PySequence_Tuple(__pyx_v_self->offset); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2266, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF_SET(__pyx_v_offset_, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "adios_mpi.pyx":2260
+    /* "adios_mpi.pyx":2265
  * 
  *         offset_ = self.offset
  *         if isinstance(self.offset, (tuple, list)):             # <<<<<<<<<<<<<<
@@ -36846,7 +36947,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
  */
   }
 
-  /* "adios_mpi.pyx":2263
+  /* "adios_mpi.pyx":2268
  *             offset_ = tuple(self.offset)
  * 
  *         val_ = self.value             # <<<<<<<<<<<<<<
@@ -36858,7 +36959,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_v_val_ = __pyx_t_3;
   __pyx_t_3 = 0;
 
-  /* "adios_mpi.pyx":2264
+  /* "adios_mpi.pyx":2269
  * 
  *         val_ = self.value
  *         if not isinstance(self.value, (np.ndarray)):             # <<<<<<<<<<<<<<
@@ -36872,16 +36973,16 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_t_2 = ((!(__pyx_t_1 != 0)) != 0);
   if (__pyx_t_2) {
 
-    /* "adios_mpi.pyx":2265
+    /* "adios_mpi.pyx":2270
  *         val_ = self.value
  *         if not isinstance(self.value, (np.ndarray)):
  *             val_ = np.array(self.value)             # <<<<<<<<<<<<<<
  * 
  *         atype = np2adiostype(val_.dtype)
  */
-    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2265, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2270, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2265, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2270, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_4 = NULL;
@@ -36895,13 +36996,13 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
       }
     }
     if (!__pyx_t_4) {
-      __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_v_self->value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2265, __pyx_L1_error)
+      __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_t_6, __pyx_v_self->value); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2270, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
     } else {
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_6)) {
         PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_self->value};
-        __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2265, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyFunction_FastCall(__pyx_t_6, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2270, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_GOTREF(__pyx_t_3);
       } else
@@ -36909,19 +37010,19 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_6)) {
         PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_self->value};
-        __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2265, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyCFunction_FastCall(__pyx_t_6, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2270, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_GOTREF(__pyx_t_3);
       } else
       #endif
       {
-        __pyx_t_7 = PyTuple_New(1+1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2265, __pyx_L1_error)
+        __pyx_t_7 = PyTuple_New(1+1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2270, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_7);
         __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_t_4); __pyx_t_4 = NULL;
         __Pyx_INCREF(__pyx_v_self->value);
         __Pyx_GIVEREF(__pyx_v_self->value);
         PyTuple_SET_ITEM(__pyx_t_7, 0+1, __pyx_v_self->value);
-        __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2265, __pyx_L1_error)
+        __pyx_t_3 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_7, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2270, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       }
@@ -36930,7 +37031,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
     __Pyx_DECREF_SET(__pyx_v_val_, __pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "adios_mpi.pyx":2264
+    /* "adios_mpi.pyx":2269
  * 
  *         val_ = self.value
  *         if not isinstance(self.value, (np.ndarray)):             # <<<<<<<<<<<<<<
@@ -36939,23 +37040,23 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
  */
   }
 
-  /* "adios_mpi.pyx":2267
+  /* "adios_mpi.pyx":2272
  *             val_ = np.array(self.value)
  * 
  *         atype = np2adiostype(val_.dtype)             # <<<<<<<<<<<<<<
  *         ## No space allowed
  *         cdef int64_t varid = 0;
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_val_, __pyx_n_s_dtype); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2267, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_val_, __pyx_n_s_dtype); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2272, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_dtype))))) __PYX_ERR(0, 2267, __pyx_L1_error)
-  __pyx_t_6 = __pyx_f_9adios_mpi_np2adiostype(((PyArray_Descr *)__pyx_t_3), 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2267, __pyx_L1_error)
+  if (!(likely(((__pyx_t_3) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_3, __pyx_ptype_5numpy_dtype))))) __PYX_ERR(0, 2272, __pyx_L1_error)
+  __pyx_t_6 = __pyx_f_9adios_mpi_np2adiostype(((PyArray_Descr *)__pyx_t_3), 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2272, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_atype = __pyx_t_6;
   __pyx_t_6 = 0;
 
-  /* "adios_mpi.pyx":2269
+  /* "adios_mpi.pyx":2274
  *         atype = np2adiostype(val_.dtype)
  *         ## No space allowed
  *         cdef int64_t varid = 0;             # <<<<<<<<<<<<<<
@@ -36964,7 +37065,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
  */
   __pyx_v_varid = 0;
 
-  /* "adios_mpi.pyx":2270
+  /* "adios_mpi.pyx":2275
  *         ## No space allowed
  *         cdef int64_t varid = 0;
  *         varid = define_var(gid, self.name, "", atype,             # <<<<<<<<<<<<<<
@@ -36973,96 +37074,96 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
  */
   __pyx_t_6 = __pyx_v_self->name;
   __Pyx_INCREF(__pyx_t_6);
-  __pyx_t_8 = __Pyx_PyInt_As_int(__pyx_v_atype); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2270, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_PyInt_As_int(__pyx_v_atype); if (unlikely((__pyx_t_8 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 2275, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2271
+  /* "adios_mpi.pyx":2276
  *         cdef int64_t varid = 0;
  *         varid = define_var(gid, self.name, "", atype,
  *                    str(ldim_).replace(' ', '').strip('(,)'),             # <<<<<<<<<<<<<<
  *                    str(gdim_).replace(' ', '').strip('(,)'),
  *                    str(offset_).replace(' ', '').strip('(,)'))
  */
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2271, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_v_ldim_);
   __Pyx_GIVEREF(__pyx_v_ldim_);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_ldim_);
-  __pyx_t_7 = __Pyx_PyObject_Call(((PyObject *)(&PyString_Type)), __pyx_t_3, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2271, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_Call(((PyObject *)(&PyString_Type)), __pyx_t_3, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_replace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2271, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_replace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__65, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2271, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__65, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_strip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2271, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_strip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__67, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2271, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__67, NULL); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 2276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(PyString_CheckExact(__pyx_t_7))||((__pyx_t_7) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_7)->tp_name), 0))) __PYX_ERR(0, 2271, __pyx_L1_error)
+  if (!(likely(PyString_CheckExact(__pyx_t_7))||((__pyx_t_7) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_7)->tp_name), 0))) __PYX_ERR(0, 2276, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2272
+  /* "adios_mpi.pyx":2277
  *         varid = define_var(gid, self.name, "", atype,
  *                    str(ldim_).replace(' ', '').strip('(,)'),
  *                    str(gdim_).replace(' ', '').strip('(,)'),             # <<<<<<<<<<<<<<
  *                    str(offset_).replace(' ', '').strip('(,)'))
  * 
  */
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2272, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_v_gdim_);
   __Pyx_GIVEREF(__pyx_v_gdim_);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_gdim_);
-  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)(&PyString_Type)), __pyx_t_3, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2272, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)(&PyString_Type)), __pyx_t_3, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_replace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2272, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_replace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__68, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2272, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__68, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_strip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2272, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_strip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__69, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2272, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__69, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(PyString_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 2272, __pyx_L1_error)
+  if (!(likely(PyString_CheckExact(__pyx_t_4))||((__pyx_t_4) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 2277, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2273
+  /* "adios_mpi.pyx":2278
  *                    str(ldim_).replace(' ', '').strip('(,)'),
  *                    str(gdim_).replace(' ', '').strip('(,)'),
  *                    str(offset_).replace(' ', '').strip('(,)'))             # <<<<<<<<<<<<<<
  * 
  *         if (self.transform is not None):
  */
-  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2273, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2278, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_v_offset_);
   __Pyx_GIVEREF(__pyx_v_offset_);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_offset_);
-  __pyx_t_9 = __Pyx_PyObject_Call(((PyObject *)(&PyString_Type)), __pyx_t_3, NULL); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2273, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_Call(((PyObject *)(&PyString_Type)), __pyx_t_3, NULL); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2278, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_replace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2273, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_replace); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2278, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__70, NULL); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2273, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__70, NULL); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2278, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_strip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2273, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_9, __pyx_n_s_strip); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2278, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-  __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__71, NULL); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2273, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__71, NULL); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2278, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_9);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(PyString_CheckExact(__pyx_t_9))||((__pyx_t_9) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_9)->tp_name), 0))) __PYX_ERR(0, 2273, __pyx_L1_error)
+  if (!(likely(PyString_CheckExact(__pyx_t_9))||((__pyx_t_9) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_t_9)->tp_name), 0))) __PYX_ERR(0, 2278, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2270
+  /* "adios_mpi.pyx":2275
  *         ## No space allowed
  *         cdef int64_t varid = 0;
  *         varid = define_var(gid, self.name, "", atype,             # <<<<<<<<<<<<<<
@@ -37080,7 +37181,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
   __pyx_v_varid = __pyx_t_10;
 
-  /* "adios_mpi.pyx":2275
+  /* "adios_mpi.pyx":2280
  *                    str(offset_).replace(' ', '').strip('(,)'))
  * 
  *         if (self.transform is not None):             # <<<<<<<<<<<<<<
@@ -37091,7 +37192,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "adios_mpi.pyx":2276
+    /* "adios_mpi.pyx":2281
  * 
  *         if (self.transform is not None):
  *             set_transform(varid, self.transform)             # <<<<<<<<<<<<<<
@@ -37103,7 +37204,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
     __pyx_f_9adios_mpi_set_transform(__pyx_v_varid, ((PyObject*)__pyx_t_9), 0);
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-    /* "adios_mpi.pyx":2275
+    /* "adios_mpi.pyx":2280
  *                    str(offset_).replace(' ', '').strip('(,)'))
  * 
  *         if (self.transform is not None):             # <<<<<<<<<<<<<<
@@ -37112,7 +37213,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
  */
   }
 
-  /* "adios_mpi.pyx":2246
+  /* "adios_mpi.pyx":2251
  *         self.transform = transform
  * 
  *     def define(self, int64_t gid):             # <<<<<<<<<<<<<<
@@ -37142,7 +37243,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_2define(struct __pyx_obj_9adios_mp
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2278
+/* "adios_mpi.pyx":2283
  *             set_transform(varid, self.transform)
  * 
  *     def bytes(self):             # <<<<<<<<<<<<<<
@@ -37176,7 +37277,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
   PyObject *__pyx_t_6 = NULL;
   __Pyx_RefNannySetupContext("bytes", 0);
 
-  /* "adios_mpi.pyx":2279
+  /* "adios_mpi.pyx":2284
  * 
  *     def bytes(self):
  *         val_ = self.value             # <<<<<<<<<<<<<<
@@ -37188,7 +37289,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
   __pyx_v_val_ = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2280
+  /* "adios_mpi.pyx":2285
  *     def bytes(self):
  *         val_ = self.value
  *         if not isinstance(self.value, (np.ndarray)):             # <<<<<<<<<<<<<<
@@ -37202,16 +37303,16 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
   __pyx_t_3 = ((!(__pyx_t_2 != 0)) != 0);
   if (__pyx_t_3) {
 
-    /* "adios_mpi.pyx":2281
+    /* "adios_mpi.pyx":2286
  *         val_ = self.value
  *         if not isinstance(self.value, (np.ndarray)):
  *             val_ = np.array(self.value)             # <<<<<<<<<<<<<<
  * 
  *         return val_.size * val_.itemsize
  */
-    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2281, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2286, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2281, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2286, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_4 = NULL;
@@ -37225,13 +37326,13 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
       }
     }
     if (!__pyx_t_4) {
-      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_self->value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2281, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_self->value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2286, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     } else {
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_5)) {
         PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_self->value};
-        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2281, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2286, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_GOTREF(__pyx_t_1);
       } else
@@ -37239,19 +37340,19 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
         PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_self->value};
-        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2281, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2286, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_GOTREF(__pyx_t_1);
       } else
       #endif
       {
-        __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2281, __pyx_L1_error)
+        __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2286, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
         __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
         __Pyx_INCREF(__pyx_v_self->value);
         __Pyx_GIVEREF(__pyx_v_self->value);
         PyTuple_SET_ITEM(__pyx_t_6, 0+1, __pyx_v_self->value);
-        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2281, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2286, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       }
@@ -37260,7 +37361,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
     __Pyx_DECREF_SET(__pyx_v_val_, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "adios_mpi.pyx":2280
+    /* "adios_mpi.pyx":2285
  *     def bytes(self):
  *         val_ = self.value
  *         if not isinstance(self.value, (np.ndarray)):             # <<<<<<<<<<<<<<
@@ -37269,7 +37370,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
  */
   }
 
-  /* "adios_mpi.pyx":2283
+  /* "adios_mpi.pyx":2288
  *             val_ = np.array(self.value)
  * 
  *         return val_.size * val_.itemsize             # <<<<<<<<<<<<<<
@@ -37277,11 +37378,11 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
  *     def write(self, int64_t fd):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_val_, __pyx_n_s_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2283, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_val_, __pyx_n_s_size); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2288, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_val_, __pyx_n_s_itemsize); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2283, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_val_, __pyx_n_s_itemsize); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2288, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = PyNumber_Multiply(__pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2283, __pyx_L1_error)
+  __pyx_t_6 = PyNumber_Multiply(__pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2288, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -37289,7 +37390,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
   __pyx_t_6 = 0;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2278
+  /* "adios_mpi.pyx":2283
  *             set_transform(varid, self.transform)
  * 
  *     def bytes(self):             # <<<<<<<<<<<<<<
@@ -37312,7 +37413,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_4bytes(struct __pyx_obj_9adios_mpi
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2285
+/* "adios_mpi.pyx":2290
  *         return val_.size * val_.itemsize
  * 
  *     def write(self, int64_t fd):             # <<<<<<<<<<<<<<
@@ -37329,7 +37430,7 @@ static PyObject *__pyx_pw_9adios_mpi_7varinfo_7write(PyObject *__pyx_v_self, PyO
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("write (wrapper)", 0);
   assert(__pyx_arg_fd); {
-    __pyx_v_fd = __Pyx_PyInt_As_int64_t(__pyx_arg_fd); if (unlikely((__pyx_v_fd == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 2285, __pyx_L3_error)
+    __pyx_v_fd = __Pyx_PyInt_As_int64_t(__pyx_arg_fd); if (unlikely((__pyx_v_fd == ((int64_t)-1)) && PyErr_Occurred())) __PYX_ERR(0, 2290, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -37356,7 +37457,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
   PyObject *__pyx_t_6 = NULL;
   __Pyx_RefNannySetupContext("write", 0);
 
-  /* "adios_mpi.pyx":2286
+  /* "adios_mpi.pyx":2291
  * 
  *     def write(self, int64_t fd):
  *         val_ = self.value             # <<<<<<<<<<<<<<
@@ -37368,7 +37469,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
   __pyx_v_val_ = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2288
+  /* "adios_mpi.pyx":2293
  *         val_ = self.value
  * 
  *         if val_ is None:             # <<<<<<<<<<<<<<
@@ -37379,7 +37480,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "adios_mpi.pyx":2289
+    /* "adios_mpi.pyx":2294
  * 
  *         if val_ is None:
  *             return             # <<<<<<<<<<<<<<
@@ -37390,7 +37491,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "adios_mpi.pyx":2288
+    /* "adios_mpi.pyx":2293
  *         val_ = self.value
  * 
  *         if val_ is None:             # <<<<<<<<<<<<<<
@@ -37399,7 +37500,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
  */
   }
 
-  /* "adios_mpi.pyx":2291
+  /* "adios_mpi.pyx":2296
  *             return
  * 
  *         if not isinstance(self.value, (np.ndarray)):             # <<<<<<<<<<<<<<
@@ -37413,16 +37514,16 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
   __pyx_t_2 = ((!(__pyx_t_3 != 0)) != 0);
   if (__pyx_t_2) {
 
-    /* "adios_mpi.pyx":2292
+    /* "adios_mpi.pyx":2297
  * 
  *         if not isinstance(self.value, (np.ndarray)):
  *             val_ = np.array(self.value)             # <<<<<<<<<<<<<<
  * 
  *         write(fd, self.name, val_)
  */
-    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2292, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetModuleGlobalName(__pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2297, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2292, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_array); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2297, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_4 = NULL;
@@ -37436,13 +37537,13 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
       }
     }
     if (!__pyx_t_4) {
-      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_self->value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2292, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_v_self->value); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2297, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     } else {
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_5)) {
         PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_self->value};
-        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2292, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2297, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_GOTREF(__pyx_t_1);
       } else
@@ -37450,19 +37551,19 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
         PyObject *__pyx_temp[2] = {__pyx_t_4, __pyx_v_self->value};
-        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2292, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-1, 1+1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2297, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
         __Pyx_GOTREF(__pyx_t_1);
       } else
       #endif
       {
-        __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2292, __pyx_L1_error)
+        __pyx_t_6 = PyTuple_New(1+1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 2297, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_6);
         __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_4); __pyx_t_4 = NULL;
         __Pyx_INCREF(__pyx_v_self->value);
         __Pyx_GIVEREF(__pyx_v_self->value);
         PyTuple_SET_ITEM(__pyx_t_6, 0+1, __pyx_v_self->value);
-        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2292, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_6, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2297, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       }
@@ -37471,7 +37572,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
     __Pyx_DECREF_SET(__pyx_v_val_, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "adios_mpi.pyx":2291
+    /* "adios_mpi.pyx":2296
  *             return
  * 
  *         if not isinstance(self.value, (np.ndarray)):             # <<<<<<<<<<<<<<
@@ -37480,7 +37581,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
  */
   }
 
-  /* "adios_mpi.pyx":2294
+  /* "adios_mpi.pyx":2299
  *             val_ = np.array(self.value)
  * 
  *         write(fd, self.name, val_)             # <<<<<<<<<<<<<<
@@ -37492,7 +37593,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
   __pyx_f_9adios_mpi_write(__pyx_v_fd, ((PyObject*)__pyx_t_1), __pyx_v_val_, 0, NULL);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2285
+  /* "adios_mpi.pyx":2290
  *         return val_.size * val_.itemsize
  * 
  *     def write(self, int64_t fd):             # <<<<<<<<<<<<<<
@@ -37517,7 +37618,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_6write(struct __pyx_obj_9adios_mpi
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2296
+/* "adios_mpi.pyx":2301
  *         write(fd, self.name, val_)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -37545,7 +37646,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_8__repr__(struct __pyx_obj_9adios_
   PyObject *__pyx_t_2 = NULL;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "adios_mpi.pyx":2297
+  /* "adios_mpi.pyx":2302
  * 
  *     def __repr__(self):
  *         return ("AdiosVarinfo (name=%r, ldim=%r, gdim=%r, offset=%r, transform=%r, value=%r)") % \             # <<<<<<<<<<<<<<
@@ -37554,14 +37655,14 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_8__repr__(struct __pyx_obj_9adios_
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "adios_mpi.pyx":2298
+  /* "adios_mpi.pyx":2303
  *     def __repr__(self):
  *         return ("AdiosVarinfo (name=%r, ldim=%r, gdim=%r, offset=%r, transform=%r, value=%r)") % \
  *                 (self.name, self.ldim, self.gdim, self.offset, self.transform, self.value)             # <<<<<<<<<<<<<<
  * 
  * ## Aliases
  */
-  __pyx_t_1 = PyTuple_New(6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2298, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2303, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_self->name);
   __Pyx_GIVEREF(__pyx_v_self->name);
@@ -37582,21 +37683,21 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_8__repr__(struct __pyx_obj_9adios_
   __Pyx_GIVEREF(__pyx_v_self->value);
   PyTuple_SET_ITEM(__pyx_t_1, 5, __pyx_v_self->value);
 
-  /* "adios_mpi.pyx":2297
+  /* "adios_mpi.pyx":2302
  * 
  *     def __repr__(self):
  *         return ("AdiosVarinfo (name=%r, ldim=%r, gdim=%r, offset=%r, transform=%r, value=%r)") % \             # <<<<<<<<<<<<<<
  *                 (self.name, self.ldim, self.gdim, self.offset, self.transform, self.value)
  * 
  */
-  __pyx_t_2 = __Pyx_PyString_Format(__pyx_kp_s_AdiosVarinfo_name_r_ldim_r_gdim, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2297, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyString_Format(__pyx_kp_s_AdiosVarinfo_name_r_ldim_r_gdim, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2302, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2296
+  /* "adios_mpi.pyx":2301
  *         write(fd, self.name, val_)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -37616,7 +37717,7 @@ static PyObject *__pyx_pf_9adios_mpi_7varinfo_8__repr__(struct __pyx_obj_9adios_
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2220
+/* "adios_mpi.pyx":2225
  * cdef class varinfo(object):
  *     cdef str name
  *     cdef public ldim             # <<<<<<<<<<<<<<
@@ -37711,7 +37812,7 @@ static int __pyx_pf_9adios_mpi_7varinfo_4ldim_4__del__(struct __pyx_obj_9adios_m
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2221
+/* "adios_mpi.pyx":2226
  *     cdef str name
  *     cdef public ldim
  *     cdef public gdim             # <<<<<<<<<<<<<<
@@ -37806,7 +37907,7 @@ static int __pyx_pf_9adios_mpi_7varinfo_4gdim_4__del__(struct __pyx_obj_9adios_m
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2222
+/* "adios_mpi.pyx":2227
  *     cdef public ldim
  *     cdef public gdim
  *     cdef public offset             # <<<<<<<<<<<<<<
@@ -37901,7 +38002,7 @@ static int __pyx_pf_9adios_mpi_7varinfo_6offset_4__del__(struct __pyx_obj_9adios
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2223
+/* "adios_mpi.pyx":2228
  *     cdef public gdim
  *     cdef public offset
  *     cdef public value             # <<<<<<<<<<<<<<
@@ -37996,7 +38097,7 @@ static int __pyx_pf_9adios_mpi_7varinfo_5value_4__del__(struct __pyx_obj_9adios_
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2312
+/* "adios_mpi.pyx":2317
  * ## ====================
  * 
  * def readvar(fname, varname):             # <<<<<<<<<<<<<<
@@ -38034,11 +38135,11 @@ static PyObject *__pyx_pw_9adios_mpi_93readvar(PyObject *__pyx_self, PyObject *_
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_varname)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("readvar", 1, 2, 2, 1); __PYX_ERR(0, 2312, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("readvar", 1, 2, 2, 1); __PYX_ERR(0, 2317, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "readvar") < 0)) __PYX_ERR(0, 2312, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "readvar") < 0)) __PYX_ERR(0, 2317, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -38051,7 +38152,7 @@ static PyObject *__pyx_pw_9adios_mpi_93readvar(PyObject *__pyx_self, PyObject *_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("readvar", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2312, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("readvar", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 2317, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("adios_mpi.readvar", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -38075,47 +38176,47 @@ static PyObject *__pyx_pf_9adios_mpi_92readvar(CYTHON_UNUSED PyObject *__pyx_sel
   PyObject *__pyx_t_4 = NULL;
   __Pyx_RefNannySetupContext("readvar", 0);
 
-  /* "adios_mpi.pyx":2322
+  /* "adios_mpi.pyx":2327
  *         NumPy ndarray: variable value
  *     """
  *     f = file(fname, comm=MPI.COMM_SELF)             # <<<<<<<<<<<<<<
  *     v = f[varname]
  *     return v.read(from_steps=0, nsteps=v.nsteps)
  */
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2322, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2327, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_fname);
   __Pyx_GIVEREF(__pyx_v_fname);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_fname);
-  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2322, __pyx_L1_error)
+  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2327, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_MPI); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2322, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_MPI); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2327, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_COMM_SELF); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2322, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_COMM_SELF); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2327, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_comm, __pyx_t_4) < 0) __PYX_ERR(0, 2322, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_comm, __pyx_t_4) < 0) __PYX_ERR(0, 2327, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_file), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2322, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_file), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2327, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_f = ((struct __pyx_obj_9adios_mpi_file *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "adios_mpi.pyx":2323
+  /* "adios_mpi.pyx":2328
  *     """
  *     f = file(fname, comm=MPI.COMM_SELF)
  *     v = f[varname]             # <<<<<<<<<<<<<<
  *     return v.read(from_steps=0, nsteps=v.nsteps)
  * 
  */
-  __pyx_t_4 = PyObject_GetItem(((PyObject *)__pyx_v_f), __pyx_v_varname); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2323, __pyx_L1_error)
+  __pyx_t_4 = PyObject_GetItem(((PyObject *)__pyx_v_f), __pyx_v_varname); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2328, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_v_v = __pyx_t_4;
   __pyx_t_4 = 0;
 
-  /* "adios_mpi.pyx":2324
+  /* "adios_mpi.pyx":2329
  *     f = file(fname, comm=MPI.COMM_SELF)
  *     v = f[varname]
  *     return v.read(from_steps=0, nsteps=v.nsteps)             # <<<<<<<<<<<<<<
@@ -38123,16 +38224,16 @@ static PyObject *__pyx_pf_9adios_mpi_92readvar(CYTHON_UNUSED PyObject *__pyx_sel
  * def bpls(fname):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_v, __pyx_n_s_read); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2324, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_v, __pyx_n_s_read); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2329, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2324, __pyx_L1_error)
+  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2329, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_from_steps, __pyx_int_0) < 0) __PYX_ERR(0, 2324, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_v, __pyx_n_s_nsteps); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2324, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_from_steps, __pyx_int_0) < 0) __PYX_ERR(0, 2329, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_v, __pyx_n_s_nsteps); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2329, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_nsteps, __pyx_t_1) < 0) __PYX_ERR(0, 2324, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_nsteps, __pyx_t_1) < 0) __PYX_ERR(0, 2329, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2324, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2329, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -38140,7 +38241,7 @@ static PyObject *__pyx_pf_9adios_mpi_92readvar(CYTHON_UNUSED PyObject *__pyx_sel
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2312
+  /* "adios_mpi.pyx":2317
  * ## ====================
  * 
  * def readvar(fname, varname):             # <<<<<<<<<<<<<<
@@ -38164,7 +38265,7 @@ static PyObject *__pyx_pf_9adios_mpi_92readvar(CYTHON_UNUSED PyObject *__pyx_sel
   return __pyx_r;
 }
 
-/* "adios_mpi.pyx":2326
+/* "adios_mpi.pyx":2331
  *     return v.read(from_steps=0, nsteps=v.nsteps)
  * 
  * def bpls(fname):             # <<<<<<<<<<<<<<
@@ -38202,35 +38303,35 @@ static PyObject *__pyx_pf_9adios_mpi_94bpls(CYTHON_UNUSED PyObject *__pyx_self, 
   int __pyx_t_8;
   __Pyx_RefNannySetupContext("bpls", 0);
 
-  /* "adios_mpi.pyx":2335
+  /* "adios_mpi.pyx":2340
  *         dict: Adios file meta data
  *     """
  *     f = file(fname, comm=MPI.COMM_SELF)             # <<<<<<<<<<<<<<
  *     return {'nvars': f.nvars,
  *             'nattrs': f.nattrs,
  */
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2335, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_fname);
   __Pyx_GIVEREF(__pyx_v_fname);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_fname);
-  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2335, __pyx_L1_error)
+  __pyx_t_2 = PyDict_New(); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_MPI); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2335, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_MPI); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_COMM_SELF); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2335, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_n_s_COMM_SELF); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_comm, __pyx_t_4) < 0) __PYX_ERR(0, 2335, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_comm, __pyx_t_4) < 0) __PYX_ERR(0, 2340, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_file), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2335, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(((PyObject *)__pyx_ptype_9adios_mpi_file), __pyx_t_1, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2340, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_f = ((struct __pyx_obj_9adios_mpi_file *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "adios_mpi.pyx":2336
+  /* "adios_mpi.pyx":2341
  *     """
  *     f = file(fname, comm=MPI.COMM_SELF)
  *     return {'nvars': f.nvars,             # <<<<<<<<<<<<<<
@@ -38238,40 +38339,40 @@ static PyObject *__pyx_pf_9adios_mpi_94bpls(CYTHON_UNUSED PyObject *__pyx_self, 
  *             'vars': tuple([ k for k in f.vars.iterkeys() ]),
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_4 = PyDict_New(); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2336, __pyx_L1_error)
+  __pyx_t_4 = PyDict_New(); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2341, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_f->nvars); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2336, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_f->nvars); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2341, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_nvars, __pyx_t_2) < 0) __PYX_ERR(0, 2336, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_nvars, __pyx_t_2) < 0) __PYX_ERR(0, 2341, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "adios_mpi.pyx":2337
+  /* "adios_mpi.pyx":2342
  *     f = file(fname, comm=MPI.COMM_SELF)
  *     return {'nvars': f.nvars,
  *             'nattrs': f.nattrs,             # <<<<<<<<<<<<<<
  *             'vars': tuple([ k for k in f.vars.iterkeys() ]),
  *             'attrs': tuple([ k for k in f.attrs.iterkeys() ]),
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_f->nattrs); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2337, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_f->nattrs); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2342, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_nattrs, __pyx_t_2) < 0) __PYX_ERR(0, 2336, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_nattrs, __pyx_t_2) < 0) __PYX_ERR(0, 2341, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "adios_mpi.pyx":2338
+  /* "adios_mpi.pyx":2343
  *     return {'nvars': f.nvars,
  *             'nattrs': f.nattrs,
  *             'vars': tuple([ k for k in f.vars.iterkeys() ]),             # <<<<<<<<<<<<<<
  *             'attrs': tuple([ k for k in f.attrs.iterkeys() ]),
  *             'time_steps': (f.current_step, f.last_step),
  */
-  __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2338, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2343, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_5 = 0;
   if (unlikely(((PyObject *)__pyx_v_f->vars) == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "iterkeys");
-    __PYX_ERR(0, 2338, __pyx_L1_error)
+    __PYX_ERR(0, 2343, __pyx_L1_error)
   }
-  __pyx_t_3 = __Pyx_dict_iterator(((PyObject *)__pyx_v_f->vars), 0, __pyx_n_s_iterkeys, (&__pyx_t_6), (&__pyx_t_7)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2338, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_dict_iterator(((PyObject *)__pyx_v_f->vars), 0, __pyx_n_s_iterkeys, (&__pyx_t_6), (&__pyx_t_7)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2343, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_1);
   __pyx_t_1 = __pyx_t_3;
@@ -38279,34 +38380,34 @@ static PyObject *__pyx_pf_9adios_mpi_94bpls(CYTHON_UNUSED PyObject *__pyx_self, 
   while (1) {
     __pyx_t_8 = __Pyx_dict_iter_next(__pyx_t_1, __pyx_t_6, &__pyx_t_5, &__pyx_t_3, NULL, NULL, __pyx_t_7);
     if (unlikely(__pyx_t_8 == 0)) break;
-    if (unlikely(__pyx_t_8 == -1)) __PYX_ERR(0, 2338, __pyx_L1_error)
+    if (unlikely(__pyx_t_8 == -1)) __PYX_ERR(0, 2343, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_XDECREF_SET(__pyx_v_k, __pyx_t_3);
     __pyx_t_3 = 0;
-    if (unlikely(__Pyx_ListComp_Append(__pyx_t_2, (PyObject*)__pyx_v_k))) __PYX_ERR(0, 2338, __pyx_L1_error)
+    if (unlikely(__Pyx_ListComp_Append(__pyx_t_2, (PyObject*)__pyx_v_k))) __PYX_ERR(0, 2343, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = PyList_AsTuple(((PyObject*)__pyx_t_2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2338, __pyx_L1_error)
+  __pyx_t_1 = PyList_AsTuple(((PyObject*)__pyx_t_2)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2343, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_vars, __pyx_t_1) < 0) __PYX_ERR(0, 2336, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_vars, __pyx_t_1) < 0) __PYX_ERR(0, 2341, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2339
+  /* "adios_mpi.pyx":2344
  *             'nattrs': f.nattrs,
  *             'vars': tuple([ k for k in f.vars.iterkeys() ]),
  *             'attrs': tuple([ k for k in f.attrs.iterkeys() ]),             # <<<<<<<<<<<<<<
  *             'time_steps': (f.current_step, f.last_step),
  *             'file_size': f.file_size}
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2339, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2344, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_6 = 0;
   if (unlikely(((PyObject *)__pyx_v_f->attrs) == Py_None)) {
     PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%s'", "iterkeys");
-    __PYX_ERR(0, 2339, __pyx_L1_error)
+    __PYX_ERR(0, 2344, __pyx_L1_error)
   }
-  __pyx_t_3 = __Pyx_dict_iterator(((PyObject *)__pyx_v_f->attrs), 0, __pyx_n_s_iterkeys, (&__pyx_t_5), (&__pyx_t_7)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2339, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_dict_iterator(((PyObject *)__pyx_v_f->attrs), 0, __pyx_n_s_iterkeys, (&__pyx_t_5), (&__pyx_t_7)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2344, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_2);
   __pyx_t_2 = __pyx_t_3;
@@ -38314,30 +38415,30 @@ static PyObject *__pyx_pf_9adios_mpi_94bpls(CYTHON_UNUSED PyObject *__pyx_self, 
   while (1) {
     __pyx_t_8 = __Pyx_dict_iter_next(__pyx_t_2, __pyx_t_5, &__pyx_t_6, &__pyx_t_3, NULL, NULL, __pyx_t_7);
     if (unlikely(__pyx_t_8 == 0)) break;
-    if (unlikely(__pyx_t_8 == -1)) __PYX_ERR(0, 2339, __pyx_L1_error)
+    if (unlikely(__pyx_t_8 == -1)) __PYX_ERR(0, 2344, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_XDECREF_SET(__pyx_v_k, __pyx_t_3);
     __pyx_t_3 = 0;
-    if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_v_k))) __PYX_ERR(0, 2339, __pyx_L1_error)
+    if (unlikely(__Pyx_ListComp_Append(__pyx_t_1, (PyObject*)__pyx_v_k))) __PYX_ERR(0, 2344, __pyx_L1_error)
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyList_AsTuple(((PyObject*)__pyx_t_1)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2339, __pyx_L1_error)
+  __pyx_t_2 = PyList_AsTuple(((PyObject*)__pyx_t_1)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2344, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_attrs, __pyx_t_2) < 0) __PYX_ERR(0, 2336, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_attrs, __pyx_t_2) < 0) __PYX_ERR(0, 2341, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "adios_mpi.pyx":2340
+  /* "adios_mpi.pyx":2345
  *             'vars': tuple([ k for k in f.vars.iterkeys() ]),
  *             'attrs': tuple([ k for k in f.attrs.iterkeys() ]),
  *             'time_steps': (f.current_step, f.last_step),             # <<<<<<<<<<<<<<
  *             'file_size': f.file_size}
  */
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_f->current_step); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2340, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_f->current_step); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2345, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_f->last_step); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2340, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_f->last_step); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2345, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2340, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2345, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
@@ -38345,23 +38446,23 @@ static PyObject *__pyx_pf_9adios_mpi_94bpls(CYTHON_UNUSED PyObject *__pyx_self, 
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_1 = 0;
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_time_steps, __pyx_t_3) < 0) __PYX_ERR(0, 2336, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_time_steps, __pyx_t_3) < 0) __PYX_ERR(0, 2341, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "adios_mpi.pyx":2341
+  /* "adios_mpi.pyx":2346
  *             'attrs': tuple([ k for k in f.attrs.iterkeys() ]),
  *             'time_steps': (f.current_step, f.last_step),
  *             'file_size': f.file_size}             # <<<<<<<<<<<<<<
  */
-  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_f->file_size); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2341, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyInt_From_int(__pyx_v_f->file_size); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 2346, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_file_size, __pyx_t_3) < 0) __PYX_ERR(0, 2336, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_n_s_file_size, __pyx_t_3) < 0) __PYX_ERR(0, 2341, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_r = __pyx_t_4;
   __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "adios_mpi.pyx":2326
+  /* "adios_mpi.pyx":2331
  *     return v.read(from_steps=0, nsteps=v.nsteps)
  * 
  * def bpls(fname):             # <<<<<<<<<<<<<<
@@ -42914,6 +43015,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_File, __pyx_k_File, sizeof(__pyx_k_File), 0, 0, 1, 1},
   {&__pyx_kp_u_Format_string_allocated_too_shor, __pyx_k_Format_string_allocated_too_shor, sizeof(__pyx_k_Format_string_allocated_too_shor), 0, 1, 0, 0},
   {&__pyx_kp_u_Format_string_allocated_too_shor_2, __pyx_k_Format_string_allocated_too_shor_2, sizeof(__pyx_k_Format_string_allocated_too_shor_2), 0, 1, 0, 0},
+  {&__pyx_n_s_Get_rank, __pyx_k_Get_rank, sizeof(__pyx_k_Get_rank), 0, 0, 1, 1},
   {&__pyx_n_s_ICEE, __pyx_k_ICEE, sizeof(__pyx_k_ICEE), 0, 0, 1, 1},
   {&__pyx_n_s_ImportError, __pyx_k_ImportError, sizeof(__pyx_k_ImportError), 0, 0, 1, 1},
   {&__pyx_n_s_IndexError, __pyx_k_IndexError, sizeof(__pyx_k_IndexError), 0, 0, 1, 1},
@@ -42978,6 +43080,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_atype, __pyx_k_atype, sizeof(__pyx_k_atype), 0, 0, 1, 1},
   {&__pyx_n_s_axis, __pyx_k_axis, sizeof(__pyx_k_axis), 0, 0, 1, 1},
   {&__pyx_n_s_base_path, __pyx_k_base_path, sizeof(__pyx_k_base_path), 0, 0, 1, 1},
+  {&__pyx_n_s_bcast, __pyx_k_bcast, sizeof(__pyx_k_bcast), 0, 0, 1, 1},
   {&__pyx_n_s_bool, __pyx_k_bool, sizeof(__pyx_k_bool), 0, 0, 1, 1},
   {&__pyx_n_s_bpls, __pyx_k_bpls, sizeof(__pyx_k_bpls), 0, 0, 1, 1},
   {&__pyx_n_s_buffer_size, __pyx_k_buffer_size, sizeof(__pyx_k_buffer_size), 0, 0, 1, 1},
@@ -43122,6 +43225,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_release_step, __pyx_k_release_step, sizeof(__pyx_k_release_step), 0, 0, 1, 1},
   {&__pyx_n_s_replace, __pyx_k_replace, sizeof(__pyx_k_replace), 0, 0, 1, 1},
   {&__pyx_n_s_reshape, __pyx_k_reshape, sizeof(__pyx_k_reshape), 0, 0, 1, 1},
+  {&__pyx_n_s_root, __pyx_k_root, sizeof(__pyx_k_root), 0, 0, 1, 1},
   {&__pyx_n_s_rstrip, __pyx_k_rstrip, sizeof(__pyx_k_rstrip), 0, 0, 1, 1},
   {&__pyx_n_s_scalar, __pyx_k_scalar, sizeof(__pyx_k_scalar), 0, 0, 1, 1},
   {&__pyx_n_s_schema_version, __pyx_k_schema_version, sizeof(__pyx_k_schema_version), 0, 0, 1, 1},
@@ -43187,7 +43291,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_when, __pyx_k_when, sizeof(__pyx_k_when), 0, 0, 1, 1},
   {&__pyx_n_s_write, __pyx_k_write, sizeof(__pyx_k_write), 0, 0, 1, 1},
   {&__pyx_kp_u_writer_declare_group_line_1995, __pyx_k_writer_declare_group_line_1995, sizeof(__pyx_k_writer_declare_group_line_1995), 0, 1, 0, 0},
-  {&__pyx_kp_u_writer_define_var_line_2035, __pyx_k_writer_define_var_line_2035, sizeof(__pyx_k_writer_define_var_line_2035), 0, 1, 0, 0},
+  {&__pyx_kp_u_writer_define_var_line_2040, __pyx_k_writer_define_var_line_2040, sizeof(__pyx_k_writer_define_var_line_2040), 0, 1, 0, 0},
   {&__pyx_n_s_xrange, __pyx_k_xrange, sizeof(__pyx_k_xrange), 0, 0, 1, 1},
   {&__pyx_n_s_zeros, __pyx_k_zeros, sizeof(__pyx_k_zeros), 0, 0, 1, 1},
   {&__pyx_n_s_zip, __pyx_k_zip, sizeof(__pyx_k_zip), 0, 0, 1, 1},
@@ -43671,56 +43775,56 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__53);
   __Pyx_GIVEREF(__pyx_tuple__53);
 
-  /* "adios_mpi.pyx":2202
+  /* "adios_mpi.pyx":2207
  *         if self.is_static:
  *             if self.value is None:
  *                 raise TypeError("Value is none")             # <<<<<<<<<<<<<<
  * 
  *             define_attribute_byvalue(gid, self.name, "", self.value)
  */
-  __pyx_tuple__60 = PyTuple_Pack(1, __pyx_kp_s_Value_is_none); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 2202, __pyx_L1_error)
+  __pyx_tuple__60 = PyTuple_Pack(1, __pyx_kp_s_Value_is_none); if (unlikely(!__pyx_tuple__60)) __PYX_ERR(0, 2207, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__60);
   __Pyx_GIVEREF(__pyx_tuple__60);
 
-  /* "adios_mpi.pyx":2271
+  /* "adios_mpi.pyx":2276
  *         cdef int64_t varid = 0;
  *         varid = define_var(gid, self.name, "", atype,
  *                    str(ldim_).replace(' ', '').strip('(,)'),             # <<<<<<<<<<<<<<
  *                    str(gdim_).replace(' ', '').strip('(,)'),
  *                    str(offset_).replace(' ', '').strip('(,)'))
  */
-  __pyx_tuple__65 = PyTuple_Pack(2, __pyx_kp_s__64, __pyx_kp_s__10); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 2271, __pyx_L1_error)
+  __pyx_tuple__65 = PyTuple_Pack(2, __pyx_kp_s__64, __pyx_kp_s__10); if (unlikely(!__pyx_tuple__65)) __PYX_ERR(0, 2276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__65);
   __Pyx_GIVEREF(__pyx_tuple__65);
-  __pyx_tuple__67 = PyTuple_Pack(1, __pyx_kp_s__66); if (unlikely(!__pyx_tuple__67)) __PYX_ERR(0, 2271, __pyx_L1_error)
+  __pyx_tuple__67 = PyTuple_Pack(1, __pyx_kp_s__66); if (unlikely(!__pyx_tuple__67)) __PYX_ERR(0, 2276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__67);
   __Pyx_GIVEREF(__pyx_tuple__67);
 
-  /* "adios_mpi.pyx":2272
+  /* "adios_mpi.pyx":2277
  *         varid = define_var(gid, self.name, "", atype,
  *                    str(ldim_).replace(' ', '').strip('(,)'),
  *                    str(gdim_).replace(' ', '').strip('(,)'),             # <<<<<<<<<<<<<<
  *                    str(offset_).replace(' ', '').strip('(,)'))
  * 
  */
-  __pyx_tuple__68 = PyTuple_Pack(2, __pyx_kp_s__64, __pyx_kp_s__10); if (unlikely(!__pyx_tuple__68)) __PYX_ERR(0, 2272, __pyx_L1_error)
+  __pyx_tuple__68 = PyTuple_Pack(2, __pyx_kp_s__64, __pyx_kp_s__10); if (unlikely(!__pyx_tuple__68)) __PYX_ERR(0, 2277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__68);
   __Pyx_GIVEREF(__pyx_tuple__68);
-  __pyx_tuple__69 = PyTuple_Pack(1, __pyx_kp_s__66); if (unlikely(!__pyx_tuple__69)) __PYX_ERR(0, 2272, __pyx_L1_error)
+  __pyx_tuple__69 = PyTuple_Pack(1, __pyx_kp_s__66); if (unlikely(!__pyx_tuple__69)) __PYX_ERR(0, 2277, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__69);
   __Pyx_GIVEREF(__pyx_tuple__69);
 
-  /* "adios_mpi.pyx":2273
+  /* "adios_mpi.pyx":2278
  *                    str(ldim_).replace(' ', '').strip('(,)'),
  *                    str(gdim_).replace(' ', '').strip('(,)'),
  *                    str(offset_).replace(' ', '').strip('(,)'))             # <<<<<<<<<<<<<<
  * 
  *         if (self.transform is not None):
  */
-  __pyx_tuple__70 = PyTuple_Pack(2, __pyx_kp_s__64, __pyx_kp_s__10); if (unlikely(!__pyx_tuple__70)) __PYX_ERR(0, 2273, __pyx_L1_error)
+  __pyx_tuple__70 = PyTuple_Pack(2, __pyx_kp_s__64, __pyx_kp_s__10); if (unlikely(!__pyx_tuple__70)) __PYX_ERR(0, 2278, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__70);
   __Pyx_GIVEREF(__pyx_tuple__70);
-  __pyx_tuple__71 = PyTuple_Pack(1, __pyx_kp_s__66); if (unlikely(!__pyx_tuple__71)) __PYX_ERR(0, 2273, __pyx_L1_error)
+  __pyx_tuple__71 = PyTuple_Pack(1, __pyx_kp_s__66); if (unlikely(!__pyx_tuple__71)) __PYX_ERR(0, 2278, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__71);
   __Pyx_GIVEREF(__pyx_tuple__71);
 
@@ -43833,29 +43937,29 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__82);
   __pyx_codeobj__83 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__82, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_jyc_project_adios_devel_w, __pyx_n_s_normalize_key, 60, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__83)) __PYX_ERR(0, 60, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2312
+  /* "adios_mpi.pyx":2317
  * ## ====================
  * 
  * def readvar(fname, varname):             # <<<<<<<<<<<<<<
  *     """ Retrieve a variable value from an Adios file.
  * 
  */
-  __pyx_tuple__84 = PyTuple_Pack(4, __pyx_n_s_fname, __pyx_n_s_varname, __pyx_n_s_f, __pyx_n_s_v); if (unlikely(!__pyx_tuple__84)) __PYX_ERR(0, 2312, __pyx_L1_error)
+  __pyx_tuple__84 = PyTuple_Pack(4, __pyx_n_s_fname, __pyx_n_s_varname, __pyx_n_s_f, __pyx_n_s_v); if (unlikely(!__pyx_tuple__84)) __PYX_ERR(0, 2317, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__84);
   __Pyx_GIVEREF(__pyx_tuple__84);
-  __pyx_codeobj__85 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__84, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_jyc_project_adios_devel_w, __pyx_n_s_readvar_2, 2312, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__85)) __PYX_ERR(0, 2312, __pyx_L1_error)
+  __pyx_codeobj__85 = (PyObject*)__Pyx_PyCode_New(2, 0, 4, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__84, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_jyc_project_adios_devel_w, __pyx_n_s_readvar_2, 2317, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__85)) __PYX_ERR(0, 2317, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2326
+  /* "adios_mpi.pyx":2331
  *     return v.read(from_steps=0, nsteps=v.nsteps)
  * 
  * def bpls(fname):             # <<<<<<<<<<<<<<
  *     """ Return meta data of an Adios file as a Python dictionary object.
  * 
  */
-  __pyx_tuple__86 = PyTuple_Pack(3, __pyx_n_s_fname, __pyx_n_s_f, __pyx_n_s_k); if (unlikely(!__pyx_tuple__86)) __PYX_ERR(0, 2326, __pyx_L1_error)
+  __pyx_tuple__86 = PyTuple_Pack(3, __pyx_n_s_fname, __pyx_n_s_f, __pyx_n_s_k); if (unlikely(!__pyx_tuple__86)) __PYX_ERR(0, 2331, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__86);
   __Pyx_GIVEREF(__pyx_tuple__86);
-  __pyx_codeobj__87 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__86, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_jyc_project_adios_devel_w, __pyx_n_s_bpls, 2326, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__87)) __PYX_ERR(0, 2326, __pyx_L1_error)
+  __pyx_codeobj__87 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__86, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_Users_jyc_project_adios_devel_w, __pyx_n_s_bpls, 2331, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__87)) __PYX_ERR(0, 2331, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -44067,13 +44171,13 @@ PyMODINIT_FUNC PyInit_adios_mpi(void)
   __pyx_type_9adios_mpi_writer.tp_print = 0;
   if (PyObject_SetAttrString(__pyx_m, "writer", (PyObject *)&__pyx_type_9adios_mpi_writer) < 0) __PYX_ERR(0, 1903, __pyx_L1_error)
   __pyx_ptype_9adios_mpi_writer = &__pyx_type_9adios_mpi_writer;
-  if (PyType_Ready(&__pyx_type_9adios_mpi_attrinfo) < 0) __PYX_ERR(0, 2165, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_9adios_mpi_attrinfo) < 0) __PYX_ERR(0, 2170, __pyx_L1_error)
   __pyx_type_9adios_mpi_attrinfo.tp_print = 0;
-  if (PyObject_SetAttrString(__pyx_m, "attrinfo", (PyObject *)&__pyx_type_9adios_mpi_attrinfo) < 0) __PYX_ERR(0, 2165, __pyx_L1_error)
+  if (PyObject_SetAttrString(__pyx_m, "attrinfo", (PyObject *)&__pyx_type_9adios_mpi_attrinfo) < 0) __PYX_ERR(0, 2170, __pyx_L1_error)
   __pyx_ptype_9adios_mpi_attrinfo = &__pyx_type_9adios_mpi_attrinfo;
-  if (PyType_Ready(&__pyx_type_9adios_mpi_varinfo) < 0) __PYX_ERR(0, 2218, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_9adios_mpi_varinfo) < 0) __PYX_ERR(0, 2223, __pyx_L1_error)
   __pyx_type_9adios_mpi_varinfo.tp_print = 0;
-  if (PyObject_SetAttrString(__pyx_m, "varinfo", (PyObject *)&__pyx_type_9adios_mpi_varinfo) < 0) __PYX_ERR(0, 2218, __pyx_L1_error)
+  if (PyObject_SetAttrString(__pyx_m, "varinfo", (PyObject *)&__pyx_type_9adios_mpi_varinfo) < 0) __PYX_ERR(0, 2223, __pyx_L1_error)
   __pyx_ptype_9adios_mpi_varinfo = &__pyx_type_9adios_mpi_varinfo;
   /*--- Type import code ---*/
   __pyx_ptype_7cpython_4type_type = __Pyx_ImportType(__Pyx_BUILTIN_MODULE_NAME, "type", 
@@ -44881,160 +44985,160 @@ PyMODINIT_FUNC PyInit_adios_mpi(void)
  */
   __pyx_k__56 = adios_stat_default;
 
-  /* "adios_mpi.pyx":2036
+  /* "adios_mpi.pyx":2041
  * 
  *     def define_var(self, str varname,
  *                    ldim = tuple(),             # <<<<<<<<<<<<<<
  *                    gdim = tuple(),
  *                    offset = tuple(),
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2036, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2041, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__57 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2037
+  /* "adios_mpi.pyx":2042
  *     def define_var(self, str varname,
  *                    ldim = tuple(),
  *                    gdim = tuple(),             # <<<<<<<<<<<<<<
  *                    offset = tuple(),
  *                    transform = None):
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2037, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2042, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__58 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2038
+  /* "adios_mpi.pyx":2043
  *                    ldim = tuple(),
  *                    gdim = tuple(),
  *                    offset = tuple(),             # <<<<<<<<<<<<<<
  *                    transform = None):
  *         """
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2038, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2043, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__59 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2234
+  /* "adios_mpi.pyx":2239
  * 
  *     def __init__(self, str name,
  *                  ldim = tuple(),             # <<<<<<<<<<<<<<
  *                  gdim = tuple(),
  *                  offset = tuple(),
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2234, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2239, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__61 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2235
+  /* "adios_mpi.pyx":2240
  *     def __init__(self, str name,
  *                  ldim = tuple(),
  *                  gdim = tuple(),             # <<<<<<<<<<<<<<
  *                  offset = tuple(),
  *                  value = None,
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2235, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2240, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__62 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2236
+  /* "adios_mpi.pyx":2241
  *                  ldim = tuple(),
  *                  gdim = tuple(),
  *                  offset = tuple(),             # <<<<<<<<<<<<<<
  *                  value = None,
  *                  transform = None):
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2236, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(((PyObject *)(&PyTuple_Type)), __pyx_empty_tuple, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2241, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_k__63 = __pyx_t_1;
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2301
+  /* "adios_mpi.pyx":2306
  * 
  * ## Aliases
  * File = file             # <<<<<<<<<<<<<<
  * Var = var
  * Attr = attr
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_File, ((PyObject *)__pyx_ptype_9adios_mpi_file)) < 0) __PYX_ERR(0, 2301, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_File, ((PyObject *)__pyx_ptype_9adios_mpi_file)) < 0) __PYX_ERR(0, 2306, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2302
+  /* "adios_mpi.pyx":2307
  * ## Aliases
  * File = file
  * Var = var             # <<<<<<<<<<<<<<
  * Attr = attr
  * Writer = writer
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Var, ((PyObject *)__pyx_ptype_9adios_mpi_var)) < 0) __PYX_ERR(0, 2302, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Var, ((PyObject *)__pyx_ptype_9adios_mpi_var)) < 0) __PYX_ERR(0, 2307, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2303
+  /* "adios_mpi.pyx":2308
  * File = file
  * Var = var
  * Attr = attr             # <<<<<<<<<<<<<<
  * Writer = writer
  * Attrinfo = attrinfo
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Attr, ((PyObject *)__pyx_ptype_9adios_mpi_attr)) < 0) __PYX_ERR(0, 2303, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Attr, ((PyObject *)__pyx_ptype_9adios_mpi_attr)) < 0) __PYX_ERR(0, 2308, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2304
+  /* "adios_mpi.pyx":2309
  * Var = var
  * Attr = attr
  * Writer = writer             # <<<<<<<<<<<<<<
  * Attrinfo = attrinfo
  * Varinfo = varinfo
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Writer, ((PyObject *)__pyx_ptype_9adios_mpi_writer)) < 0) __PYX_ERR(0, 2304, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Writer, ((PyObject *)__pyx_ptype_9adios_mpi_writer)) < 0) __PYX_ERR(0, 2309, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2305
+  /* "adios_mpi.pyx":2310
  * Attr = attr
  * Writer = writer
  * Attrinfo = attrinfo             # <<<<<<<<<<<<<<
  * Varinfo = varinfo
  * 
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Attrinfo, ((PyObject *)__pyx_ptype_9adios_mpi_attrinfo)) < 0) __PYX_ERR(0, 2305, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Attrinfo, ((PyObject *)__pyx_ptype_9adios_mpi_attrinfo)) < 0) __PYX_ERR(0, 2310, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2306
+  /* "adios_mpi.pyx":2311
  * Writer = writer
  * Attrinfo = attrinfo
  * Varinfo = varinfo             # <<<<<<<<<<<<<<
  * 
  * ## ====================
  */
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Varinfo, ((PyObject *)__pyx_ptype_9adios_mpi_varinfo)) < 0) __PYX_ERR(0, 2306, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_Varinfo, ((PyObject *)__pyx_ptype_9adios_mpi_varinfo)) < 0) __PYX_ERR(0, 2311, __pyx_L1_error)
 
-  /* "adios_mpi.pyx":2312
+  /* "adios_mpi.pyx":2317
  * ## ====================
  * 
  * def readvar(fname, varname):             # <<<<<<<<<<<<<<
  *     """ Retrieve a variable value from an Adios file.
  * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_9adios_mpi_93readvar, NULL, __pyx_n_s_adios_mpi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2312, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_9adios_mpi_93readvar, NULL, __pyx_n_s_adios_mpi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2317, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_readvar_2, __pyx_t_1) < 0) __PYX_ERR(0, 2312, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_readvar_2, __pyx_t_1) < 0) __PYX_ERR(0, 2317, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "adios_mpi.pyx":2326
+  /* "adios_mpi.pyx":2331
  *     return v.read(from_steps=0, nsteps=v.nsteps)
  * 
  * def bpls(fname):             # <<<<<<<<<<<<<<
  *     """ Return meta data of an Adios file as a Python dictionary object.
  * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_9adios_mpi_95bpls, NULL, __pyx_n_s_adios_mpi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2326, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_9adios_mpi_95bpls, NULL, __pyx_n_s_adios_mpi); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2331, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_bpls, __pyx_t_1) < 0) __PYX_ERR(0, 2326, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_bpls, __pyx_t_1) < 0) __PYX_ERR(0, 2331, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "adios_mpi.pyx":1
@@ -45046,7 +45150,7 @@ PyMODINIT_FUNC PyInit_adios_mpi(void)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_t_1, __pyx_kp_u_var_read_line_1464, __pyx_kp_u_Perform_read_Read_data_from_an) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   if (PyDict_SetItem(__pyx_t_1, __pyx_kp_u_writer_declare_group_line_1995, __pyx_kp_u_Define_a_group_associated_with) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_1, __pyx_kp_u_writer_define_var_line_2035, __pyx_kp_u_Define_a_variable_associated_wi) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_1, __pyx_kp_u_writer_define_var_line_2040, __pyx_kp_u_Define_a_variable_associated_wi) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 

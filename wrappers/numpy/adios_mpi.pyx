@@ -2014,8 +2014,13 @@ cdef class writer(object):
             self.gname = gname
 
         if self.gname is None:
-            ftmp = tempfile.NamedTemporaryFile()
-            self.gname = 'group'+ftmp.name;
+            rank = self.comm.Get_rank()
+            if rank == 0:
+                ftmp = tempfile.NamedTemporaryFile().name
+            else:
+                ftmp = ""
+            ftmp = self.comm.bcast(ftmp, root=0)
+            self.gname = 'group'+ftmp;
 
         self.gid = declare_group(self.gname, "", stats)
         self.method = method

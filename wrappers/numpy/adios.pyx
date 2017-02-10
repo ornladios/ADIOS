@@ -2015,8 +2015,13 @@ cdef class writer(object):
             self.gname = gname
 
         if self.gname is None:
-            ftmp = tempfile.NamedTemporaryFile()
-            self.gname = 'group'+ftmp.name;
+            rank = 0
+            if rank == 0:
+                ftmp = tempfile.NamedTemporaryFile().name
+            else:
+                ftmp = ""
+            ftmp = ftmp
+            self.gname = 'group'+ftmp;
 
         self.gid = declare_group(self.gname, "", stats)
         self.method = method
