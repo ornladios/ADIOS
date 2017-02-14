@@ -187,6 +187,17 @@ int common_adios_open (int64_t * fd_p, const char * group_name
                     return adios_errno;
                 }
 
+
+    // Time Aggregation: if file name suddenly changes for the group
+    // we need to flush the buffer to the old file and start clean
+    if (TimeAggregationInProgress(g) && strcmp (name, g->ts_fd->name)) {
+        log_debug("TimeAggr: new filename during aggregation. Flush and start buffering again\n");
+        SetTimeAggregationFlush(g, 1); // => TimeAggregationIsFlushing => TimeAggregationLastStep
+        common_adios_close (g->ts_fd); // close old file
+        SetTimeAggregationFlush(g, 0); // => NOT TimeAggregationIsFlushing
+        g->ts_fd = NULL;               // => TimeAggregationJustBegan AND NOT TimeAggregationInProgress
+    }
+
     //printf("ts_to buffer=%d max_tx=%d\n", g->ts_to_buffer, g->max_ts);
     //Time Aggregation: buffering time steps doesn't need to init file open every time
     if (TimeAggregationInProgress(g)) {
