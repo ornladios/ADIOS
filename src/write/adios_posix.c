@@ -67,6 +67,7 @@ struct adios_POSIX_data_struct
 #endif
     int g_have_mdf;
     int file_is_open; // = 1 if in append mode we leave the file open (close at finalize)
+    char *filename; // remember the currently opened filename to recognize when user suddenly changes to another one
     int index_is_in_memory; // = 1 when index is kept in memory, no need to read from file. =1 after first 'append/update' is completed but not after first 'write'.
     uint64_t pg_start_next; // remember end of PG data for future append steps
 
@@ -101,6 +102,7 @@ void adios_posix_init (const PairStruct * parameters
 #endif
     p->g_have_mdf = 1;
     p->file_is_open = 0;  // = 1 when posix file is open (used in append mode only)
+    p->filename = NULL;
     p->index_is_in_memory = 0; 
     p->pg_start_next = 0;
     p->total_bytes_written = 0;
@@ -246,6 +248,27 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
 #ifdef HAVE_MPI
     fd->subfile_index = p->rank; // Only if HAVE_MPI
 #endif
+
+    // if an app writes multiple files with each multiple steps,
+    // i.e. with a w,a,a,a then w to another filename pattern, then
+    // we need to free up stuff kept in memory about the previous file
+    if (!p->filename) {
+        //printf ("ADIOS POSIX Open: First filename %s\n", subfile_name);
+        p->filename = strdup(subfile_name);
+    } else if (strcmp(subfile_name, p->filename)) {
+        //printf ("ADIOS POSIX Open: Change filename %s\n", subfile_name);
+        if (p->file_is_open) {
+            //printf ("ADIOS POSIX Open: Clear up previous file %s\n", p->filename);
+            adios_clear_index_v1 (p->index); // append and update methods never cleared the index and kept file open
+            adios_posix_close_internal (&p->b);
+            p->file_is_open = 0;
+            p->index_is_in_memory = 0;
+            p->b.end_of_pgs = 0;
+        }
+        free (p->filename);
+        p->filename = strdup(subfile_name);
+    }
+
 
     p->total_bytes_written = 0; // counts bytes written only in this open()..close() step
 
@@ -660,6 +683,8 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
     off_t offset = fd->current_pg->pg_start_in_file;
 
     /* FIXME: what is this check? Should never happen ? */
+    //printf ("%s: p->b.end_of_pgs = %" PRIu64 " fd->current_pg->pg_start_in_file = %"
+            PRIu64 "\n", __func__, p->b.end_of_pgs, fd->current_pg->pg_start_in_file);
     assert (p->b.end_of_pgs <= fd->current_pg->pg_start_in_file);
     if (p->b.end_of_pgs > fd->current_pg->pg_start_in_file)
         offset = p->b.end_of_pgs;
@@ -1287,6 +1312,11 @@ void adios_posix_finalize (int mype, struct adios_method_struct * method)
     p->index_is_in_memory = 0; 
 
     adios_free_index_v1 (p->index);
+
+    if (p->filename) {
+        free (p->filename);
+        p->filename = NULL;
+    }
 
     if (adios_posix_initialized)
         adios_posix_initialized = 0;
