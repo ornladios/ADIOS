@@ -6,6 +6,22 @@ Installation
 Adios Python wrapper requires Adios built with the GNU C compiler with
 relocatable codes. Add -fPIC flag to CFLAGS before configuring Adios.
 
+::
+
+  $ ./configure --prefix=/dir/tp/install \
+            MPICC=mpicc MPICXX=mpicxx MPIFC=mpif90 \
+            CC=gcc CXX=g++ FC=gfortran \
+            CFLAGS="-fPIC"
+
+.. note:: Adios provides various functions (such as, staging, compression,
+          hdf5 conversion, etc) which can be turned with proper configure options.
+          Please check 'configure --help' for more options.
+
+::
+
+  $ ./configure --help
+
+
 Quick install with pip
 ----------------------
 
