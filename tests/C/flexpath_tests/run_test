@@ -95,8 +95,8 @@ elif [ "$writer_mode" = "valgrind" ]; then
     echo "Doing     (mpirun -q -n $nw xterm -hold -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!"
     (mpirun -q -n $nw xterm -hold -sl 10000 -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!
 else
-    echo "Doing        (mpirun -q -n $nw $writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
-    (mpirun -q -n $nw $writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+    echo "Doing        (mpirun -q -n $nw ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
+    (mpirun -q -n $nw ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
 fi
 
 
