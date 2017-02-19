@@ -257,15 +257,15 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         return -1;
     }
 
-    int ii = 0;
+    // r[0] is the fastest changing dimension and r[4] is the lowest changing dimension
+    // In C, r[0] is the last dimension. In Fortran, r[0] is the first dimension
     for (i=0; i<ndims; i++)
     {
         uint dsize = (uint) adios_get_dim_value(&d->dimension);
         if (fd->group->adios_host_language_fortran == adios_flag_yes)
-            ii = ndims - 1 - i;
+            r[i] = dsize;
         else
-            ii = i;
-        r[ii] = dsize;
+            r[ndims-i-1] = dsize;
         d = d->next;
     }
 
