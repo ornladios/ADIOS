@@ -71,7 +71,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     for(i = 0; i < ndims; i++)
     {
         uint64_t dsize = (uint64_t)(completed_pg_reqgroup->orig_varblock->count[i]);
-        r[i] = dsize;
+        r[ndims-i-1] = dsize;
     }
 
     void* orig_buff;
