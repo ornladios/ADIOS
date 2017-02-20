@@ -42,7 +42,7 @@
 
 #define CONTACT_STR_LEN 50
 
-typedef enum {FORMAT, DATA, EVGROUP, STEP } Flush_type;
+typedef enum {DATA=1, EVGROUP, STEP } Flush_type;
 
 typedef struct _reader_register_msg {
     uint64_t writer_file;
@@ -130,8 +130,13 @@ typedef struct flush_msg_ {
 typedef struct var_msg_ {
     char* var_name;
     int process_id;
-    int condition;
 } Var_msg, *Var_msg_ptr;
+
+typedef struct read_request_msg_ {
+    char** var_name_array;
+    int var_count;
+    int process_id;
+} read_request_msg, *read_request_msg_ptr;
 
 typedef struct _complex_dummy
 {

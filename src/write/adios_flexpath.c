@@ -49,7 +49,7 @@
 
 /************************* Structure and Type Definitions ***********************/
 // used for messages in the control queue
-typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, INIT, EVGROUP_FLUSH, DATA_BUFFER, FINALIZE} FlexpathMessageType;
+typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, DATA_BUFFER, FINALIZE} FlexpathMessageType;
 
 // maintains connection information
 typedef struct _flexpath_stone {
@@ -994,7 +994,6 @@ set_format(struct adios_group_struct *t,
     for (attr = t->attributes; attr != NULL; attr = attr->next, fieldNo++) {
 	char *fullname = append_path_name(attr->path, attr->name);
 	char *mangle_name = flexpath_mangle(fullname);
-        fprintf(stderr, "On close, attribute \"%s/%s\"\n", attr->path, attr->name);
 	for (int i = 0; i < fieldNo; i++) {
 	    if (strcmp(mangle_name, field_list[i].field_name) == 0) {
 		adios_error(err_invalid_group, "set_format:  The Flexpath transport does not allow multiple writes using the same name in a single group, variable %s is disallowed\n", fullname);
@@ -1760,6 +1759,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
         reader_go_msg go_msg;
         go_msg.reader_file = fileData->reader_file;
         go_msg.start_timestep = 0;
+//        go_msg.file_attributes = 
         CMFormat format = CMregister_simple_format(flexpathWriteData.cm, "Flexpath reader go", reader_go_field_list, sizeof(reader_go_msg));
         CMwrite(fileData->reader_0_conn, format, &go_msg);
     }

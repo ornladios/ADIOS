@@ -154,6 +154,7 @@ typedef struct _flexpath_reader_file
     int mystep;
     int num_sendees;
     int *sendees;
+    read_request_msg *var_read_requests;
 
     uint64_t data_read; // for perf measurements.
     double time_in; // for perf measurements.
@@ -731,20 +732,31 @@ send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type, int u
 }
 
 void
-send_var_message(flexpath_reader_file *fp, int destination, char *varname)
+add_var_to_read_message(flexpath_reader_file *fp, int destination, char *varname)
 {
         int i = 0;
         int found = 0;
+        int index = -1;
         for (i=0; i<fp->num_sendees; i++) {
             if (fp->sendees[i]==destination) {
-                found=1;
+                index = i;
                 break;
             }
         }
-        if (!found) {
+        if (index == -1) {
             fp->num_sendees+=1;
             fp->sendees=realloc(fp->sendees, fp->num_sendees*sizeof(int));
+            fp->var_read_requests=realloc(fp->var_read_requests, fp->num_sendees*sizeof(read_request_msg));
             fp->sendees[fp->num_sendees-1] = destination;
+            fp->var_read_requests[fp->num_sendees-1].process_id = fp->rank;
+            fp->var_read_requests[fp->num_sendees-1].var_name_array = malloc(sizeof(char*));
+            fp->var_read_requests[fp->num_sendees-1].var_name_array[0] = strdup(varname);
+            fp->var_read_requests[fp->num_sendees-1].var_count = 1;
+        } else {
+            read_request_msg_ptr msg = &(fp->var_read_requests[index]);
+            msg->var_name_array = realloc(msg->var_name_array, sizeof(char*)*(msg->var_count +1));
+            msg->var_name_array[msg->var_count] = strdup(varname);
+            msg->var_count++;
         }
         if (!fp->bridges[destination].created) {
             build_bridge(&(fp->bridges[destination]));
@@ -754,10 +766,6 @@ send_var_message(flexpath_reader_file *fp, int destination, char *varname)
 	    fp->bridges[destination].opened = 1;
 	    send_open_msg(fp, destination);
 	}
-	Var_msg var;
-	var.process_id = fp->rank;
-	var.var_name = varname;
-	EVsubmit(fp->bridges[destination].var_source, &var, NULL);
 }
 
 /********** EVPath Handlers **********/
@@ -1236,7 +1244,6 @@ get_writer_contact_info_filesystem(const char *fname)
     
     char *buffer = malloc(size);
     fread(buffer, size, 1, fp_in);
-    printf("%s\n", buffer);
     fclose(fp_in);
     return buffer;
 }
@@ -1770,7 +1777,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 			"No process exists on the writer side matching the index.\n");
 	    return err_out_of_bound;
 	}
-	send_var_message(fp, writer_index, fpvar->varname);
+	add_var_to_read_message(fp, writer_index, fpvar->varname);
 	break;
     }
     case ADIOS_SELECTION_BOUNDINGBOX:
@@ -1811,7 +1818,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 
                     all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
                     all_disp[need_count-1] = *displ;
-                    send_var_message(fp, j, fpvar->varname);
+                    add_var_to_read_message(fp, j, fpvar->varname);
                 }
             }
             fpvar->displ = all_disp;
