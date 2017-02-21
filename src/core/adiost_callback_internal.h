@@ -26,18 +26,12 @@
 #define ADIOST_EXTERN extern "C"
 extern int adios_tool_enabled;
 
-typedef struct {
-    const char *state_name;
-    adiost_state_t  state_id;
-} adiost_state_info_t;
-
-
-enum adios_tool_setting_e {
+typedef enum adios_tool_setting_e {
     adiost_error = 0,
     adiost_unset,
     adiost_disabled,
     adiost_enabled
-};
+} adios_tool_setting_t;
 
 /* management of registered function callbacks */
 #define adiost_callback(e) e ## _callback
