@@ -16,6 +16,18 @@
 #define no_tool_present 0
 #define ADIOST_API_ROUTINE static
 
+/* The do { ... } while (0) idiom ensures that the code acts like a statement
+ * (function call). The unconditional use of the code ensures that the compiler
+ * always checks that your debug code is valid — but the optimizer will remove
+ * the code when DEBUG is 0. */
+#define DEBUG 0
+#define debug_print(...) do { \
+    if (DEBUG) { \
+        fprintf(stderr, __VA_ARGS__); \
+        fflush(stderr);\
+    } \
+} while (0)
+
 /* static/global variables for this file */
 adiost_callbacks_t adiost_callbacks;
 static adiost_initialize_t adiost_initialize_fn = NULL;
@@ -38,7 +50,7 @@ void adiost_pre_init(void) {
 
     // check whether we are enabled or disabled
     char *adiost_env_var = (char *)getenv(adiost_enabled_env_var);
-    enum adios_tool_setting_e tool_setting = adiost_error;
+    adios_tool_setting_t tool_setting = adiost_error;
 
     // convert the input to our internal enumeration
     if (adiost_env_var == NULL || strlen(adiost_env_var) == 0) {
@@ -50,7 +62,7 @@ void adiost_pre_init(void) {
     }
 
     // validate the input
-    printf("%s: %s = %d\n", __func__, adiost_enabled_env_var, tool_setting);
+    debug_print("%s: %s = %d\n", __func__, adiost_enabled_env_var, tool_setting);
     switch(tool_setting) {
         case adiost_disabled:
             break;
@@ -68,7 +80,7 @@ void adiost_pre_init(void) {
             fprintf(stderr, "Legal values are NULL, 'enabled', 'disabled'.\n");
             break;
     }
-    printf("%s: adiost_enabled = %d\n", __func__, adios_tool_enabled);
+    debug_print("%s: adiost_enabled = %d\n", __func__, adios_tool_enabled);
 }
 
 /* Post-initialization */
@@ -98,38 +110,9 @@ void adiost_finalize(void) {
     adios_tool_enabled = 0;
 }
 
-/* Create an array of state macros */
-adiost_state_info_t adiost_state_info[] = {
-#define adiost_state_macro(state, code) { # state, state },
-    FOREACH_ADIOST_STATE(adiost_state_macro)
-    #undef adiost_state_macro
-};
-
 /*****************************************************************************
  * interface operations
  ****************************************************************************/
-
-/*****************************************************************************
- * state
- ****************************************************************************/
-
-ADIOST_API_ROUTINE int adiost_enumerate_state(int current_state, int *next_state,
-                                          const char **next_state_name)
-{
-    const static int len = sizeof(adiost_state_info) / sizeof(adiost_state_info_t);
-    int i = 0;
-
-    for (i = 0; i < len - 1; i++) {
-        if (adiost_state_info[i].state_id == current_state) {
-            *next_state = adiost_state_info[i+1].state_id;
-            *next_state_name = adiost_state_info[i+1].state_name;
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
 
 /*****************************************************************************
  * callbacks
@@ -178,15 +161,6 @@ ADIOST_API_ROUTINE int adiost_get_callback(adiost_event_t evid, adiost_callback_
 
     default: return adiost_get_callback_failure;
     }
-}
-
-/* Currently undefined. If/When states are supported, this should query
- * the active state and return it. */
-
-ADIOST_API_ROUTINE adiost_state_t adiost_get_state(void)
-{
-    adiost_state_t thread_state = adiost_state_undefined;
-    return thread_state;
 }
 
 /*****************************************************************************

@@ -19,17 +19,8 @@
  ****************************************************************************/
 
 #define FOREACH_ADIOST_INQUIRY_FN(macro)  \
-    macro (adiost_enumerate_state)        \
     macro (adiost_set_callback)           \
-    macro (adiost_get_callback)           \
-    macro (adiost_get_state)
-
-/* For each state, specify the state type and the enumeration value. */
-#define FOREACH_ADIOST_STATE(macro)       \
-    macro (adiost_state_first, 0x71)     /* initial enumeration state */     \
-    macro (adiost_state_idle, 0x10)      /* waiting for work */              \
-    macro (adiost_state_overhead, 0x20)  /* overhead excluding wait states */\
-    macro (adiost_state_undefined, 0x70) /* undefined thread state */
+    macro (adiost_get_callback)
 
 /* For each event, specify the callback type and the enumeration value. */
 #define FOREACH_ADIOST_EVENT(macro) \
@@ -54,12 +45,6 @@ macro(adiost_event_fp_copy_buffer,          adiost_file_callback_t,       205) \
 macro(adiost_event_library_shutdown,        adiost_callback_t,            999) \
 
 #endif // #ifdef __ADIOST_CALLBACK_API_H__
-
-typedef enum {
-#define adiost_state_macro(state, code) state = code,
-    FOREACH_ADIOST_STATE(adiost_state_macro)
-    #undef adiost_state_macro
-} adiost_state_t;
 
 typedef enum {
 #define adiost_event_macro(event, callback, eventid) event = eventid,
@@ -142,23 +127,6 @@ ADIOST_API_FUNCTION(void, adiost_initialize, (
 
 /* initialization interface - to be defined by tool */
 adiost_initialize_t adiost_tool(void);
-
-/* Initialization modes - required? */
-typedef enum opt_init_mode_e {
-    adiost_init_mode_never  = 0,
-    adiost_init_mode_false  = 1,
-    adiost_init_mode_true   = 2,
-    adiost_init_mode_always = 3
-} adiost_init_mode_t;
-
-/* Error codes for when registering callbacks. */
-typedef enum adiost_set_callback_rc_e {  /* non-standard */
-    adiost_set_callback_error      = 0,
-    adiost_has_event_no_callback   = 1,
-    adiost_no_event_no_callback    = 2,
-    adiost_has_event_may_callback  = 3,
-    adiost_has_event_must_callback = 4,
-} adiost_set_callback_rc_t;
 
 /* Registering a callback function */
 ADIOST_API_FUNCTION(int, adiost_set_callback, (
