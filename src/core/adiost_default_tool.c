@@ -27,6 +27,18 @@
 #endif // _GNU_SOURCE 
 #include <errno.h> /* to get program name */
 
+/* The do { ... } while (0) idiom ensures that the code acts like a statement
+ * (function call). The unconditional use of the code ensures that the compiler
+ * always checks that your debug code is valid — but the optimizer will remove
+ * the code when DEBUG is 0. */
+#define DEBUG 0
+#define debug_print(...) do { \
+    if (DEBUG) { \
+        fprintf(stderr, __VA_ARGS__); \
+        fflush(stderr);\
+    } \
+} while (0)
+
 /* to get the program name from glibc */
 extern char *program_invocation_name;
 extern char *program_invocation_short_name;
@@ -113,9 +125,9 @@ ADIOST_EXTERN void my_open ( int64_t file_descriptor, adiost_event_type_t type,
     DEBUG_PRINT
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
-        printf("group_name: %s!\n", group_name); fflush(stdout);
-        printf("file_name: %s!\n", file_name); fflush(stdout);
-        printf("mode: %s!\n", mode); fflush(stdout);
+        debug_print("group_name: %s!\n", group_name);
+        debug_print("file_name: %s!\n", file_name);
+        debug_print("mode: %s!\n", mode);
         __timer_start(adiost_open_to_close_timer);
         __timer_start(adiost_open_timer);
     } else {
@@ -172,12 +184,12 @@ ADIOST_EXTERN void my_group_size(int64_t file_descriptor,
     if (type == adiost_event_enter) {
         __timer_start(adiost_group_size_timer);
     } else {
-        printf("data size: %d!\n", data_size); fflush(stdout);
+        debug_print("data size: %d!\n", data_size); fflush(stdout);
         adiost_counters_accumulated[adiost_data_bytes_counter] = 
             adiost_counters_accumulated[adiost_data_bytes_counter] + data_size;
         adiost_counters_count[adiost_data_bytes_counter] = 
             adiost_counters_count[adiost_data_bytes_counter] + 1;
-        printf("total size: %d!\n", total_size); fflush(stdout);
+        debug_print("total size: %d!\n", total_size); fflush(stdout);
         adiost_counters_accumulated[adiost_total_bytes_counter] = 
             adiost_counters_accumulated[adiost_total_bytes_counter] + total_size;
         adiost_counters_count[adiost_total_bytes_counter] = 
@@ -321,7 +333,7 @@ ADIOST_EXTERN void my_fp_copy_buffer(int64_t file_descriptor,
 /* This function is for printing a timer */
 void print_timer(const char *_name, adiost_timer_index_t index) {
     if (adiost_timers_count[index] > 0ULL) {
-        printf("%s: %s, %u calls, %3.9f seconds\n",
+        debug_print("%s: %s, %u calls, %3.9f seconds\n",
             program_invocation_short_name, _name,
             adiost_timers_count[index],
             ((double)adiost_timers_accumulated[index])/ONE_BILLIONF);
@@ -331,7 +343,7 @@ void print_timer(const char *_name, adiost_timer_index_t index) {
 /* This function is for printing a counter */
 void print_counter(const char *_name, adiost_timer_index_t index) {
     if (adiost_counters_count[index] > 0ULL) {
-        printf("%s: %s, %u calls, %u bytes\n",
+        debug_print("%s: %s, %u calls, %u bytes\n",
             program_invocation_short_name, _name,
             adiost_counters_count[index],
             adiost_counters_accumulated[index]);
@@ -365,14 +377,12 @@ ADIOST_EXTERN void my_finalize(void) {
 
 // This function is for checking that the function registration worked.
 #define CHECK(EVENT,FUNCTION,NAME) \
-    printf("Registering ADIOST callback %s...",NAME); \
-    fflush(stderr); \
+    debug_print("Registering ADIOST callback %s...",NAME); \
     if (adiost_fn_set_callback(EVENT, (adiost_callback_t)(FUNCTION)) != \
                     adiost_set_result_registration_success) { \
-        printf("\n\tFailed to register ADIOST callback %s!\n",NAME); \
-        fflush(stderr); \
+        debug_print("\n\tFailed to register ADIOST callback %s!\n",NAME); \
     } else { \
-        printf("success.\n"); \
+        debug_print("success.\n"); \
     } \
 
 ADIOST_EXTERN void default_adiost_initialize (adiost_function_lookup_t adiost_fn_lookup,
@@ -381,7 +391,7 @@ ADIOST_EXTERN void default_adiost_initialize (adiost_function_lookup_t adiost_fn
     adiost_set_callback_t adiost_fn_set_callback = 
         (adiost_set_callback_t)adiost_fn_lookup("adiost_set_callback");
 
-    fprintf(stderr,"Registering ADIOS tool events...\n"); fflush(stderr);
+    debug_print("Registering ADIOS tool events...\n");
     CHECK(adiost_event_open,         my_open,          "adios_open");
     CHECK(adiost_event_close,        my_close,         "adios_close");
     CHECK(adiost_event_write,        my_write,         "adios_write");

@@ -16,6 +16,18 @@
 #define no_tool_present 0
 #define ADIOST_API_ROUTINE static
 
+/* The do { ... } while (0) idiom ensures that the code acts like a statement
+ * (function call). The unconditional use of the code ensures that the compiler
+ * always checks that your debug code is valid — but the optimizer will remove
+ * the code when DEBUG is 0. */
+#define DEBUG 0
+#define debug_print(...) do { \
+    if (DEBUG) { \
+        fprintf(stderr, __VA_ARGS__); \
+        fflush(stderr);\
+    } \
+} while (0)
+
 /* static/global variables for this file */
 adiost_callbacks_t adiost_callbacks;
 static adiost_initialize_t adiost_initialize_fn = NULL;
@@ -50,7 +62,7 @@ void adiost_pre_init(void) {
     }
 
     // validate the input
-    printf("%s: %s = %d\n", __func__, adiost_enabled_env_var, tool_setting);
+    debug_print("%s: %s = %d\n", __func__, adiost_enabled_env_var, tool_setting);
     switch(tool_setting) {
         case adiost_disabled:
             break;
@@ -68,7 +80,7 @@ void adiost_pre_init(void) {
             fprintf(stderr, "Legal values are NULL, 'enabled', 'disabled'.\n");
             break;
     }
-    printf("%s: adiost_enabled = %d\n", __func__, adios_tool_enabled);
+    debug_print("%s: adiost_enabled = %d\n", __func__, adios_tool_enabled);
 }
 
 /* Post-initialization */
