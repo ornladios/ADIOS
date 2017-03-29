@@ -384,31 +384,42 @@ int common_adios_open (int64_t * fd_p, const char * group_name
         if (fd->bufstrat != no_buffering)
         {
             /* Allocate BP buffer with remembered size or max size or default size */
-            uint64_t bufsize;
+            uint64_t expected_bufsize;
 
             if (NotTimeAggregated(g)) {
-                if (g->last_buffer_size > 0)
-                    bufsize = g->last_buffer_size;
+                if (g->max_pg_size > 0)
+                    expected_bufsize = g->max_pg_size;
                 else
-                    bufsize = adios_databuffer_get_extension_size (fd);
+                    expected_bufsize = adios_databuffer_get_extension_size (fd);
             } else {
-                /* Time Aggregation: set the buffer size at the first time step to be buffered.
-                   ts buffering doesn't need buffer extension,
-                   only one time allocation at the first time step
+                /* Time Aggregation: set the user given buffer size at the first time step to be buffered.
+                 * Later, check if the calculated number of timesteps knowing the size encountered so far
+                 * would still fit. If not, try to increase the buffer to accommodate it. The reason for this is
+                 * that we must try to avoid buffer overflow in time aggregation, which situation is not handled.
                  */
                 if (TimeAggregationJustBegan(g)) {
                     adios_databuffer_set_max_size(g->ts_buffsize);
-                    bufsize=g->ts_buffsize;
+                    expected_bufsize=g->ts_buffsize;
+                }
+                else
+                {
+                    // fd->bytes_written is the size of (g->max_ts - g->ts_to_buffer) steps already buffered
+                    expected_bufsize =  g->max_ts * fd->bytes_written / (g->max_ts - g->ts_to_buffer);
+                    if (expected_bufsize > fd->buffer_size)
+                    {
+                        adios_databuffer_set_max_size(expected_bufsize); // allow more than what user specified (g->ts_buffsize)
+                    }
                 }
             }
 
-            //printf("==open bufsize=%llu\n", bufsize);
+            //printf("==open expected_bufsize=%llu\n", expected_bufsize);
 
             //Time Aggregation: when ts buffering is on, only the first step needs to
-            //allocate the buffer
+            //allocate the buffer here
             if (NotTimeAggregated(g) || TimeAggregationJustBegan(g))
+            if (expected_bufsize > fd->buffer_size)
             {
-                if (adios_databuffer_resize (fd, bufsize))
+                if (adios_databuffer_resize (fd, expected_bufsize))
                 {
                     fd->bufstate = buffering_stopped;
                     adios_error (err_no_memory, 
@@ -1423,20 +1434,19 @@ int common_adios_close (struct adios_file_struct * fd)
     //ts aggregation will keep the buffer for next time steps
     //only free the buffer when ts aggregation is not required, or it
     //has reached the MAX_TS. 
-    //printf("close: bytes_written=%llu buffer_siz=%llu fd->group->last_buffer_size=%llu\n", fd->bytes_written, fd->buffer_size, fd->group->last_buffer_size);
+    //printf("close: bytes_written=%llu buffer_siz=%llu fd->group->max_pg_size=%llu\n", fd->bytes_written, fd->buffer_size, fd->group->max_pg_size);
     if (fd->bufstrat != no_buffering)
     {
         //printf("rank %d group %s last buffer size = %" PRIu64 " buffer_size = %" PRIu64 "\n",
-        //        fd->group->process_id, fd->group->name, fd->group->last_buffer_size, fd->buffer_size);
+        //        fd->group->process_id, fd->group->name, fd->group->max_pg_size, fd->buffer_size);
 
-        if (fd->group->last_buffer_size < fd->buffer_size) {
-            // Remember how much buffer we used for the next cycle.
-            // Time Aggregation: with ts buffering, it will be the total amount of data
-            // written; however last_buffer_size isn't used anyways
-            if(TimeAggregated(fd->group))
-                fd->group->last_buffer_size = fd->buffer_size;
-            else
-                fd->group->last_buffer_size = fd->bytes_written;
+        // Remember how much buffer we used for this group for helping buffer allocation in the next cycle.
+        // This only works for non-time-aggregation. In time aggregation, bytes_written is the current size of all buffered steps
+        if (NotTimeAggregated(fd->group))
+        {
+            if (fd->group->max_pg_size < fd->bytes_written) {
+                fd->group->max_pg_size = fd->bytes_written;
+            }
         }
         if (NotTimeAggregated(fd->group) || TimeAggregationLastStep(fd->group)) {
             adios_databuffer_free (fd);

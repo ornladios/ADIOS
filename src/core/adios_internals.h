@@ -162,7 +162,8 @@ struct adios_group_struct
     enum ADIOS_FLAG all_unique_mesh_names;
 
     int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
-    uint64_t last_buffer_size; // remember how much buffer we used in previous output steps
+    uint64_t max_pg_size; // remember how much buffer we used locally in previous output steps (this is not global maximum)
+                          // Note: this variable is not set in time aggregation
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     // Using a "double buffering" approach. Current write cycle stored in timing_obj, while timing info from
@@ -173,8 +174,8 @@ struct adios_group_struct
 #endif
     int do_ts_aggr; //Yuan: introduced for time steps buffering
     struct adios_file_struct *ts_fd; // save and keep open the file struct during time aggr.
-    uint64_t ts_buffsize; //Yuan: introduced for time steps buffering
-    int ts_to_buffer; //current time steps
+    uint64_t ts_buffsize; //Yuan: introduced for time steps buffering, buffer size specified by user
+    int ts_to_buffer; //how many time steps are left to buffer before flush (counts down from max_ts-1 to 0)
     int max_ts; //maximum time steps to buffer 
     struct adios_index_struct_v1 * index; //the indexes for current written PGs 
     int built_index; // FIXME: 0 or 1, if index has been built, do not build it during close()

@@ -1393,7 +1393,7 @@ int adios_common_declare_group (int64_t * id, const char * name
     // ADIOS Schema
     g->meshs = NULL;
     g->mesh_count = 0;
-    g->last_buffer_size = 0;
+    g->max_pg_size = 0;
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     g->timing_obj = 0;
