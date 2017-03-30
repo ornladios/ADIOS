@@ -290,6 +290,12 @@ static void init_mpi_chain(MPI_Comm comm)
     {
     	MPI_Recv (&token, 1, MPI_INT, rank-1, rank-1, comm, &status);
     }
+
+    // Wait for Isend to complete before otherwise the request variable may disappear from the stack
+    if (rank < size-1)
+    {
+        MPI_Wait(&req, &status);
+    }
 }
 
 void adios_mpi_init (const PairStruct * parameters
