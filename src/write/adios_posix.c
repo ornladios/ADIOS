@@ -65,7 +65,8 @@ struct adios_POSIX_data_struct
     int rank;
     int size;
 #endif
-    int g_have_mdf;
+    int g_have_mdf; // = 1 write global metadata file
+    int local_fs; // = N  every N processes are writing to a local file system
     int file_is_open; // = 1 if in append mode we leave the file open (close at finalize)
     char *filename; // remember the currently opened filename to recognize when user suddenly changes to another one
     int index_is_in_memory; // = 1 when index is kept in memory, no need to read from file. =1 after first 'append/update' is completed but not after first 'write'.
@@ -101,11 +102,46 @@ void adios_posix_init (const PairStruct * parameters
     p->size = 0;
 #endif
     p->g_have_mdf = 1;
+    p->local_fs = 0; // only rank 0 creates the directory for sub-files
     p->file_is_open = 0;  // = 1 when posix file is open (used in append mode only)
     p->filename = NULL;
     p->index_is_in_memory = 0; 
     p->pg_start_next = 0;
     p->total_bytes_written = 0;
+
+
+    // process user parameters
+    const PairStruct *ps = parameters;
+    while (ps) {
+        if (!strcasecmp (ps->name, "have_metadata_file")) 
+        {
+            errno = 0;
+            p->g_have_mdf = strtol(ps->value, NULL, 10);
+            if (!errno) {
+                log_debug ("Parameter 'have_metadata_file' set to %d for POSIX write method\n",
+                           p->g_have_mdf);
+            } else {
+                log_error ("Invalid 'have_metadata_file' parameter given to the POSIX write "
+                           "method: '%s'\n", ps->value);
+            }
+        } 
+        else if (!strcasecmp (ps->name, "local-fs")) 
+        {
+            errno = 0;
+            p->local_fs = strtol(ps->value, NULL, 10);
+            if (!errno) {
+                log_debug ("Parameter 'local-fs' set to %d for POSIX write method\n",
+                           p->local_fs);
+            } else {
+                log_error ("Invalid 'local-fs' parameter given to the POSIX write "
+                           "method: '%s'\n", ps->value);
+            }
+        } else {
+            log_error ("Parameter name %s is not recognized by the POSIX write "
+                        "method\n", ps->name);
+        }
+        ps = ps->next;
+    }
 }
 
 
@@ -131,25 +167,6 @@ int adios_posix_open (struct adios_file_struct * fd
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
 
-    char *temp_string, *m_size;
-
-    temp_string = a2s_trim_spaces (method->parameters);
-    if ( (m_size = strstr (temp_string, "have_metadata_file")) )
-    {
-        char * m = strchr (m_size, '=');
-        char * n = strtok (m, ";");
-
-        if (!n)
-            p->g_have_mdf = atoi (n + 1);
-        else
-            p->g_have_mdf = atoi (m + 1);
-    }
-    else
-    {
-        // by default, write metadata file. 
-        p->g_have_mdf = 1;
-    }
-    free (temp_string);
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     int timer_count = 8;
@@ -299,8 +316,15 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
             // create dir to keep all the subfiles
             if (p->group_comm != MPI_COMM_SELF)
             {
-                if (p->rank == 0)
+                /* p->local_fs controls who creates directories.
+                   local_fs = 0 means only rank 0 does
+                   local_fs = N means every Nth rank does
+                */
+                if ( (p->local_fs == 0 && p->rank == 0) ||
+                     (p->local_fs > 0 && p->rank % p->local_fs == 0)
+                   )
                 {
+                    fprintf (stderr, "ADIOS POSIX: mkdir by rank %d\n", p->rank);
                     char * dir_name = malloc (strlen (fd->name) + 4 + 1);
                     sprintf (dir_name, "%s%s"
                                      , fd->name
