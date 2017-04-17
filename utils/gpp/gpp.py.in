@@ -66,17 +66,17 @@ def get_c_groupsize_code (group):
 
 def get_fortran_groupsize_code (group):
     #print('Get Fortran Groupsize code for group "'+group.get_name()+'"')
-    groupsize_code_string = ''
-    groupsize_code_string += 'adios_groupsize = '
+    groupsize_code_string = 'adios_groupsize = 0\n'
+    groupsize_code_string += 'adios_groupsize = adios_groupsize + '
     for v in group.get_vars():
         #print('  count variable "'+v.get_fullpath()+'"')
         if (v.is_scalar() ):
             if v.get_type() != 'string':
-                groupsize_code_string += ('%d' % type_mapper.get_size (v.get_type() ) + ' &\n                + ')
+                groupsize_code_string += ('%d_8' % type_mapper.get_size (v.get_type() ) + ' &\n                + ')
             else:
                 groupsize_code_string += ('len_trim(' + v.get_gwrite() + ')' + ' &\n                + ')
         else:
-            groupsize_code_string += ('%d * ' % type_mapper.get_size (v.get_type() ) )
+            groupsize_code_string += ('%d_8 * ' % type_mapper.get_size (v.get_type() ) )
 
             for d in v.get_dimensions():
                 #print('  count dim "'+d+'"')

@@ -194,9 +194,9 @@ subroutine writeArray()
     ! Write out data using ADIOS
     group = "genarray"
     !  calculate how much we write from this processor
-    group_size = 4 * 9               + &  ! X,Y, nproc, all size_ and offs_ integers
-                 4 * ndx * ndy       + &  ! int_xy
-                 4 * ndx * ndy            ! int_xyt
+    group_size = 4_8 * 9_8           + &  ! X,Y, nproc, all size_ and offs_ integers
+                 ndx * ndy * 4_8     + &  ! int_xy
+                 ndx * ndy * 4_8          ! int_xyt
 
     adios_totalsize = group_size
 
@@ -297,8 +297,8 @@ subroutine processArgs()
         call getarg(4, ndx_str)
         call getarg(5, ndy_str)
         call getarg(6, time_str)
-        read (ndx_str,'(i6)') ndx
-        read (ndy_str,'(i6)') ndy
+        read (ndx_str,'(i12)') ndx
+        read (ndy_str,'(i12)') ndy
         read (time_str,'(i6)') timesteps
         inputfile=char(0)
         common_size = .true.
