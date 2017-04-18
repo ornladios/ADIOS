@@ -42,7 +42,37 @@
 
 #define CONTACT_STR_LEN 50
 
-typedef enum {FORMAT, DATA, EVGROUP, STEP } Flush_type;
+typedef enum {DATA=1, EVGROUP, STEP } Flush_type;
+
+typedef struct _reader_register_msg {
+    uint64_t writer_file;
+    uint64_t reader_file;
+    int condition;
+    int contact_count;
+    char **contacts;
+} reader_register_msg;
+
+static FMField reader_register_field_list[] =
+{
+    {"writer_file", "integer", sizeof(uint64_t), FMOffset(reader_register_msg*, writer_file)},
+    {"reader_file", "integer", sizeof(uint64_t), FMOffset(reader_register_msg*, reader_file)},
+    {"condition", "integer", sizeof(int), FMOffset(reader_register_msg*, condition)},
+    {"contact_count", "integer", sizeof(int), FMOffset(reader_register_msg*, contact_count)},
+    {"contacts", "string[contact_count]", sizeof(char*), FMOffset(reader_register_msg*, contacts)},
+    {NULL, NULL, 0, 0}
+};
+
+typedef struct _reader_go_msg {
+    uint64_t reader_file;
+    int start_timestep;
+} reader_go_msg;
+
+static FMField reader_go_field_list[] =
+{
+    {"reader_file", "integer", sizeof(uint64_t), FMOffset(reader_go_msg*, reader_file)},
+    {"start_timestep", "integer", sizeof(int), FMOffset(reader_go_msg*, start_timestep)},
+    {NULL, NULL, 0, 0}
+};
 
 typedef struct _update_step_msg{
     int step;
@@ -100,8 +130,13 @@ typedef struct flush_msg_ {
 typedef struct var_msg_ {
     char* var_name;
     int process_id;
-    int condition;
 } Var_msg, *Var_msg_ptr;
+
+typedef struct read_request_msg_ {
+    char** var_name_array;
+    int var_count;
+    int process_id;
+} read_request_msg, *read_request_msg_ptr;
 
 typedef struct _complex_dummy
 {

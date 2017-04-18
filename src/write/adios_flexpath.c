@@ -49,7 +49,7 @@
 
 /************************* Structure and Type Definitions ***********************/
 // used for messages in the control queue
-typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, INIT, EVGROUP_FLUSH, DATA_BUFFER, FINALIZE} FlexpathMessageType;
+typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, DATA_BUFFER, FINALIZE} FlexpathMessageType;
 
 // maintains connection information
 typedef struct _flexpath_stone {
@@ -117,6 +117,9 @@ typedef struct _flexpath_write_file_data {
     int size;
     int host_language;
     // EVPath stuff
+    // reader_info
+    CMConnection reader_0_conn;
+    uint64_t reader_file;
     EVstone multiStone;
     EVstone sinkStone;
 
@@ -130,6 +133,7 @@ typedef struct _flexpath_write_file_data {
     FlexpathStone* bridges;
     int numBridges;
     attr_list attrs;
+
 
     // server state
     int maxQueueSize;
@@ -665,6 +669,13 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 	*size += sizeof(unsigned char *);
 	break;
 
+    case adios_string_array:
+	field_list[fieldNo].field_type = strdup("string");
+	field_list[fieldNo].field_size = sizeof(char *);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(unsigned char *);
+	break;
+
     case adios_double:
 	field_list[fieldNo].field_type = strdup("double");
 	field_list[fieldNo].field_size = sizeof(double);
@@ -758,6 +769,198 @@ get_dim_name (struct adios_dimension_item_struct *d)
     return vname;
 }
 
+static int
+set_field_type(int type, FMFieldList field_list, int fieldNo, char *dims, int all_static, FlexpathFMStructure *currentFm) 
+{
+    switch (type) {
+    case adios_unknown:
+        fprintf(stderr, "set_format: Bad Type Error\n");
+        fieldNo--;
+        break;
+		      
+    case adios_integer:
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "*(integer%s)", dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "integer%s", dims);
+        }
+        field_list[fieldNo].field_size = sizeof(int);
+		      
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+		      
+    case adios_unsigned_integer:
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "*(unsigned integer%s)", dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "unsigned integer%s", dims);
+        }
+        field_list[fieldNo].field_size = sizeof(unsigned int);
+	
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    case adios_real:
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "*(float%s)", dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "float%s", dims);
+        }
+        field_list[fieldNo].field_size = sizeof(float);
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    case adios_string:
+        field_list[fieldNo].field_type = strdup("string");
+        field_list[fieldNo].field_size = sizeof(char);
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    case adios_string_array:
+        field_list[fieldNo].field_type = strdup("string");
+        field_list[fieldNo].field_size = sizeof(char);
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    case adios_double:
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "*(double%s)", dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "double%s", dims);
+        }
+        field_list[fieldNo].field_size = sizeof(double);
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+	
+    case adios_long_double:
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "*(double%s)", dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "double%s", dims);
+        }		    
+        field_list[fieldNo].field_size = sizeof(long double);
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    case adios_byte:
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
+                     dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
+                     dims);
+        }
+        field_list[fieldNo].field_size = sizeof(char);
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    case adios_long: // needs to be unsigned integer in ffs
+        // to distinguish on reader_side, I have to look at the size also
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "*(integer%s)", dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "integer%s", dims);
+        }
+        field_list[fieldNo].field_size = sizeof(long);
+	
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+	
+    case adios_unsigned_long: // needs to be unsigned integer in ffs
+        // to distinguish on reader_side, I have to look at the size also
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "*(unsigned integer%s)", dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "unsigned integer%s", dims);
+        }		    
+        field_list[fieldNo].field_size = sizeof(unsigned long);
+	
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    case adios_complex:
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255, "*(complex%s)",
+                     dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255, "complex%s",
+                     dims);
+        }
+        field_list[fieldNo].field_size = sizeof(complex_dummy);
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    case adios_double_complex:
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255, "*(double_complex%s)",
+                     dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255, "double_complex%s",
+                     dims);
+        }
+        field_list[fieldNo].field_size = sizeof(double_complex_dummy);
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    default:
+        fprintf(stderr, "Rejecting field %d, name %s\n", fieldNo, field_list[fieldNo].field_name);
+        adios_error(err_invalid_group, 
+                    "set_format: Unknown Type Error %d: name: %s\n", 
+                    type, field_list[fieldNo].field_name);
+        fieldNo--;	      
+        return 1;
+        //break;
+    }
+    return 0;
+}
+
+
 // construct an fm structure based off the group xml file
 FlexpathFMStructure* 
 set_format(struct adios_group_struct *t, 
@@ -787,6 +990,35 @@ set_format(struct adios_group_struct *t,
     int fieldNo = 0;
     int altvarcount = 0;
 
+    struct adios_attribute_struct *attr;
+    for (attr = t->attributes; attr != NULL; attr = attr->next, fieldNo++) {
+	char *fullname = append_path_name(attr->path, attr->name);
+	char *mangle_name = flexpath_mangle(fullname);
+	for (int i = 0; i < fieldNo; i++) {
+	    if (strcmp(mangle_name, field_list[i].field_name) == 0) {
+		adios_error(err_invalid_group, "set_format:  The Flexpath transport does not allow multiple writes using the same name in a single group, variable %s is disallowed\n", fullname);
+		return NULL;
+	    }
+	}
+	field_list[fieldNo].field_name = mangle_name;
+	if (!attr->nelems) {
+	    // set the field type size and offset approrpriately
+	    set_field(attr->type, &field_list, fieldNo, &currentFm->size);
+	} else {
+	    //it's a vector!
+            char dims[100];
+            sprintf(&dims[0], "[%d]", attr->nelems);
+            set_field_type(attr->type, field_list, fieldNo, dims, /* all static */ 1, currentFm);
+        }
+	field_list = (FMFieldList) realloc(field_list, sizeof(FMField) * (fieldNo + 2));
+
+	fp_verbose(fileData, "field: %s, %s, %d, %d\n", 
+		     field_list[fieldNo].field_name, 
+		     field_list[fieldNo].field_type,
+		     field_list[fieldNo].field_size,
+		     field_list[fieldNo].field_offset); 
+    }
+
     // for each type look through all the fields
     struct adios_var_struct *adios_var;
     for (adios_var = t->vars; adios_var != NULL; adios_var = adios_var->next, fieldNo++) {
@@ -803,7 +1035,6 @@ set_format(struct adios_group_struct *t,
 	field_list[fieldNo].field_name = mangle_name;
         if (fullname!=NULL) {
             int num_dims = 0;
-            char atom_name[200] = "";
             FlexpathVarNode *dims=NULL;
             if (adios_var->dimensions) {
                 struct adios_dimension_struct *adim = adios_var->dimensions;  
@@ -870,186 +1101,8 @@ set_format(struct adios_group_struct *t,
 		currentFm->size ++;					
 	    }
 		  
-	    switch (adios_var->type) {
-	    case adios_unknown:
-		fprintf(stderr, "set_format: Bad Type Error\n");
-		fieldNo--;
-		break;
-		      
-	    case adios_integer:
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "*(integer%s)", dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "integer%s", dims);
-		}
-		field_list[fieldNo].field_size = sizeof(int);
-		      
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-		      
-	    case adios_unsigned_integer:
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "*(unsigned integer%s)", dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "unsigned integer%s", dims);
-		}
-		field_list[fieldNo].field_size = sizeof(unsigned int);
-		      
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-
-	    case adios_real:
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "*(float%s)", dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "float%s", dims);
-		}
-		field_list[fieldNo].field_size = sizeof(float);
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-
-	    case adios_string:
-		field_list[fieldNo].field_type = strdup("string");
-		field_list[fieldNo].field_size = sizeof(char);
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-
-	    case adios_double:
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "*(double%s)", dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "double%s", dims);
-		}
-		field_list[fieldNo].field_size = sizeof(double);
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-		
-	    case adios_long_double:
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "*(double%s)", dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "double%s", dims);
-		}		    
-		field_list[fieldNo].field_size = sizeof(long double);
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-
-	    case adios_byte:
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
-			     dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
-			     dims);
-		}
-		field_list[fieldNo].field_size = sizeof(char);
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-
-	    case adios_long: // needs to be unsigned integer in ffs
-                // to distinguish on reader_side, I have to look at the size also
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "*(integer%s)", dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "integer%s", dims);
-		}
-		field_list[fieldNo].field_size = sizeof(long);
-		      
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-		
-	    case adios_unsigned_long: // needs to be unsigned integer in ffs
-                // to distinguish on reader_side, I have to look at the size also
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "*(unsigned integer%s)", dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255,
-			     "unsigned integer%s", dims);
-		}		    
-		field_list[fieldNo].field_size = sizeof(unsigned long);
-		      
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-
-	    case adios_complex:
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255, "*(complex%s)",
-			     dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255, "complex%s",
-			     dims);
-		}
-		field_list[fieldNo].field_size = sizeof(complex_dummy);
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-
-            case adios_double_complex:
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		if (all_static) {
-		    snprintf((char *) field_list[fieldNo].field_type, 255, "*(double_complex%s)",
-			     dims);
-		} else {
-		    snprintf((char *) field_list[fieldNo].field_type, 255, "double_complex%s",
-			     dims);
-		}
-		field_list[fieldNo].field_size = sizeof(double_complex_dummy);
-		field_list[fieldNo].field_offset = currentFm->size;
-		currentFm->size += sizeof(void *);
-		break;
-
-	    default:
-		fprintf(stderr, "Rejecting field %d, name %s\n", fieldNo, field_list[fieldNo].field_name);
-		adios_error(err_invalid_group, 
-			    "set_format: Unknown Type Error %d: name: %s\n", 
-			    adios_var->type, field_list[fieldNo].field_name);
-		fieldNo--;	      
-		return NULL;
-		//break;
-	    }
-	}
-
+            set_field_type(adios_var->type, field_list, fieldNo, dims, all_static, currentFm);
+        }        
 	field_list = (FMFieldList) realloc(field_list, sizeof(FMField) * (fieldNo + 2));
 
 	fp_verbose(fileData, "field: %s, %s, %d, %d\n", 
@@ -1450,6 +1503,25 @@ stone_close_handler(CManager cm, CMConnection conn, int closed_stone, void *clie
     }
 }
 
+extern void
+reader_register_handler(CManager cm, CMConnection conn, void *vmsg, void *client_data, attr_list attrs)
+{
+    reader_register_msg *msg = (reader_register_msg *)vmsg;
+    FlexpathWriteFileData *fileData = (void*)msg->writer_file;
+    fileData->numBridges = msg->contact_count;
+    fileData->reader_0_conn = conn;
+    fileData->reader_file = msg->reader_file;
+    CMConnection_add_reference(conn);
+    char *recv_buf;
+    char ** recv_buf_ptr = CMCondition_get_client_data(cm, msg->condition);
+    recv_buf = (char *)malloc(fileData->numBridges*CONTACT_LENGTH*sizeof(char));
+    for (int i = 0; i < msg->contact_count; i++) {
+        strcpy(&recv_buf[i*CONTACT_LENGTH], msg->contacts[i]);
+    }
+    *recv_buf_ptr = recv_buf;
+    CMCondition_signal(cm, msg->condition);
+}
+
 // Initializes flexpath write local data structures
 extern void 
 adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
@@ -1491,6 +1563,8 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     }
 
     EVregister_close_handler(flexpathWriteData.cm, stone_close_handler, &flexpathWriteData);
+    CMFormat format = CMregister_simple_format(flexpathWriteData.cm, "Flexpath reader register", reader_register_field_list, sizeof(reader_register_msg));
+    CMregister_handler(format, reader_register_handler, NULL);
 }
 
 extern int 
@@ -1534,9 +1608,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
 
     // communication channel setup
     char writer_info_filename[200];
-    char writer_ready_filename[200];
-    char reader_info_filename[200];
-    char reader_ready_filename[200];   
+    char writer_info_tmp[200];
 
     int i=0;
     flexpathWriteData.rank = fileData->rank;
@@ -1564,53 +1636,49 @@ adios_flexpath_open(struct adios_file_struct *fd,
     // rank 0 prints contact info to file
     if (fileData->rank == 0) {
         sprintf(writer_info_filename, "%s_%s", fd->name, "writer_info.txt");
-        FILE* writer_info = fopen(writer_info_filename,"w");
+        sprintf(writer_info_tmp, "%s_%s", fd->name, "writer_info.tmp");
+        FILE* writer_info = fopen(writer_info_filename, "w");
+        int condition = CMCondition_get(flexpathWriteData.cm, NULL);
+        CMCondition_set_client_data(flexpathWriteData.cm, condition, &recv_buff);
+        fprintf(writer_info, "%d\n", condition);
+        fprintf(writer_info, "%p\n", fileData);
         for (i=0; i<fileData->size; i++) {
             fprintf(writer_info, "%s\n",&recv_buff[i*CONTACT_LENGTH]); 
         }
         fclose(writer_info);
+        rename(writer_info_tmp, writer_info_filename);
+        free(recv_buff);
+        /* wait for reader to wake up, tell us he's ready (and provide his contact info) */
+
+        CMCondition_wait(flexpathWriteData.cm, condition);
+        /* recv_buff and fileData->numBridges have been filled in by the reader_register_handler */
+        MPI_Bcast(&fileData->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(recv_buff, fileData->numBridges*CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
+        unlink(writer_info_filename);
+    } else {
+        MPI_Bcast(&fileData->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        recv_buff = (char *)malloc(fileData->numBridges*CONTACT_LENGTH*sizeof(char));
+        MPI_Bcast(recv_buff, fileData->numBridges*CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
     }
 
-    // poll file - race condition issues
-    FILE* reader_ready = NULL;
-    sprintf(reader_ready_filename, "%s_%s", fd->name, "reader_ready.txt");
-    while (!reader_ready) {
-	reader_ready = fopen(reader_ready_filename,"r");
-    }
-    fclose(reader_ready);
-
-    // read contact list
-    sprintf(reader_info_filename, "%s_%s", fd->name, "reader_info.txt");
-    FILE* reader_info = fopen(reader_info_filename, "r");
-    if (!reader_info) {
-	reader_info = fopen(reader_info_filename, "r");
-    }
-    char in_contact[CONTACT_LENGTH] = "";
-    int numBridges = 0;
     int stone_num;
     // build a bridge per line
-    while (fscanf(reader_info, "%d:%s",&stone_num, in_contact)!=EOF) {
+    int numBridges = fileData->numBridges;
+    fileData->bridges = malloc(sizeof(FlexpathStone) * numBridges);
+    for (int i = 0; i < numBridges; i++) {
+        char in_contact[CONTACT_LENGTH];
+        sscanf(&recv_buff[i*CONTACT_LENGTH], "%d:%s",&stone_num, in_contact);
 	//fprintf(stderr, "reader contact: %d:%s\n", stone_num, in_contact);
-        fileData->bridges = realloc(fileData->bridges, sizeof(FlexpathStone) * (numBridges + 1));
         attr_list contact_list = attr_list_from_string(in_contact);
-        fileData->bridges[numBridges].opened = 0;
-	fileData->bridges[numBridges].created = 0;
-        fileData->bridges[numBridges].step = 0;
-        fileData->bridges[numBridges].theirNum = stone_num;
-        fileData->bridges[numBridges].contact = strdup(in_contact);
-        numBridges += 1;
+        fileData->bridges[i].opened = 0;
+	fileData->bridges[i].created = 0;
+        fileData->bridges[i].step = 0;
+        fileData->bridges[i].theirNum = stone_num;
+        fileData->bridges[i].contact = strdup(in_contact);
     }
-    fileData->numBridges = numBridges;
-    fclose(reader_info);
 
     MPI_Barrier((fileData->mpiComm));
     
-    // cleanup of reader files (writer is done with it).
-    if (fileData->rank == 0) {
-	unlink(reader_info_filename);
-	unlink(reader_ready_filename);
-    }
-
 	
     //process group format
     struct adios_group_struct *t = method->group;
@@ -1686,14 +1754,15 @@ adios_flexpath_open(struct adios_file_struct *fd,
     FMContext my_context = create_local_FMcontext();
     fileData->fm->ioFormat = register_data_format(my_context, fileData->fm->format);
     
-    sprintf(writer_ready_filename, "%s_%s", fd->name, "writer_ready.txt");
-    if (fileData->rank == 0) {
-        FILE* writer_info = fopen(writer_ready_filename, "w");
-        fprintf(writer_info, "ready");
-        fclose(writer_info);
-    }       
-    
     pthread_create(&fileData->ctrl_thr_id, NULL, (void*)&control_thread, fileData);   
+    if (fileData->rank == 0) {
+        reader_go_msg go_msg;
+        go_msg.reader_file = fileData->reader_file;
+        go_msg.start_timestep = 0;
+//        go_msg.file_attributes = 
+        CMFormat format = CMregister_simple_format(flexpathWriteData.cm, "Flexpath reader go", reader_go_field_list, sizeof(reader_go_msg));
+        CMwrite(fileData->reader_0_conn, format, &go_msg);
+    }
     return 0;	
 }
 
@@ -1914,6 +1983,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     evgroup *gp = malloc(sizeof(evgroup));    
     gp->group_name = strdup(method->group->name);
     gp->process_id = fileData->rank;
+
     if (fileData->globalCount == 0 ) {
 
 	gp->num_vars = 0;

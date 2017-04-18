@@ -77,28 +77,26 @@ do
     shift
 done
 
-echo "NR is $nr NW is $nw"
-
 # remove any lingering flexpath startup files
 rm -f *writer_info.txt *writer_ready.txt *reader_info.txt *reader_ready.txt
 
 # Spawn the writer
 if [ "$writer_mode" = "debug" ]; then
     if [ "$debugger" = "lldb" ]; then
-	echo "	(mpirun -q -n $nr xterm -e lldb ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
-	(mpirun -q -n $nr xterm -e lldb ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+	echo "	(mpirun -q -n $wr xterm -e lldb ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
+	(mpirun -q -n $nw xterm -e lldb ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!
     elif [ "$debugger" = "gdb" ]; then
-	echo "(mpirun -q -n $nr xterm -e gdb -args ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
-	(mpirun -q -n $nr xterm -e gdb -args ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+	echo "(mpirun -q -n $nw xterm -e gdb -args ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
+	(mpirun -q -n $wr xterm -e gdb -args ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
     else 
 	echo "Unknown debugger \"$debugger\"";
     fi
 elif [ "$writer_mode" = "valgrind" ]; then 
-    echo "Doing     (mpirun -q -n $nr xterm -hold -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!"
-    (mpirun -q -n $nr xterm -hold -sl 10000 -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!
+    echo "Doing     (mpirun -q -n $nw xterm -hold -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!"
+    (mpirun -q -n $nw xterm -hold -sl 10000 -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!
 else
-    echo "Doing        (mpirun -q -n $nw $writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
-    (mpirun -q -n $nw $writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+    echo "Doing        (mpirun -q -n $nw ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
+    (mpirun -q -n $nw ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
 fi
 
 

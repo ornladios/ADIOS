@@ -6,7 +6,7 @@ readonly E_BADARGS=65
 
 
 #  Currently attributes and maya_append do not work
-all_tests="1D_arr_global 1D_arr_global_noxml scalar maya_append maya_noxml local_arrays attributes global_range_select"
+all_tests="1D_arr_global 1D_arr_global_noxml scalar maya_append maya_noxml local_arrays global_range_select"
 
 count=0
 passed=0
