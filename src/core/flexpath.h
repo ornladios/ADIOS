@@ -14,6 +14,8 @@
 #define FP_DST_ATTR_NAME "fp_dst_rank"
 #define FP_DIM_ATTR_NAME "fp_dim"
 #define FP_NDIMS_ATTR_NAME "fp_ndims"
+#define FP_TIMESTEP "fp_timestep"
+#define FP_ONLY_SCALARS "fp_only_scalars"
 
 #define CLOSE_MSG 0
 #define OPEN_MSG 1
@@ -33,8 +35,8 @@
 	    }
 #define fp_verbose(flxp_file, ...)                             \
             if(flxp_file->verbose) {    \
-		fprintf(stderr, "file %p: %s %d:", flxp_file, FLEXPATH_SIDE, flxp_file->rank); \
-		fprintf(stderr, __VA_ARGS__);			   \
+		fprintf(stdout, "file %p: %s %d:", flxp_file, FLEXPATH_SIDE, flxp_file->rank); \
+		fprintf(stdout, __VA_ARGS__);			   \
             }
             
 
@@ -42,7 +44,12 @@
 
 #define CONTACT_STR_LEN 50
 
-typedef enum {DATA=1, EVGROUP, STEP } Flush_type;
+typedef struct _finalize_close_msg {
+    int finalize;
+    int close;
+    int final_timestep;
+} finalize_close_msg, * finalize_close_msg_ptr;
+
 
 typedef struct _reader_register_msg {
     uint64_t writer_file;
@@ -74,16 +81,6 @@ static FMField reader_go_field_list[] =
     {NULL, NULL, 0, 0}
 };
 
-typedef struct _update_step_msg{
-    int step;
-    int finalized;
-    int condition;
-}update_step_msg;
-
-typedef struct _drop_evgroup{
-    int step;
-    int condition;
-}drop_evgroup_msg;
 /*
  * Contains the offset information for a variable for all writers.
  * offsets_per_rank is == ndims.
@@ -111,31 +108,14 @@ typedef struct _evgroup {
     global_var* vars;
 } evgroup, *evgroup_ptr;
 
-typedef struct _op_msg
-{
-    int process_id;
-    char *file_name;
-    int type; //4 = end_of_stream, 3 = init, 2 = ack, 1 = open, 0 = close,
-    int step;
-    int condition;
-} op_msg, *op_msg_ptr;
  
-typedef struct flush_msg_ {
-    Flush_type type;
-    int process_id;
-    int condition;
-    int id;
-} Flush_msg, *Flush_msg_ptr;
-
-typedef struct var_msg_ {
-    char* var_name;
-    int process_id;
-} Var_msg, *Var_msg_ptr;
-
-typedef struct read_request_msg_ {
-    char** var_name_array;
-    int var_count;
-    int process_id;
+typedef struct _reader_request_msg {
+    int     condition;
+    int     timestep_requested;
+    int     process_return_id;
+    int     current_lamport_min;
+    int     var_count;
+    char**  var_name_array;
 } read_request_msg, *read_request_msg_ptr;
 
 typedef struct _complex_dummy
@@ -150,32 +130,14 @@ typedef struct _double_complex_dummy
     double i;
 } double_complex_dummy;
 
-static FMField complex_dummy_field_list[] =
+static FMField read_request_msg_field_list[]=
 {
-    {"r", "float", sizeof(float), FMOffset(complex_dummy*, r)},
-    {"i", "float", sizeof(float), FMOffset(complex_dummy*, i)},
-    {NULL, NULL, 0, 0}
-};
-
-static FMField double_complex_dummy_field_list[] =
-{
-    {"r", "double", sizeof(double), FMOffset(double_complex_dummy*, r)},
-    {"i", "double", sizeof(double), FMOffset(double_complex_dummy*, i)},
-    {NULL, NULL, 0, 0}
-};
-
-static FMField update_step_msg_field_list[]=
-{
-    {"step", "integer", sizeof(int), FMOffset(update_step_msg*, step)},
-    {"finalized", "integer", sizeof(int), FMOffset(update_step_msg*, finalized)},
-    {"condition", "integer", sizeof(int), FMOffset(update_step_msg*, condition)},
-    {NULL, NULL, 0, 0}
-};
-
-static FMField drop_evgroup_msg_field_list[]=
-{
-    {"step", "integer", sizeof(int), FMOffset(drop_evgroup_msg*, step)},
-    {"condition", "integer", sizeof(int), FMOffset(drop_evgroup_msg*, condition)},
+    {"condition", "integer", sizeof(int), FMOffset(read_request_msg_ptr, condition)},
+    {"timestep_requested", "integer", sizeof(int), FMOffset(read_request_msg_ptr, timestep_requested)},
+    {"process_return_id", "integer",  sizeof(int), FMOffset(read_request_msg_ptr, process_return_id)},
+    {"current_lamport_min", "integer",  sizeof(int), FMOffset(read_request_msg_ptr, current_lamport_min)},
+    {"var_count", "integer", sizeof(int), FMOffset(read_request_msg_ptr, var_count)},
+    {"var_name_array", "string[var_count]", sizeof(char *), FMOffset(read_request_msg_ptr, var_name_array)},
     {NULL, NULL, 0, 0}
 };
 
@@ -197,6 +159,20 @@ static FMField global_var_field_list[]=
     {NULL, NULL, 0, 0}
 };
 
+static FMField complex_dummy_field_list[] =
+{
+    {"r", "float", sizeof(float), FMOffset(complex_dummy*, r)},
+    {"i", "float", sizeof(float), FMOffset(complex_dummy*, i)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMField double_complex_dummy_field_list[] =
+{
+    {"r", "double", sizeof(double), FMOffset(double_complex_dummy*, r)},
+    {"i", "double", sizeof(double), FMOffset(double_complex_dummy*, i)},
+    {NULL, NULL, 0, 0}
+};
+
 static FMField evgroup_field_list[]=
 {
     {"condition", "integer", sizeof(int), FMOffset(evgroup_ptr, condition)},
@@ -208,44 +184,21 @@ static FMField evgroup_field_list[]=
     {NULL, NULL, 0, 0}
 };
 
-static FMField flush_field_list[] =
-{   
-    {"type", "integer", sizeof(Flush_type), FMOffset(Flush_msg_ptr, type)},
-    {"process_id", "integer", sizeof(int), FMOffset(Flush_msg_ptr, process_id)},
-    {"condition", "integer", sizeof(int), FMOffset(Flush_msg_ptr, condition)},
-    {"id", "integer", sizeof(int), FMOffset(Flush_msg_ptr, id)},
-    {NULL, NULL, 0, 0}
-};
 
-static FMField var_field_list[] =
+static FMField finalize_close_msg_field_list[] =
 {
-    {"var_name", "string", sizeof(char*), FMOffset(Var_msg_ptr, var_name)},
-    {"process_id", "integer", sizeof(int), FMOffset(Var_msg_ptr, process_id)},
+    {"finalize", "integer", sizeof(int), FMOffset(finalize_close_msg_ptr, finalize)},
+    {"close", "integer", sizeof(int), FMOffset(finalize_close_msg_ptr, close)},
+    {"final_timestep", "integer", sizeof(int), FMOffset(finalize_close_msg_ptr, final_timestep)},
     {NULL, NULL, 0, 0}
 };
 
-
-static FMField op_file_field_list[] =
+static FMStructDescRec finalize_close_msg_format_list[]=
 {
-    {"process_id", "integer", sizeof(int), FMOffset(op_msg_ptr, process_id)},
-    {"file_name", "string", sizeof(char*), FMOffset(op_msg_ptr, file_name)},
-    {"type", "integer", sizeof(int), FMOffset(op_msg_ptr, type)},
-    {"step", "integer", sizeof(int), FMOffset(op_msg_ptr, step)},
-    {"condition", "integer", sizeof(int), FMOffset(op_msg_ptr, condition)},
+    {"finalize_close_msg", finalize_close_msg_field_list, sizeof(finalize_close_msg), NULL},
     {NULL, NULL, 0, 0}
 };
 
-static FMStructDescRec update_step_msg_format_list[]=
-{
-    {"update_step_msg", update_step_msg_field_list, sizeof(update_step_msg), NULL},
-    {NULL, NULL, 0, 0}
-};
-
-static FMStructDescRec drop_evgroup_msg_format_list[]=
-{
-    {"drop_evgroup_msg", drop_evgroup_msg_field_list, sizeof(drop_evgroup_msg), NULL},
-    {NULL, NULL, 0, 0}
-};
 
 static FMStructDescRec offset_struct_format_list[] =
 {
@@ -253,6 +206,11 @@ static FMStructDescRec offset_struct_format_list[] =
     {NULL, NULL, 0, 0}
 };
 
+static FMStructDescRec read_request_format_list[] =
+{
+    {"read_request", read_request_msg_field_list, sizeof(read_request_msg), NULL},
+    {NULL, NULL, 0, NULL}
+};
 
 static FMStructDescRec evgroup_format_list[] =
 {   
@@ -262,29 +220,12 @@ static FMStructDescRec evgroup_format_list[] =
     {NULL,NULL,0,NULL}
 };
 
-static FMStructDescRec flush_format_list[] =
-{   
-    {"flush", flush_field_list, sizeof(Flush_msg), NULL},
-    {NULL,NULL,0,NULL}
-};
- 
-static FMStructDescRec var_format_list[] =
-{
-    {"varMsg", var_field_list, sizeof(Var_msg), NULL},
-    {NULL, NULL, 0, NULL}
-};
-
 static FMStructDescRec data_format_list[] =
 {
     {"anonymous", NULL, 0, NULL},
     {NULL, NULL, 0, NULL}
 };
 
-static FMStructDescRec op_format_list[] =
-{
-    {"op_msg", op_file_field_list, sizeof(op_msg), NULL},
-    {NULL, NULL, 0, NULL}
-};
 
 static char *getFixedName(char *name);
 
