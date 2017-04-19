@@ -28,7 +28,7 @@
 
 
 int main (int argc, char **argv){
-	int rank =0, size =0;
+	int rank =0, writer_size =0;
 	int NX = 0;
 	double *t = NULL;
 	// this is an array we expect as a reference array
@@ -44,6 +44,10 @@ int main (int argc, char **argv){
 	// adios read initialization
 	MPI_Init( &argc, &argv);
 	MPI_Comm_rank (comm, &rank);
+
+        /*volatile int qur = 0;
+        while(qur == 0) {  Wait for gdb  }
+        MPI_Barrier(comm);*/
 
 	// depending on the method
 	SET_ERROR_IF_NOT_ZERO(adios_read_init_method(adios_opts.method, comm, adios_opts.adios_options), err.adios);
@@ -65,27 +69,20 @@ int main (int argc, char **argv){
 	// read how many processors wrote that array
 	avi = adios_inq_var (adios_handle, "size");
 	if (!avi){
-		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
+		p_error("rank %d: Quitting no inq var for writer size... (%d) %s\n", rank, adios_errno, adios_errmsg());
 		CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
 		return DIAG_ERR;
 	}
-	size = *((int*)avi->value);
+	writer_size = *((int*)avi->value);
 	adios_free_varinfo(avi);
 	avi = NULL;
 
-	// if I run the more readers than writers; just release
-	// the excessive readers
-	if (rank >= size){
-		p_info("rank %d: I am an excessive rank. Nothing to read ...\n", rank);
-		CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
-		return DIAG_OK;
-	}
 
-	// read the size of the array
+	// read the size of the array per process
 	avi = adios_inq_var (adios_handle, "NX");
 	if (!avi){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
+		CLOSE_ADIOS_READER(adios_handle, adios_opts.method)
 		return DIAG_ERR;
 	}
 
@@ -106,11 +103,11 @@ int main (int argc, char **argv){
 	uint64_t count[2] = {1,0};
 	count[1] = NX;
 	uint64_t start[2] = {0,0};
-	start[0] = rank;
+	start[0] = rank % writer_size;
 
 	sel = adios_selection_boundingbox(2,start, count);
 	if( !sel ){
-		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
+		p_error("rank %d: Quitting because no sel... (%d) %s\n", rank, adios_errno, adios_errmsg());
 		diag = DIAG_ERR;
 		goto close_adios;
 	}
@@ -119,45 +116,53 @@ int main (int argc, char **argv){
 	t = calloc(NX, sizeof(double));
 
 	if (adios_schedule_read(adios_handle, sel, "var_1d_array",0,1,t) != 0){
-		p_error("rank %d: Quitting ...(%d) %s\n", rank, adios_errno, adios_errmsg());
+		p_error("rank %d: Quitting schedule read for var array failed...(%d) %s\n", 
+                                    rank, adios_errno, adios_errmsg());
 		diag = DIAG_ERR;
 		goto just_clean;
 	}
 
 	// not sure if this assumption is correct; difficult to find in the ADIOS sources
 	if (adios_perform_reads(adios_handle, 1) != 0){
-		p_error("rank %d: Quitting ...(%d) %s\n", rank, adios_errno, adios_errmsg());
+		p_error("rank %d: Couldn't perform the read...(%d) %s\n", rank, adios_errno, adios_errmsg());
 		diag = DIAG_ERR;
 		goto just_clean;
 	}
 
 	// make the reference array with reference values I expect to get
 	t_ref = calloc(NX, sizeof(double));
-	gen_1D_array(t_ref, NX, rank);
+	gen_1D_array(t_ref, NX, (rank % writer_size));
 
 	// compare the values what you get with what you expect
 	int i = 0;
+        if(rank == 0)
+        {
+            printf("Reader received array: ");
+        }
 	for (i = 0; i < NX; ++i) {
+                if(rank == 0)
+                    printf("%f ", t[i]);
 		if (t[i] != t_ref[i]) {
-			p_test_failed("%s: rank %d: for t[%d] (expected %.1f, got %.1f)\n",
-					test_result.name, rank, i, t_ref[i], t[i]);
+			p_test_failed(test_result.name, rank);
 			test_result.result = TEST_FAILED;
 			break;
 		}
 	}
+        if(rank == 0)
+            printf("\n");
 
 	if (TEST_PASSED == test_result.result)
-		p_test_passed("%s: rank %d\n", test_result.name, rank);
+		p_test_passed(test_result.name, rank);
 	else 
-	    p_test_failed("%s: rank %d\n", test_result.name, rank);
+	    p_test_failed(test_result.name, rank);
 
 
 	adios_release_step(adios_handle);
 	// 0 - next available step, block for max 30 seconds until the next step
 	// is available
 	adios_advance_step(adios_handle, 0, 30);
-	if (0 == adios_errno){
-		printf("Rank %d: proceeding to the next step ...\n", rank);
+	if (err_end_of_stream == adios_errno){
+		printf("Rank %d: finished the step and moved on appropriately\n", rank);
 	} else {
 		printf("ERROR: adios_advance_step(); anyway Quitting ... Rank %d: (%d) %s\n", rank, adios_errno, adios_errmsg());
 	}
