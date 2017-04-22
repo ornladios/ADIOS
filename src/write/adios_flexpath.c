@@ -164,10 +164,10 @@ typedef struct _flexpath_write_data {
 } FlexpathWriteData;
 
 /************************* Global Variable Declarations *************************/
-// used for sanitizing names
-#define OPLEN 7
-static char opList[OPLEN] = { '+', '-', '*', '/', '.', '>', '<' };
-static char *opRepList[OPLEN] = { "_plus_", "_minus_", "_mult_", "_div_", "_dot_", "_greater_", "_less_" };
+static atom_t RANK_ATOM = -1;
+static atom_t TIMESTEP_ATOM = -1;
+static atom_t SCALAR_ATOM = -1;
+static atom_t CM_TRANSPORT = -1;
 
 // used for global communication and data structures
 FlexpathWriteData flexpathWriteData;
@@ -211,63 +211,22 @@ append_path_name(char *path, char *name)
 attr_list
 set_timestep_atom(attr_list attrs, int value)
 {
-    atom_t dst_atom = attr_atom_from_string(FP_TIMESTEP);
     int dst;
-    if (!get_int_attr(attrs, dst_atom, &dst)) {
-        add_int_attr(attrs, dst_atom, value);
+    if (!get_int_attr(attrs, TIMESTEP_ATOM, &dst)) {
+        add_int_attr(attrs, TIMESTEP_ATOM, value);
     }
-    set_int_attr(attrs, dst_atom, value);
+    set_int_attr(attrs, TIMESTEP_ATOM, value);
     return attrs;
 }
     
 attr_list
 set_only_scalars_atom(attr_list attrs, int value)
 {
-    atom_t dst_atom = attr_atom_from_string(FP_ONLY_SCALARS);
     int dst;
-    if (!get_int_attr(attrs, dst_atom, &dst)) {
-        add_int_attr(attrs, dst_atom, value);
+    if (!get_int_attr(attrs, SCALAR_ATOM, &dst)) {
+        add_int_attr(attrs, SCALAR_ATOM, value);
     }
-    set_int_attr(attrs, dst_atom, value);
-    return attrs;
-}
-
-// sets a size atom
-attr_list 
-set_size_atom(attr_list attrs, int value) 
-{
-    atom_t dst_atom = attr_atom_from_string("fp_size");
-    int size;
-    if (!get_int_attr(attrs, dst_atom, &size)) {
-        add_int_attr(attrs, dst_atom, value);
-    }
-    set_int_attr(attrs, dst_atom, value);
-    return attrs;
-}
-
-// sets a dst rank atom
-attr_list 
-set_dst_rank_atom(attr_list attrs, int value) 
-{
-    atom_t dst_atom = attr_atom_from_string("fp_dst_rank");
-    int dst;
-    if (!get_int_attr(attrs, dst_atom, &dst)) {
-        add_int_attr(attrs, dst_atom, value);
-    }
-    set_int_attr(attrs, dst_atom, value);
-    return attrs;
-}
-
-// sets a dst condition atom
-attr_list 
-set_dst_condition_atom(attr_list attrs, int condition)
-{
-    atom_t dst_atom = attr_atom_from_string("fp_dst_condition");
-    int dst;
-    if (!get_int_attr(attrs, dst_atom, &dst)) {
-	add_int_attr(attrs, dst_atom, condition);
-    }
-    set_int_attr(attrs, dst_atom, condition);
+    set_int_attr(attrs, SCALAR_ATOM, value);
     return attrs;
 }
 
@@ -1098,10 +1057,15 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     flexpathWriteData.rank = -1;
     flexpathWriteData.openFiles = NULL;
 
+    // setup ATOMS for attribute lists
+    RANK_ATOM = attr_atom_from_string(FP_RANK_ATTR_NAME);
+    TIMESTEP_ATOM = attr_atom_from_string(FP_TIMESTEP);
+    SCALAR_ATOM = attr_atom_from_string(FP_ONLY_SCALARS);
+    CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
+
     // setup CM
     setenv("CMSelfFormats", "1", 1);
     flexpathWriteData.cm = CManager_create();
-    atom_t CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
     char * transport = getenv("CMTransport");
     if (transport == NULL) {
 	int listened = 0;
@@ -1270,8 +1234,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
     fileData->name = strdup(method->group->name); 
     add_open_file(fileData);
     //Template for all other attrs set here
-    atom_t rank_atom = attr_atom_from_string(FP_RANK_ATTR_NAME);
-    add_int_attr(fileData->attrs, rank_atom, fileData->rank);   
+    add_int_attr(fileData->attrs, RANK_ATOM, fileData->rank);   
 
     //generate multiqueue function that sends formats or all data based on flush msg
 
