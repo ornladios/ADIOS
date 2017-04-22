@@ -207,29 +207,6 @@ append_path_name(char *path, char *name)
     return NULL;
 }
 
-
-attr_list
-set_timestep_atom(attr_list attrs, int value)
-{
-    int dst;
-    if (!get_int_attr(attrs, TIMESTEP_ATOM, &dst)) {
-        add_int_attr(attrs, TIMESTEP_ATOM, value);
-    }
-    set_int_attr(attrs, TIMESTEP_ATOM, value);
-    return attrs;
-}
-    
-attr_list
-set_only_scalars_atom(attr_list attrs, int value)
-{
-    int dst;
-    if (!get_int_attr(attrs, SCALAR_ATOM, &dst)) {
-        add_int_attr(attrs, SCALAR_ATOM, value);
-    }
-    set_int_attr(attrs, SCALAR_ATOM, value);
-    return attrs;
-}
-
 // free data packets once EVPath is finished with them
 void 
 data_free(void* eventData, void* clientData) 
@@ -1549,7 +1526,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
     //Timestep attr needed for raw handler on the reader side to determine which timestep the piece of data is 
     //refering too.
-    fileData->attrs = set_timestep_atom(fileData->attrs, fileData->writerStep);
+    set_int_attr(fileData->attrs, TIMESTEP_ATOM, fileData->writerStep);
 
     //We create two attr_lists because we reference count them underneath and the two messages that we
     //send out have got to be different.  We want to identify what is the only scalars message on the 
@@ -1575,8 +1552,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     //Used to strip out the array data and send only scalar data, array data is stripped out by setting pointer to NULL
     void* temp = copy_buffer_without_array(fileData->fm->buffer, fileData);
    
-    temp_attr_scalars = set_only_scalars_atom(temp_attr_scalars, 1);
-    temp_attr_noscalars = set_only_scalars_atom(temp_attr_noscalars, 0);
+    set_int_attr(temp_attr_scalars, SCALAR_ATOM, 1);
+    set_int_attr(temp_attr_noscalars, SCALAR_ATOM, 0);
 
     //Need to make a copy as we reuse the fileData->fm in every step...
     void *buffer = malloc(fileData->fm->size);    
