@@ -133,8 +133,6 @@ typedef struct _flexpath_write_file_data {
 
     FlexpathStone* bridges;
     int numBridges;
-    attr_list attrs;
-
 
     // server state
     int maxQueueSize;
@@ -1059,6 +1057,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
 	attr_list listen_list = create_attr_list();
 	add_attr(listen_list, CM_TRANSPORT, Attr_String, (attr_value)strdup(transport));
 	CMlisten_specific(flexpathWriteData.cm, listen_list);
+        free_attr_list(listen_list);
     }
     
     // fork communications thread
@@ -1102,9 +1101,6 @@ adios_flexpath_open(struct adios_file_struct *fd,
         sscanf(method->parameters,"QUEUE_SIZE=%d;", &fileData->maxQueueSize);
     }
    
-    // setup step state
-    fileData->attrs = create_attr_list();
-
     // communication channel setup
     char writer_info_filename[200];
     char writer_info_tmp[200];
@@ -1211,7 +1207,6 @@ adios_flexpath_open(struct adios_file_struct *fd,
     fileData->name = strdup(method->group->name); 
     add_open_file(fileData);
     //Template for all other attrs set here
-    add_int_attr(fileData->attrs, RANK_ATOM, fileData->rank);   
 
     //generate multiqueue function that sends formats or all data based on flush msg
 
@@ -1519,20 +1514,21 @@ free_data_buffer(void * event_data, void * client_data)
 extern void 
 adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) 
 {
-
+    attr_list attrs = create_attr_list();
     FlexpathWriteFileData *fileData = find_open_file(method->group->name);
 
     fp_verbose(fileData, " adios_flexpath_close called\n");
 
     //Timestep attr needed for raw handler on the reader side to determine which timestep the piece of data is 
     //refering too.
-    set_int_attr(fileData->attrs, TIMESTEP_ATOM, fileData->writerStep);
+    add_int_attr(attrs, RANK_ATOM, fileData->rank);   
+    set_int_attr(attrs, TIMESTEP_ATOM, fileData->writerStep);
 
     //We create two attr_lists because we reference count them underneath and the two messages that we
     //send out have got to be different.  We want to identify what is the only scalars message on the 
     //reader side to process it differently.
-    attr_list temp_attr_scalars = attr_copy_list(fileData->attrs);
-    attr_list temp_attr_noscalars = attr_copy_list(fileData->attrs);
+    attr_list temp_attr_scalars = attr_copy_list(attrs);
+    attr_list temp_attr_noscalars = attr_copy_list(attrs);
     
     // now gather offsets and send them via MPI to root
     evgroup *gp = malloc(sizeof(evgroup));    
@@ -1579,11 +1575,14 @@ adios_flexpath_finalize(int mype, struct adios_method_struct *method)
     fp_verbose(fileData, "adios_flexpath_finalize called\n");
 
     while(fileData) {
+        attr_list attrs = create_attr_list();
         finalize_close_msg end_msg;
         end_msg.finalize = 1;
         end_msg.close = 1;
         end_msg.final_timestep = fileData->writerStep;
-        EVsubmit_general(fileData->finalizeSource, &end_msg, NULL, fileData->attrs);
+        add_int_attr(attrs, RANK_ATOM, fileData->rank);   
+        EVsubmit_general(fileData->finalizeSource, &end_msg, NULL, attrs);
+        free_attr_list(attrs);
 
         fp_verbose(fileData, "Sent finalize message to readers \n");
 
