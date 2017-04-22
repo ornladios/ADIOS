@@ -7,9 +7,13 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 #include "mpi.h"
 #include "adios.h"
 
+#include "misc.h"
+#include "utils.h"
+#include "test_common.h"
 /*************************************************************/
 /*          Example of writing arrays in ADIOS               */
 /*                                                           */
@@ -25,13 +29,17 @@ int main (int argc, char ** argv)
     MPI_Comm    comm = MPI_COMM_WORLD;
 
     int64_t     adios_handle;
+    struct adios_tsprt_opts adios_opts;
+    int err_count = 0;
+
+    GET_ENTRY_OPTIONS(adios_opts, "Runs writers. It is recommended to run as many writers as readers.");
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
-    
-    strcpy (filename, "arrays");
-    adios_init ("arrays.xml", comm);
+
+    SET_ERROR_IF_NOT_ZERO(adios_init(adios_opts.xml_adios_init_filename, comm), err_count);
+    RET_IF_ERROR(err_count, rank);
     
     int test_scalar = rank * 1000;
     int group_num;
@@ -39,7 +47,7 @@ int main (int argc, char ** argv)
       for (i = 0; i < NX; i++)
         t[i] = rank * NX + i + 100*group_num;
     
-      adios_open (&adios_handle, "temperature", filename, "w", comm);
+      adios_open (&adios_handle, "temperature", FILE_NAME, "w", comm);
     
       test_scalar++;
       adios_write (adios_handle, "NX", &NX);
@@ -48,15 +56,18 @@ int main (int argc, char ** argv)
       adios_write (adios_handle, "size", &size);
       adios_write (adios_handle, "rank", &rank);
       adios_write (adios_handle, "var_2d_array", t);
-		fprintf(stderr, "Writer side Rank=%d: test_scalar: %d step: %d, t[0,5+x] = [%6.2f",rank, test_scalar, group_num, t[0]);
-		int j; // CFLAGS may not be C99 (sigh)
-		for(j=1; j < NX; j++) {
+
+      fprintf(stderr, "Writer side Rank=%d: test_scalar: %d step: %d, t[0] = %6.2f\n",rank, test_scalar, group_num, t[0]);
+		//int j; // CFLAGS may not be C99 (sigh)
+		/*for(j=1; j < NX; j++) {
 		    fprintf(stderr, ", %6.2f", t[j]);
 		}
 		fprintf(stderr, "]\n");
+               */
     
       adios_close (adios_handle);
       fprintf(stderr, "Rank=%d commited write %d\n", rank, group_num);
+      //sleep(11);
     }
     adios_finalize (rank);
 
