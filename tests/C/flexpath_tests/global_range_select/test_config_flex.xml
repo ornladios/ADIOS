@@ -11,7 +11,7 @@
     </global-bounds>
 </adios-group>
 
-<method group="temperature"  method="FLEXPATH">QUEUE_SIZE=4;</method>
+<method group="temperature"  method="FLEXPATH"></method>
 
 <buffer max-size-MB="20"/>
 

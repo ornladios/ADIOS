@@ -194,10 +194,14 @@ typedef struct _local_read_data
 
     // EVPath stuff
     CManager cm;
-    atom_t CM_TRANSPORT;
 } flexpath_read_data;
 
 flexpath_read_data* fp_read_data = NULL;
+
+static atom_t RANK_ATOM = -1;
+static atom_t TIMESTEP_ATOM = -1;
+static atom_t SCALAR_ATOM = -1;
+static atom_t CM_TRANSPORT = -1;
 
 /********** Helper functions. **********/
 
@@ -891,56 +895,6 @@ static FMField *find_field_by_name(const char *name, const FMFieldList flist)
     return NULL;
 }
 
-static uint64_t calc_ffspacket_size(FMField *f, attr_list attrs, void *buffer)
-{
-    uint64_t size = 0;
-    while (f->field_name) {
-        char atom_name[200] = "";
-
-        strcat(atom_name, FP_NDIMS_ATTR_NAME);
-        strcat(atom_name, "_");
-        strcat(atom_name, f->field_name);
-        int num_dims = 0;
-        if (!get_int_attr(attrs, attr_atom_from_string(atom_name), &num_dims)) {
-            fprintf(
-                stderr,
-                "Lookup failure in calc_ffs_packet_size, dims attribute %s\n",
-                atom_name);
-        }
-        if (num_dims == 0) {
-            size += (uint64_t)f->field_size;
-        } else {
-            int i;
-            uint64_t tmpsize = (uint64_t)f->field_size;
-            for (i = 0; i < num_dims; i++) {
-                char *dim;
-                char atom_name[200] = "";
-                strcat(atom_name, FP_DIM_ATTR_NAME);
-                strcat(atom_name, "_");
-                strcat(atom_name, f->field_name);
-                strcat(atom_name, "_");
-                char dim_num[10] = "";
-                sprintf(dim_num, "%d", i + 1);
-                strcat(atom_name, dim_num);
-                if (!get_string_attr(attrs, attr_atom_from_string(atom_name),
-                                     &dim)) {
-                    fprintf(stderr, "LOOKUP FAILURE in get_string_attr, %s\n",
-                            atom_name);
-                }
-
-                FMField *temp_field = find_field_by_name(dim, f);
-                uint64_t *temp_val = get_FMfieldAddr_by_name(
-                    temp_field, temp_field->field_name, buffer);
-                uint64_t dimval = *temp_val;
-                tmpsize *= dimval;
-            }
-            size += tmpsize;
-        }
-        f++;
-    }
-    return size;
-}
-
 void
 print_displacement(array_displacements *disp, int myrank)
 {
@@ -1069,22 +1023,6 @@ need_writer(
         }
     }
     return 1;
-}
-
-int
-get_ndims_attr(const char *field_name, attr_list attrs)
-{
-    char atom_name[200] = "";
-    if (strncmp("FPDIM_", field_name, 6) == 0) return 0;
-    strcat(atom_name, FP_NDIMS_ATTR_NAME);
-    strcat(atom_name, "_");
-    strcat(atom_name, field_name);
-    int num_dims = 0;
-    atom_t atm = attr_atom_from_string(atom_name);
-    if (!get_int_attr(attrs, atm, &num_dims)) {
-	fprintf(stderr, "LOOKUP FAILURE in get_ndims_attr, %s\n", atom_name);
-    }
-    return num_dims;
 }
 
 flexpath_var*
@@ -1481,9 +1419,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     int writer_rank;
     int timestep;
     int only_scalars = 0;
-    get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &writer_rank);
-    get_int_attr(attrs, attr_atom_from_string(FP_TIMESTEP), &timestep);
-    get_int_attr(attrs, attr_atom_from_string(FP_ONLY_SCALARS), &only_scalars);
+    get_int_attr(attrs, RANK_ATOM, &writer_rank);
+    get_int_attr(attrs, TIMESTEP_ATOM, &timestep);
+    get_int_attr(attrs, SCALAR_ATOM, &only_scalars);
     /* fprintf(stderr, "\treader rank:%d:got data from writer:%d:step:%d\n", */
     /* 	    fp->rank, writer_rank, fp->mystep); */
     FMContext context = CMget_FMcontext(cm);
@@ -1493,10 +1431,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     // copy //FMfree_struct_desc_list call
     FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(format));
     FMField *f = struct_list[0].field_list;
-#if 0
-    uint64_t packet_size = calc_ffspacket_size(f, attrs, base_data);
-    fp->data_read += packet_size;
-#endif
     /* setting up initial vars from the format list that comes along with the
        message. Message contains both an FFS description and the data. */
     if (fp->num_vars == 0) {
@@ -1730,6 +1664,12 @@ int
 adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
 {
     setenv("CMSelfFormats", "1", 1);
+    // setup ATOMS for attribute lists
+    RANK_ATOM = attr_atom_from_string(FP_RANK_ATTR_NAME);
+    TIMESTEP_ATOM = attr_atom_from_string(FP_TIMESTEP);
+    SCALAR_ATOM = attr_atom_from_string(FP_ONLY_SCALARS);
+    CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
+
     fp_read_data = malloc(sizeof(flexpath_read_data));
     if (!fp_read_data) {
         adios_error(err_no_memory, "Cannot allocate memory for flexpath.");
@@ -1737,7 +1677,6 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
     }
     memset(fp_read_data, 0, sizeof(flexpath_read_data));
 
-    fp_read_data->CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
     attr_list listen_list = NULL;
     char * transport = NULL;
     transport = getenv("CMTransport");
@@ -1760,7 +1699,7 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
       }
     } else {
 	listen_list = create_attr_list();
-	add_attr(listen_list, fp_read_data->CM_TRANSPORT, Attr_String,
+	add_attr(listen_list, CM_TRANSPORT, Attr_String,
 		 (attr_value)strdup(transport));
 	CMlisten_specific(fp_read_data->cm, listen_list);
     }
@@ -2346,14 +2285,18 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
                     fp_verbose(fp, "Adding var to read message for ADIOS_SELECTION_BOUNDINGBOX for writer: %d\n", j);
                     add_var_to_read_message(fp, j, fpvar->varname);
                     //free displ
-                    if(displ)
-                    {
+                    if(displ) {
                         //if(displ->start) free(displ->start);
                         //if(displ->count) free(displ->count);
                         free(displ);
                     }
                 }
             }
+            if (all_disp == NULL) {
+                adios_error(err_operation_not_supported,
+                            "Selection does not match data written by any writer.");
+                return 1;
+            }                
             fpvar->displ = all_disp;
             fpvar->num_displ = need_count;
         }

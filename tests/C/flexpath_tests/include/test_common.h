@@ -62,6 +62,20 @@
          fflush(stdout);  											\
     } while(0)
 
+#define test_failed(prog_name, rank)                             \
+    do {                                                  \
+	 fprintf(stdout, "%s\t\tProgram name: %s\tRank: %d\n", DBG_TEST_FAILED_STR, prog_name, rank);	\
+         fflush(stdout);  											\
+    } while(0)
+
+#define test_passed(prog_name, rank)                             \
+    do {                                                  \
+         fprintf(stdout, "%s\t\tProgram name: %s\tRank: %d\n", DBG_TEST_PASSED_STR, prog_name, rank);  \
+         fflush(stdout);  											\
+    } while(0)
+
+
+
 
 
 //! @todo do something like that but smarter without unnecessary copying
