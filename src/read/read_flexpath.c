@@ -2346,14 +2346,18 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
                     fp_verbose(fp, "Adding var to read message for ADIOS_SELECTION_BOUNDINGBOX for writer: %d\n", j);
                     add_var_to_read_message(fp, j, fpvar->varname);
                     //free displ
-                    if(displ)
-                    {
+                    if(displ) {
                         //if(displ->start) free(displ->start);
                         //if(displ->count) free(displ->count);
                         free(displ);
                     }
                 }
             }
+            if (all_disp == NULL) {
+                adios_error(err_operation_not_supported,
+                            "Selection does not match data written by any writer.");
+                return 1;
+            }                
             fpvar->displ = all_disp;
             fpvar->num_displ = need_count;
         }
