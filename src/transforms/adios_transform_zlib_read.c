@@ -40,7 +40,8 @@ int adios_transform_zlib_generate_read_subrequests(adios_transform_read_request 
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {
     void *buf = malloc(pg_reqgroup->raw_var_length);
-    assert(buf);
+    if(pg_reqgroup->raw_var_length > 0)
+        assert(buf);
     adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup, buf);
     adios_transform_raw_read_request_append(pg_reqgroup, subreq);
     return 0;
