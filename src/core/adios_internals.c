@@ -386,7 +386,7 @@ int adios_parse_dimension (const char * dimension
     else
     {
         int errno_save = errno;
-        long long t = strtoll (dimension, &end, 10);
+        unsigned long long t = strtoull (dimension, &end, 10);
         if (errno != errno_save || (end != 0 && *end != '\0'))
         {
             adios_error (err_invalid_argument,
@@ -520,7 +520,7 @@ int adios_parse_dimension (const char * dimension
     else
     {
         int errno_save = errno;
-        long long t = strtoll (global_dimension, &end, 10);
+        unsigned long long t = strtoull (global_dimension, &end, 10);
         if (errno != errno_save || (end != 0 && *end != '\0'))
         {
             adios_error (err_invalid_argument,
@@ -654,7 +654,7 @@ int adios_parse_dimension (const char * dimension
     else
     {
         int errno_save = errno;
-        long long t = strtoll (local_offset, &end, 10);
+        unsigned long long t = strtoull (local_offset, &end, 10);
         if (errno != errno_save || (end != 0 && *end != '\0'))
         {
             adios_error (err_invalid_argument,
