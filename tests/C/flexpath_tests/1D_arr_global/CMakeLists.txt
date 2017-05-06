@@ -5,6 +5,7 @@ include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/src)
 
 add_executable(writer_global writer.c ../common/utils.c)
+set_target_properties(writer_global PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 target_link_libraries(writer_global adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES}) 
 #add_custom_target(
 #    writer ALL
@@ -14,6 +15,7 @@ target_link_libraries(writer_global adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
 
 
 add_executable(reader_global reader.c ../common/utils.c)
+set_target_properties(reader_global PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 target_link_libraries(reader_global adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
 #add_custom_target(
 #    reader ALL

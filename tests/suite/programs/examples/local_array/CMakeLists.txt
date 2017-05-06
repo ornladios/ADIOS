@@ -6,7 +6,7 @@ include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/test/suite/programs/examples/local_array)
 
 add_executable(local_array_write_C local_array_write_C.c)
-if(MPI_COMPILE_FLAGS)
+if(MPI_C_COMPILE_FLAGS)
   set_target_properties(local_array_write_C PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 endif()
 if(MPI_LINK_FLAGS)
@@ -21,7 +21,7 @@ add_custom_command(
 
 
 add_executable(local_array_read_C local_array_read_C.c)
-if(MPI_COMPILE_FLAGS)
+if(MPI_C_COMPILE_FLAGS)
   set_target_properties(local_array_read_C PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 endif()
 if(MPI_LINK_FLAGS)

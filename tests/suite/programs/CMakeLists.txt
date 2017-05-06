@@ -39,7 +39,7 @@ set(WRITE_PROGS ${WRITE_PROGS1}
 if(BUILD_WRITE)
   foreach (PROG ${WRITE_PROGS} )
     add_executable(${PROG} ${PROG}.c)
-    if(MPI_COMPILE_FLAGS)
+    if(MPI_C_COMPILE_FLAGS)
       set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
     endif()
     if(MPI_LINK_FLAGS)
@@ -48,10 +48,12 @@ if(BUILD_WRITE)
   endforeach()
 
   foreach (PROG ${WRITE_PROGS1} )
+    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
     target_link_libraries(${PROG} adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
   endforeach()  
 
   foreach (PROG ${WRITE_PROGS2} )
+    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
     target_link_libraries(${PROG} adiosread ${ADIOSREADLIB_LDADD} ${MPI_C_LIBRARIES})
   endforeach()
 

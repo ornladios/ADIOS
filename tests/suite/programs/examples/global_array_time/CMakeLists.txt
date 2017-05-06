@@ -23,7 +23,7 @@ target_link_libraries(global_array_time_read_as_stream_C adiosread ${ADIOSREADLI
 
 set (PROGS global_array_time_read_as_stream_C global_array_time_read_as_file_C global_array_time_write_C)
 foreach (PROG ${PROGS} )
-  if(MPI_COMPILE_FLAGS)
+  if(MPI_C_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
   endif()
   if(MPI_LINK_FLAGS)

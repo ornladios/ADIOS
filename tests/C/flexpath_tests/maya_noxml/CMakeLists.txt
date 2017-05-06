@@ -7,9 +7,11 @@ link_directories(${PROJECT_BINARY_DIR}/src)
 
 
 add_executable(writer_maya_noxml writer.c ../common/utils.c)
+set_target_properties(writer_maya_noxml PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 target_link_libraries(writer_maya_noxml adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES}) 
 
 add_executable(reader_maya_noxml reader.c ../common/utils.c)
+set_target_properties(reader_maya_noxml PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
 target_link_libraries(reader_maya_noxml adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
 
 file(COPY readme.txt DESTINATION ${PROJECT_BINARY_DIR}/tests/C/flexpath_tests/maya_append)
