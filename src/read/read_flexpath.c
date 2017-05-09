@@ -1622,8 +1622,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     if(!only_scalars)
     {
         timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
-        fp_verbose(fp, "Reporting received data for timestep:%d\n", timestep);
+        fp_verbose(fp, "Reporting received data for timestep:%d from writer %d\n", timestep, writer_rank);
         curr_var_list->req_cond.num_completed++;
+        fp_verbose(fp, "Received data message!  (%d of %d)\n", curr_var_list->req_cond.num_completed, curr_var_list->req_cond.num_pending);
         /* fprintf(stderr, "\t\treader rank:%d:step:%d:num_completed:%d:num_pending:%d\n", */
         /* 	    fp->rank, fp->mystep, fp->req.num_completed, fp->req.num_pending); */
         if (curr_var_list->req_cond.num_completed == curr_var_list->req_cond.num_pending) {
@@ -1635,7 +1636,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     }
     else
     {
-        fp_verbose(fp, "Only scalars message received for:%d\n", timestep);
+        fp_verbose(fp, "Only scalars message received for timestep:%d from writer %d\n", timestep, writer_rank);
         pthread_mutex_lock(&(fp->queue_mutex));
         timestep_separated_lists * ts_var_list = find_var_list(fp, timestep);
         ts_var_list->is_list_filled = 1;
