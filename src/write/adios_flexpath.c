@@ -12,11 +12,13 @@
 #include <math.h>
 #include <string.h>
 #include <errno.h>
+#include <stdarg.h>
 
 #include <pthread.h>
 
 // xml parser
 #include <mxml.h>
+#include <cod.h>
 
 // add by Kimmy 10/15/2012
 #include <sys/types.h>
@@ -42,7 +44,6 @@
 
 // // evpath libraries
 #include <evpath.h>
-#include <cod.h>
 #define FLEXPATH_SIDE "WRITER"
 #include "core/flexpath.h"
 #include <sys/queue.h>
@@ -153,6 +154,7 @@ typedef struct _flexpath_write_file_data {
 
     // general
     int verbose;
+    int failed;   /* set if all output stones are closed */
 } FlexpathWriteFileData;
 
 typedef struct _flexpath_write_data {
@@ -376,6 +378,7 @@ char * multiqueue_action = "{\n\
             int time_req;\n\
             read_msg = EVdata_read_request(0);\n\
             time_req = read_msg->timestep_requested;\n\
+	    fp_verbose(\"Read request received for timestep %d, from reader %d\\n\", time_req, read_msg->process_return_id);\n \
             int j;\n\
             for(j = 0; j < EVcount_anonymous(); j++)\n\
             {\n\
@@ -391,6 +394,7 @@ char * multiqueue_action = "{\n\
                 {\n\
                     int target;\n\
                     target = read_msg->process_return_id;\n\
+		    fp_verbose(\"Data for timestep %d sent to reader %d\\n\", read_msg->timestep_requested, read_msg->process_return_id);\n\
                     EVsubmit_anonymous(target + 1, j);\n\
                     EVdiscard_read_request(i);\n\
                     i--;\n\
@@ -979,18 +983,16 @@ void
 stone_close_handler(CManager cm, CMConnection conn, int closed_stone, void *client_data)
 {
     FlexpathWriteFileData* file = flexpathWriteData.openFiles;
+    fp_verbose(file, "IN STONE CLOSE_HANDLER, closed stone %d\n", closed_stone);
     while (file) {
 	int i;
 	for (i=0; i < file->numBridges; i++) {
 	    if (file->bridges[i].myNum == closed_stone) {
 		int j;
 		file->bridges[i].opened = 0;
-		for (j=0; j< file->numBridges; j++) {
-		    if (file->bridges[j].opened == 1) {
-			/* if any bridge still open, simply return at this point, we're done */
-			return;
-		    }
-		}
+                file->failed = 1;
+                fp_verbose(file, "IN STONE CLOSE_HANDLER, signaling final condition for File %p\n", file);
+                CMCondition_signal(cm, file->final_condition);
 	    }
 	}
         file = file->next;
@@ -1024,10 +1026,30 @@ reader_register_handler(CManager cm, CMConnection conn, void *vmsg, void *client
     CMCondition_signal(cm, msg->condition);
 }
 
+static void
+fp_verbose_wrapper(char *format, ...)
+{
+    static int fp_verbose_set = -1;
+    static int MPI_rank = -1;
+    if (fp_verbose_set == -1) {
+        fp_verbose_set = (getenv("FLEXPATH_VERBOSE") != NULL);
+        MPI_Comm_rank(MPI_COMM_WORLD, &MPI_rank);
+    }
+    if (fp_verbose_set) {
+        va_list args;
+
+        va_start(args, format);
+        fprintf(stdout, "%s %d:", FLEXPATH_SIDE, MPI_rank);
+        vfprintf(stdout, format, args);
+        va_end(args);
+    }
+}
+
 // Initializes flexpath write local data structures
 extern void 
 adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
 {
+    static cod_extern_entry externs[] = {   {"fp_verbose", (void*) 0},    {NULL, NULL}};
     // global data structure creation
     flexpathWriteData.rank = -1;
     flexpathWriteData.openFiles = NULL;
@@ -1038,9 +1060,13 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     SCALAR_ATOM = attr_atom_from_string(FP_ONLY_SCALARS);
     CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
 
+    externs[0].extern_value = fp_verbose_wrapper;
+
     // setup CM
     setenv("CMSelfFormats", "1", 1);
     flexpathWriteData.cm = CManager_create();
+    EVadd_standard_routines(flexpathWriteData.cm, "void fp_verbose(string format, ...);",  externs);
+    atom_t CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
     char * transport = getenv("CMTransport");
     if (transport == NULL) {
 	int listened = 0;
@@ -1130,6 +1156,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
     MPI_Gather(sendmsg, CONTACT_LENGTH, MPI_CHAR, recv_buff, 
         CONTACT_LENGTH, MPI_CHAR, 0, (fileData->mpiComm));
 
+    fp_verbose(fileData, "Gather of writer contact data to rank 0 is complete\n");
     //TODO: recv_buff has a small memory leak here because of register_reader_handler
     // rank 0 prints contact info to file
     if (fileData->rank == 0) {
@@ -1284,6 +1311,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
         go_msg.start_timestep = 0;
 //        go_msg.file_attributes = 
         CMFormat format = CMregister_simple_format(flexpathWriteData.cm, "Flexpath reader go", reader_go_field_list, sizeof(reader_go_msg));
+        fp_verbose(fileData, "Writer Rank 0 sending GO message to reader rank 0\n");
         CMwrite(fileData->reader_0_conn, format, &go_msg);
     }
     return 0;	
@@ -1565,6 +1593,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     free_attr_list(temp_attr_scalars);
     free_attr_list(temp_attr_noscalars);
     fileData->writerStep++;
+    fp_verbose(fileData, " adios_flexpath_close exit\n");
 }
 
 // wait until all open files have finished sending data to shutdown
@@ -1577,21 +1606,24 @@ adios_flexpath_finalize(int mype, struct adios_method_struct *method)
     while(fileData) {
         attr_list attrs = create_attr_list();
         finalize_close_msg end_msg;
-        end_msg.finalize = 1;
-        end_msg.close = 1;
-        end_msg.final_timestep = fileData->writerStep;
-        add_int_attr(attrs, RANK_ATOM, fileData->rank);   
-        EVsubmit_general(fileData->finalizeSource, &end_msg, NULL, attrs);
-        free_attr_list(attrs);
+        if (fileData->failed) {
+            fp_verbose(fileData, "adios_flexpath_finalize file %p already-failed output stream, rolling on\n", fileData);
+        } else {
+            end_msg.finalize = 1;
+            end_msg.close = 1;
+            end_msg.final_timestep = fileData->writerStep;
+            add_int_attr(attrs, RANK_ATOM, fileData->rank);   
+            EVsubmit_general(fileData->finalizeSource, &end_msg, NULL, attrs);
+            free_attr_list(attrs);
 
-        fp_verbose(fileData, "Sent finalize message to readers \n");
+            fp_verbose(fileData, "Sent finalize message to readers \n");
 
-        /*TODO:Very Bad!!! This means that our finalization is not going to be able to 
-               differentiate between streams...but the API doesn't support that yet, so...*/
-        fp_verbose(fileData, "Waiting on condition %d for the reader to be done!\n", fileData->final_condition);
-        CMCondition_wait(flexpathWriteData.cm, fileData->final_condition);
-        fp_verbose(fileData, "Finished Wait for reader cohort to be finished!\n");
-
+            /*TODO:Very Bad!!! This means that our finalization is not going to be able to 
+              differentiate between streams...but the API doesn't support that yet, so...*/
+            fp_verbose(fileData, "Waiting on condition %d for the reader to be done!\n", fileData->final_condition);
+            CMCondition_wait(flexpathWriteData.cm, fileData->final_condition);
+            fp_verbose(fileData, "Finished Wait for reader cohort to be finished!\n");
+        }
 	fileData->finalized = 1;
 	fileData = fileData->next;	    
     }
