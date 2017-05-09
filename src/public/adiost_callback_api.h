@@ -30,8 +30,9 @@
 
 /* For each event, specify the callback type and the enumeration value. */
 #define FOREACH_ADIOST_EVENT(macro) \
-macro(adiost_event_open,                    adiost_open_callback_t,        1) \
-macro(adiost_event_close,                   adiost_file_callback_t,        3) \
+macro(adiost_event_thread,                  adiost_thread_callback_t,      1) \
+macro(adiost_event_open,                    adiost_open_callback_t,        3) \
+macro(adiost_event_close,                   adiost_file_callback_t,        5) \
 macro(adiost_event_write,                   adiost_file_callback_t,        10) \
 macro(adiost_event_read,                    adiost_file_callback_t,        12) \
 macro(adiost_event_advance_step,            adiost_file_callback_t,        14) \
@@ -81,6 +82,13 @@ typedef void (*adiost_interface_fn_t)(void);
 
 typedef adiost_interface_fn_t (*adiost_function_lookup_t)(
     const char *                      /* entry point to look up       */
+);
+
+/* Events: adios_thread */
+typedef void (*adiost_thread_callback_t)(
+    int64_t file_descriptor,
+    adiost_event_type_t type,
+    const char * thread_name
 );
 
 /* Events: adios_open */

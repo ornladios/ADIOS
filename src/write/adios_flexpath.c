@@ -1368,6 +1368,7 @@ op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
 void 
 control_thread(void *arg) 
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, "Flexpath control thread");
     FlexpathWriteFileData *fileData = (FlexpathWriteFileData*)arg;
     int rank = fileData->rank;
     FlexpathQueueNode *controlMsg;
@@ -1410,6 +1411,7 @@ control_thread(void *arg)
 	    }
 	}
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_thread, NULL, "Flexpath control thread");
     return;
 }
 

@@ -40,7 +40,7 @@
 #include "core/util.h"
 #include "core/adios_logger.h"
 #include "core/adios_clock.h"
-
+#include "core/adiost_callback_internal.h"
 
 #ifdef HAVE_ICEE
 
@@ -222,6 +222,7 @@ job_cleanup(thr_pool_t *pool)
 static void *
 worker_thread(void *arg)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, "ICEE worker thread");
     thr_pool_t *pool = (thr_pool_t *)arg;
     int timedout;
     job_t *job;
@@ -302,6 +303,7 @@ worker_thread(void *arg)
         }
     }
     pthread_cleanup_pop(1); /* worker_cleanup(pool) */
+    ADIOST_CALLBACK_EXIT(adiost_event_thread, NULL, "ICEE worker thread");
     return (NULL);
 }
 

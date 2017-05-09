@@ -49,7 +49,8 @@ extern char *program_invocation_short_name;
 
 /* Enumeration of timer indices. */
 typedef enum adiost_timer_index {
-    adiost_open_timer = 0,
+    adiost_thread_timer = 0,
+    adiost_open_timer,
     adiost_close_timer,
     adiost_open_to_close_timer,
     adiost_read_timer,
@@ -122,6 +123,16 @@ void __timer_stop(adiost_timer_index_t index) {
     uint64_t diff = timespec_subtract(&end_time, &(adiost_timers_start_time[index]));
     adiost_timers_accumulated[index] = adiost_timers_accumulated[index] + diff;
     adiost_timers_count[index] = adiost_timers_count[index] + 1;
+}
+
+ADIOST_EXTERN void my_thread(int64_t file_descriptor, char * name, adiost_event_type_t type) {
+    DEBUG_PRINT
+    DEBUG_PRINT_FD
+    if (type == adiost_event_enter) {
+        __timer_start(adiost_thread_timer);
+    } else {
+        __timer_stop(adiost_thread_timer);
+    }
 }
 
 ADIOST_EXTERN void my_open ( int64_t file_descriptor, adiost_event_type_t type,
@@ -356,6 +367,7 @@ void print_counter(const char *_name, adiost_timer_index_t index) {
 
 ADIOST_EXTERN void my_finalize(void) {
     DEBUG_PRINT
+    print_timer("adios_thread", adiost_thread_timer);
     print_timer("adios_open", adiost_open_timer);
     print_timer("adios_close", adiost_close_timer);
     print_timer("adios_open_to_close", adiost_open_to_close_timer);
@@ -396,6 +408,7 @@ ADIOST_EXTERN void default_adiost_initialize (adiost_function_lookup_t adiost_fn
         (adiost_set_callback_t)adiost_fn_lookup("adiost_set_callback");
 
     debug_print("Registering ADIOS tool events...\n");
+    CHECK(adiost_event_thread,       my_thread,        "adios_thread");
     CHECK(adiost_event_open,         my_open,          "adios_open");
     CHECK(adiost_event_close,        my_close,         "adios_close");
     CHECK(adiost_event_write,        my_write,         "adios_write");
