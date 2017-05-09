@@ -13,6 +13,12 @@
  ****************************************************************************/
 
 #include <stdint.h>
+#ifndef ADIOST_EXPORT 
+#define ADIOST_EXPORT 
+#endif
+#ifndef ADIOST_WEAK
+#define ADIOST_WEAK
+#endif
 
 /****************************************************************************
  * iteration macros - to be expanded by other macros in multiple places
@@ -126,7 +132,7 @@ ADIOST_API_FUNCTION(void, adiost_initialize, (
 ));
 
 /* initialization interface - to be defined by tool */
-adiost_initialize_t adiost_tool(void);
+ADIOST_EXPORT adiost_initialize_t ADIOST_WEAK adiost_tool(void);
 
 /* Registering a callback function */
 ADIOST_API_FUNCTION(int, adiost_set_callback, (

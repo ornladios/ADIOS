@@ -12,13 +12,17 @@
  * data to the ADIOS metadata.
  */
 
+// we want our implementation of the tool to be weak, and exported.
+#define ADIOST_EXPORT __attribute__((visibility("default")))
+#define ADIOST_WEAK __attribute__ (( weak )) 
+
 #include "adiost_callback_api.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <time.h>
 #define ADIOST_EXTERN 
-#define DEBUG_PRINT //printf("In %s!\n", __func__); fflush(stdout);
-#define DEBUG_PRINT_FD //printf("file_descriptor: %d!\n", file_descriptor); fflush(stdout);
+#define DEBUG_PRINT printf("In %s!\n", __func__); fflush(stdout);
+#define DEBUG_PRINT_FD printf("file_descriptor: %d!\n", file_descriptor); fflush(stdout);
 #define ONE_BILLION 1000000000
 #define ONE_BILLIONF 1000000000.0
 
@@ -426,6 +430,6 @@ ADIOST_EXTERN void default_adiost_initialize (adiost_function_lookup_t adiost_fn
 
 /* Weak function definitions, declarations */
 
-extern __attribute__ (( weak )) adiost_initialize_t adiost_tool(void) { return default_adiost_initialize; }
+extern adiost_initialize_t adiost_tool(void) { return default_adiost_initialize; }
 
 

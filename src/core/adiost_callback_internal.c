@@ -38,7 +38,8 @@ const char adiost_enabled_env_var[] = {"ADIOS_TOOL"};
 /* forward declaration of the weak (default) tool */
 
 //extern __attribute__ (( weak )) adiost_initialize_t adiost_tool(void);
-extern adiost_initialize_t adiost_tool(void);
+//extern adiost_initialize_t adiost_tool(void);
+extern __attribute__((visibility("default"))) adiost_initialize_t __attribute__((weak)) adiost_tool(void);
 
 /* Pre-initialization. */
 
@@ -68,10 +69,12 @@ void adiost_pre_init(void) {
             break;
         case adiost_unset:
         case adiost_enabled:
-            adiost_initialize_fn = adiost_tool();
-            // if initialization is successful, we are enabled
-            if (adiost_initialize_fn) {
-                adios_tool_enabled = 1;
+            if (adiost_tool) {
+            	adiost_initialize_fn = adiost_tool();
+            	// if initialization is successful, we are enabled
+            	if (adiost_initialize_fn) {
+                	adios_tool_enabled = 1;
+            	}
             }
             break;
         case adiost_error:
