@@ -1372,6 +1372,53 @@ int bp_parse_attrs (BP_FILE * fh)
     return 0;
 }
 
+static const uint64_t JOINEDDIM = 18446744073709551614ULL;
+static void process_joined_array(struct adios_index_var_struct_v1 *v)
+{
+    if (v->characteristics[0].value)  // scalar
+        return;
+    if (!is_global_array(&(v->characteristics[0])))
+        return;
+    int ndim = v->characteristics[0].dims.count;
+    int joindim = -1;
+    int i, j;
+    for (i = 0; i < ndim; i++)
+    {
+        if (v->characteristics[0].dims.dims[i*3+1] == JOINEDDIM)
+        {
+            joindim = i;
+            log_debug("Variable %s is a Joined Array in dimension %d\n", v->var_name, i);
+            break;
+        }
+    }
+    if (joindim >= 0)
+    {
+        uint64_t offset = 0;
+        uint32_t timeidx = v->characteristics[0].time_index;
+        log_debug("  Calculate joined array offsets for %" PRIu64 " blocks\n", v->characteristics_count);
+        //log_debug("  Time index start from %d\n", v->characteristics[0].time_index);
+        int startidx = 0; // first characteristics for the current time_index
+        for (i = 0; i < v->characteristics_count; ++i)
+        {
+            if (v->characteristics[i].time_index > timeidx)
+            {
+                //log_debug("  Time index change to %d\n", v->characteristics[i].time_index);
+                // Update global dimensions of all characteristics for this time_index now
+                for (j = startidx; j < i; ++j) {
+                    v->characteristics[j].dims.dims[joindim*3+1] = offset;
+                }
+                timeidx = v->characteristics[i].time_index;
+                offset = 0;
+                startidx = i;
+            }
+            //log_debug("    Calculated offset = %" PRIu64 "\n", offset);
+            v->characteristics[i].dims.dims[joindim*3+2] = offset;
+            offset += v->characteristics[i].dims.dims[joindim*3];
+        }
+    }
+}
+
+
 /*******************/
 /* Parse VARIABLES */
 /*******************/
@@ -1489,6 +1536,7 @@ int bp_parse_vars (BP_FILE * fh)
                         (*root)->characteristics [j].time_index);*/
             }
         }
+        process_joined_array((*root));
         root = &(*root)->next;
     }
 
