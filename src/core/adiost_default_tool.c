@@ -58,16 +58,9 @@ typedef enum adiost_timer_index {
     adiost_advance_step_timer,
     adiost_group_size_timer,
     adiost_transform_timer,
-    adiost_fp_send_open_msg_timer,
-    adiost_fp_send_close_msg_timer,
+    adiost_fp_send_read_msg_timer,
     adiost_fp_send_finalize_msg_timer,
-    adiost_fp_send_flush_msg_timer,
-    adiost_fp_send_var_msg_timer,
-    adiost_fp_process_open_msg_timer,
-    adiost_fp_process_close_msg_timer,
-    adiost_fp_process_finalize_msg_timer,
-    adiost_fp_process_flush_msg_timer,
-    adiost_fp_process_var_msg_timer,
+    adiost_fp_add_var_to_read_msg_timer,
     adiost_fp_copy_buffer_timer,
     adiost_last_timer_unused
 } adiost_timer_index_t;
@@ -224,25 +217,14 @@ ADIOST_EXTERN void my_transform( int64_t file_descriptor,
     }
 } 
 
-ADIOST_EXTERN void my_fp_send_open_msg(int64_t file_descriptor,
+ADIOST_EXTERN void my_fp_send_read_msg(int64_t file_descriptor,
         adiost_event_type_t type) { 
     DEBUG_PRINT
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
-        __timer_start(adiost_fp_send_open_msg_timer);
+        __timer_start(adiost_fp_send_read_msg_timer);
     } else {
-        __timer_stop(adiost_fp_send_open_msg_timer);
-    }
-} 
-
-ADIOST_EXTERN void my_fp_send_close_msg(int64_t file_descriptor,
-        adiost_event_type_t type) { 
-    DEBUG_PRINT
-    DEBUG_PRINT_FD
-    if (type == adiost_event_enter) {
-        __timer_start(adiost_fp_send_close_msg_timer);
-    } else {
-        __timer_stop(adiost_fp_send_close_msg_timer);
+        __timer_stop(adiost_fp_send_read_msg_timer);
     }
 } 
 
@@ -257,80 +239,14 @@ ADIOST_EXTERN void my_fp_send_finalize_msg(int64_t file_descriptor,
     }
 } 
 
-ADIOST_EXTERN void my_fp_send_flush_msg(int64_t file_descriptor,
+ADIOST_EXTERN void my_fp_add_var_to_read_msg(int64_t file_descriptor,
         adiost_event_type_t type) { 
     DEBUG_PRINT
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
-        __timer_start(adiost_fp_send_flush_msg_timer);
+        __timer_start(adiost_fp_add_var_to_read_msg_timer);
     } else {
-        __timer_stop(adiost_fp_send_flush_msg_timer);
-    }
-} 
-
-ADIOST_EXTERN void my_fp_send_var_msg(int64_t file_descriptor,
-        adiost_event_type_t type) { 
-    DEBUG_PRINT
-    DEBUG_PRINT_FD
-    if (type == adiost_event_enter) {
-        __timer_start(adiost_fp_send_var_msg_timer);
-    } else {
-        __timer_stop(adiost_fp_send_var_msg_timer);
-    }
-} 
-
-ADIOST_EXTERN void my_fp_process_open_msg(int64_t file_descriptor,
-        adiost_event_type_t type) { 
-    DEBUG_PRINT
-    DEBUG_PRINT_FD
-    if (type == adiost_event_enter) {
-        __timer_start(adiost_fp_process_open_msg_timer);
-    } else {
-        __timer_stop(adiost_fp_process_open_msg_timer);
-    }
-} 
-
-ADIOST_EXTERN void my_fp_process_close_msg(int64_t file_descriptor,
-        adiost_event_type_t type) { 
-    DEBUG_PRINT
-    DEBUG_PRINT_FD
-    if (type == adiost_event_enter) {
-        __timer_start(adiost_fp_process_close_msg_timer);
-    } else {
-        __timer_stop(adiost_fp_process_close_msg_timer);
-    }
-} 
-
-ADIOST_EXTERN void my_fp_process_finalize_msg(int64_t file_descriptor,
-        adiost_event_type_t type) { 
-    DEBUG_PRINT
-    DEBUG_PRINT_FD
-    if (type == adiost_event_enter) {
-        __timer_start(adiost_fp_process_finalize_msg_timer);
-    } else {
-        __timer_stop(adiost_fp_process_finalize_msg_timer);
-    }
-} 
-
-ADIOST_EXTERN void my_fp_process_flush_msg(int64_t file_descriptor,
-        adiost_event_type_t type) { 
-    DEBUG_PRINT
-    DEBUG_PRINT_FD
-    if (type == adiost_event_enter) {
-        __timer_start(adiost_fp_process_flush_msg_timer);
-    } else {
-        __timer_stop(adiost_fp_process_flush_msg_timer);
-    }
-} 
-
-ADIOST_EXTERN void my_fp_process_var_msg(int64_t file_descriptor,
-        adiost_event_type_t type) { 
-    DEBUG_PRINT
-    DEBUG_PRINT_FD
-    if (type == adiost_event_enter) {
-        __timer_start(adiost_fp_process_var_msg_timer);
-    } else {
-        __timer_stop(adiost_fp_process_var_msg_timer);
+        __timer_stop(adiost_fp_add_var_to_read_msg_timer);
     }
 } 
 
@@ -376,16 +292,9 @@ ADIOST_EXTERN void my_finalize(void) {
     print_timer("adios_transform", adiost_transform_timer);
     print_timer("adios_read", adiost_read_timer);
     print_timer("adios_write", adiost_write_timer);
-    print_timer("flexpath send open msg", adiost_fp_send_open_msg_timer);
-    print_timer("flexpath send close msg", adiost_fp_send_close_msg_timer);
+    print_timer("flexpath send open msg", adiost_fp_send_read_msg_timer);
     print_timer("flexpath send finalize msg", adiost_fp_send_finalize_msg_timer);
-    print_timer("flexpath send flush msg", adiost_fp_send_flush_msg_timer);
-    print_timer("flexpath send var msg", adiost_fp_send_var_msg_timer);
-    print_timer("flexpath process open msg", adiost_fp_process_open_msg_timer);
-    print_timer("flexpath process close msg", adiost_fp_process_close_msg_timer);
-    print_timer("flexpath process finalize msg", adiost_fp_process_finalize_msg_timer);
-    print_timer("flexpath process flush msg", adiost_fp_process_flush_msg_timer);
-    print_timer("flexpath process var msg", adiost_fp_process_var_msg_timer);
+    print_timer("flexpath send var msg", adiost_fp_add_var_to_read_msg_timer);
     print_timer("flexpath copy buffer", adiost_fp_copy_buffer_timer);
     print_counter("adios data written", adiost_data_bytes_counter);
     print_counter("adios total written", adiost_total_bytes_counter);
@@ -416,12 +325,19 @@ ADIOST_EXTERN void default_adiost_initialize (adiost_function_lookup_t adiost_fn
     CHECK(adiost_event_advance_step, my_advance_step,  "adios_advance_step");
     CHECK(adiost_event_group_size,   my_group_size,    "adios_group_size");
     CHECK(adiost_event_transform,    my_transform,     "adios_transform");
+/*
     CHECK(adiost_event_fp_send_open_msg, 
         my_fp_send_open_msg, "adios_fp_send_open_msg");
     CHECK(adiost_event_fp_send_close_msg, 
         my_fp_send_close_msg, "adios_fp_send_close_msg");
+*/
+    CHECK(adiost_event_fp_send_read_msg, 
+        my_fp_send_read_msg, "adios_fp_send_read_msg");
     CHECK(adiost_event_fp_send_finalize_msg, 
         my_fp_send_finalize_msg, "adios_fp_send_finalize_msg");
+    CHECK(adiost_event_fp_add_var_to_read_msg, 
+        my_fp_add_var_to_read_msg, "adiost_fp_add_var_to_read_msg");
+/*
     CHECK(adiost_event_fp_send_flush_msg, 
         my_fp_send_flush_msg, "adios_fp_send_flush_msg");
     CHECK(adiost_event_fp_send_var_msg, 
@@ -436,6 +352,7 @@ ADIOST_EXTERN void default_adiost_initialize (adiost_function_lookup_t adiost_fn
         my_fp_process_flush_msg, "adios_fp_process_flush_msg");
     CHECK(adiost_event_fp_process_var_msg, 
         my_fp_process_var_msg, "adios_fp_process_var_msg");
+*/
     CHECK(adiost_event_fp_copy_buffer, 
         my_fp_copy_buffer, "adios_fp_copy_buffer");
     CHECK(adiost_event_library_shutdown, my_finalize, "adios_finalize");

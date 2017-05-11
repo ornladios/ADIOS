@@ -53,8 +53,8 @@ int common_adios_init(const char *config, MPI_Comm comm) {
   // parse the config file
   if (comm == MPI_COMM_NULL) comm = MPI_COMM_SELF;
   adios_errno = err_no_error;
-  adios_parse_config(config, comm);
   adiost_pre_init();
+  adios_parse_config(config, comm);
   adiost_post_init();
   return adios_errno;
 }

@@ -173,7 +173,6 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     common_query_init(); 
 
     adiost_post_init();
-
     return retval;
 }
 
@@ -384,13 +383,14 @@ ADIOS_FILE * common_read_open (const char * fname,
     struct common_read_internals_struct * internals; 
     long i;
 
+    ADIOST_CALLBACK_ENTER(adiost_event_open, fp, "", "", "");
+
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method,
             "Invalid read method (=%d) passed to adios_read_open().\n", (int)method);
+        ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
         return NULL;
     }
-
-    ADIOST_CALLBACK_ENTER(adiost_event_open, fp, "", "", "");
 
     adios_errno = err_no_error;
     internals = (struct common_read_internals_struct *)

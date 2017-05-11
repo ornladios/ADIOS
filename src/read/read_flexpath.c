@@ -1061,7 +1061,7 @@ setup_flexpath_vars(FMField *f, int *num)
 void
 send_finalize_msg(flexpath_reader_file *fp)
 {
-    ADIOST_CALLBACK_ENTER(adiost_event_fp_finalize_msg, fp);
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_finalize_msg, fp);
     int i; 
     if((fp->rank / fp->num_bridges) == 0)
     {
@@ -1085,7 +1085,7 @@ send_finalize_msg(flexpath_reader_file *fp)
             EVsubmit(fp->bridges[send_to].finalize_source, &msg, NULL);
         }
     }
-    ADIOST_CALLBACK_EXIT(adiost_event_fp_finalize_msg, fp);
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_finalize_msg, fp);
 }
 
 static void

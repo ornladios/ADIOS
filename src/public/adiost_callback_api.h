@@ -38,16 +38,9 @@ macro(adiost_event_read,                    adiost_file_callback_t,        12) \
 macro(adiost_event_advance_step,            adiost_file_callback_t,        14) \
 macro(adiost_event_group_size,              adiost_group_size_callback_t,  51) \
 macro(adiost_event_transform,               adiost_file_callback_t,        52) \
-macro(adiost_event_fp_send_open_msg,        adiost_file_callback_t,       100) \
-macro(adiost_event_fp_send_close_msg,       adiost_file_callback_t,       101) \
 macro(adiost_event_fp_send_finalize_msg,    adiost_file_callback_t,       102) \
-macro(adiost_event_fp_send_flush_msg,       adiost_file_callback_t,       103) \
-macro(adiost_event_fp_send_var_msg,         adiost_file_callback_t,       104) \
-macro(adiost_event_fp_process_open_msg,     adiost_file_callback_t,       200) \
-macro(adiost_event_fp_process_close_msg,    adiost_file_callback_t,       201) \
-macro(adiost_event_fp_process_finalize_msg, adiost_file_callback_t,       202) \
-macro(adiost_event_fp_process_flush_msg,    adiost_file_callback_t,       203) \
-macro(adiost_event_fp_process_var_msg,      adiost_file_callback_t,       204) \
+macro(adiost_event_fp_send_read_msg,        adiost_file_callback_t,       105) \
+macro(adiost_event_fp_add_var_to_read_msg,  adiost_file_callback_t,       106) \
 macro(adiost_event_fp_copy_buffer,          adiost_file_callback_t,       205) \
 macro(adiost_event_library_shutdown,        adiost_callback_t,            999) \
 
