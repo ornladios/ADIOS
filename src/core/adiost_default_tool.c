@@ -325,34 +325,12 @@ ADIOST_EXTERN void default_adiost_initialize (adiost_function_lookup_t adiost_fn
     CHECK(adiost_event_advance_step, my_advance_step,  "adios_advance_step");
     CHECK(adiost_event_group_size,   my_group_size,    "adios_group_size");
     CHECK(adiost_event_transform,    my_transform,     "adios_transform");
-/*
-    CHECK(adiost_event_fp_send_open_msg, 
-        my_fp_send_open_msg, "adios_fp_send_open_msg");
-    CHECK(adiost_event_fp_send_close_msg, 
-        my_fp_send_close_msg, "adios_fp_send_close_msg");
-*/
     CHECK(adiost_event_fp_send_read_msg, 
         my_fp_send_read_msg, "adios_fp_send_read_msg");
     CHECK(adiost_event_fp_send_finalize_msg, 
         my_fp_send_finalize_msg, "adios_fp_send_finalize_msg");
     CHECK(adiost_event_fp_add_var_to_read_msg, 
         my_fp_add_var_to_read_msg, "adiost_fp_add_var_to_read_msg");
-/*
-    CHECK(adiost_event_fp_send_flush_msg, 
-        my_fp_send_flush_msg, "adios_fp_send_flush_msg");
-    CHECK(adiost_event_fp_send_var_msg, 
-        my_fp_send_var_msg, "adios_fp_send_var_msg");
-    CHECK(adiost_event_fp_process_open_msg, 
-        my_fp_process_open_msg, "adios_fp_process_open_msg");
-    CHECK(adiost_event_fp_process_close_msg, 
-        my_fp_process_close_msg, "adios_fp_process_close_msg");
-    CHECK(adiost_event_fp_process_finalize_msg, 
-        my_fp_process_finalize_msg, "adios_fp_process_finalize_msg");
-    CHECK(adiost_event_fp_process_flush_msg, 
-        my_fp_process_flush_msg, "adios_fp_process_flush_msg");
-    CHECK(adiost_event_fp_process_var_msg, 
-        my_fp_process_var_msg, "adios_fp_process_var_msg");
-*/
     CHECK(adiost_event_fp_copy_buffer, 
         my_fp_copy_buffer, "adios_fp_copy_buffer");
     CHECK(adiost_event_library_shutdown, my_finalize, "adios_finalize");
