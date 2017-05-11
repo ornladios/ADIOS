@@ -152,6 +152,31 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
 
 }
 
+/* Convert 'step' to time, which is used in ADIOS internals.
+ * 'step' should start from 0.
+ */
+int get_time_from_pglist(struct bp_index_pg_struct_v1 * pgs, int step)
+{
+    int i = 0;
+    int prev_ti = 0, counter = 0;
+
+    while (pgs != NULL)
+    {
+        if (pgs->time_index != prev_ti)
+        {
+            counter ++;
+            if (counter == (step + 1))
+            {
+                return pgs->time_index;
+            }
+            prev_ti = pgs->time_index;
+        }
+        pgs = pgs->next;
+    }
+    return -1;
+
+}
+
 /* This routine converts "step" to "time", which is an ADIOS internal thing.
  * The calculated "time" is needed by other BP routines to figure 
  * correct piece of var index to process.
@@ -2058,7 +2083,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     else
     {
         allstep = 0;
-        t = get_time (var_root, tostep);
+        t = get_time_from_pglist (fh->pgs_root, tostep);
     }
 
     /* Prepare vars */
