@@ -29,6 +29,7 @@ Available data transformation methods (in XML transform tags in <var> elements):
     "isobar"   : ISOBAR compression
     "alacrity" : ALACRITY indexing
     "zfp"      : zfp compression
+    "lz4"      : LZ4 compression
 \end{lstlisting}
 
 
@@ -60,6 +61,22 @@ In fact, all three lossless compression plugins (zlib, bzip2, and szip) currentl
 1-to-9 compression level. The default compression for each library is used if this parameter is
 omitted, which is typically the case.
 
+
+\href{https://github.com/lz4/lz4}{LZ4} is a fast lossless compression library which can (de)compress hundreds to thousands of MByte/s.
+The compression level (e.g. lvl=5) can be 1-to-N (N means any positive integer value). 
+The default compression level 1 achieves the best compression ratio, higher level means less compression ratio but faster compression.
+Note that from tests on the particle-in-cell code \href{http://picongpu.hzdr.de}{PIConGPU}, LZ4 works better for integral data types and rather bad for heavily fluctuating floating point types in terms of achieved compression ratio.
+To avoid compression overhead for small data a threshold in bytes (e.g. threshold=2048) can be defined, data smaller than the threshold will be stored uncompressed.
+The default and smallest threshold is 128 bytes.
+The following example will enable fast LZ4 compression for data larger than 4 KiB.
+
+\begin{lstlisting}[language=XML]
+<var name="/temperature"
+     ...
+     transform="lz4:threshold=4096,lvl=9"
+/>
+\end{lstlisting}
+
 The zfp transform accommodates the three high-level compression modes of the zfp API: rate, precision, and accuracy.
 In the compression settings string, users specify one the compression modes followed by an \texttt{=} and a numerical value.
 We refer users to \href{http://computation.llnl.gov/projects/floating-point-compression}{zfp software's} README for details,
@@ -87,6 +104,8 @@ zlib & lossless compression & requires the zlib external library \\
 bzip2 & lossless compression & requires the bzip2 external library \\
 \hline
 szip & lossless compression & requires the szip external library \\
+\hline
+lz4 & lossless compression & requires the lz4 external library \\
 \hline
 zfp & lossy compression & included with ADIOS \\
 \hline

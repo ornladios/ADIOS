@@ -42,26 +42,6 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     int raw_size = (int) completed_pg_reqgroup->raw_var_length;
     unsigned char *raw_buff = completed_pg_reqgroup->subreqs->data;
 
-    // Decompress into orig_buff
-    sz_params sz;
-    memset(&sz, 0, sizeof(sz_params));
-    sz.max_quant_intervals = 32768;
-    sz.quantization_intervals = 0;
-    sz.dataEndianType = LITTLE_ENDIAN_DATA;
-    sz.sysEndianType = LITTLE_ENDIAN_DATA;
-    sz.sol_ID = SZ;
-    sz.layers = 1;
-    sz.sampleDistance = 100;
-    sz.predThreshold = 0.99;
-    sz.offset = 0;
-    sz.szMode = SZ_BEST_SPEED;
-    sz.gzipMode = 1;
-    sz.errorBoundMode = ABS;
-    sz.absErrBound = 1E-6;
-    sz.relBoundRatio = 1E-3;
-
-    SZ_Init_Params(&sz);
-
     // Get type info
     int dtype;
     switch (reqgroup->transinfo->orig_type)
@@ -91,7 +71,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     for(i = 0; i < ndims; i++)
     {
         uint64_t dsize = (uint64_t)(completed_pg_reqgroup->orig_varblock->count[i]);
-        r[i] = dsize;
+        r[ndims-i-1] = dsize;
     }
 
     void* orig_buff;
@@ -124,7 +104,6 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     log_debug("%s: %d %d %d %d %d\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
     //log_debug("=====================\n");
 
-    SZ_Finalize();
     return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, orig_buff);
 }
 

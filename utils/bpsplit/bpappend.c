@@ -353,6 +353,7 @@ void recalc_offsets(void) {
     while (vg) {
         for (i=0; i < vg->characteristics_count; i++) {
             vg->characteristics[i].offset += out_bp->pg_index_offset;
+            vg->characteristics[i].payload_offset += out_bp->pg_index_offset;
         }
         vg = vg->next;
     }
@@ -362,6 +363,7 @@ void recalc_offsets(void) {
     while (ag) {
         for (i=0; i < ag->characteristics_count; i++) {
             ag->characteristics[i].offset += out_bp->pg_index_offset;
+            ag->characteristics[i].payload_offset += out_bp->pg_index_offset;
         }
         ag = ag->next;
     }

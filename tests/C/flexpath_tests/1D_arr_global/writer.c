@@ -17,9 +17,9 @@
 #include "adios.h"
 #include "adios_read.h"  // for adios_errno
 
+#include "cfg.h"
 #include "misc.h"
 #include "utils.h"
-#include "cfg.h"
 #include "test_common.h"
 
 #include <stdio.h>
@@ -60,6 +60,18 @@ int main(int argc, char ** argv){
 		return DIAG_ERR;
 	}
 
+        if(rank == 0)
+        {
+            printf("Writer side array: ");
+            int j;
+            for(j = 0; j < NX; j++)
+            {
+                printf("%f ", t[j]);
+            }
+            printf("\n");
+        }
+
+
 	uint64_t adios_groupsize, adios_totalsize;
 
 	// open with the group name as specified in the xml file
@@ -82,6 +94,7 @@ int main(int argc, char ** argv){
 	// clean and finalize the system
 	adios_finalize(rank);
 	MPI_Finalize();
+
 
 	return DIAG_OK;
 }

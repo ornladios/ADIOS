@@ -144,10 +144,9 @@ Then, we initialize Adios:
 
 >>> ad.init_noxml()
 
-Then, we give a file name to create and specify a group with Adios method:
+Then, we give a file name to create with Adios method:
 
->>> fw = ad.writer(fname)
->>> fw.declare_group('group', method='POSIX1')
+>>> fw = ad.writer(fname, method='POSIX1')
 
 "POSIX1" is one of many Adios's write methods. Others are "MPI",
 "MPI_AGGREGATE", "FLEXPATH", "DATASPACES", etc. More detailed
@@ -166,3 +165,22 @@ To write an attribute, we can do as follows:
 Finally, we let Adios to write a file by calling "close"
 
 >>> fw.close()
+
+Transform
+---------
+
+Adios provides transform methods for data reduction and compressions, such as ZFP, SZ, zlib, etc. For the full list, use ```adios_list_methods``` command.
+
+For an example, SZ transform method can be set by the following command:
+
+>>> fw['temperature'].transform = 'SZ'
+
+will compress temperature data with SZ with default parameters.
+
+Method specific parameters can be set like:
+
+>>> fw['temperature'].transform = 'SZ:errorBoundMode=ABS,absErrBound=1E-3'
+
+An example of ZFP is as follows:
+
+>>> fw['temperature'].transform = 'zfp:accuracy=0.001'

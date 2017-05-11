@@ -20,8 +20,7 @@ print("\n>>> Writing ...\n")
 ad.init_noxml()
 ad.set_max_buffer_size (10)
 
-fw = ad.writer(fname)
-fw.declare_group('group', method='POSIX1')
+fw = ad.writer(fname, method='POSIX1')
 
 fw['NX'] = NX
 fw['size'] = size

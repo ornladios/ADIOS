@@ -251,9 +251,9 @@ subroutine processArgs()
         call getarg(5, ndx_str)
         call getarg(6, ndy_str)
         call getarg(7, ndz_str)
-        read (ndx_str,'(i6)') ndx
-        read (ndy_str,'(i6)') ndy
-        read (ndz_str,'(i6)') ndz
+        read (ndx_str,'(i12)') ndx
+        read (ndy_str,'(i12)') ndy
+        read (ndz_str,'(i12)') ndz
         inputfile=char(0)
         common_size = .true.
         call getarg(8, time_str)

@@ -179,6 +179,7 @@ AC_APLOD
 AC_ALACRITY
 AC_FASTBIT
 AC_BGQ
+AC_LZ4
 
 
 AC_ZFP
@@ -687,6 +688,28 @@ if test -z "${HAVE_SZIP_TRUE}"; then
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${SZIP_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${SZIP_LIBS}"
 fi
+if test -z "${HAVE_LZ4_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DLZ4 ${LZ4_CPPFLAGS}"
+    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${LZ4_CFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${LZ4_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${LZ4_LIBS}"
+    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} -DLZ4 ${LZ4_CPPFLAGS}"
+    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${LZ4_CFLAGS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${LZ4_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${LZ4_LIBS}"
+    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} -DLZ4 ${LZ4_CPPFLAGS}"
+    ADIOSLIB_INT_CFLAGS="${ADIOSLIB_INT_CFLAGS} ${LZ4_CFLAGS}"
+    ADIOSLIB_INT_LDFLAGS="${ADIOSLIB_INT_LDFLAGS} ${LZ4_LDFLAGS}"
+    ADIOSLIB_INT_LDADD="${ADIOSLIB_INT_LDADD} ${LZ4_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} -DLZ4 ${LZ4_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${LZ4_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${LZ4_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${LZ4_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} -DLZ4 ${LZ4_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${LZ4_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${LZ4_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${LZ4_LIBS}"
+fi
 if test -z "${HAVE_ZFP_TRUE}"; then
     ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${ZFP_LDFLAGS}"
     ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${ZFP_LIBS}"
@@ -893,7 +916,6 @@ AC_CONFIG_FILES([Makefile
                  tests/C/flexpath_tests/1D_arr_global_noxml/Makefile
                  tests/C/flexpath_tests/global_range_select/Makefile
                  tests/C/flexpath_tests/maya_noxml/Makefile
-                 tests/C/flexpath_tests/maya_append/Makefile
                  tests/C/flexpath_tests/scalar/Makefile
                  tests/C/flexpath_tests/local_arrays/Makefile
                  tests/C/fgr_tests/Makefile
@@ -1278,6 +1300,17 @@ if test -z "${HAVE_SZIP_TRUE}"; then
     echo
 else
     echo "  - No SZIP to build SZIP transform method"
+fi
+
+if test -z "${HAVE_LZ4_TRUE}"; then
+    echo "  - LZ4";
+    echo "      - LZ4_CFLAGS = $LZ4_CFLAGS";
+    echo "      - LZ4_CPPFLAGS = $LZ4_CPPFLAGS";
+    echo "      - LZ4_LDFLAGS = $LZ4_LDFLAGS";
+    echo "      - LZ4_LIBS = $LZ4_LIBS";
+    echo
+else
+    echo "  - No LZ4 to build LZ4 transform method"
 fi
 
 if test -z "${BUILD_ZFP_TRUE}"; then

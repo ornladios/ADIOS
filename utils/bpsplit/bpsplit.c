@@ -462,6 +462,7 @@ void weed_out_indexes(void) {
                      vg->characteristics[i].offset <= out_offset_end) {
                 // recalc offset for output offset
                 vg->characteristics[i].offset -= out_offset_start; 
+                vg->characteristics[i].payload_offset -= out_offset_start;
                 count++;
             } else
                 break;
@@ -498,6 +499,7 @@ void weed_out_indexes(void) {
                      ag->characteristics[i].offset <= out_offset_end) {
                 // recalc offset for output offset
                 ag->characteristics[i].offset -= out_offset_start; 
+                ag->characteristics[i].payload_offset -= out_offset_start;
                 count++;
             } else
                 break;

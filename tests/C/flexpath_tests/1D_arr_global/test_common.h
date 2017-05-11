@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//! size of the X dimension
+#define NX_DIM 10
 
 #define DBG_TEST_FAILED_STR		"TEST_FAILED"
 #define DBG_TEST_PASSED_STR		"TEST_PASSED"
@@ -44,25 +46,22 @@
 #define DBG_DEBUG_STR		"DEBUG\t"
 #define DBG_TODO_STR		"TODO\t"
 
-#define p_test_failed(fmt, args...)                             \
-    do {                                                  \
-	 fprintf(stderr, "%s " fmt, DBG_TEST_FAILED_STR,  ##args);	\
-         fflush(stdout);  											\
+//This is in here for legacy reasons...as soon as I figure out 
+//a better way for this testing suite to be I'm going to remove this...
+#define internal_p_test_failed(fmt, args...)    \
+    do {    \
+        fprintf(stdout, "%s " fmt, DBG_TEST_FAILED_STR, ##args); \
+        fflush(stdout); \
     } while(0)
 
-#define p_test_passed(fmt, args...)                             \
-    do {                                                  \
-         fprintf(stderr, "%s " fmt, DBG_TEST_PASSED_STR,  ##args);  \
-         fflush(stdout);  											\
-    } while(0)
 
-#define test_failed(prog_name, rank)                             \
+#define p_test_failed(prog_name, rank)                             \
     do {                                                  \
 	 fprintf(stdout, "%s\t\tProgram name: %s\tRank: %d\n", DBG_TEST_FAILED_STR, prog_name, rank);	\
          fflush(stdout);  											\
     } while(0)
 
-#define test_passed(prog_name, rank)                             \
+#define p_test_passed(prog_name, rank)                             \
     do {                                                  \
          fprintf(stdout, "%s\t\tProgram name: %s\tRank: %d\n", DBG_TEST_PASSED_STR, prog_name, rank);  \
          fflush(stdout);  											\
@@ -70,13 +69,11 @@
 
 
 
-
-
 //! @todo do something like that but smarter without unnecessary copying
 #define p_error(fmt, args...)                             				\
     do {                                                                \
         if((DBG_ERROR) <= DBG_LEVEL) {                                  \
-            fprintf(stderr, "%s(%d) %s:%s:%d: " fmt, DBG_ERROR_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
+            fprintf(stdout, "%s(%d) %s:%s:%d: " fmt, DBG_ERROR_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
             fflush(stdout);  											\
         }                                                               \
     } while(0)
@@ -85,7 +82,7 @@
 #define p_warn(fmt, args...) \
 	do {                                                                \
         if((DBG_WARNING) <= DBG_LEVEL) {                                      \
-        	fprintf(stderr, "%s(%d) %s:%s:%d: " fmt, DBG_WARN_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
+        	fprintf(stdout, "%s(%d) %s:%s:%d: " fmt, DBG_WARN_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
             fflush(stdout);												\
         }                                                               \
     } while(0)
@@ -93,7 +90,7 @@
 #define p_info(fmt, args...) \
 	do {                                                                \
         if((DBG_INFO) <= DBG_LEVEL) {                                      \
-        	fprintf(stderr, "%s(%d) %s:%s:%d: " fmt, DBG_INFO_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
+        	fprintf(stdout, "%s(%d) %s:%s:%d: " fmt, DBG_INFO_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
             fflush(stdout);												\
         }                                                               \
     } while(0)
@@ -101,7 +98,7 @@
 #define p_debug(fmt, args...) \
 	do {                                                                \
         if((DBG_DEBUG) <= DBG_LEVEL) {                                      \
-        	fprintf(stderr, "%s(%d) %s:%s:%d: " fmt, DBG_DEBUG_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
+        	fprintf(stdout, "%s(%d) %s:%s:%d: " fmt, DBG_DEBUG_STR, (DBG_ERROR), __FILE__, __FUNCTION__, __LINE__, ##args);   \
             fflush(stdout);												\
         }                                                               \
     } while(0)
@@ -207,7 +204,7 @@
  */
 #define RET_AND_CLOSE_ADIOS_READER_IF_TEST_FAILED(test_res, rank, handle, method) \
 	if ( TEST_FAILED == test_res.result ) { \
-		p_test_failed("%s: rank %d\n", test_res.name, rank); \
+		p_test_failed(test_res.name, rank); \
 		CLOSE_ADIOS_READER(handle, method);                 \
 		return DIAG_ERR;                                    \
 	}
@@ -237,7 +234,7 @@
 #define TEST_INT_EQUAL(value_ref, value, err_count, test_res) \
 	if (value != value_ref ){ \
 		test_res = TEST_FAILED; \
-		p_test_failed("("#value_ref" != "#value"  -> expected=%d, got=%d)\n", value_ref, value); \
+		internal_p_test_failed("("#value_ref" != "#value"  -> expected=%d, got=%d)\n", value_ref, value); \
 		err_count++; \
 	}
 
@@ -252,7 +249,7 @@
 #define TEST_LONG_EQUAL(value_ref, value, err_count, test_res) \
 	if (value != value_ref ){ \
 		test_res = TEST_FAILED; \
-		p_test_failed("("#value_ref" != "#value"  -> expected=%" PRIu64 ", got=%" PRIu64 ")\n", value_ref, value); \
+		internal_p_test_failed("("#value_ref" != "#value"  -> expected=%" PRIu64 ", got=%" PRIu64 ")\n", value_ref, value); \
 		err_count++; \
 	}
 
@@ -267,7 +264,7 @@
 #define TEST_DOUBLE_EQUAL(value_ref, value, err_count, test_res) \
 	if (value != value_ref ){ \
 		test_res = TEST_FAILED; \
-		p_test_failed("("#value_ref" != "#value"  -> expected=%g, got=%g)\n", value_ref, value); \
+		internal_p_test_failed("("#value_ref" != "#value"  -> expected=%g, got=%g)\n", value_ref, value); \
 		err_count++; \
 	}
 

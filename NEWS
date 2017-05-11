@@ -1,3 +1,5 @@
+    - added LZ4 compression transform by René Widera HZDR, Germany
+
 1.11.1 Release January 2017
     - fix: able to read from a BP file when the index itself is > 2GB
     - fix: bpmeta, bpdump works correctly with index size > 2GB

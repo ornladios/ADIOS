@@ -33,7 +33,8 @@ check_C=local_array_time \
 	steps_read_stream \
 	blocks \
 	build_standard_dataset \
-	transforms_writeblock_read 
+	transforms_writeblock_read \
+	test_singlevalue
 
 test_C=
 
@@ -189,6 +190,11 @@ build_standard_dataset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EX
 transforms_writeblock_read_SOURCES = transforms_writeblock_read.c 
 transforms_writeblock_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD) 
 transforms_writeblock_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+
+test_singlevalue_SOURCES=test_singlevalue.c
+test_singlevalue_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+test_singlevalue_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
+test_singlevalue.o: test_singlevalue.c
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1

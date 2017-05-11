@@ -65,8 +65,10 @@ struct adios_POSIX_data_struct
     int rank;
     int size;
 #endif
-    int g_have_mdf;
+    int g_have_mdf; // = 1 write global metadata file
+    int local_fs; // = N  every N processes are writing to a local file system
     int file_is_open; // = 1 if in append mode we leave the file open (close at finalize)
+    char *filename; // remember the currently opened filename to recognize when user suddenly changes to another one
     int index_is_in_memory; // = 1 when index is kept in memory, no need to read from file. =1 after first 'append/update' is completed but not after first 'write'.
     uint64_t pg_start_next; // remember end of PG data for future append steps
 
@@ -100,10 +102,46 @@ void adios_posix_init (const PairStruct * parameters
     p->size = 0;
 #endif
     p->g_have_mdf = 1;
+    p->local_fs = 0; // only rank 0 creates the directory for sub-files
     p->file_is_open = 0;  // = 1 when posix file is open (used in append mode only)
+    p->filename = NULL;
     p->index_is_in_memory = 0; 
     p->pg_start_next = 0;
     p->total_bytes_written = 0;
+
+
+    // process user parameters
+    const PairStruct *ps = parameters;
+    while (ps) {
+        if (!strcasecmp (ps->name, "have_metadata_file")) 
+        {
+            errno = 0;
+            p->g_have_mdf = strtol(ps->value, NULL, 10);
+            if (!errno) {
+                log_debug ("Parameter 'have_metadata_file' set to %d for POSIX write method\n",
+                           p->g_have_mdf);
+            } else {
+                log_error ("Invalid 'have_metadata_file' parameter given to the POSIX write "
+                           "method: '%s'\n", ps->value);
+            }
+        } 
+        else if (!strcasecmp (ps->name, "local-fs")) 
+        {
+            errno = 0;
+            p->local_fs = strtol(ps->value, NULL, 10);
+            if (!errno) {
+                log_debug ("Parameter 'local-fs' set to %d for POSIX write method\n",
+                           p->local_fs);
+            } else {
+                log_error ("Invalid 'local-fs' parameter given to the POSIX write "
+                           "method: '%s'\n", ps->value);
+            }
+        } else {
+            log_error ("Parameter name %s is not recognized by the POSIX write "
+                        "method\n", ps->name);
+        }
+        ps = ps->next;
+    }
 }
 
 
@@ -129,25 +167,6 @@ int adios_posix_open (struct adios_file_struct * fd
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
 
-    char *temp_string, *m_size;
-
-    temp_string = a2s_trim_spaces (method->parameters);
-    if ( (m_size = strstr (temp_string, "have_metadata_file")) )
-    {
-        char * m = strchr (m_size, '=');
-        char * n = strtok (m, ";");
-
-        if (!n)
-            p->g_have_mdf = atoi (n + 1);
-        else
-            p->g_have_mdf = atoi (m + 1);
-    }
-    else
-    {
-        // by default, write metadata file. 
-        p->g_have_mdf = 1;
-    }
-    free (temp_string);
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     int timer_count = 8;
@@ -247,6 +266,27 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
     fd->subfile_index = p->rank; // Only if HAVE_MPI
 #endif
 
+    // if an app writes multiple files with each multiple steps,
+    // i.e. with a w,a,a,a then w to another filename pattern, then
+    // we need to free up stuff kept in memory about the previous file
+    if (!p->filename) {
+        //printf ("ADIOS POSIX Open: First filename %s\n", subfile_name);
+        p->filename = strdup(subfile_name);
+    } else if (strcmp(subfile_name, p->filename)) {
+        //printf ("ADIOS POSIX Open: Change filename %s\n", subfile_name);
+        if (p->file_is_open) {
+            //printf ("ADIOS POSIX Open: Clear up previous file %s\n", p->filename);
+            adios_clear_index_v1 (p->index); // append and update methods never cleared the index and kept file open
+            adios_posix_close_internal (&p->b);
+            p->file_is_open = 0;
+            p->index_is_in_memory = 0;
+            p->b.end_of_pgs = 0;
+        }
+        free (p->filename);
+        p->filename = strdup(subfile_name);
+    }
+
+
     p->total_bytes_written = 0; // counts bytes written only in this open()..close() step
 
     switch (fd->mode)
@@ -276,8 +316,15 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
             // create dir to keep all the subfiles
             if (p->group_comm != MPI_COMM_SELF)
             {
-                if (p->rank == 0)
+                /* p->local_fs controls who creates directories.
+                   local_fs = 0 means only rank 0 does
+                   local_fs = N means every Nth rank does
+                */
+                if ( (p->local_fs == 0 && p->rank == 0) ||
+                     (p->local_fs > 0 && p->rank % p->local_fs == 0)
+                   )
                 {
+                    fprintf (stderr, "ADIOS POSIX: mkdir by rank %d\n", p->rank);
                     char * dir_name = malloc (strlen (fd->name) + 4 + 1);
                     sprintf (dir_name, "%s%s"
                                      , fd->name
@@ -660,6 +707,8 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
     off_t offset = fd->current_pg->pg_start_in_file;
 
     /* FIXME: what is this check? Should never happen ? */
+    //printf ("%s: p->b.end_of_pgs = %" PRIu64 " fd->current_pg->pg_start_in_file = %"
+    //        PRIu64 "\n", __func__, p->b.end_of_pgs, fd->current_pg->pg_start_in_file);
     assert (p->b.end_of_pgs <= fd->current_pg->pg_start_in_file);
     if (p->b.end_of_pgs > fd->current_pg->pg_start_in_file)
         offset = p->b.end_of_pgs;
@@ -1287,6 +1336,11 @@ void adios_posix_finalize (int mype, struct adios_method_struct * method)
     p->index_is_in_memory = 0; 
 
     adios_free_index_v1 (p->index);
+
+    if (p->filename) {
+        free (p->filename);
+        p->filename = NULL;
+    }
 
     if (adios_posix_initialized)
         adios_posix_initialized = 0;
