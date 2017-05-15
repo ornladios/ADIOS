@@ -989,7 +989,7 @@ void adios_posix_close (struct adios_file_struct * fd
 
                     recv_buffer = malloc (total_size);
                     START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gatherv (&size, 0, MPI_BYTE
+                    MPI_Gatherv (buffer, 0, MPI_BYTE // 0 == index_sizes[0]
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, p->group_comm
                                 );
@@ -1066,13 +1066,13 @@ void adios_posix_close (struct adios_file_struct * fd
                 {
                     START_TIMER (ADIOS_TIMER_COMM);
                     // Added this explicit cast to avoid truncation of low-order bytes on BGP
-                    int i_buffer_size = (int) buffer_offset;
-                    MPI_Gather (&i_buffer_size, 1, MPI_INT
+                    int i_buffer_offset = (int) buffer_offset;
+                    MPI_Gather (&i_buffer_offset, 1, MPI_INT
                                ,0, 0, MPI_INT
                                ,0, p->group_comm
                                );
 
-                    MPI_Gatherv (buffer, i_buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, i_buffer_offset, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, p->group_comm
                                 );
@@ -1147,7 +1147,7 @@ void adios_posix_close (struct adios_file_struct * fd
                     int * index_offsets = malloc (4 * p->size);
                     char * recv_buffer = 0;
                     int i;
-                    uint32_t size = buffer_size;
+                    uint32_t size = buffer_offset;
                     uint32_t total_size = 0;
 
                     // Need to make a temporary copy of p->index and merge
@@ -1174,10 +1174,9 @@ void adios_posix_close (struct adios_file_struct * fd
                     }
 
                     recv_buffer = malloc (total_size);
-                    memcpy (recv_buffer, buffer, index_sizes[0]);
 
                     START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gatherv (&size, 0, MPI_BYTE
+                    MPI_Gatherv (buffer, index_sizes[0], MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, p->group_comm
                                 );
@@ -1260,12 +1259,14 @@ void adios_posix_close (struct adios_file_struct * fd
                 else
                 {
                     START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gather (&buffer_size, 1, MPI_INT
+                    // Added this explicit cast to avoid truncation of low-order bytes on BGP
+                    int i_buffer_offset = (int) buffer_offset;
+                    MPI_Gather (&i_buffer_offset, 1, MPI_INT
                                ,0, 0, MPI_INT
                                ,0, p->group_comm
                                );
 
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, i_buffer_offset, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, p->group_comm
                                 );
