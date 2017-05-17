@@ -1,4 +1,6 @@
 #!/bin/bash -v
+export MACOSX_DEPLOYMENT_TARGET=10.11
+
 rm -rf ./build
 sed -f adios_mpi2serial.sed adios_mpi.pyx > adios.pyx
 cython -X embedsignature=True --cplus adios.pyx    
