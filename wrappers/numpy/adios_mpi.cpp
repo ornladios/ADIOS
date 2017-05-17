@@ -1170,7 +1170,7 @@ struct __pyx_opt_args_9adios_mpi_3var_read {
   PyObject *step_scalar;
 };
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":28
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":28
  *     ctypedef MPI_Count  Count  "MPI_Count"
  * 
  * ctypedef public api class Status [             # <<<<<<<<<<<<<<
@@ -1186,7 +1186,7 @@ typedef struct PyMPIStatusObject PyMPIStatusObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIStatus_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":35
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":35
  *     cdef unsigned   flags
  * 
  * ctypedef public api class Datatype [             # <<<<<<<<<<<<<<
@@ -1202,7 +1202,7 @@ typedef struct PyMPIDatatypeObject PyMPIDatatypeObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIDatatype_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":42
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":42
  *     cdef unsigned     flags
  * 
  * ctypedef public api class Request [             # <<<<<<<<<<<<<<
@@ -1219,7 +1219,7 @@ typedef struct PyMPIRequestObject PyMPIRequestObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIRequest_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":50
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":50
  *     cdef object      ob_buf
  * 
  * ctypedef public api class Prequest(Request) [             # <<<<<<<<<<<<<<
@@ -1233,7 +1233,7 @@ typedef struct PyMPIPrequestObject PyMPIPrequestObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIPrequest_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":56
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":56
  *     pass
  * 
  * ctypedef public api class Grequest(Request) [             # <<<<<<<<<<<<<<
@@ -1248,7 +1248,7 @@ typedef struct PyMPIGrequestObject PyMPIGrequestObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIGrequest_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":62
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":62
  *     cdef MPI_Request ob_grequest
  * 
  * ctypedef public api class Message [             # <<<<<<<<<<<<<<
@@ -1265,7 +1265,7 @@ typedef struct PyMPIMessageObject PyMPIMessageObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIMessage_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":70
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":70
  *     cdef object      ob_buf
  * 
  * ctypedef public api class Op [             # <<<<<<<<<<<<<<
@@ -1283,7 +1283,7 @@ typedef struct PyMPIOpObject PyMPIOpObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIOp_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":79
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":79
  *     cdef int    ob_usrid
  * 
  * ctypedef public api class Group [             # <<<<<<<<<<<<<<
@@ -1299,7 +1299,7 @@ typedef struct PyMPIGroupObject PyMPIGroupObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIGroup_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":86
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":86
  *     cdef unsigned  flags
  * 
  * ctypedef public api class Info [             # <<<<<<<<<<<<<<
@@ -1315,7 +1315,7 @@ typedef struct PyMPIInfoObject PyMPIInfoObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIInfo_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":93
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":93
  *     cdef unsigned flags
  * 
  * ctypedef public api class Errhandler [             # <<<<<<<<<<<<<<
@@ -1331,7 +1331,7 @@ typedef struct PyMPIErrhandlerObject PyMPIErrhandlerObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIErrhandler_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":100
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":100
  *     cdef unsigned       flags
  * 
  * ctypedef public api class Comm [             # <<<<<<<<<<<<<<
@@ -1347,7 +1347,7 @@ typedef struct PyMPICommObject PyMPICommObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIComm_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":107
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":107
  *     cdef unsigned flags
  * 
  * ctypedef public api class Intracomm(Comm) [             # <<<<<<<<<<<<<<
@@ -1361,7 +1361,7 @@ typedef struct PyMPIIntracommObject PyMPIIntracommObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIIntracomm_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":113
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":113
  *     pass
  * 
  * ctypedef public api class Topocomm(Intracomm) [             # <<<<<<<<<<<<<<
@@ -1375,7 +1375,7 @@ typedef struct PyMPITopocommObject PyMPITopocommObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPITopocomm_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":119
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":119
  *     pass
  * 
  * ctypedef public api class Cartcomm(Topocomm) [             # <<<<<<<<<<<<<<
@@ -1389,7 +1389,7 @@ typedef struct PyMPICartcommObject PyMPICartcommObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPICartcomm_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":125
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":125
  *     pass
  * 
  * ctypedef public api class Graphcomm(Topocomm) [             # <<<<<<<<<<<<<<
@@ -1403,7 +1403,7 @@ typedef struct PyMPIGraphcommObject PyMPIGraphcommObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIGraphcomm_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":131
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":131
  *     pass
  * 
  * ctypedef public api class Distgraphcomm(Topocomm) [             # <<<<<<<<<<<<<<
@@ -1417,7 +1417,7 @@ typedef struct PyMPIDistgraphcommObject PyMPIDistgraphcommObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIDistgraphcomm_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":137
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":137
  *     pass
  * 
  * ctypedef public api class Intercomm(Comm) [             # <<<<<<<<<<<<<<
@@ -1431,7 +1431,7 @@ typedef struct PyMPIIntercommObject PyMPIIntercommObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIIntercomm_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":143
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":143
  *     pass
  * 
  * ctypedef public api class Win [             # <<<<<<<<<<<<<<
@@ -1448,7 +1448,7 @@ typedef struct PyMPIWinObject PyMPIWinObject;
 
 __PYX_EXTERN_C DL_EXPORT(PyTypeObject) PyMPIWin_Type;
 
-/* "../../../../sw/anaconda2/4.1.1/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":151
+/* "../../../../.local/lib/python2.7/site-packages/mpi4py/include/mpi4py/MPI.pxd":151
  *     cdef object   ob_mem
  * 
  * ctypedef public api class File [             # <<<<<<<<<<<<<<
