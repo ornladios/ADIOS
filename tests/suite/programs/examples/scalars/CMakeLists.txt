@@ -3,6 +3,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/scalars)
 include_directories(${PROJECT_BINARY_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src/public)
+include_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/scalars)
 link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/scalars)
 
 add_executable(scalars_write_C scalars_write_C.c gwrite_scalars.ch)

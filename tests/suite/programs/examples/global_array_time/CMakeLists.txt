@@ -3,15 +3,16 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array_time)
 include_directories(${PROJECT_BINARY_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src/public)
+include_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/global_array_time)
 link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/global_array_time)
 
-add_executable(global_array_time_write_C global_array_time_write_C.c)
+add_executable(global_array_time_write_C global_array_time_write_C.c gwrite_restart.ch)
 target_link_libraries(global_array_time_write_C adios ${ADIOSLIB_LDADD})
 add_custom_command(
         OUTPUT gwrite_restart.ch
         COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py
         ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array_time/global_array_time_C.xml
-        DEPENDS global_array_C.xml
+        DEPENDS global_array_time_C.xml
         )
 
 add_executable(global_array_time_read_as_file_C global_array_time_read_as_file_C.c)
@@ -34,13 +35,13 @@ endforeach()
 
 
 if(BUILD_FORTRAN)
-    add_executable(global_array_time_write_F global_array_time_write_F.F90)
+    add_executable(global_array_time_write_F global_array_time_write_F.F90 gwrite_restart.fh)
     target_link_libraries(global_array_time_write_F adiosf ${ADIOSLIB_LDADD})
     add_custom_command(
         OUTPUT gwrite_restart.fh
         COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py
         ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array_time/global_array_time_F.xml
-        DEPENDS global_array_F.xml
+        DEPENDS global_array_time_F.xml
         )
 endif()
 
