@@ -153,7 +153,7 @@ int process_metadata()
                 rank, "record", adios_errmsg());
         return 1;
     }
-    printf ("rank %d: record dims = %llu * %llu \n", rank, varinfo->dims[0], varinfo->dims[1]); 
+    printf ("rank %d: record dims = %" PRIu64 " * %" PRIu64 " \n", rank, varinfo->dims[0], varinfo->dims[1]); 
     printf ("rank %d: total nblocks = %d in %d steps\n", 
              rank, varinfo->sum_nblocks, varinfo->nsteps); 
 

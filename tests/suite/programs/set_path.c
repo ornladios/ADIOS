@@ -136,8 +136,7 @@ int write_file ()
 {
     int64_t       fh;
     uint64_t      groupsize=0, totalsize;
-    char          *newpath, *oldpath;
-    char          varpath[128];
+    char          *newpath;
 
     log ("Write to %s\n", FILENAME);
     adios_open (&fh, "abc", FILENAME, "w", comm);
@@ -148,7 +147,7 @@ int write_file ()
     groupsize += 1000; // add for extra metadata of triplicated variables, which is not expected from the xml itself
 
     adios_group_size (fh, groupsize, &totalsize);
-    log ("Group size: data only = %lld, with metadata = %lld\n", groupsize, totalsize);
+    log ("Group size: data only = %" PRIu64 ", with metadata = %" PRIu64 "\n", groupsize, totalsize);
 
     adios_write (fh, "gdim1", &gdim1);
     adios_write (fh, "ldim1", &ldim1);
@@ -157,25 +156,25 @@ int write_file ()
     newpath = getpath(0);
     log ("  Change path of all variables to %s\n", newpath);
     adios_set_path (fh, newpath);
-    log ("    Write s0\n", varpath);
+    log ("    Write s0\n");
     adios_write (fh, "s0", &s0);
-    log ("    Write a1\n", varpath);
+    log ("    Write a1\n");
     adios_write (fh, "a1", a0);
 
     newpath = getpath(1);
     log ("  Change path of all variables to %s\n", newpath);
     adios_set_path (fh, newpath);
-    log ("    Write s0\n", varpath);
+    log ("    Write s0\n");
     adios_write (fh, "s0", &s1);
-    log ("    Write a1\n", varpath);
+    log ("    Write a1\n");
     adios_write (fh, "a1", a1);
 
     newpath = getpath(2);
     log ("  Change path of all variables to %s\n", newpath);
     adios_set_path (fh, newpath);
-    log ("    Write s0\n", varpath);
+    log ("    Write s0\n");
     adios_write (fh, "s0", &s2);
-    log ("    Write a1\n", varpath);
+    log ("    Write a1\n");
     adios_write (fh, "a1", a2);
 
     adios_close (fh);

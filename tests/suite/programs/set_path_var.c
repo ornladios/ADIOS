@@ -148,7 +148,7 @@ int write_file ()
     groupsize += 1000; // add for extra metadata of triplicated variables, which is not expected from the xml itself
 
     adios_group_size (fh, groupsize, &totalsize);
-    log ("Group size: data only = %lld, with metadata = %lld\n", groupsize, totalsize);
+    log ("Group size: data only = %" PRIu64 ", with metadata = %" PRIu64 "\n", groupsize, totalsize);
 
     adios_write (fh, "gdim1", &gdim1);
     adios_write (fh, "ldim1", &ldim1);
