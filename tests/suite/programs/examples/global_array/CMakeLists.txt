@@ -51,7 +51,7 @@ if(BUILD_FORTRAN)
     target_link_libraries(global_array_write_F adiosf ${ADIOSLIB_LDADD})
     add_custom_command(
 	OUTPUT gwrite_temperature.fh
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array/global_array_F.xml
+	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array/global_array_F.xml
 	DEPENDS global_array_F.xml
 	)
     add_executable(global_array_write_noxml_F global_array_write_noxml_F.F90)

@@ -1,0 +1,5 @@
+add_subdirectory(attributes)
+add_subdirectory(scalars)
+add_subdirectory(global_array)
+add_subdirectory(global_array_time)
+add_subdirectory(local_array)
