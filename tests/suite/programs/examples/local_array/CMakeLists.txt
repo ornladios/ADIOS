@@ -30,5 +30,6 @@ if(MPI_LINK_FLAGS)
 endif()
 target_link_libraries(local_array_read_C adiosread ${ADIOSREADLIB_LDADD} ${MPI_C_LIBRARIES})
 
-#install(FILES arrays.xml gwrite_arrays.ch gread_arrays.ch job.pbs  DESTINATION ${PROJECT_BINARY_DIR}/examples/C/arrays)
+file(COPY local_array_C.xml
+     DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs/examples/local_array)
 

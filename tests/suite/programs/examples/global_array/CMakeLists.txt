@@ -60,6 +60,6 @@ if(BUILD_FORTRAN)
     target_link_libraries(global_array_write_byid_noxml_F adiosf ${ADIOSLIB_LDADD})
 endif()
 
-
-#install(FILES adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array)
+file(COPY global_array_C.xml  global_array_F.xml 
+     DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs/examples/global_array)
 

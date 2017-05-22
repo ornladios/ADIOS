@@ -15,6 +15,9 @@ add_custom_command(
         DEPENDS global_array_time_C.xml
         )
 
+add_executable(global_array_time_write_multifile_C global_array_time_write_multifile_C.c gwrite_restart.ch)
+target_link_libraries(global_array_time_write_multifile_C adios ${ADIOSLIB_LDADD})
+
 add_executable(global_array_time_read_as_file_C global_array_time_read_as_file_C.c)
 target_link_libraries(global_array_time_read_as_file_C adiosread ${ADIOSREADLIB_LDADD})
 #set_target_properties(global_array_time_read_as_file_C PROPERTIES COMPILE_FLAGS "-DADIOS_USE_READ_API_1")
@@ -45,4 +48,6 @@ if(BUILD_FORTRAN)
         )
 endif()
 
-#install(FILES global_array_time_write_C.xml gread_restart.ch gwrite_restart.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array-time)
+file(COPY global_array_time_aggr_C.xml  global_array_time_C.xml  global_array_time_F.xml
+     DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs/examples/global_array_time)
+

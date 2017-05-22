@@ -41,4 +41,5 @@ if(BUILD_FORTRAN)
     target_link_libraries(scalars_read_F adiosreadf ${ADIOSREADLIB_LDADD})
 endif()
 
-#install(FILES scalars.xml gwrite_scalars.ch gread_scalars.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/scalars)
+file(COPY scalars_C.xml  scalars_F.xml  
+     DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs/examples/scalars)

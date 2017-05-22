@@ -23,7 +23,8 @@ set (WRITE_PROGS1 local_array_time
   set_path_var
   steps_write
   blocks
-  build_standard_dataset)
+  build_standard_dataset
+  test_singlevalue)
 
 set(WRITE_PROGS2 adios_staged_read
                  adios_staged_read_v2 

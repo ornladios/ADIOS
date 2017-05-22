@@ -95,7 +95,7 @@ $TRUNKDIR/utils/bpls/bpls -la ../global_array_time_C.bp -D -d temperature -n 10 
 for BUFSIZE in 3000 300000 10000 1000 0 ; do
             
     echo "  Run time-aggregation with buffer size = $BUFSIZE"
-    cat ../global_array_time_aggr_C.xml | sed -e "s/buffer-size=[0-9]*/buffer-size=$BUFSIZE/" > global_array_time_C.xml
+    cat ../global_array_time_aggr_C.xml | sed -e "s/buffer-size=\"[0-9]*\"/buffer-size=\"$BUFSIZE\"/" > global_array_time_C.xml
     $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ../global_array_time_write_C
     EX=$?
     if [ ! -f global_array_time_C.bp ]; then
@@ -141,7 +141,7 @@ pushd time_aggr_multifile >/dev/null
 for BUFSIZE in 3000 300000 10000 1000 0 ; do
             
 	echo "  Run multi-file time-aggregation with buffer size = $BUFSIZE"
-    cat ../global_array_time_aggr_C.xml | sed -e "s/buffer-size=[0-9]*/buffer-size=$BUFSIZE/" > global_array_time_aggr_C.xml
+    cat ../global_array_time_aggr_C.xml | sed -e "s/buffer-size=\"[0-9]*\"/buffer-size=\"$BUFSIZE\"/" > global_array_time_aggr_C.xml
 	$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ../global_array_time_write_multifile_C
     EX=$?
     if [ $EX != 0 ]; then

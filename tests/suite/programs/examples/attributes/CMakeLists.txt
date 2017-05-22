@@ -31,5 +31,6 @@ endif()
 target_link_libraries(attributes_read_C adiosread ${ADIOSREADLIB_LDADD} ${MPI_C_LIBRARIES})
 #set_target_properties(attributes_read PROPERTIES COMPILE_FLAGS "-DADIOS_USE_READ_API_1")
 
-#install(FILES attributes.xml gwrite_temperature.ch gread_temperature.ch DESTINATION ${PROJECT_BINARY_DIR}/examples/C/attributes)
+file(COPY attributes_C.xml
+     DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs/examples/attributes)
 
