@@ -1,9 +1,9 @@
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/test/suite/programs/examples/global_array_time)
+include_directories(${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array_time)
 include_directories(${PROJECT_BINARY_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src/public)
-link_directories(${PROJECT_BINARY_DIR}/test/suite/programs/examples/global_array_time)
+link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/global_array_time)
 
 add_executable(global_array_time_write_C global_array_time_write_C.c)
 target_link_libraries(global_array_time_write_C adios ${ADIOSLIB_LDADD})
@@ -42,6 +42,6 @@ if(BUILD_FORTRAN)
         ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array_time/global_array_time_F.xml
         DEPENDS global_array_F.xml
         )
-endif
+endif()
 
 #install(FILES global_array_time_write_C.xml gread_restart.ch gwrite_restart.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array-time)

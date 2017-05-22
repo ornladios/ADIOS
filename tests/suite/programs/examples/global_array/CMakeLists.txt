@@ -1,9 +1,9 @@
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/test/suite/programs/examples/global_array)
+include_directories(${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array)
 include_directories(${PROJECT_BINARY_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src/public)
-link_directories(${PROJECT_BINARY_DIR}/test/suite/programs/examples/global_array)
+link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/global_array)
 
 add_executable(global_array_write_C global_array_write_C.c)
 target_link_libraries(global_array_write_C adios ${ADIOSLIB_LDADD})
@@ -57,7 +57,7 @@ if(BUILD_FORTRAN)
     target_link_libraries(global_array_write_noxml_F adiosf ${ADIOSLIB_LDADD})
     add_executable(global_array_write_byid_noxml_F global_array_write_byid_noxml_F.F90)
     target_link_libraries(global_array_write_byid_noxml_F adiosf ${ADIOSLIB_LDADD})
-endif
+endif()
 
 
 #install(FILES adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array)

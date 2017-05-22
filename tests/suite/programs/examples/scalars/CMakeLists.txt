@@ -1,9 +1,9 @@
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/test/suite/programs/examples/scalars)
+include_directories(${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/scalars)
 include_directories(${PROJECT_BINARY_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src/public)
-link_directories(${PROJECT_BINARY_DIR}/test/suite/programs/examples/scalars)
+link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/scalars)
 
 add_executable(scalars_write_C scalars_write_C.c gwrite_scalars.ch)
 if(MPI_COMPILE_FLAGS)
@@ -36,10 +36,8 @@ if(BUILD_FORTRAN)
 	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/scalars/scalars_F.xml
 	DEPENDS scalars_F.xml
 	)
-
-
     add_executable(scalars_read_F scalars_read_F.F90)
     target_link_libraries(scalars_read_F adiosreadf ${ADIOSREADLIB_LDADD})
-endif
+endif()
 
 #install(FILES scalars.xml gwrite_scalars.ch gread_scalars.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/scalars)

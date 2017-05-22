@@ -75,3 +75,5 @@ file(COPY adios_amr_write.xml adios_amr_write_2vars.xml posix_method.xml
           path_test.xml adios_transforms.xml set_path.xml set_path_var.xml
           two_groups.xml
      DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs)
+
+add_subdirectory(examples)

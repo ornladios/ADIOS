@@ -87,12 +87,12 @@ int main (int argc, char ** argv)
         fprintf (outf, "byte        v1  = %d\n", v1);
         fprintf (outf, "short       v2  = %d\n", v2);
         fprintf (outf, "integer     v3  = %d\n", v3);
-        fprintf (outf, "long        v4  = %lld\n", v4);
+        fprintf (outf, "long        v4  = %" PRId64 "\n", v4);
 
         fprintf (outf, "uns.byte    v5  = %u\n", v5);
         fprintf (outf, "uns.short   v6  = %u\n", v6);
         fprintf (outf, "uns.int     v7  = %u\n", v7);
-        fprintf (outf, "uns.long    v8  = %llu\n", v8);
+        fprintf (outf, "uns.long    v8  = %" PRIu64 "\n", v8);
 
         fprintf (outf, "float       v9  = %g\n", v9);
         fprintf (outf, "double      v10 = %g\n", v10);

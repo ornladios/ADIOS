@@ -1,9 +1,9 @@
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/test/suite/programs/examples/attributes)
+include_directories(${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/attributes)
 include_directories(${PROJECT_BINARY_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src/public)
-link_directories(${PROJECT_BINARY_DIR}/test/suite/programs/examples/attributes)
+link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/attributes)
 
 add_executable(attributes_write_C attributes_write_C.c)
 if(MPI_COMPILE_FLAGS)
