@@ -57,7 +57,7 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f)
 {
     int i = 0, timestep = 0 ;
     ADIOS_VARINFO * tempVar = adios_inq_var(f, queryInfo->varName);
-    fprintf(stderr,"times steps for variable is: [%d, %d], batch size is %llu\n", queryInfo->fromStep, queryInfo->fromStep + queryInfo->numSteps, queryInfo->batchSize);
+    fprintf(stderr,"times steps for variable is: [%d, %d], batch size is %" PRIu64 "\n", queryInfo->fromStep, queryInfo->fromStep + queryInfo->numSteps, queryInfo->batchSize);
     for (timestep = queryInfo->fromStep; timestep < queryInfo->fromStep + queryInfo->numSteps; timestep ++) {
         fprintf(stderr,"querying on timestep %d \n", timestep );
 
