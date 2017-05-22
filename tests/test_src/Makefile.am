@@ -12,7 +12,7 @@
 test_C = hashtest copy_subvolume text_to_pairstruct test_strutil points_1DtoND trim_spaces
 
 if BUILD_WRITE
-    test_C += transforms_specparse group_free_test query_minmax read_points_2d array_attribute array_attribute
+    test_C += transforms_specparse group_free_test query_minmax read_points_2d read_points_3d array_attribute array_attribute
 endif
 
 if BUILD_FORTRAN
@@ -102,6 +102,12 @@ read_points_2d_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD
 read_points_2d_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 read_points_2d_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
 read_points_2d.o: read_points_2d.c
+
+read_points_3d_SOURCES=read_points_3d.c
+read_points_3d_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
+read_points_3d_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
+read_points_3d_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
+read_points_3d.o: read_points_3d.c
 
 array_attribute_SOURCES=array_attribute.c
 array_attribute_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
