@@ -39,6 +39,7 @@
 #include "core/util.h"
 #include "core/adios_logger.h"
 #include "core/globals.h"
+#include "core/adiost_callback_internal.h"
 
 #if HAVE_FLEXPATH==1
 
@@ -938,6 +939,7 @@ set_format(struct adios_group_struct *t,
 // copies buffer zeroing out pointers to arrays 
 void *copy_buffer_without_array(void *buffer, FlexpathWriteFileData *fileData)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_copy_buffer, fileData);
     char *temp = (char *)malloc(fileData->fm->size);
     memcpy(temp, buffer, fileData->fm->size);
     FMField *f = fileData->fm->format[0].field_list;
@@ -948,9 +950,9 @@ void *copy_buffer_without_array(void *buffer, FlexpathWriteFileData *fileData)
         }
         f++;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_copy_buffer, fileData);
     return temp;
 }
-
 
 // adds an open file handle to global open file list
 void 
