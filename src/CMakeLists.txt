@@ -186,6 +186,8 @@ if(BUILD_WRITE)
                      core/a2sel.c
                      core/adios_clock.c
                      core/qhashtbl.c
+                     core/adiost_callback_internal.c
+                     core/adiost_default_tool.c
                      read/read_bp.c
                      read/read_bp_staged.c
                      read/read_bp_staged1.c
@@ -230,6 +232,8 @@ if(BUILD_WRITE)
                      core/a2sel.c
                      core/adios_clock.c
                      core/qhashtbl.c
+                     core/adiost_callback_internal.c
+                     core/adiost_default_tool.c
                      read/read_bp.c
                      read/read_bp_staged.c
                      read/read_bp_staged1.c
@@ -265,6 +269,8 @@ if(BUILD_WRITE)
                        core/a2sel.c
                        core/adios_clock.c
                        core/qhashtbl.c
+                       core/adiost_callback_internal.c
+                       core/adiost_default_tool.c
                        read/read_bp.c
                        read/read_bp_staged.c
                        read/read_bp_staged1.c
@@ -517,7 +523,8 @@ set(include_HEADERS ${include_HEADERS} public/adios.h
                    public/adios_link.h
                    public/adios_read_ext.h
                    public/adios_query.h
-                   public/adios_transform_methods.h)
+                   public/adios_transform_methods.h
+                   public/adiost_callback_api.h)
 
 set(libadiosread_a_SOURCES core/adios_bp_v1.c
                       core/adios_endianness.c
@@ -540,6 +547,8 @@ set(libadiosread_a_SOURCES core/adios_bp_v1.c
                       core/a2sel.c
                       core/adios_clock.c
                       core/qhashtbl.c
+                      core/adiost_callback_internal.c
+                      core/adiost_default_tool.c
                       read/read_bp.c
                       read/read_bp_staged.c
                       read/read_bp_staged1.c)
@@ -608,6 +617,8 @@ if(BUILD_FORTRAN)
                       core/a2sel.c
                       core/adios_clock.c
                       core/qhashtbl.c
+                      core/adiost_callback_internal.c
+                      core/adiost_default_tool.c
                       read/read_bp.c
                       read/read_bp_staged.c
                       read/read_bp_staged1.c)
@@ -732,6 +743,8 @@ set(libadiosread_nompi_a_SOURCES core/mpidummy.c
                       core/a2sel.c
                       core/adios_clock.c
                       core/qhashtbl.c
+                      core/adiost_callback_internal.c
+                      core/adiost_default_tool.c
                       read/read_bp.c)
 
 if(HAVE_DMALLOC)
@@ -795,6 +808,8 @@ if(BUILD_FORTRAN)
                           core/a2sel.c
                           core/adios_clock.c
                           core/qhashtbl.c
+                          core/adiost_callback_internal.c
+                          core/adiost_default_tool.c
                           read/read_bp.c)
     if(HAVE_DATASPACES)
         set(FortranReadSeqLibSource ${FortranReadSeqLibSource} read/read_dataspaces.c)

@@ -16,13 +16,14 @@
 #define ADIOST_EXPORT __attribute__((visibility("default")))
 #define ADIOST_WEAK __attribute__ (( weak )) 
 
-#include "adiost_callback_api.h"
+#include "public/adiost_callback_api.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <inttypes.h>
 #include <time.h>
 #define ADIOST_EXTERN 
 #define DEBUG_PRINT printf("In %s!\n", __func__); fflush(stdout);
-#define DEBUG_PRINT_FD printf("file_descriptor: %d!\n", file_descriptor); fflush(stdout);
+#define DEBUG_PRINT_FD printf("file_descriptor: %" PRId64 "!\n", file_descriptor); fflush(stdout);
 #define ONE_BILLION 1000000000
 #define ONE_BILLIONF 1000000000.0
 
@@ -192,12 +193,12 @@ ADIOST_EXTERN void my_group_size(int64_t file_descriptor,
     if (type == adiost_event_enter) {
         __timer_start(adiost_group_size_timer);
     } else {
-        debug_print("data size: %d!\n", data_size); fflush(stdout);
+        debug_print("data size: %" PRIu64 "!\n", data_size); fflush(stdout);
         adiost_counters_accumulated[adiost_data_bytes_counter] = 
             adiost_counters_accumulated[adiost_data_bytes_counter] + data_size;
         adiost_counters_count[adiost_data_bytes_counter] = 
             adiost_counters_count[adiost_data_bytes_counter] + 1;
-        debug_print("total size: %d!\n", total_size); fflush(stdout);
+        debug_print("total size: %" PRIu64 "!\n", total_size); fflush(stdout);
         adiost_counters_accumulated[adiost_total_bytes_counter] = 
             adiost_counters_accumulated[adiost_total_bytes_counter] + total_size;
         adiost_counters_count[adiost_total_bytes_counter] = 
@@ -264,7 +265,7 @@ ADIOST_EXTERN void my_fp_copy_buffer(int64_t file_descriptor,
 /* This function is for printing a timer */
 void print_timer(const char *_name, adiost_timer_index_t index) {
     if (adiost_timers_count[index] > 0ULL) {
-        debug_print("%s: %s, %u calls, %3.9f seconds\n",
+        debug_print("%s: %s, %" PRIu64 " calls, %3.9f seconds\n",
             program_invocation_short_name, _name,
             adiost_timers_count[index],
             ((double)adiost_timers_accumulated[index])/ONE_BILLIONF);
@@ -274,7 +275,7 @@ void print_timer(const char *_name, adiost_timer_index_t index) {
 /* This function is for printing a counter */
 void print_counter(const char *_name, adiost_timer_index_t index) {
     if (adiost_counters_count[index] > 0ULL) {
-        debug_print("%s: %s, %u calls, %u bytes\n",
+        debug_print("%s: %s, %" PRIu64 " calls, %" PRIu64 " bytes\n",
             program_invocation_short_name, _name,
             adiost_counters_count[index],
             adiost_counters_accumulated[index]);
