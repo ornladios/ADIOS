@@ -275,20 +275,20 @@ static int bp_read_open_rootonly (const char * filename,
             MPI_File_get_size (fh->mpi_fh, &file_size);
             err = 0;
         }
-        else
-        {
-            char e [MPI_MAX_ERROR_STRING];
-            int len = 0;
-            memset (e, 0, MPI_MAX_ERROR_STRING);
-            MPI_Error_string (err, e, &len);
-            adios_error (err_file_open_error, "MPI open failed for %s: '%s'\n", filename, e);
-            return adios_flag_no;
-        }
     }
     MPI_Bcast (&err, 1, MPI_INT, 0, comm);
     MPI_Bcast (&file_size, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
     fh->b->file_size = file_size;
     fh->mfooter.file_size = file_size;
+    if (err)
+    {
+        char e [MPI_MAX_ERROR_STRING];
+        int len = 0;
+        memset (e, 0, MPI_MAX_ERROR_STRING);
+        MPI_Error_string (err, e, &len);
+        adios_error (err_file_open_error, "MPI open failed for %s: '%s'\n", filename, e);
+        return adios_flag_no;
+    }
     return err;
 }
 
