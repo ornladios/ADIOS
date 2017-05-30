@@ -28,7 +28,7 @@ int main (int argc, char ** argv)
     int         rank, size, i, datasize;
     //int j;
     MPI_Comm    comm = MPI_COMM_WORLD;
-    enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP_AGGREGATE;
+    enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
     ADIOS_SELECTION * sel1;
     //ADIOS_SELECTION * sel2;
     //ADIOS_VARCHUNK * chunk = 0;
@@ -43,30 +43,32 @@ int main (int argc, char ** argv)
     adios_read_init_method (method, comm, "max_chunk_size=4;verbose=3;num_aggregators=2");
 
     ADIOS_FILE * f = adios_read_open_file ("adios_global.bp", method, comm);
-    ADIOS_VARINFO * varinfo = adios_inq_var (f, "temperature");
-    if (varinfo)
+    if (f != NULL)
     {
-        printf ("nsteps = %d\n", varinfo->nsteps);
-        for (i = 0; i < varinfo->nsteps; i++)
+        ADIOS_VARINFO * varinfo = adios_inq_var (f, "temperature");
+        if (varinfo)
         {
-            printf ("step: %d has %d", i, varinfo->nblocks[i]);
-        }
-        printf ("\n");
-        printf ("ndim = %d\n", varinfo->ndim);
-        printf ("dims = (");
-        datasize = 8;
-        for (i = 0; i < varinfo->ndim; i++)
-        {
-            datasize *= varinfo->dims[i];
-            printf ("%" PRIu64, varinfo->dims[i]);
-            if (i != varinfo->ndim - 1)
+            printf ("nsteps = %d\n", varinfo->nsteps);
+            for (i = 0; i < varinfo->nsteps; i++)
             {
-                printf (",");
+                printf ("step: %d has %d", i, varinfo->nblocks[i]);
             }
-        }
-        printf (")\n");
-        data = malloc (datasize);
-/*
+            printf ("\n");
+            printf ("ndim = %d\n", varinfo->ndim);
+            printf ("dims = (");
+            datasize = 8;
+            for (i = 0; i < varinfo->ndim; i++)
+            {
+                datasize *= varinfo->dims[i];
+                printf ("%" PRIu64, varinfo->dims[i]);
+                if (i != varinfo->ndim - 1)
+                {
+                    printf (",");
+                }
+            }
+            printf (")\n");
+            data = malloc (datasize);
+            /*
         adios_inq_var_blockinfo (f, varinfo);
         for (i = 0; i < varinfo->sum_nblocks; i++)
         {
@@ -83,15 +85,15 @@ int main (int argc, char ** argv)
             }
             printf ("\n");
         }
-*/
-        for (i = 0; i < varinfo->ndim; i++)
-        {
-            start[i] = 0;
-            count[i] = varinfo->dims[i];
-        }
+             */
+            for (i = 0; i < varinfo->ndim; i++)
+            {
+                start[i] = 0;
+                count[i] = varinfo->dims[i];
+            }
 
-        sel1 = adios_selection_boundingbox (varinfo->ndim, start, count);
-/*
+            sel1 = adios_selection_boundingbox (varinfo->ndim, start, count);
+            /*
         npoints = 1;
         for (i = 0; i < varinfo->ndim; i++)
         {
@@ -108,8 +110,8 @@ int main (int argc, char ** argv)
                 temp = temp/count[j];
             }
         }
-*/
-/*
+             */
+            /*
         for (i = 0; i < npoints; i++)
         {
             printf ("(");
@@ -121,48 +123,49 @@ int main (int argc, char ** argv)
         }
 
         printf ("\n");
-*/
-/*
+             */
+            /*
         sel2 = adios_selection_points (varinfo->ndim, npoints, points);
-*/
-        adios_schedule_read (f, sel1, "temperature", 0, 1, data);
-/*
+             */
+            adios_schedule_read (f, sel1, "temperature", 0, 1, data);
+            /*
         adios_schedule_read (f, sel2, "temperature", 0, 1, data);
-*/
-        adios_perform_reads (f, 1);
+             */
+            adios_perform_reads (f, 1);
 #if 0
-        while (adios_check_reads (f, &chunk) > 0)
-        {
-            datasize = 1;
-            for (i = 0; i < varinfo->ndim; i++)
+            while (adios_check_reads (f, &chunk) > 0)
             {
-                datasize *= chunk->sel->u.bb.count[i];
-            }
-            printf ("data:\n");
-/*
+                datasize = 1;
+                for (i = 0; i < varinfo->ndim; i++)
+                {
+                    datasize *= chunk->sel->u.bb.count[i];
+                }
+                printf ("data:\n");
+                /*
             for (i = 0; i < datasize; i ++)
             {
                 printf ("%7.4f ", * ((double *)chunk->data + i));
             }
             printf ("\n");
-*/
-            for (i = 0; i < 10; i ++)
-            {
-                printf ("%7.4f ", * ((double *)chunk->data + i));
+                 */
+                for (i = 0; i < 10; i ++)
+                {
+                    printf ("%7.4f ", * ((double *)chunk->data + i));
+                }
+                printf ("\n");
+
+                adios_free_chunk (chunk);
             }
-            printf ("\n");
-
-            adios_free_chunk (chunk);
-        }
 #endif
-        adios_selection_delete (sel1);
-/*
+            adios_selection_delete (sel1);
+            /*
         adios_selection_delete (sel2);
-*/
-    }
+             */
+        }
 
-    adios_free_varinfo (varinfo);
-    adios_read_close (f);
+        adios_free_varinfo (varinfo);
+        adios_read_close (f);
+    }
 
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
     MPI_Finalize ();
