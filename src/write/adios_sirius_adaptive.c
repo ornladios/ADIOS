@@ -1233,6 +1233,8 @@ int ** build_conn (int nvertices, int * mesh, int nmesh)
         int n2 = * (mesh + i * 3 + 1);
         int n3 = * (mesh + i * 3 + 2);
 
+        assert (n1 < nvertices && n2 < nvertices || n3 < nvertices);
+   
         sort3 (&n1, &n2, &n3);
         insert_triangle (nvertices, n1, n2, n3, conn);
     }
@@ -1940,6 +1942,10 @@ void get_delta1 (double * r, double * z, double * field,
 {
     double * delta = (double *) malloc (nvertices * 8);
     assert (delta);
+    for (int i = 0; i < nvertices; i++)
+    {
+        delta[i] = 0.0;
+    }
 
     double * r_sorted = 0, * z_sorted = 0;
     int * r_idx = 0, * z_idx = 0;
