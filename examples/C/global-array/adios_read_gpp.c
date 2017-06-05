@@ -20,7 +20,7 @@ int main (int argc, char ** argv)
 {
 	char        filename [256];
 	int         rank, size, i;
-	int         NX = 4096; 
+	int         NX = 10;
 	double      t[NX];
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
@@ -37,19 +37,20 @@ int main (int argc, char ** argv)
     //adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "");
 
     fp = adios_read_open_file ("adios_global.bp", ADIOS_READ_METHOD_BP, comm);
+    if (fp != NULL) {
 
-    #include "gread_temperature.ch"
+#include "gread_temperature.ch"
 
-    adios_read_close (fp);
+        adios_read_close (fp);
 
-    // Verify data
-	for (i = 0; i < NX; i++)
-		if (t[i] != rank*NX + i)
-        {
-            fprintf (stderr, "Error detected\n");
-        }
+        // Verify data
+        for (i = 0; i < NX; i++)
+            if (t[i] != rank*NX + i)
+            {
+                fprintf (stderr, "Error detected\n");
+            }
+    }
 
-    
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
 
 	MPI_Finalize ();

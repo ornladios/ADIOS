@@ -39,6 +39,7 @@
 #include "core/util.h"
 #include "core/adios_logger.h"
 #include "core/globals.h"
+#include "core/adiost_callback_internal.h"
 
 #if HAVE_FLEXPATH==1
 
@@ -54,8 +55,8 @@ typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, DATA_BUFFER, FINALIZE} FlexpathMes
 
 // maintains connection information
 typedef struct _flexpath_stone {
-    int myNum;
-    int theirNum;
+    int bridge_stoneID;
+    int reader_stoneID;
     int step;
     int opened;
     int created;
@@ -151,6 +152,7 @@ typedef struct _flexpath_write_file_data {
     // for maintaining open file list
     struct _flexpath_write_file_data* next;
     char* name;
+    void *adios_file_data;
 
     // general
     int verbose;
@@ -938,6 +940,7 @@ set_format(struct adios_group_struct *t,
 // copies buffer zeroing out pointers to arrays 
 void *copy_buffer_without_array(void *buffer, FlexpathWriteFileData *fileData)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_copy_buffer, fileData);
     char *temp = (char *)malloc(fileData->fm->size);
     memcpy(temp, buffer, fileData->fm->size);
     FMField *f = fileData->fm->format[0].field_list;
@@ -948,9 +951,9 @@ void *copy_buffer_without_array(void *buffer, FlexpathWriteFileData *fileData)
         }
         f++;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_copy_buffer, fileData);
     return temp;
 }
-
 
 // adds an open file handle to global open file list
 void 
@@ -978,6 +981,16 @@ find_open_file(char* name)
     return file;
 }
 
+FlexpathWriteFileData* 
+find_flexpath_fileData(void *adios_file_data) 
+{
+    FlexpathWriteFileData* file = flexpathWriteData.openFiles;
+    while (file && (file->adios_file_data != adios_file_data)) {
+        file = file->next;
+    }
+    return file;
+}
+
 
 void
 stone_close_handler(CManager cm, CMConnection conn, int closed_stone, void *client_data)
@@ -987,7 +1000,7 @@ stone_close_handler(CManager cm, CMConnection conn, int closed_stone, void *clie
     while (file) {
 	int i;
 	for (i=0; i < file->numBridges; i++) {
-	    if (file->bridges[i].myNum == closed_stone) {
+	    if (file->bridges[i].bridge_stoneID == closed_stone) {
 		int j;
 		file->bridges[i].opened = 0;
                 file->failed = 1;
@@ -1098,14 +1111,14 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
 }
 
 extern int 
-adios_flexpath_open(struct adios_file_struct *fd, 
-		    struct adios_method_struct *method, 
-		    MPI_Comm comm) 
-{    
+adios_flexpath_open(struct adios_file_struct *fd,
+                    struct adios_method_struct *method,
+                    MPI_Comm comm)
+{
     EVaction split_action;
     EVaction multi_action;
     int i;
-    if ( fd == NULL || method == NULL) {
+    if (fd == NULL || method == NULL) {
         perr("open: Bad input parameters\n");
         return -1;
     }
@@ -1118,20 +1131,19 @@ adios_flexpath_open(struct adios_file_struct *fd,
 
     FlexpathWriteFileData *fileData = malloc(sizeof(FlexpathWriteFileData));
     mem_check(fileData, "fileData");
-    //Sets some variables, prefer a call to calloc myself
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
     fp_verbose_init(fileData);
 
     fileData->maxQueueSize = 1;
     if (method->parameters) {
-        sscanf(method->parameters,"QUEUE_SIZE=%d;", &fileData->maxQueueSize);
+        sscanf(method->parameters, "QUEUE_SIZE=%d;", &fileData->maxQueueSize);
     }
-   
+
     // communication channel setup
     char writer_info_filename[200];
     char writer_info_tmp[200];
 
-    i=0;
+    i = 0;
     flexpathWriteData.rank = fileData->rank;
     fileData->globalCount = 0;
 
@@ -1143,18 +1155,18 @@ adios_flexpath_open(struct adios_file_struct *fd,
     char *recv_buff = NULL;
     char sendmsg[CONTACT_LENGTH] = {0};
     if (fileData->rank == 0) {
-        recv_buff = (char *) malloc(fileData->size*CONTACT_LENGTH*sizeof(char));
+        recv_buff = (char *)malloc(fileData->size * CONTACT_LENGTH * sizeof(char));
     }
-        
+
     // send out contact string
     fileData->multiStone = EValloc_stone(flexpathWriteData.cm);
     fileData->splitStone = EValloc_stone(flexpathWriteData.cm);
     fileData->sinkStone = EValloc_stone(flexpathWriteData.cm);
 
-    char * contact = attr_list_to_string(CMget_contact_list(flexpathWriteData.cm));
+    char *contact = attr_list_to_string(CMget_contact_list(flexpathWriteData.cm));
     sprintf(&sendmsg[0], "%d:%s", fileData->multiStone, contact);
     MPI_Gather(sendmsg, CONTACT_LENGTH, MPI_CHAR, recv_buff, 
-        CONTACT_LENGTH, MPI_CHAR, 0, (fileData->mpiComm));
+               CONTACT_LENGTH, MPI_CHAR, 0, (fileData->mpiComm));
 
     fp_verbose(fileData, "Gather of writer contact data to rank 0 is complete\n");
     //TODO: recv_buff has a small memory leak here because of register_reader_handler
@@ -1162,13 +1174,13 @@ adios_flexpath_open(struct adios_file_struct *fd,
     if (fileData->rank == 0) {
         sprintf(writer_info_filename, "%s_%s", fd->name, "writer_info.txt");
         sprintf(writer_info_tmp, "%s_%s", fd->name, "writer_info.tmp");
-        FILE* writer_info = fopen(writer_info_filename, "w");
+        FILE *writer_info = fopen(writer_info_filename, "w");
         int condition = CMCondition_get(flexpathWriteData.cm, NULL);
         CMCondition_set_client_data(flexpathWriteData.cm, condition, &recv_buff);
         fprintf(writer_info, "%d\n", condition);
         fprintf(writer_info, "%p\n", fileData);
-        for (i=0; i<fileData->size; i++) {
-            fprintf(writer_info, "%s\n",&recv_buff[i*CONTACT_LENGTH]); 
+        for (i = 0; i < fileData->size; i++) {
+            fprintf(writer_info, "%s\n", &recv_buff[i * CONTACT_LENGTH]);
         }
         fclose(writer_info);
         rename(writer_info_tmp, writer_info_filename);
@@ -1179,142 +1191,129 @@ adios_flexpath_open(struct adios_file_struct *fd,
         /* recv_buff and fileData->numBridges have been filled in by the reader_register_handler */
         MPI_Bcast(&fileData->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(&fileData->total_num_readers, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(recv_buff, fileData->numBridges*CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
-
-
-
+        MPI_Bcast(recv_buff, fileData->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
         unlink(writer_info_filename);
     } else {
         MPI_Bcast(&fileData->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast(&fileData->total_num_readers, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        recv_buff = (char *)malloc(fileData->numBridges*CONTACT_LENGTH*sizeof(char));
-        MPI_Bcast(recv_buff, fileData->numBridges*CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
-        /*Could get rid of the old array here, but maybe not*/
+        recv_buff = (char *)malloc(fileData->numBridges * CONTACT_LENGTH * sizeof(char));
+        MPI_Bcast(recv_buff, fileData->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
     }
-    
-    int stone_num;
+
     // build a bridge per line
     int numBridges = fileData->numBridges;
     fileData->bridges = malloc(sizeof(FlexpathStone) * numBridges);
     for (i = 0; i < numBridges; i++) {
         char in_contact[CONTACT_LENGTH];
-        sscanf(&recv_buff[i*CONTACT_LENGTH], "%d:%s",&stone_num, in_contact);
-	//fprintf(stderr, "reader contact: %d:%s\n", stone_num, in_contact);
+        int their_main_stone;
+        int their_sink_stone;
+        sscanf(&recv_buff[i * CONTACT_LENGTH], "%d:%s", &their_main_stone,
+               in_contact);
+        // fprintf(stderr, "reader contact: %d:%s\n", stone_num, in_contact);
         attr_list contact_list = attr_list_from_string(in_contact);
         fileData->bridges[i].opened = 1;
-	fileData->bridges[i].created = 1;
+        fileData->bridges[i].created = 1;
         fileData->bridges[i].step = 0;
-        fileData->bridges[i].theirNum = stone_num;
+        fileData->bridges[i].reader_stoneID = their_main_stone;
         fileData->bridges[i].contact = strdup(in_contact);
-
     }
 
-
     MPI_Barrier((fileData->mpiComm));
-    
-	
-    //process group format
+
+    // process group format
     struct adios_group_struct *t = method->group;
     if (t == NULL) {
-	adios_error(err_invalid_group, "Invalid group.\n");
-	return err_invalid_group;
+        adios_error(err_invalid_group, "Invalid group.\n");
+        return err_invalid_group;
     }
     fileData->host_language = t->adios_host_language_fortran;
     struct adios_var_struct *fields = t->vars;
-	
+
     if (fields == NULL) {
-	adios_error(err_invalid_group, "Group has no variables.\n");
-	return err_invalid_group;
-    }	
+        adios_error(err_invalid_group, "Group has no variables.\n");
+        return err_invalid_group;
+    }
 
     fileData->fm = set_format(t, fields, fileData);
 
-
     // attach rank attr and add file to open list
-    fileData->name = strdup(method->group->name); 
+    fileData->name = strdup(method->group->name);
+    fileData->adios_file_data = fd;
     add_open_file(fileData);
-    //Template for all other attrs set here
+    // Template for all other attrs set here
 
-    //generate multiqueue function that sends formats or all data based on flush msg
+    //generate multiqueue function that sends formats or all data based on data request msg
 
     FMStructDescList queue_list[] = {read_request_format_list,
                                      finalize_close_msg_format_list,
-                                     data_format_list,
-				     NULL};
+                                     data_format_list, 
+                                     NULL};
 
+    char *q_action_spec = create_multityped_action_spec(queue_list, multiqueue_action);
 
-    char* q_action_spec = create_multityped_action_spec(queue_list, multiqueue_action); 
-
-
-    multi_action = EVassoc_multi_action(flexpathWriteData.cm, fileData->multiStone, q_action_spec, 
-                                        NULL);
+    multi_action = EVassoc_multi_action(flexpathWriteData.cm, fileData->multiStone, q_action_spec, NULL);
     split_action = EVassoc_split_action(flexpathWriteData.cm, fileData->splitStone, NULL);
 
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, finalize_close_msg_format_list,
                             finalize_msg_handler, fileData);
 
-    fileData->dataSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-						  fileData->multiStone, 
-						  fileData->fm->format);						 
+    fileData->dataSource = EVcreate_submit_handle(flexpathWriteData.cm, fileData->multiStone,
+                                                  fileData->fm->format);
 
-    fileData->scalarDataSource = EVcreate_submit_handle(flexpathWriteData.cm,
-                                                        fileData->splitStone,
+    fileData->scalarDataSource = EVcreate_submit_handle(flexpathWriteData.cm, fileData->splitStone,
                                                         fileData->fm->format);
 
-    fileData->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-						    fileData->splitStone, 
-						    evgroup_format_list);
+    fileData->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, fileData->splitStone,
+                                                    evgroup_format_list);
 
-    fileData->finalizeSource = EVcreate_submit_handle(flexpathWriteData.cm,
-						  fileData->splitStone, 
-						  finalize_close_msg_format_list);
+    fileData->finalizeSource = EVcreate_submit_handle(flexpathWriteData.cm, 
+                                                      fileData->splitStone,
+                                                      finalize_close_msg_format_list);
 
+    // link multiqueue to sink
 
-    //link multiqueue to sink
-    
-    EVaction_set_output(flexpathWriteData.cm, fileData->multiStone, 
+    EVaction_set_output(flexpathWriteData.cm, fileData->multiStone,
                         multi_action, 0, fileData->sinkStone);
-    
-	
-    //Set each output to the rank + 1 and preserve the 0 output for a sink stone just in case
-    //we need it for control one day
+
+    // Set each output to the rank + 1 and preserve the 0 output for a sink
+    // stone just in case
+    // we need it for control one day
     for (i = 0; i < numBridges; i++) {
-	fileData->bridges[i].myNum = 
-	    EVcreate_bridge_action(
-		flexpathWriteData.cm, 
-		attr_list_from_string(fileData->bridges[i].contact), 
-		fileData->bridges[i].theirNum);		    
-	
-	EVaction_set_output(flexpathWriteData.cm, fileData->multiStone, multi_action, i+1, 
-			    fileData->bridges[i].myNum);
+        fileData->bridges[i].bridge_stoneID = EVcreate_bridge_action(
+            flexpathWriteData.cm,
+            attr_list_from_string(fileData->bridges[i].contact),
+            fileData->bridges[i].reader_stoneID);
+
+        EVaction_set_output(flexpathWriteData.cm, fileData->multiStone,
+                            multi_action, i + 1,
+                            fileData->bridges[i].bridge_stoneID);
     }
 
-    //Set up split stone to peer'd readers
-    for(i = 0; i < fileData->total_num_readers; i++) {
-        if((i % fileData->size) == fileData->rank) {
-            EVaction_add_split_target(flexpathWriteData.cm, 
-                                      fileData->splitStone, 
-                                      split_action, 
-                                      fileData->bridges[i].myNum);
+    // Set up split stone to peer'd readers
+    for (i = 0; i < fileData->total_num_readers; i++) {
+        if ((i % fileData->size) == fileData->rank) {
+            EVaction_add_split_target(flexpathWriteData.cm,
+                                      fileData->splitStone, split_action,
+                                      fileData->bridges[i].bridge_stoneID);
         }
     }
-            
+
     FMContext my_context = create_local_FMcontext();
     fileData->fm->ioFormat = register_data_format(my_context, fileData->fm->format);
 
-    //Set this up here so that the reader can close without waiting for the end of the stream
+    // Set this up here so that the reader can close without waiting for the end
+    // of the stream
     fileData->final_condition = CMCondition_get(flexpathWriteData.cm, NULL);
-    
+
     if (fileData->rank == 0) {
         reader_go_msg go_msg;
         go_msg.reader_file = fileData->reader_file;
         go_msg.start_timestep = 0;
-//        go_msg.file_attributes = 
         CMFormat format = CMregister_simple_format(flexpathWriteData.cm, "Flexpath reader go", reader_go_field_list, sizeof(reader_go_msg));
         fp_verbose(fileData, "Writer Rank 0 sending GO message to reader rank 0\n");
         CMwrite(fileData->reader_0_conn, format, &go_msg);
     }
-    return 0;	
+    return 0;
 }
 
 
@@ -1519,6 +1518,30 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
     gp->vars = gbl_vars;
     //fileData->gp = gp;       
 }
+
+extern void
+adios_flexpath_feedback_handler(struct adios_file_struct *fd, 
+                                FMStructDescList format_list, 
+                                EVSimpleHandlerFunc handler, void *client_data)
+{
+    static int first = 1;
+    static atom_t global_stone_ID;
+    if (first) {
+        /*
+         * we don't have a means of assigning these truely "globally", so we'll leverage the 32-bit 
+         * atom name hashing mechanisms (which we use in ATL and rely upon to hopefully avoid collisions)
+         */
+        global_stone_ID = attr_atom_from_string("flexpath feedback stone");
+        global_stone_ID |= 0x80000000;
+        first = 0;
+    }
+    FlexpathWriteFileData* fileData = find_flexpath_fileData(fd);
+    CMadd_stone_to_global_lookup(flexpathWriteData.cm, fileData->sinkStone, global_stone_ID);
+    EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, format_list, 
+                            handler, client_data);
+}
+
+
 
 /* This function is used to free the data when it is no longer needed by EVPath */
 static void

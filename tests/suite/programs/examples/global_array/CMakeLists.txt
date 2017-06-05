@@ -1,11 +1,12 @@
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/test/suite/programs/examples/global_array)
+include_directories(${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array)
 include_directories(${PROJECT_BINARY_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src/public)
-link_directories(${PROJECT_BINARY_DIR}/test/suite/programs/examples/global_array)
+include_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/global_array)
+link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs/examples/global_array)
 
-add_executable(global_array_write_C global_array_write_C.c)
+add_executable(global_array_write_C global_array_write_C.c gwrite_temperature.ch)
 target_link_libraries(global_array_write_C adios ${ADIOSLIB_LDADD})
 add_custom_command(
 	OUTPUT gwrite_temperature.ch
@@ -46,19 +47,19 @@ foreach (PROG ${PROGS} )
 endforeach()
 
 if(BUILD_FORTRAN)
-    add_executable(global_array_write_F global_array_write_F.F90)
+    add_executable(global_array_write_F global_array_write_F.F90 gwrite_temperature.fh)
     target_link_libraries(global_array_write_F adiosf ${ADIOSLIB_LDADD})
     add_custom_command(
 	OUTPUT gwrite_temperature.fh
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array/global_array_F.xml
+	COMMAND ${PROJECT_BINARY_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array/global_array_F.xml
 	DEPENDS global_array_F.xml
 	)
     add_executable(global_array_write_noxml_F global_array_write_noxml_F.F90)
     target_link_libraries(global_array_write_noxml_F adiosf ${ADIOSLIB_LDADD})
     add_executable(global_array_write_byid_noxml_F global_array_write_byid_noxml_F.F90)
     target_link_libraries(global_array_write_byid_noxml_F adiosf ${ADIOSLIB_LDADD})
-endif
+endif()
 
-
-#install(FILES adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array)
+file(COPY global_array_C.xml  global_array_F.xml 
+     DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs/examples/global_array)
 

@@ -77,3 +77,64 @@ If the error is caused by a certificate error, then, try
   $ wget http://curl.haxx.se/ca/cacert.pem
   $ pip --cert cacert.pem search adios
   $ pip --cert cacert.pem install adios
+
+Custom MPI4py build
+^^^^^^^^^^^^^^^^^^^
+
+You may want to build mpi4py by yourself. The source code is available here[https://bitbucket.org/mpi4py/mpi4py/downloads/mpi4py-2.0.0.tar.gz]
+
+Then, run setup.py as follows:
+::
+  $ python setup.py build_ext --mpicc=cc --mpicxx=CC
+
+Install in a cutom location and set PYTHONPATH env:
+::
+  $ PREFIX=/dir/to/install
+  $ python setup.py install --prefix=$PREFIX
+  $ export PYTHONPATH=$PREFIX/lib/python2.7/site-packages:$PYTHONPATH
+
+
+Build script on Titan
+^^^^^^^^^^^^^^^^^^^^^
+
+The following script is a reference for building Adios python module on Titan:
+::
+  #!/bin/bash -ex
+  module unload PrgEnv-cray
+  module unload PrgEnv-pgi
+  module unload PrgEnv-intel
+  module unload PrgEnv-gnu
+  module unload python
+  module unload python_anaconda
+  module unload python_anaconda_mpi4py
+  module unload python_anaconda_adios
+
+  module load PrgEnv-gnu
+  module load python_anaconda
+  module load python_anaconda_mpi4py
+  module load adios/1.12-devel
+
+  git fetch origin
+  VER=`git describe --always`
+  PVER=1.11.1.post2
+
+  PREFIX=$WORLDWORK_CSC143/sw/python_anaconda_adios/$VER
+  PIP=`which pip`
+
+  [ ! -f cacert.pem ] && wget http://curl.haxx.se/ca/cacert.pem
+
+  $PIP install -I -U \
+      --global-option build_ext \
+      --global-option -lrt --install-option="--prefix=$PREFIX" \
+      --ignore-installed \
+      --cert cacert.pem \
+      adios==$PVER -v
+
+  $PIP install -I -U \
+      --global-option build_ext \
+      --global-option=--mpicc=cc \
+      --global-option=--mpicxx=CC \
+      --global-option -lrt --install-option="--prefix=$PREFIX" \
+      --ignore-installed \
+      --cert cacert.pem \
+      adios_mpi==$PVER -v

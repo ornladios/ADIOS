@@ -48,7 +48,7 @@ void print_block (ADIOS_VARINFO *vi, int blockid, double *P, double *V, double *
     int n;
     printf ("    Block %d of dimensions { ", blockid);
     for (n=0; n < vi->ndim; n++) {
-        printf ("%lld ", vi->blockinfo[blockid].count[n]);
+        printf ("%" PRIu64 " ", vi->blockinfo[blockid].count[n]);
     }
     printf ("}\n");
 }
@@ -94,7 +94,7 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method)
             if (result->selections->type == ADIOS_SELECTION_POINTS)
             {
                 // we have selection(s) and each one contains the points
-                printf("Number of hits returned in batch %d = %lld points in %d containers\n",
+                printf("Number of hits returned in batch %d = %" PRIu64 " points in %d containers\n",
                         nBatches, result->npoints, result->nselections);
 
                 for (i=0; i < result->nselections; i++)

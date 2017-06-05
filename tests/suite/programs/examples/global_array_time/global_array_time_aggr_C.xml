@@ -20,7 +20,7 @@
   </adios-group>
 
   <method group="restart" method="MPI"/>
-  <time-aggregation group="restart" buffer-size=3000/>
+  <time-aggregation group="restart" buffer-size="3000"/>
 
   <buffer max-size-MB="5"/>
 

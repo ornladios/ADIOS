@@ -34,6 +34,7 @@
 #include "dmalloc.h"
 #endif
 
+#include "adiost_callback_internal.h"
 
 /* Note: MATLAB reloads the mex64 files each time, so all static variables get the original value.
    Therefore static variables cannot be used to pass info between two Matlab/ADIOS calls */
@@ -83,6 +84,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     int retval;
     char *end;
 
+    adiost_pre_init();
     adios_errno = err_no_error;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method,
@@ -170,6 +172,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     // init the query API; may call it multiple times here in multiple read methods' init;
     common_query_init(); 
 
+    adiost_post_init();
     return retval;
 }
 
@@ -203,6 +206,7 @@ int common_read_finalize_method(enum ADIOS_READ_METHOD method)
 
     // finalize the query API; may call it multiple times here in multiple read methods' finalize;
     common_query_finalize(); 
+    adiost_finalize();
     return retval;
 }
 
@@ -379,9 +383,12 @@ ADIOS_FILE * common_read_open (const char * fname,
     struct common_read_internals_struct * internals; 
     long i;
 
+    ADIOST_CALLBACK_ENTER(adiost_event_open, fp, "", "", "");
+
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method,
             "Invalid read method (=%d) passed to adios_read_open().\n", (int)method);
+        ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
         return NULL;
     }
 
@@ -397,6 +404,7 @@ ADIOS_FILE * common_read_open (const char * fname,
         adios_error (err_invalid_read_method, 
             "Read method (=%d) passed to adios_read_open() is not provided "
             "by this build of ADIOS.\n", (int)method);
+        ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
         return NULL;
     }
 
@@ -410,8 +418,10 @@ ADIOS_FILE * common_read_open (const char * fname,
 	internals->infocache = adios_infocache_new();
 
     fp = adios_read_hooks[internals->method].adios_read_open_fn (fname, comm, lock_mode, timeout_sec);
-    if (!fp)
+    if (!fp) {
+        ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
         return fp;
+    }
 
     fp->is_streaming = 1; // Mark file handle as streaming
 
@@ -439,6 +449,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     common_read_link (fp);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
     return fp;
 }
 
@@ -529,6 +540,8 @@ int common_read_close (ADIOS_FILE *fp)
     struct common_read_internals_struct * internals;
     int retval;
 
+    ADIOST_CALLBACK_ENTER(adiost_event_close, fp);
+
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -566,6 +579,8 @@ int common_read_close (ADIOS_FILE *fp)
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_read_close()\n");
         retval = err_invalid_file_pointer;
     }
+
+    ADIOST_CALLBACK_EXIT(adiost_event_close, fp);
     return retval;
 }
 
@@ -626,6 +641,8 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
     int retval;
     long i;
     
+    ADIOST_CALLBACK_ENTER(adiost_event_advance_step, fp);
+
     adios_errno = err_no_error;
     if (fp) {
         if (fp->is_streaming)
@@ -669,6 +686,8 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_advance_step()\n");
         retval = err_invalid_file_pointer;
     }
+
+    ADIOST_CALLBACK_EXIT(adiost_event_advance_step, fp);
     return retval;
 }
 
@@ -3660,6 +3679,8 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
     struct common_read_internals_struct * internals;
     int retval;
 
+    ADIOST_CALLBACK_ENTER(adiost_event_read, fp);
+
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -3677,6 +3698,8 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_perform_reads()\n");
         retval = err_invalid_file_pointer;
     }
+
+    ADIOST_CALLBACK_EXIT(adiost_event_read, fp);
     return retval;
 }
 

@@ -222,7 +222,7 @@ int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
     return adios_step_to_time_v1 (fp, v, from_steps);
 }
 
-int bp_read_open (const char * filename,
+static int bp_read_open (const char * filename,
           MPI_Comm comm,
           BP_FILE * fh)
 {
@@ -254,6 +254,44 @@ int bp_read_open (const char * filename,
     return 0;
 }
 
+static int bp_read_open_rootonly (const char * filename,
+          MPI_Comm comm,
+          BP_FILE * fh)
+{
+    int  err;
+    int  rank;
+
+    MPI_Comm_rank (comm, &rank);
+
+    // variable definition
+    MPI_Offset  file_size = 0;
+
+    if (rank == 0)
+    {
+        // open a file by one processor then broadcast the size and the success
+        err = MPI_File_open (MPI_COMM_SELF, (char *) filename, MPI_MODE_RDONLY,
+                (MPI_Info) MPI_INFO_NULL, &(fh->mpi_fh));
+        if (err == MPI_SUCCESS) {
+            MPI_File_get_size (fh->mpi_fh, &file_size);
+            err = 0;
+        }
+    }
+    MPI_Bcast (&err, 1, MPI_INT, 0, comm);
+    MPI_Bcast (&file_size, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
+    fh->b->file_size = file_size;
+    fh->mfooter.file_size = file_size;
+    if (err)
+    {
+        char e [MPI_MAX_ERROR_STRING];
+        int len = 0;
+        memset (e, 0, MPI_MAX_ERROR_STRING);
+        MPI_Error_string (err, e, &len);
+        adios_error (err_file_open_error, "MPI open failed for %s: '%s'\n", filename, e);
+        return adios_flag_no;
+    }
+    return err;
+}
+
 /* This routine does the parallel bp file open and index parsing.
  */
 int bp_open (const char * fname,
@@ -266,7 +304,7 @@ int bp_open (const char * fname,
 
     adios_buffer_struct_init (fh->b);
 
-    if (bp_read_open (fname, comm, fh))
+    if (bp_read_open_rootonly (fname, comm, fh))
     {
         return -1;
     }
@@ -282,6 +320,21 @@ int bp_open (const char * fname,
 
     /* Broadcast to all other processors */
     MPI_Bcast (&fh->mfooter, sizeof (struct bp_minifooter), MPI_BYTE, 0, comm);
+
+    if (fh->mfooter.pgs_index_offset > 0)
+    {
+        /* This BP file has data not just metadata. We need to open it
+         * by every reader process.
+         * This check is equivalent to has_subfiles(fh) but this makes it more
+         * secure for future if a metadata+data BP file will ever have subfiles.
+         */
+        if (rank == 0)
+            MPI_File_close(&fh->mpi_fh);
+        if (bp_read_open (fname, comm, fh))
+        {
+            return -1;
+        }
+    }
 
     uint64_t footer_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
@@ -460,6 +513,7 @@ BP_FILE * BP_FILE_alloc (const char * fname, MPI_Comm comm)
     fh->subfile_handles.warning_printed = 0;
     fh->subfile_handles.head = NULL;
     fh->subfile_handles.tail = NULL;
+    fh->mpi_fh = MPI_FILE_NULL;
     return fh;
 }
 
@@ -543,7 +597,7 @@ int bp_close (BP_FILE * fh)
     MPI_File mpi_fh = fh->mpi_fh;
 
     adios_errno = 0;
-    if (fh->mpi_fh)
+    if (fh->mpi_fh != MPI_FILE_NULL)
         MPI_File_close (&mpi_fh);
 
     close_all_BP_subfiles (fh);

@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
 
         log_test ("rank %d: ndim = %d\n", rank, v->ndim);
         //log_test ("nsteps = %d\n",  v->nsteps);
-        log_test ("rank %d: dims[%llu][%llu]\n", rank, v->dims[0], v->dims[1]);
+        log_test ("rank %d: dims[%" PRIu64 "][%" PRIu64 "]\n", rank, v->dims[0], v->dims[1]);
 
         uint64_t slice_size = v->dims[0]/size;
         if (rank == size-1)
@@ -86,7 +86,7 @@ int main (int argc, char ** argv)
             adios_schedule_read (f, sel, "temperature", 0, 1, data);
             adios_perform_reads (f, 1);
 
-            log_test("rank=%d: step %d: [0:%lld,0:%lld] = [", rank, f->current_step, v->dims[0], v->dims[1]);
+            log_test("rank=%d: step %d: [0:%" PRIu64 ",0:%" PRIu64 "] = [", rank, f->current_step, v->dims[0], v->dims[1]);
             for (i = 0; i < slice_size; i++) {
                 log_test (" [");
                 for (j = 0; j < v->dims[1]; j++) {

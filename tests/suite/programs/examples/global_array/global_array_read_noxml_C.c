@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
     log_test (" ======== Rank %d ========== \n", rank);
     npl = 10;
     for (i = 0; i < slice_size; i+=npl) {
-        log_test ("[%4.4lld]  ", rank*slice_size+i);
+        log_test ("[%4.4" PRIu64 "]  ", rank*slice_size+i);
         for (j= 0; j < npl; j++) {
             log_test (" %6.6g", * ((double *)data + i + j));
         }

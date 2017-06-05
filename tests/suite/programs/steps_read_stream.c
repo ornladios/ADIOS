@@ -188,7 +188,7 @@ int process_metadata()
         return 1;
     }
     nblocks = v->nblocks[0];
-    printf ("rank %d: record dims = %llu * %llu \n", rank, v->dims[0], v->dims[1]); 
+    printf ("rank %d: record dims = %" PRIu64 " * %" PRIu64 " \n", rank, v->dims[0], v->dims[1]); 
     adios_free_varinfo (v);
     printf ("rank %d: nblocks = %d\n", rank, nblocks); 
 

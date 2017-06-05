@@ -29,6 +29,7 @@
 #include "core/buffer.h"
 #include "core/util.h"
 #include "core/adios_logger.h"
+#include "core/adiost_callback_internal.h"
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 #include "core/adios_timing.h"
@@ -921,6 +922,7 @@ void * adios_mpi_amr_do_mkdir (char * path)
 
 void * adios_mpi_amr_do_open_thread (void * param)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, __func__);
     struct adios_MPI_thread_data_open * td = (struct adios_MPI_thread_data_open *) param;
     int err;
 
@@ -948,6 +950,7 @@ void * adios_mpi_amr_do_open_thread (void * param)
                      td->md->subfile_name, e);
     }
 
+    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, __func__);
     return NULL;
 }
 
@@ -1046,6 +1049,7 @@ void * adios_mpi_amr_do_reopen_thread (void * param)
 
 void * adios_mpi_amr_do_write_thread (void * param)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, __func__);
     struct adios_MPI_thread_data_write * td = (struct adios_MPI_thread_data_write *) param;
 
     uint64_t count = adios_mpi_amr_striping_unit_write(
@@ -1062,6 +1066,7 @@ void * adios_mpi_amr_do_write_thread (void * param)
             count, td->total_data_size);
     }
 
+    ADIOST_CALLBACK_EXIT(adiost_event_thread, NULL, __func__);
     return NULL;
 }
 

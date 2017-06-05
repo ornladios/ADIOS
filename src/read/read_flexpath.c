@@ -46,6 +46,7 @@
 #include "core/flexpath.h"
 #include "core/futils.h"
 #include "core/globals.h"
+#include "core/adiost_callback_internal.h"
 
 #include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
@@ -73,7 +74,7 @@ typedef struct _bridge_info
     EVstone bridge_stone;
     EVsource read_source;
     EVsource finalize_source;
-    int their_num;
+    int remote_stone_ID;
     char *contact;
     int created;
     int opened;
@@ -153,7 +154,8 @@ typedef struct _flexpath_reader_file
 
     int verbose;
 
-    EVstone stone;
+    EVstone terminal_stone;
+    EVstone feedback_bridge;
 
     MPI_Comm comm;
     int rank;
@@ -457,7 +459,7 @@ void build_bridge(bridge_info* bridge)
 	bridge->bridge_stone =
 	    EVcreate_bridge_action(fp_read_data->cm,
 				   contact_list,
-				   (EVstone)bridge->their_num);
+				   (EVstone)bridge->remote_stone_ID);
 
         bridge->read_source = 
             EVcreate_submit_handle(fp_read_data->cm,
@@ -1060,6 +1062,7 @@ setup_flexpath_vars(FMField *f, int *num)
 void
 send_finalize_msg(flexpath_reader_file *fp)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_finalize_msg, fp);
     int i; 
     if((fp->rank / fp->num_bridges) == 0)
     {
@@ -1083,11 +1086,13 @@ send_finalize_msg(flexpath_reader_file *fp)
             EVsubmit(fp->bridges[send_to].finalize_source, &msg, NULL);
         }
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_finalize_msg, fp);
 }
 
 static void
 send_read_msg(flexpath_reader_file *fp, int index, int use_condition)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_read_msg, fp);
     //Initial sanity check
     if(index >= fp->num_sendees)
     {
@@ -1123,11 +1128,13 @@ send_read_msg(flexpath_reader_file *fp, int index, int use_condition)
 	CMCondition_wait(fp_read_data->cm, msg->condition);
 	fp_verbose(fp, "Done with WAIT\n");
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_read_msg, fp);
 }
 
 void
 add_var_to_read_message(flexpath_reader_file *fp, int destination, char *varname)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_add_var_to_read_msg, fp);
         int i = 0;
         int found = 0;
         int index = -1;
@@ -1163,6 +1170,7 @@ add_var_to_read_message(flexpath_reader_file *fp, int destination, char *varname
 	if (!fp->bridges[destination].opened) {
 	    fp->bridges[destination].opened = 1;
 	}
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_add_var_to_read_msg, fp);
 }
 
 /********** EVPath Handlers **********/
@@ -1730,23 +1738,21 @@ get_writer_contact_info_filesystem(const char *fname, flexpath_reader_file * fp)
 
     sprintf(writer_info_filename, "%s_%s", fname, WRITER_CONTACT_FILE);
     FILE *fp_in;
+    fp_verbose(fp, "Looking for writer contact in file %s\n", writer_info_filename);
 redo:
     fp_in = fopen(writer_info_filename, "r");
     while (!fp_in) {
-        //CMsleep(fp_read_data->cm, 1);
+        CMusleep(fp_read_data->cm, 500);
         fp_in = fopen(writer_info_filename, "r");
     }
     struct stat buf;
     fstat(fileno(fp_in), &buf);
     int size = buf.st_size;
-    if(size == 0)
-    {
+    if(size == 0) {
         fp_verbose(fp, "Size of writer contact file is zero, but it shouldn't be! Retrying!\n");
         goto redo;
     }
-    //printf("Size: %d\n", size);
     
-    //TODO: Ask Greg about this....
     char *buffer = calloc(1, size + 1);
     int temp = fread(buffer, size, 1, fp_in);
     fclose(fp_in);
@@ -1782,7 +1788,8 @@ adios_read_flexpath_open(const char * fname,
     flexpath_reader_file *fp = new_flexpath_reader_file(fname);
     fp->host_language = futils_is_called_from_fortran();
     adios_errno = 0;
-    fp->stone = EValloc_stone(fp_read_data->cm);
+    fp->terminal_stone = EValloc_stone(fp_read_data->cm);
+    fp->feedback_bridge = -1;
     fp->comm = comm;
     
     adiosfile->fh = (uint64_t)fp;
@@ -1794,26 +1801,26 @@ adios_read_flexpath_open(const char * fname,
     fp_verbose(fp, "entering flexpath_open\n");
 
     EVassoc_terminal_action(fp_read_data->cm,
-			    fp->stone,
+			    fp->terminal_stone,
 			    evgroup_format_list,
 			    group_msg_handler,
 			    adiosfile);
 
     EVassoc_terminal_action(fp_read_data->cm,
-                            fp->stone,
+                            fp->terminal_stone,
                             finalize_close_msg_format_list,
                             finalize_msg_handler,
                             adiosfile);
                             
     EVassoc_raw_terminal_action(fp_read_data->cm,
-				fp->stone,
+				fp->terminal_stone,
 				raw_handler,
 				adiosfile);
 
     char *string_list;
     char data_contact_info[CONTACT_LENGTH] = {0};
     string_list = attr_list_to_string(CMget_contact_list(fp_read_data->cm));
-    sprintf(&data_contact_info[0], "%d:%s", fp->stone, string_list);
+    sprintf(&data_contact_info[0], "%d:%s", fp->terminal_stone, string_list);
     free(string_list);
 
     //volatile int qur = 0;
@@ -1849,7 +1856,7 @@ adios_read_flexpath_open(const char * fname,
             fp->bridges = realloc(fp->bridges,
                                   sizeof(bridge_info) * (num_bridges+1));
             send_buffer = realloc(send_buffer, (num_bridges+1)*CONTACT_LENGTH);
-            fp->bridges[num_bridges].their_num = their_stone;
+            fp->bridges[num_bridges].remote_stone_ID = their_stone;
             fp->bridges[num_bridges].contact = strdup(in_contact);
             sprintf(&send_buffer[num_bridges*CONTACT_LENGTH], "%d:%s", their_stone, in_contact);
             fp->bridges[num_bridges].created = 0;
@@ -1911,7 +1918,7 @@ adios_read_flexpath_open(const char * fname,
             int their_stone;
             char in_contact[CONTACT_LENGTH];
             sscanf(&this_side_contact_buffer[i*CONTACT_LENGTH], "%d:%s", &their_stone, in_contact);
-            fp->bridges[i].their_num = their_stone;
+            fp->bridges[i].remote_stone_ID = their_stone;
             fp->bridges[i].contact = strdup(in_contact);
             fp->bridges[i].created = 0;
             fp->bridges[i].step = 0;
@@ -1958,6 +1965,30 @@ adios_read_flexpath_open(const char * fname,
     adios_errno = err_no_error;
     fp_verbose(fp, "leaving flexpath_open\n");
     return adiosfile;
+}
+
+extern EVsource
+adios_flexpath_create_feedback_source(ADIOS_FILE *adiosfile, FMStructDescList format_list)
+{
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    static int first = 1;
+    static atom_t global_stone_ID;
+    if (first) {
+        /*
+         * we don't have a means of assigning these truely "globally", so we'll leverage the 32-bit 
+         * atom name hashing mechanisms (which we use in ATL and rely upon to hopefully avoid collisions)
+         */
+        global_stone_ID = attr_atom_from_string("flexpath feedback stone");
+        global_stone_ID |= 0x80000000;
+        first = 0;
+    }
+    if (fp->feedback_bridge == -1) {
+        attr_list contact_list = attr_list_from_string(fp->bridges[0].contact);
+        fp->feedback_bridge = EVcreate_bridge_action(fp_read_data->cm, contact_list, 
+                                                     global_stone_ID);
+//        free(contact_list);
+    }
+    return EVcreate_submit_handle(fp_read_data->cm, fp->feedback_bridge, format_list);
 }
 
 int adios_read_flexpath_finalize_method ()

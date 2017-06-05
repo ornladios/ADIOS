@@ -38,57 +38,61 @@ int main (int argc, char ** argv)
     adios_read_init_method (method, comm, "verbose=4");
 
     ADIOS_FILE * f = adios_read_open_file ("adios_global.bp", method, comm);
-    ADIOS_VARINFO * varinfo = adios_inq_var (f, "temperature");
-    if (varinfo)
+    if (f != NULL)
     {
-        printf ("nsteps = %d\n", varinfo->nsteps);
-        for (i = 0; i < varinfo->nsteps; i++)
+        printf ("rank %d: Passed adios_read_open_file\n", rank);
+        ADIOS_VARINFO * varinfo = adios_inq_var (f, "temperature");
+        if (varinfo)
         {
-            printf ("step: %d has %d", i, varinfo->nblocks[i]);
-        }
-        printf ("\n");
-
-        adios_inq_var_blockinfo (f, varinfo);
-        for (i = 0; i < varinfo->sum_nblocks; i++)
-        {
-            printf ("block[%d]: ", i);
-            printf ("start=");
-            for (j = 0; j < varinfo->ndim; j++)
+            printf ("nsteps = %d\n", varinfo->nsteps);
+            for (i = 0; i < varinfo->nsteps; i++)
             {
-                printf ("%" PRIu64, varinfo->blockinfo[i].start[j]);
-            }
-            printf ("count=");
-            for (j = 0; j < varinfo->ndim; j++)
-            {
-                printf ("%" PRIu64, varinfo->blockinfo[i].count[j]);
+                printf ("step: %d has %d", i, varinfo->nblocks[i]);
             }
             printf ("\n");
+
+            adios_inq_var_blockinfo (f, varinfo);
+            for (i = 0; i < varinfo->sum_nblocks; i++)
+            {
+                printf ("block[%d]: ", i);
+                printf ("start=");
+                for (j = 0; j < varinfo->ndim; j++)
+                {
+                    printf ("%" PRIu64, varinfo->blockinfo[i].start[j]);
+                }
+                printf ("count=");
+                for (j = 0; j < varinfo->ndim; j++)
+                {
+                    printf ("%" PRIu64, varinfo->blockinfo[i].count[j]);
+                }
+                printf ("\n");
+            }
+
+            datasize = 8;
+            for (i = 0; i < varinfo->ndim; i++)
+            {
+                datasize *= varinfo->blockinfo[rank].count[i];
+            }
+
+            data = malloc (datasize);
+
+            sel = adios_selection_writeblock (rank);
+            adios_schedule_read (f, sel, "temperature", 0, 1, data);
+            adios_perform_reads (f, 1);
+            adios_selection_delete (sel);
         }
 
-        datasize = 8;
-        for (i = 0; i < varinfo->ndim; i++)
+        adios_free_varinfo (varinfo);
+        adios_read_close (f);
+
+        printf ("data:\n");
+        for (i = 0; i < datasize/8; i ++)
         {
-            datasize *= varinfo->blockinfo[rank].count[i];
+            printf ("%7.4f ", * ((double *)data + i));
         }
-
-        data = malloc (datasize);
-
-        sel = adios_selection_writeblock (rank);
-        adios_schedule_read (f, sel, "temperature", 0, 1, data);
-        adios_perform_reads (f, 1);
-        adios_selection_delete (sel);
+        printf ("\n");
+        free (data);
     }
-
-    adios_free_varinfo (varinfo);
-    adios_read_close (f);
-
-    printf ("data:\n");
-    for (i = 0; i < datasize/8; i ++)
-    {
-        printf ("%7.4f ", * ((double *)data + i));
-    }
-    printf ("\n");
-    free (data);
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
     MPI_Finalize ();
     return 0;

@@ -137,7 +137,7 @@ void query_columns(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method, ADIOS_VARINFO 
                 break;
             }
 
-            printf("Number of hits returned in batch %d = %lld points in %d containers\n",
+            printf("Number of hits returned in batch %d = %" PRIu64 " points in %d containers\n",
                     nBatches, result->npoints, result->nselections);
 
             int n;

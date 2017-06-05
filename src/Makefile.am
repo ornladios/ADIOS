@@ -177,6 +177,8 @@ libcoreonce_a_SOURCES = core/a2sel.c \
                             core/strutil.c \
                             core/util.c \
                             core/adios_transform_methods.c \
+                            core/adiost_callback_internal.c \
+                            core/adiost_default_tool.c \
                             $(transforms_common_SOURCES) \
                             $(transforms_write_SOURCES) \
                             $(transforms_read_SOURCES) 
@@ -824,7 +826,8 @@ include_HEADERS += public/adios.h \
                    public/adios_link.h \
                    public/adios_read_ext.h \
                    public/adios_query.h \
-                   public/adios_transform_methods.h 
+                   public/adios_transform_methods.h \
+                   public/adiost_callback_api.h
                  
 EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
@@ -835,6 +838,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/common_read.h core/adios_infocache.h core/futils.h core/globals.h core/ds_metadata.h \
              core/types.h core/util.h core/strutil.h core/flexpath.h core/qhashtbl.h \
              public/adios_version.h.in core/util_mpi.h \
+             core/adiost_callback_internal.h \
              $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
              $(query_common_HDRS) $(query_method_HDRS) \
              transforms/transform_plugins.h \

@@ -42,46 +42,47 @@ int main (int argc, char ** argv)
     if (f == NULL)
     {
         printf ("%s\n", adios_errmsg());
-        return -1;
     }
-
-    ADIOS_VARINFO * v = adios_inq_var (f, "temperature");
-
-    /* Using less readers to read the global array back, i.e., non-uniform */
-    uint64_t slice_size = v->dims[0]/size;
-    start[0] = slice_size * rank;
-    if (rank == size-1) /* last rank may read more lines */
-        slice_size = slice_size + v->dims[0]%size;
-    count[0] = slice_size;
-
-    start[1] = 0;
-    count[1] = v->dims[1];
-       
-
-    data = malloc (slice_size * v->dims[1] * sizeof (double));
-    if (data == NULL)
+    else
     {
-        fprintf (stderr, "malloc failed.\n");
-        return -1;
+        ADIOS_VARINFO * v = adios_inq_var (f, "temperature");
+
+        /* Using less readers to read the global array back, i.e., non-uniform */
+        uint64_t slice_size = v->dims[0]/size;
+        start[0] = slice_size * rank;
+        if (rank == size-1) /* last rank may read more lines */
+            slice_size = slice_size + v->dims[0]%size;
+        count[0] = slice_size;
+
+        start[1] = 0;
+        count[1] = v->dims[1];
+
+
+        data = malloc (slice_size * v->dims[1] * sizeof (double));
+        if (data == NULL)
+        {
+            fprintf (stderr, "malloc failed.\n");
+            return -1;
+        }
+
+        /* Read a subset of the temperature array */
+        sel = adios_selection_boundingbox (v->ndim, start, count);
+        adios_schedule_read (f, sel, "temperature", 0, 1, data);
+        adios_perform_reads (f, 1);
+
+        for (i = 0; i < slice_size; i++) {
+            printf ("rank %d: [%" PRIu64 ",%d:%" PRIu64 "]", rank, start[0]+i, 0, slice_size);
+            for (j = 0; j < v->dims[1]; j++)
+                printf (" %6.6g", * ((double *)data + i * v->dims[1] + j));
+            printf ("\n");
+        }
+
+        free (data);
+        adios_selection_delete (sel);
+        adios_free_varinfo (v);
+        adios_read_close (f);
+        MPI_Barrier (comm);
     }
-
-    /* Read a subset of the temperature array */
-    sel = adios_selection_boundingbox (v->ndim, start, count);
-    adios_schedule_read (f, sel, "temperature", 0, 1, data);
-    adios_perform_reads (f, 1);
-
-    for (i = 0; i < slice_size; i++) {
-        printf ("rank %d: [%" PRIu64 ",%d:%" PRIu64 "]", rank, start[0]+i, 0, slice_size);
-        for (j = 0; j < v->dims[1]; j++)
-            printf (" %6.6g", * ((double *)data + i * v->dims[1] + j));
-        printf ("\n");
-    }
-
-    free (data);
-    adios_selection_delete (sel);
-    adios_free_varinfo (v);
-    adios_read_close (f);
-    MPI_Barrier (comm);
     adios_read_finalize_method (method);
     MPI_Finalize ();
     return 0;

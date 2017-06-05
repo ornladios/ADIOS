@@ -39,7 +39,7 @@ static void test_file_mode_reads_on_var(ADIOS_FILE *fp, const char *bp_filename,
 	MPI_Assert(COMM, varinfo->blockinfo);
 
 	const enum ADIOS_DATATYPES datatype = varinfo->type;
-	const int datatypesize = adios_get_type_size(datatype, NULL);
+	const int datatypesize = adios_type_size(datatype, NULL);
 
 	int timestep, timestep_blockidx, blockidx = 0;
 	for (timestep = 0; timestep < varinfo->nsteps; ++timestep) {

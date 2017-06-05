@@ -120,7 +120,7 @@ static void produce_xml(
 		fprintf(outfile, VAR_XML, xml_spec->varnames[i], adios_type_to_string_int(xml_spec->vartypes[i]), dimvar_list_buf1, transform_name);
 	}
 
-	fprintf(outfile, GLOBALBOUNDS_FOOTER_XML);
+	fprintf(outfile, "%s", GLOBALBOUNDS_FOOTER_XML);
 	fprintf(outfile, FOOTER_XML, xml_spec->group_name, xml_spec->write_transport_method, xml_spec->buffer_size_mb);
 }
 

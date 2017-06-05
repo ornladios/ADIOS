@@ -1458,7 +1458,7 @@ set(PACKAGE adios)
 set(VERSION_MAJOR 1)
 
 # Minor version number
-set(VERSION_MINOR 10)
+set(VERSION_MINOR 12)
 
 # Micro version number
 set(VERSION_MICRO 0)
