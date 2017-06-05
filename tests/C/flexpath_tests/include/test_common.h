@@ -123,14 +123,16 @@
  *
  * The macro causes to return DIAG_ERR if getting options returned errors
  */
-#define GET_ENTRY_OPTIONS(adios_opts, help_string) \
+static int test_verbose = 0;
+
+#define GET_ENTRY_OPTIONS(adios_opts, help_string)	\
 	if (1 == argc){ \
 		p_error("See '-h' for options. At least transport param needs to be specified. Quitting ...\n"); \
 		return DIAG_ERR; \
 	} \
 	do { \
 		int show_help = 0; \
-		if( DIAG_OK != get_options(&adios_opts, argc, argv, &show_help) ){ \
+		if( DIAG_OK != get_options(&adios_opts, argc, argv, &show_help, &test_verbose) ){ \
 			p_error("Got from get_options(). Quitting ...\n."); \
 			return DIAG_ERR; \
 		} \

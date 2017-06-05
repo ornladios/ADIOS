@@ -60,8 +60,7 @@ int main(int argc, char ** argv){
 		return DIAG_ERR;
 	}
 
-        if(rank == 0)
-        {
+        if ((rank == 0) && test_verbose) {
             printf("Writer side array: ");
             int j;
             for(j = 0; j < NX; j++)
@@ -78,8 +77,10 @@ int main(int argc, char ** argv){
 	adios_open( &adios_handle, "temperature", FILE_NAME, "w", comm);
 	adios_groupsize = 4 + 4 + 4 + 8 * (NX);
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%" PRIu64 ", adios_totalsize=%" PRIu64 ", retval=%d\n",
-			rank, adios_groupsize, adios_totalsize, retval);
+	if (test_verbose) {
+	    fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%" PRIu64 ", adios_totalsize=%" PRIu64 ", retval=%d\n",
+		    rank, adios_groupsize, adios_totalsize, retval);
+	}
 
 	// write; don't check errors for simplicity reasons
 	adios_write(adios_handle, "NX", &NX);
@@ -87,7 +88,9 @@ int main(int argc, char ** argv){
 	adios_write(adios_handle, "rank", &rank);
 	adios_write(adios_handle, "var_1d_array", t);
 
-	fprintf(stderr, "Rank=%d committed write\n", rank);
+	if (test_verbose) {
+	    fprintf(stderr, "Rank=%d committed write\n", rank);
+	}
 
 	adios_close(adios_handle);
 
