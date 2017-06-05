@@ -317,6 +317,7 @@ ADIOST_EXTERN void default_adiost_initialize (adiost_function_lookup_t adiost_fn
     adiost_set_callback_t adiost_fn_set_callback = 
         (adiost_set_callback_t)adiost_fn_lookup("adiost_set_callback");
 
+    if (!getenv("ADIOST")) return;
     debug_print("Registering ADIOS tool events...\n");
     CHECK(adiost_event_thread,       my_thread,        "adios_thread");
     CHECK(adiost_event_open,         my_open,          "adios_open");
