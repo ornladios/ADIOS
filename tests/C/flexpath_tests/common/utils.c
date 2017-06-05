@@ -189,9 +189,6 @@ diag_t get_options(struct adios_tsprt_opts * p_tsprt_opts, int argc, char ** arg
 			break;
 		case 't':
 			cvalue = optarg;
-			// by default I set adios options to be verbosed
-			// TODO might be changed to the actual option
-			strcpy(p_tsprt_opts->adios_options, "verbose=4; show hidden_attrs");
 
 			if (strcmp(cvalue, "flx") == 0){
 				p_tsprt_opts->method = ADIOS_READ_METHOD_FLEXPATH;
