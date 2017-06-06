@@ -84,7 +84,6 @@ typedef struct _bridge_info
 
 typedef struct _flexpath_read_request
 {
-    long pad1, pad2, pad3, pad4, pad5;
     int num_pending;
     int num_completed;
     int condition;
@@ -177,7 +176,7 @@ typedef struct _flexpath_reader_file
     int num_sendees;
     int *sendees;
     read_request_msg *var_read_requests;
-    flexpath_read_request go_cond;
+    int go_cond;
 
     int num_vars;
     uint64_t data_read; // for perf measurements.
@@ -756,7 +755,7 @@ new_flexpath_reader_file(const char *fname)
     fp->file_name = strdup(fname);
     fp->writer_coordinator = -1;
     fp->last_writer_step = -1;
-    fp->go_cond = (flexpath_read_request) { .condition = -1 };
+    fp->go_cond = -1;
     pthread_mutex_init(&fp->queue_mutex, NULL);
     pthread_cond_init(&fp->queue_condition, NULL);
     return fp;
@@ -1663,7 +1662,7 @@ reader_go_handler(CManager cm, CMConnection conn, void *vmsg, void *client_data,
 {
     reader_go_msg *msg = (reader_go_msg *)vmsg;
     flexpath_reader_file* fp = (flexpath_reader_file *)msg->reader_file;
-    CMCondition_signal(cm, fp->go_cond.condition);
+    CMCondition_signal(cm, fp->go_cond);
 }
 
 /*
@@ -1889,12 +1888,12 @@ adios_read_flexpath_open(const char * fname,
         CMFormat format = CMregister_simple_format(fp_read_data->cm, "Flexpath reader register", reader_register_field_list, sizeof(reader_register_msg));
         attr_list writer_rank0_contact = attr_list_from_string(fp->bridges[0].contact);
         CMConnection conn = CMget_conn (fp_read_data->cm, writer_rank0_contact);
-        fp->go_cond.condition = CMCondition_get(fp_read_data->cm, conn);
+        fp->go_cond = CMCondition_get(fp_read_data->cm, conn);
         CMwrite(conn, format, &reader_register);
 
         /* wait for "go" from writer */
-        fp_verbose(fp, "waiting for go message in read_open, WAITING, condition %d\n", fp->go_cond.condition);
-        CMCondition_wait(fp_read_data->cm, fp->go_cond.condition);
+        fp_verbose(fp, "waiting for go message in read_open, WAITING, condition %d\n", fp->go_cond);
+        CMCondition_wait(fp_read_data->cm, fp->go_cond);
         fp_verbose(fp, "finished wait for go message in read_open\n");
         //Cleanup
         free(send_buffer);
