@@ -8,8 +8,8 @@ our($opt_v, $opt_r, $opt_w);
 
 getopts('vrw');
 
-my $writer_output = "1>/dev/null 2>&1";
-my $reader_output = "1>/dev/null 2>&1";
+my $writer_output = "";
+my $reader_output = "";
 
 $reader_output = "" if $opt_r == 1;
 $writer_output = "" if $opt_w == 1;
@@ -49,7 +49,7 @@ foreach (@groups)
         unless($test_pid)
         {
             #Child process is here
-            exec ("../run_test -nw $num_writers -nr $num_readers  2>&1 1>/dev/null"); #.  "$writer_output");
+            exec ("../run_test -q -nw $num_writers -nr $num_readers"); #.  "$writer_output");
             die "Can't exec run_test! $!";
         }
 
