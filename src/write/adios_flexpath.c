@@ -415,7 +415,11 @@ static int
 finalize_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
     FlexpathWriteFileData * fp = (FlexpathWriteFileData *) client_data;
-    CMCondition_signal(flexpathWriteData.cm, fp->final_condition);
+    int cond = fp->final_condition;
+    fp->final_condition = -1;
+    if (cond != -1) {
+        CMCondition_signal(flexpathWriteData.cm, cond);
+    }
 
     fp_verbose(fp, "Finalize msg handler called and signalled condition %d!\n", fp->final_condition);
 
@@ -1001,11 +1005,15 @@ stone_close_handler(CManager cm, CMConnection conn, int closed_stone, void *clie
 	int i;
 	for (i=0; i < file->numBridges; i++) {
 	    if (file->bridges[i].bridge_stoneID == closed_stone) {
-		int j;
+		int cond = file->final_condition;
+                file->final_condition = -1;
 		file->bridges[i].opened = 0;
                 file->failed = 1;
-                fp_verbose(file, "IN STONE CLOSE_HANDLER, signaling final condition for File %p\n", file);
-                CMCondition_signal(cm, file->final_condition);
+                if (cond != -1) {
+                    /* hearing from one is sufficient for waiting */
+                    fp_verbose(file, "IN STONE CLOSE_HANDLER, signaling final condition for File %p\n", file);
+                    CMCondition_signal(cm, cond);
+                }
 	    }
 	}
         file = file->next;
