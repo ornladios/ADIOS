@@ -53,15 +53,19 @@ int main(int argc, char ** argv){
 	adios_open( &adios_handle, "scalar", FILE_NAME, "w", comm);
 	adios_groupsize = 4 + 4 + 4;
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%" PRIu64 ", adios_totalsize=%" PRIu64 ", retval=%d\n",
-			rank, adios_groupsize, adios_totalsize, retval);
+	if (test_verbose) {
+	    fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%" PRIu64 ", adios_totalsize=%" PRIu64 ", retval=%d\n",
+		    rank, adios_groupsize, adios_totalsize, retval);
+	}
 
 	// write; don't check errors for simplicity reasons
 	adios_write(adios_handle, "size", &size);
 	adios_write(adios_handle, "rank", &rank);
 	adios_write(adios_handle, "lucky_scalar", &rank);
 
-	fprintf(stderr, "Rank=%d committed write\n", rank);
+	if (test_verbose) {
+	    fprintf(stderr, "Rank=%d committed write\n", rank);
+	}
 
 	// close and finalize the ADIOS and friends
 	adios_close(adios_handle);

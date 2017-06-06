@@ -143,7 +143,7 @@ int main (int argc, char **argv){
                 if(rank == 0)
                     printf("%f ", t[i]);
 		if (t[i] != t_ref[i]) {
-			p_test_failed(test_result.name, rank);
+		    	test_failed(test_result.name, rank);
 			test_result.result = TEST_FAILED;
 			break;
 		}
@@ -152,9 +152,9 @@ int main (int argc, char **argv){
             printf("\n");
 
 	if (TEST_PASSED == test_result.result)
-		p_test_passed(test_result.name, rank);
+		test_passed(test_result.name, rank);
 	else 
-	    p_test_failed(test_result.name, rank);
+	    test_failed(test_result.name, rank);
 
 
 	adios_release_step(adios_handle);

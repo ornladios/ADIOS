@@ -60,12 +60,15 @@ int main(int argc, char **argv)
         adios_write(adios_handle, "rank", &rank);
         adios_write(adios_handle, "var_2d_array", t);
 
-        fprintf(stderr,
-                "Writer side Rank=%d: test_scalar: %d step: %d, t[0] = %6.2f\n",
-                rank, test_scalar, group_num, t[0]);
+        if (test_verbose) {
+            fprintf(stderr,
+                    "Writer side Rank=%d: test_scalar: %d step: %d, t[0] = %6.2f\n",
+                    rank, test_scalar, group_num, t[0]);
+        }
 
         adios_close(adios_handle);
-        fprintf(stderr, "Rank=%d commited write %d\n", rank, group_num);
+        if (test_verbose)
+            fprintf(stderr, "Rank=%d commited write %d\n", rank, group_num);
     }
     adios_finalize(rank);
 

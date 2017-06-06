@@ -46,15 +46,15 @@
 
 #define p_test_failed(fmt, args...)                             \
     do {                                                  \
-	 fprintf(stderr, "%s " fmt, DBG_TEST_FAILED_STR,  ##args);	\
+	 fprintf(stderr, "%s "fmt, DBG_TEST_FAILED_STR,  ##args);	\
          fflush(stdout);  											\
     } while(0)
 
 #define p_test_passed(fmt, args...)                             \
-    do {                                                  \
-         fprintf(stderr, "%s " fmt, DBG_TEST_PASSED_STR,  ##args);  \
+    do {if(test_verbose){					   \
+         fprintf(stderr, "%s "fmt, DBG_TEST_PASSED_STR,  ##args);  \
          fflush(stdout);  											\
-    } while(0)
+	}} while(0)
 
 #define test_failed(prog_name, rank)                             \
     do {                                                  \

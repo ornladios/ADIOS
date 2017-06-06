@@ -94,8 +94,10 @@ int main(int argc, char ** argv){
 	uint64_t adios_totalsize = 0;
 
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%" PRIu64 ", adios_totalsize=%" PRIu64 ", retval=%d\n",
-				rank, adios_groupsize, adios_totalsize, retval);
+	if (test_verbose) {
+	    fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%" PRIu64 ", adios_totalsize=%" PRIu64 ", retval=%d\n",
+		    rank, adios_groupsize, adios_totalsize, retval);
+	}
 
 	// init the array that I will transport over the sea
 	if (gen_1D_array(t, NX, rank) == DIAG_ERR){
@@ -111,7 +113,9 @@ int main(int argc, char ** argv){
 	adios_write(adios_handle, "offsets", &offsets);
 	adios_write(adios_handle, "var_1d_array", t);
 
-	fprintf(stderr, "Rank=%d committed write\n", rank);
+	if (test_verbose) {
+	    fprintf(stderr, "Rank=%d committed write\n", rank);
+	}
 
 	adios_close(adios_handle);
 
