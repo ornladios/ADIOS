@@ -48,14 +48,6 @@ typedef struct adiost_callbacks_s {
 } adiost_callbacks_t;
 
 
-/* Function signature declarations */
-
-typedef void (*adiost_initialize_t) (
-    adiost_function_lookup_t adiost_fn_lookup,
-    const char *version,
-    unsigned int adiost_version
-);
-
 /* Global variables */
 
 extern adiost_callbacks_t adiost_callbacks;
