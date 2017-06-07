@@ -16,24 +16,23 @@ A Fortran90 compiler and mpif90 compilers are needed to build the Fortran librar
 \subsection{Quick installation with Automake}
 
 To get started with ADIOS, the following steps can be used to configure, build,
-test, and install the ADIOS library, header files, and support programs.
+test, and install the ADIOS library, header files, and support programs. We suggest to use the \verb+-fPIC+ flag to build a library that can be used by python, Matlab, VisIt or anything that relies on shared libraries.
 
 \begin{lstlisting}
-cd adios-1.10
+cd adios-1.12.0
 mkdir build
 cd build
-../configure -prefix=<install-dir>
+../configure -prefix=<install-dir> CFLAGS="-fPIC"
 make
 make install
 \end{lstlisting}
 
-Note: There is a runconf batch script in the trunk set up for our machines. Studying
+Note: There is a  \verb+runconf+ batch script in the trunk set up for our machines. Studying
 it can help you setting up the appropriate environment variables and configure
-options for your system. Then instead of running ../configure, source runconf (so that
-the settings stay set in the environment). 
+options for your system. Then instead of running ../configure, run ../runconf. 
 \begin{lstlisting}
 cd build
-. ../runconf
+../runconf
 make
 \end{lstlisting}
 
@@ -90,7 +89,7 @@ CMake is an alternative way used to configure, build, test, and install the ADIO
 header files, and support programs. CMake 2.8.0 or higher is required to build ADIOS.
 
 \begin{lstlisting}
-cd trunk/
+cd adios-1.12.0/
 source cmake_init
 mkdir build
 cd build
@@ -98,7 +97,7 @@ cmake ..
 make
 \end{lstlisting}
 
-Note: The cmake\_init batch script in the trunk set up for our machines. You need to
+Note: The \verb+cmake_init+ batch script is set up for our machines. You need to
 set up the appropriate environment variables and configure options for your system.
 
 The nice and highly recommended feature of CMake is the ability of out-of-source build.

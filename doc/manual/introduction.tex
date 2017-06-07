@@ -82,6 +82,20 @@ Linux clusters and Mac OSX.
 
 %
 %
+\section {What's new in version 1.12}
+This release adds support for {\bf LZ4} lossless compression and {\bf SZ} error bounded lossy compression, provides a more robust version of {\bf FlexPath staging method}, and a {\bf performance profiling API} that performance tools like TAU and Vampir can use to gather information about ADIOS operations. The \verb+POSIX+ and \verb+MPI_AGGREGATE+ methods support writing to a distributed file system (e.g. Summit burst buffer) and an application can read it back as long as every process reads back the data generated on the same compute node. 
+
+\begin{itemize}
+\item SZ lossy compression, see  \url{ https://collab.cels.anl.gov/display/ESR/SZ} for details.
+\item LZ4 compression was added by a user of ADIOS, René Widera from HZDR, Germany
+\item Profiling API was added by Kevin Huck of the TAU team \url{ix.cs.uoregon.edu/~khuck}. Tool developers need to use the \verb+adiost_callback_api.h+. A basic default tool implementation is in \newline \verb+src/core/adiost_default_tool.c+
+\item The FLEXPATH staging method from Georgia Tech has been redesigned for more robust and faster data staging. The new version of the chaos library is required \url{https://anon@svn.research.cc.gatech.edu/kaos/chaos_base/trunk}
+\item Transport parameter \verb+"local-fs=1"+ will allow the \verb+POSIX+ and \verb+MPI_AGGREGATE+ methods write the output to a distributed file system. The output path is the same on all compute nodes. Any reader process will see the global arrays (definition) but only can successfully read that portion of the data that was written on the same compute node. Think of checkpoint/restart as an example.
+\item Bug fixes for time-aggregation, reading >2GB blocks from file, CMake build, etc.
+\end{itemize}
+
+
+
 \section {What's new in version 1.11}
 Two new features in this release are {\bf time aggregation} and the {\bf ZFP lossy compression transformation}. Time aggregation allows for buffering a small/frequently written dataset for multiple output steps and flush to disk less frequently. The buffer size is controlled by the user. Optionally the aggregated group can be forced to flush when another group (e.g. checkpoint) is written. 
 Lossy compression allows for reducing output data much further than what's available with the current lossless compression transformations. ZFP gives control to the user to set the required accuracy in the output dataset.  
