@@ -1,9 +1,3 @@
-/*
-    read_flexpath.c
-    Goal: to create evpath io connection layer in conjunction with
-    write/adios_flexpath.c
-
-*/
 // system libraries
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,7 +86,6 @@ typedef struct _flexpath_read_request
 typedef struct _flexpath_var_chunk
 {
     int has_data;
-    int rank; // the writer's rank this chunk represents. not used or needed right now
     void *data;
     void *user_buf;
 } flexpath_var_chunk;
@@ -118,7 +111,6 @@ typedef struct _flexpath_var
     enum ADIOS_DATATYPES type;
     uint64_t type_size; // type size, not arrays size
 
-    int time_dim; // -1 means it is not a time dimension
     int ndims;
     uint64_t *global_dims; // ndims size (if ndims>0)
     uint64_t *local_dims; // for local arrays NOTE**Isn't currently used...do we have this functionality
@@ -218,7 +210,6 @@ new_flexpath_var(const char *varname, int id, uint64_t type_size)
     memset(var, 0, sizeof(flexpath_var));
     // free this when freeing vars.
     var->varname = strdup(varname);
-    var->time_dim = -1;
     var->id = id;
     var->type_size = type_size;
     var->displ = NULL;
@@ -570,7 +561,6 @@ flexpath_var_free(flexpath_var * tmpvars)
 		chunk->data = NULL;
 		chunk->has_data = 0;
 	    }
-	    chunk->rank = 0;
 	}
 	
 
@@ -1174,26 +1164,6 @@ add_var_to_read_message(flexpath_reader_file *fp, int destination, char *varname
 
 /********** EVPath Handlers **********/
 
-/*
-static int
-update_step_msg_handler(
-    CManager cm,
-    void *vevent,
-    void *client_data,
-    attr_list attrs)
-{
-    update_step_msg *msg = (update_step_msg*)vevent;
-    ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
-    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-
-    fp->last_writer_step = msg->step;
-    fp->writer_finalized = msg->finalized;
-    adiosfile->last_step = msg->step;
-    CMCondition_signal(fp_read_data->cm, msg->condition);
-    return 0;
-}
-*/
-
 static int
 group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
@@ -1388,36 +1358,10 @@ extract_selection_from_partial(int element_size, uint64_t dims, uint64_t *global
 	data += source_block_stride;
 	selection += dest_block_stride;
     }
-    /*if(fp_read_data->rank == 0)
-    {
-	double prev = 0.0;
-    	int count = 0;
-    	for(i = 0; i < 2048*1024; i++)
-    	{
-    	    if(temp_doub[i] == 0)
-    	    {
-    	        count++;
-    	    }
-    	    else
-    	    {
-    	        if(count == 0)
-    	        {
-		  printf("%f, ", temp_doub[i]);
-    	        }
-    	        else
-    	        {
-		  printf("0.0[%d], %f", count, temp_doub[i]);
-		  count = 0;
-    	        }
-    	    }
-    	}
-    }
-*/
-	
     free(first_index);
 }
 
-    static int
+static int
 raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
 {
     ADIOS_FILE *adiosfile = client_data;
