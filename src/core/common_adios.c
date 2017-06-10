@@ -473,6 +473,7 @@ int common_adios_group_size(int64_t fd_p, uint64_t data_size,
 
   if (fd->buffer_size == 0) {
     *total_size = 0;
+    ADIOST_CALLBACK_EXIT(adiost_event_group_size, fd_p, data_size, *total_size);
     return err_no_error;
   }
 
