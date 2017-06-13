@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <time.h>
+#include "adios_clock.h"
 #define ADIOST_EXTERN 
 #define DEBUG_PRINT printf("In %s!\n", __func__); fflush(stdout);
 #define DEBUG_PRINT_FD printf("file_descriptor: %" PRId64 "!\n", file_descriptor); fflush(stdout);
@@ -82,7 +83,7 @@ static uint64_t adiost_counters_count[adiost_last_counter_unused] = {0ULL};
 static uint64_t adiost_counters_accumulated[adiost_last_counter_unused] = {0ULL};
 
 void __timer_start(adiost_timer_index_t index) {
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &(adiost_timers_start_time[index]));
+    adios_clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &(adiost_timers_start_time[index]));
 }
 
 /* Subtract the ‘struct timeval’ values X and Y,
@@ -113,7 +114,7 @@ uint64_t timespec_subtract (struct timespec *end, struct timespec *start)
 
 void __timer_stop(adiost_timer_index_t index) {
     struct timespec end_time;
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
+    adios_clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end_time);
     uint64_t diff = timespec_subtract(&end_time, &(adiost_timers_start_time[index]));
     adiost_timers_accumulated[index] = adiost_timers_accumulated[index] + diff;
     adiost_timers_count[index] = adiost_timers_count[index] + 1;

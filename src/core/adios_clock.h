@@ -21,6 +21,9 @@ unsigned long adios_gettime_ms();
 #ifndef CLOCK_MONOTONIC
 #   define CLOCK_MONOTONIC 1
 #endif
+#ifndef CLOCK_PROCESS_CPUTIME_ID
+#   define CLOCK_PROCESS_CPUTIME_ID 2
+#endif
 
 /* create a timespec variable and pass the pointer here */
 int adios_clock_gettime(clockid_t clk_id, struct timespec *ts);
