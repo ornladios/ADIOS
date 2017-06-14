@@ -12,6 +12,7 @@
  * data to the ADIOS metadata.
  */
 
+#include "config.h"
 // we want our implementation of the tool to be weak, and exported.
 #define ADIOST_EXPORT __attribute__((visibility("default")))
 #define ADIOST_WEAK __attribute__ (( weak )) 
