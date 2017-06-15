@@ -413,9 +413,9 @@ char * multiqueue_action = "{\n\
         EVdiscard_and_submit_finalize_close_msg(0, 0);\n\
     }\n\
     int num_data_in_queue = EVcount_anonymous();\n\
+    set_int_attr(stone_attrs, \"queue_size\", num_data_in_queue);\n\
     if(old_num_data_in_queue > num_data_in_queue)\n\
     {\n\
-        set_int_attr(stone_attrs, \"queue_size\", num_data_in_queue);\n\
         queue_size_msg new;\n\
         new.size = num_data_in_queue;\n\
         EVsubmit(0, new);\n\
@@ -1166,7 +1166,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
     fp_verbose_init(fileData);
 
-    fileData->maxQueueSize = 1;
+    fileData->maxQueueSize = 42;
     if (method->parameters) {
         sscanf(method->parameters, "QUEUE_SIZE=%d;", &fileData->maxQueueSize);
     }
@@ -1647,6 +1647,10 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     void *buffer = malloc(fileData->fm->size);    
     memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
 
+    //Submit the messages that will get forwarded on immediately to the designated readers through split stone
+    EVsubmit_general(fileData->offsetSource, gp, NULL, temp_attr_scalars);
+    EVsubmit_general(fileData->scalarDataSource, temp, free_data_buffer, temp_attr_scalars);
+
     //Testing against the maxqueuesize
     int current_queue_size; 
     attr_list multiqueue_attrs = EVextract_attr_list(flexpathWriteData.cm, fileData->multiStone);
@@ -1669,10 +1673,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
         }
     }
 
-
-    //Submit the messages that will get forwarded on immediately to the designated readers through split stone
-    EVsubmit_general(fileData->offsetSource, gp, NULL, temp_attr_scalars);
-    EVsubmit_general(fileData->scalarDataSource, temp, free_data_buffer, temp_attr_scalars);
 
     //Full data is submitted to multiqueue stone
     EVsubmit_general(fileData->dataSource, buffer, free_data_buffer, temp_attr_noscalars);
