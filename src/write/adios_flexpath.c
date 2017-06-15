@@ -138,6 +138,8 @@ typedef struct _flexpath_write_file_data {
 
     // server state
     int maxQueueSize;
+    pthread_mutex_t queue_size_mutex;
+    pthread_cond_t queue_size_condition;
     int readerStep;
     int writerStep; // how many times has the writer called closed?
     int finalized; // have we finalized?
@@ -170,6 +172,7 @@ static atom_t RANK_ATOM = -1;
 static atom_t TIMESTEP_ATOM = -1;
 static atom_t SCALAR_ATOM = -1;
 static atom_t CM_TRANSPORT = -1;
+static atom_t QUEUE_SIZE = -1;
 
 // used for global communication and data structures
 FlexpathWriteData flexpathWriteData;
@@ -371,6 +374,7 @@ get_var_offsets(struct adios_var_struct *v,
 char * multiqueue_action = "{\n\
     static int lowest_timestamp = 0;\n\
     attr_list attrs;\n\
+    int old_num_data_in_queue = EVcount_anonymous();\n\
     if(EVcount_read_request() > 0)\n\
     {\n\
         int i = 0;\n\
@@ -408,6 +412,14 @@ char * multiqueue_action = "{\n\
     {\n\
         EVdiscard_and_submit_finalize_close_msg(0, 0);\n\
     }\n\
+    int num_data_in_queue = EVcount_anonymous();\n\
+    if(old_num_data_in_queue > num_data_in_queue)\n\
+    {\n\
+        set_int_attr(stone_attrs, \"queue_size\", num_data_in_queue);\n\
+        queue_size_msg new;\n\
+        new.size = num_data_in_queue;\n\
+        EVsubmit(0, new);\n\
+    }\n\
 }";
 
 
@@ -425,6 +437,17 @@ finalize_msg_handler(CManager cm, void *vevent, void *client_data, attr_list att
 
     return 0;
 }
+
+static int
+queue_size_msg_handler(CManager cm, void*vevent, void*client_data, attr_list attrs)
+{
+    FlexpathWriteFileData * fp = (FlexpathWriteFileData *) client_data;
+    fp_verbose(fp, "Sending the condition signal that the queue_size has changed!\n");
+    pthread_mutex_lock(&(fp->queue_size_mutex));
+    pthread_cond_signal(&(fp->queue_size_condition));
+    pthread_mutex_unlock(&(fp->queue_size_mutex));
+}
+
 
 // sets a field based on data type
 void 
@@ -1080,6 +1103,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     TIMESTEP_ATOM = attr_atom_from_string(FP_TIMESTEP);
     SCALAR_ATOM = attr_atom_from_string(FP_ONLY_SCALARS);
     CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
+    QUEUE_SIZE = attr_atom_from_string("queue_size");
 
     externs[0].extern_value = fp_verbose_wrapper;
 
@@ -1146,6 +1170,9 @@ adios_flexpath_open(struct adios_file_struct *fd,
     if (method->parameters) {
         sscanf(method->parameters, "QUEUE_SIZE=%d;", &fileData->maxQueueSize);
     }
+
+    pthread_mutex_init(&fileData->queue_size_mutex, NULL);
+    pthread_cond_init(&fileData->queue_size_condition, NULL);
 
     // communication channel setup
     char writer_info_filename[200];
@@ -1254,6 +1281,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
 
     FMStructDescList queue_list[] = {read_request_format_list,
                                      finalize_close_msg_format_list,
+                                     queue_size_msg_format_list,
                                      data_format_list, 
                                      NULL};
 
@@ -1264,6 +1292,11 @@ adios_flexpath_open(struct adios_file_struct *fd,
 
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, finalize_close_msg_format_list,
                             finalize_msg_handler, fileData);
+    EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, queue_size_msg_format_list,
+                            queue_size_msg_handler, fileData);
+    //This is just set so the first get_attr doesn't throw an error message
+    attr_list multiqueue_stone_attrs = EVextract_attr_list(flexpathWriteData.cm, fileData->multiStone);
+    add_int_attr(multiqueue_stone_attrs, QUEUE_SIZE, 0);   
 
     fileData->dataSource = EVcreate_submit_handle(flexpathWriteData.cm, fileData->multiStone,
                                                   fileData->fm->format);
@@ -1613,6 +1646,29 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     //Need to make a copy as we reuse the fileData->fm in every step...
     void *buffer = malloc(fileData->fm->size);    
     memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
+
+    //Testing against the maxqueuesize
+    int current_queue_size; 
+    attr_list multiqueue_attrs = EVextract_attr_list(flexpathWriteData.cm, fileData->multiStone);
+    if(!get_int_attr(multiqueue_attrs, QUEUE_SIZE, &current_queue_size))
+    {
+        fprintf(stderr, "Error: Couldn't find queue_size in multiqueue stone attrs!\n");
+    }
+
+    while(current_queue_size == fileData->maxQueueSize)
+    {
+        pthread_mutex_lock(&(fileData->queue_size_mutex));
+        fp_verbose(fileData, "Waiting for queue to become less full on timestep: %d\n", fileData->writerStep);
+        pthread_cond_wait(&(fileData->queue_size_condition), &(fileData->queue_size_mutex));
+        fp_verbose(fileData, "Received queue_size signal!\n");
+        pthread_mutex_unlock(&(fileData->queue_size_mutex));
+
+        if(!get_int_attr(multiqueue_attrs, QUEUE_SIZE, &current_queue_size))
+        {
+            fprintf(stderr, "Error: Couldn't find queue_size in multiqueue stone attrs!\n");
+        }
+    }
+
 
     //Submit the messages that will get forwarded on immediately to the designated readers through split stone
     EVsubmit_general(fileData->offsetSource, gp, NULL, temp_attr_scalars);
