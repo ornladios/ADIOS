@@ -130,6 +130,16 @@ typedef struct _double_complex_dummy
     double i;
 } double_complex_dummy;
 
+typedef struct _queue_size_msg {
+    int queue_size;
+} queue_size_msg, *queue_size_msg_ptr;
+
+static FMField queue_size_msg_field_list[]=
+{
+    {"size", "integer", sizeof(int), FMOffset(queue_size_msg_ptr, queue_size)},
+    {NULL, NULL, 0, 0}
+};
+
 static FMField read_request_msg_field_list[]=
 {
     {"condition", "integer", sizeof(int), FMOffset(read_request_msg_ptr, condition)},
@@ -218,6 +228,12 @@ static FMStructDescRec evgroup_format_list[] =
     {"offset_struct", offset_struct_field_list, sizeof(offset_struct), NULL},
     {"global_var", global_var_field_list, sizeof(global_var), NULL},
     {NULL,NULL,0,NULL}
+};
+
+static FMStructDescRec queue_size_msg_format_list[] =
+{
+    {"queue_size_msg", queue_size_msg_field_list, sizeof(queue_size_msg), NULL},
+    {NULL, NULL, 0, NULL}
 };
 
 static FMStructDescRec data_format_list[] =
