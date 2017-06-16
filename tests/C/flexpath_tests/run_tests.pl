@@ -10,6 +10,8 @@ getopts('vrw');
 
 my $writer_output = "";
 my $reader_output = "";
+my $passed = 0;
+my $failed = 0;
 
 $reader_output = "" if $opt_r == 1;
 $writer_output = "" if $opt_w == 1;
@@ -91,14 +93,18 @@ foreach (@groups)
         if($return_test == 0)
         {
             print "$_ with $num_readers readers and $num_writers writers: PASSED!\n";
+	    $passed += 1;
         }
         else
         {
             print "$_ with $num_readers readers and $num_writers writers: FAILED!\n";
+	    $failed += 1;
         }
     }
     chdir '..' or die "Cannot change directory to ..: $!";
 }
 
 #print "@groups\n";
+my $total = $passed + $failed;
+print "\nResults:   $passed Passed out of $total, $failed Failed\n";
 
