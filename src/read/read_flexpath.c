@@ -113,7 +113,7 @@ typedef struct _flexpath_var
 
     int ndims;
     uint64_t *global_dims; // ndims size (if ndims>0)
-    uint64_t *local_dims; // for local arrays NOTE**Isn't currently used...do we have this functionality
+    uint64_t *local_dims; // for local arrays 
     uint64_t array_size; // not relevant for scalars
 
     int num_chunks;
