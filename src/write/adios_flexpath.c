@@ -111,15 +111,9 @@ typedef struct _flexpath_fm_structure {
     LIST_HEAD(dims, _flexpath_dim_names) dimList;
 } FlexpathFMStructure;
 
-// information used per each flexpath file
-typedef struct _flexpath_write_file_data {
-    // MPI stuff
-    MPI_Comm mpiComm;
-    int rank;
-    int size;
-    int host_language;
-    // EVPath stuff
-    // reader_info
+struct _flexpath_write_file_data;
+
+typedef struct _flexpath_per_subscriber_info {
     CMConnection reader_0_conn;
     uint64_t reader_file;
     //We need to hold the full list somewhere, but this can be freed
@@ -133,20 +127,34 @@ typedef struct _flexpath_write_file_data {
     EVsource offsetSource;
     EVsource finalizeSource;
 
-    FlexpathStone* bridges;
     int numBridges;
+    FlexpathStone* bridges;
+    int final_condition;
+
+    struct _flexpath_write_file_data *parent_file;
+
+} *subscriber_info;
+
+// information used per each flexpath file
+typedef struct _flexpath_write_file_data {
+    // MPI stuff
+    MPI_Comm mpiComm;
+    int rank;
+    int size;
+    int host_language;
+
 
     // server state
     int maxQueueSize;
     pthread_mutex_t queue_size_mutex;
     pthread_cond_t queue_size_condition;
-    int readerStep;
+
     int writerStep; // how many times has the writer called closed?
     int finalized; // have we finalized?
-    int final_condition;
 
     FlexpathFMStructure* fm;
 
+    subscriber_info subscribers;
     // global array distribution data
     int globalCount;
     evgroup *gp;
@@ -427,13 +435,15 @@ static int
 finalize_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
     FlexpathWriteFileData * fp = (FlexpathWriteFileData *) client_data;
-    int cond = fp->final_condition;
-    fp->final_condition = -1;
+    int cond = fp->subscribers->final_condition;
+    fp->subscribers->final_condition = -1;
     if (cond != -1) {
         CMCondition_signal(flexpathWriteData.cm, cond);
+        fp_verbose(fp, "Finalize msg handler called and signalled condition %d!", cond);
+    } else {
+        fp_verbose(fp, "Finalize msg handler called and condition already signalled...");
     }
 
-    fp_verbose(fp, "Finalize msg handler called and signalled condition %d!\n", fp->final_condition);
 
     return 0;
 }
@@ -446,6 +456,7 @@ queue_size_msg_handler(CManager cm, void*vevent, void*client_data, attr_list att
     pthread_mutex_lock(&(fp->queue_size_mutex));
     pthread_cond_signal(&(fp->queue_size_condition));
     pthread_mutex_unlock(&(fp->queue_size_mutex));
+    return 0;
 }
 
 
@@ -1026,16 +1037,20 @@ stone_close_handler(CManager cm, CMConnection conn, int closed_stone, void *clie
     fp_verbose(file, "IN STONE CLOSE_HANDLER, closed stone %d\n", closed_stone);
     while (file) {
 	int i;
-	for (i=0; i < file->numBridges; i++) {
-	    if (file->bridges[i].bridge_stoneID == closed_stone) {
-		int cond = file->final_condition;
-                file->final_condition = -1;
-		file->bridges[i].opened = 0;
-                file->failed = 1;
-                if (cond != -1) {
-                    /* hearing from one is sufficient for waiting */
-                    fp_verbose(file, "IN STONE CLOSE_HANDLER, signaling final condition for File %p\n", file);
-                    CMCondition_signal(cm, cond);
+	for (i=0; i < 1; i++) {
+            int j;
+            subscriber_info sub = file->subscribers;
+            for (j=0; j < sub->numBridges; j++) {
+                if (sub->bridges[j].bridge_stoneID == closed_stone) {
+                    int cond = sub->final_condition;
+                    sub->final_condition = -1;
+                    sub->bridges[j].opened = 0;
+                    sub->parent_file->failed = 1;
+                    if (cond != -1) {
+                        /* hearing from one is sufficient for waiting */
+                        fp_verbose(file, "IN STONE CLOSE_HANDLER, signaling final condition for File %p, subscriber %p\n", file, sub);
+                        CMCondition_signal(cm, cond);
+                    }
                 }
 	    }
 	}
@@ -1049,16 +1064,17 @@ reader_register_handler(CManager cm, CMConnection conn, void *vmsg, void *client
     int i;
     reader_register_msg *msg = (reader_register_msg *)vmsg;
     FlexpathWriteFileData *fileData = (void*)msg->writer_file;
-    fileData->numBridges = msg->contact_count;
-    fileData->reader_0_conn = conn;
-    fileData->reader_file = msg->reader_file;
+    subscriber_info sub = fileData->subscribers;
+    sub->numBridges = msg->contact_count;
+    sub->reader_0_conn = conn;
+    sub->reader_file = msg->reader_file;
     CMConnection_add_reference(conn);
     char *recv_buf;
     char ** recv_buf_ptr = CMCondition_get_client_data(cm, msg->condition);
-    recv_buf = (char *)calloc(fileData->numBridges, CONTACT_LENGTH);
-    fp_verbose(fileData, "Reader Register handler called!\n");
+    recv_buf = (char *)calloc(sub->numBridges, CONTACT_LENGTH);
+    fp_verbose(fileData, "Reader Register handler called, will signal condition %d!\n", msg->condition);
     int total_num_readers;
-    fileData->total_num_readers = msg->contact_count;
+    sub->total_num_readers = msg->contact_count;
     for (i = 0; i < msg->contact_count; i++) {
         strcpy(&recv_buf[i*CONTACT_LENGTH], msg->contacts[i]);
         //Writer_reader_information, done this way to keep the determining logic in one place (currently on the reader side)
@@ -1162,6 +1178,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
     }
 
     FlexpathWriteFileData *fileData = malloc(sizeof(FlexpathWriteFileData));
+    subscriber_info sub = malloc(sizeof(struct _flexpath_per_subscriber_info));
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
     fp_verbose_init(fileData);
@@ -1193,13 +1210,15 @@ adios_flexpath_open(struct adios_file_struct *fd,
         recv_buff = (char *)malloc(fileData->size * CONTACT_LENGTH * sizeof(char));
     }
 
-    // send out contact string
-    fileData->multiStone = EValloc_stone(flexpathWriteData.cm);
-    fileData->splitStone = EValloc_stone(flexpathWriteData.cm);
-    fileData->sinkStone = EValloc_stone(flexpathWriteData.cm);
+    fileData->subscribers = sub;
+    sub->parent_file = fileData;
+    sub->multiStone = EValloc_stone(flexpathWriteData.cm);
+    sub->splitStone = EValloc_stone(flexpathWriteData.cm);
+    sub->sinkStone = EValloc_stone(flexpathWriteData.cm);
 
+    // send out contact string
     char *contact = attr_list_to_string(CMget_contact_list(flexpathWriteData.cm));
-    sprintf(&sendmsg[0], "%d:%s", fileData->multiStone, contact);
+    sprintf(&sendmsg[0], "%d:%s", sub->multiStone, contact);
     MPI_Gather(sendmsg, CONTACT_LENGTH, MPI_CHAR, recv_buff, 
                CONTACT_LENGTH, MPI_CHAR, 0, (fileData->mpiComm));
 
@@ -1211,6 +1230,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
         sprintf(writer_info_tmp, "%s_%s", fd->name, "writer_info.tmp");
         FILE *writer_info = fopen(writer_info_filename, "w");
         int condition = CMCondition_get(flexpathWriteData.cm, NULL);
+        fp_verbose(fileData, "Setting condition %d\n", condition);
         CMCondition_set_client_data(flexpathWriteData.cm, condition, &recv_buff);
         fprintf(writer_info, "%d\n", condition);
         fprintf(writer_info, "%p\n", fileData);
@@ -1220,24 +1240,25 @@ adios_flexpath_open(struct adios_file_struct *fd,
         fclose(writer_info);
         rename(writer_info_tmp, writer_info_filename);
         free(recv_buff);
+        fp_verbose(fileData, "wrote writer information to writer_info file  %s, waiting for condition %d\n", writer_info_filename, condition);
         /* wait for reader to wake up, tell us he's ready (and provide his contact info) */
 
         CMCondition_wait(flexpathWriteData.cm, condition);
         /* recv_buff and fileData->numBridges have been filled in by the reader_register_handler */
-        MPI_Bcast(&fileData->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&fileData->total_num_readers, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(recv_buff, fileData->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&sub->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&sub->total_num_readers, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(recv_buff, sub->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
         unlink(writer_info_filename);
     } else {
-        MPI_Bcast(&fileData->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&fileData->total_num_readers, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        recv_buff = (char *)malloc(fileData->numBridges * CONTACT_LENGTH * sizeof(char));
-        MPI_Bcast(recv_buff, fileData->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&sub->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&sub->total_num_readers, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        recv_buff = (char *)malloc(sub->numBridges * CONTACT_LENGTH * sizeof(char));
+        MPI_Bcast(recv_buff, sub->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
     }
 
     // build a bridge per line
-    int numBridges = fileData->numBridges;
-    fileData->bridges = malloc(sizeof(FlexpathStone) * numBridges);
+    int numBridges = sub->numBridges;
+    sub->bridges = malloc(sizeof(FlexpathStone) * numBridges);
     for (i = 0; i < numBridges; i++) {
         char in_contact[CONTACT_LENGTH];
         int their_main_stone;
@@ -1246,11 +1267,11 @@ adios_flexpath_open(struct adios_file_struct *fd,
                in_contact);
         // fprintf(stderr, "reader contact: %d:%s\n", stone_num, in_contact);
         attr_list contact_list = attr_list_from_string(in_contact);
-        fileData->bridges[i].opened = 1;
-        fileData->bridges[i].created = 1;
-        fileData->bridges[i].step = 0;
-        fileData->bridges[i].reader_stoneID = their_main_stone;
-        fileData->bridges[i].contact = strdup(in_contact);
+        sub->bridges[i].opened = 1;
+        sub->bridges[i].created = 1;
+        sub->bridges[i].step = 0;
+        sub->bridges[i].reader_stoneID = their_main_stone;
+        sub->bridges[i].contact = strdup(in_contact);
     }
 
     MPI_Barrier((fileData->mpiComm));
@@ -1287,55 +1308,54 @@ adios_flexpath_open(struct adios_file_struct *fd,
 
     char *q_action_spec = create_multityped_action_spec(queue_list, multiqueue_action);
 
-    multi_action = EVassoc_multi_action(flexpathWriteData.cm, fileData->multiStone, q_action_spec, NULL);
-    split_action = EVassoc_split_action(flexpathWriteData.cm, fileData->splitStone, NULL);
+    multi_action = EVassoc_multi_action(flexpathWriteData.cm, sub->multiStone, q_action_spec, NULL);
+    split_action = EVassoc_split_action(flexpathWriteData.cm, sub->splitStone, NULL);
 
-    EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, finalize_close_msg_format_list,
+    EVassoc_terminal_action(flexpathWriteData.cm, sub->sinkStone, finalize_close_msg_format_list,
                             finalize_msg_handler, fileData);
-    EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, queue_size_msg_format_list,
+    EVassoc_terminal_action(flexpathWriteData.cm, sub->sinkStone, queue_size_msg_format_list,
                             queue_size_msg_handler, fileData);
     //This is just set so the first get_attr doesn't throw an error message
-    attr_list multiqueue_stone_attrs = EVextract_attr_list(flexpathWriteData.cm, fileData->multiStone);
+    attr_list multiqueue_stone_attrs = EVextract_attr_list(flexpathWriteData.cm, sub->multiStone);
     add_int_attr(multiqueue_stone_attrs, QUEUE_SIZE, 0);   
 
-    fileData->dataSource = EVcreate_submit_handle(flexpathWriteData.cm, fileData->multiStone,
-                                                  fileData->fm->format);
+    sub->dataSource = EVcreate_submit_handle(flexpathWriteData.cm, sub->multiStone,
+                                             fileData->fm->format);
 
-    fileData->scalarDataSource = EVcreate_submit_handle(flexpathWriteData.cm, fileData->splitStone,
-                                                        fileData->fm->format);
+    sub->scalarDataSource = EVcreate_submit_handle(flexpathWriteData.cm, sub->splitStone,
+                                                   fileData->fm->format);
 
-    fileData->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, fileData->splitStone,
-                                                    evgroup_format_list);
+    sub->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, sub->splitStone,
+                                               evgroup_format_list);
 
-    fileData->finalizeSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-                                                      fileData->splitStone,
-                                                      finalize_close_msg_format_list);
+    sub->finalizeSource = EVcreate_submit_handle(flexpathWriteData.cm, sub->splitStone,
+                                                 finalize_close_msg_format_list);
 
     // link multiqueue to sink
 
-    EVaction_set_output(flexpathWriteData.cm, fileData->multiStone,
-                        multi_action, 0, fileData->sinkStone);
+    EVaction_set_output(flexpathWriteData.cm, sub->multiStone,
+                        multi_action, 0, sub->sinkStone);
 
     // Set each output to the rank + 1 and preserve the 0 output for a sink
     // stone just in case
     // we need it for control one day
     for (i = 0; i < numBridges; i++) {
-        fileData->bridges[i].bridge_stoneID = EVcreate_bridge_action(
+        sub->bridges[i].bridge_stoneID = EVcreate_bridge_action(
             flexpathWriteData.cm,
-            attr_list_from_string(fileData->bridges[i].contact),
-            fileData->bridges[i].reader_stoneID);
+            attr_list_from_string(sub->bridges[i].contact),
+            sub->bridges[i].reader_stoneID);
 
-        EVaction_set_output(flexpathWriteData.cm, fileData->multiStone,
+        EVaction_set_output(flexpathWriteData.cm, sub->multiStone,
                             multi_action, i + 1,
-                            fileData->bridges[i].bridge_stoneID);
+                            sub->bridges[i].bridge_stoneID);
     }
 
     // Set up split stone to peer'd readers
-    for (i = 0; i < fileData->total_num_readers; i++) {
+    for (i = 0; i < sub->total_num_readers; i++) {
         if ((i % fileData->size) == fileData->rank) {
             EVaction_add_split_target(flexpathWriteData.cm,
-                                      fileData->splitStone, split_action,
-                                      fileData->bridges[i].bridge_stoneID);
+                                      sub->splitStone, split_action,
+                                      sub->bridges[i].bridge_stoneID);
         }
     }
 
@@ -1344,15 +1364,15 @@ adios_flexpath_open(struct adios_file_struct *fd,
 
     // Set this up here so that the reader can close without waiting for the end
     // of the stream
-    fileData->final_condition = CMCondition_get(flexpathWriteData.cm, NULL);
+    sub->final_condition = CMCondition_get(flexpathWriteData.cm, NULL);
 
     if (fileData->rank == 0) {
         reader_go_msg go_msg;
-        go_msg.reader_file = fileData->reader_file;
+        go_msg.reader_file = sub->reader_file;
         go_msg.start_timestep = 0;
         CMFormat format = CMregister_simple_format(flexpathWriteData.cm, "Flexpath reader go", reader_go_field_list, sizeof(reader_go_msg));
         fp_verbose(fileData, "Writer Rank 0 sending GO message to reader rank 0\n");
-        CMwrite(fileData->reader_0_conn, format, &go_msg);
+        CMwrite(sub->reader_0_conn, format, &go_msg);
     }
     return 0;
 }
@@ -1577,8 +1597,9 @@ adios_flexpath_feedback_handler(struct adios_file_struct *fd,
         first = 0;
     }
     FlexpathWriteFileData* fileData = find_flexpath_fileData(fd);
-    CMadd_stone_to_global_lookup(flexpathWriteData.cm, fileData->sinkStone, global_stone_ID);
-    EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, format_list, 
+    subscriber_info sub = fileData->subscribers;
+    CMadd_stone_to_global_lookup(flexpathWriteData.cm, sub->sinkStone, global_stone_ID);
+    EVassoc_terminal_action(flexpathWriteData.cm, sub->sinkStone, format_list, 
                             handler, client_data);
 }
 
@@ -1608,6 +1629,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 {
     attr_list attrs = create_attr_list();
     FlexpathWriteFileData *fileData = find_open_file(method->group->name);
+    subscriber_info sub = fileData->subscribers;
 
     fp_verbose(fileData, " adios_flexpath_close called\n");
 
@@ -1648,34 +1670,31 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
 
     //Submit the messages that will get forwarded on immediately to the designated readers through split stone
-    EVsubmit_general(fileData->offsetSource, gp, NULL, temp_attr_scalars);
-    EVsubmit_general(fileData->scalarDataSource, temp, free_data_buffer, temp_attr_scalars);
+    EVsubmit_general(sub->offsetSource, gp, NULL, temp_attr_scalars);
+    EVsubmit_general(sub->scalarDataSource, temp, free_data_buffer, temp_attr_scalars);
 
     //Testing against the maxqueuesize
     int current_queue_size; 
-    attr_list multiqueue_attrs = EVextract_attr_list(flexpathWriteData.cm, fileData->multiStone);
-    if(!get_int_attr(multiqueue_attrs, QUEUE_SIZE, &current_queue_size))
-    {
+    attr_list multiqueue_attrs = EVextract_attr_list(flexpathWriteData.cm, sub->multiStone);
+    if(!get_int_attr(multiqueue_attrs, QUEUE_SIZE, &current_queue_size)) {
         fprintf(stderr, "Error: Couldn't find queue_size in multiqueue stone attrs!\n");
     }
 
-    while(current_queue_size == fileData->maxQueueSize)
-    {
+    while(current_queue_size == fileData->maxQueueSize) {
         pthread_mutex_lock(&(fileData->queue_size_mutex));
         fp_verbose(fileData, "Waiting for queue to become less full on timestep: %d\n", fileData->writerStep);
         pthread_cond_wait(&(fileData->queue_size_condition), &(fileData->queue_size_mutex));
         fp_verbose(fileData, "Received queue_size signal!\n");
         pthread_mutex_unlock(&(fileData->queue_size_mutex));
 
-        if(!get_int_attr(multiqueue_attrs, QUEUE_SIZE, &current_queue_size))
-        {
+        if(!get_int_attr(multiqueue_attrs, QUEUE_SIZE, &current_queue_size)) {
             fprintf(stderr, "Error: Couldn't find queue_size in multiqueue stone attrs!\n");
         }
     }
 
 
     //Full data is submitted to multiqueue stone
-    EVsubmit_general(fileData->dataSource, buffer, free_data_buffer, temp_attr_noscalars);
+    EVsubmit_general(sub->dataSource, buffer, free_data_buffer, temp_attr_noscalars);
 
     free_attr_list(temp_attr_scalars);
     free_attr_list(temp_attr_noscalars);
@@ -1689,6 +1708,7 @@ adios_flexpath_finalize(int mype, struct adios_method_struct *method)
 {
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
     fp_verbose(fileData, "adios_flexpath_finalize called\n");
+    subscriber_info sub = fileData->subscribers;
 
     while(fileData) {
         attr_list attrs = create_attr_list();
@@ -1696,19 +1716,23 @@ adios_flexpath_finalize(int mype, struct adios_method_struct *method)
         if (fileData->failed) {
             fp_verbose(fileData, "adios_flexpath_finalize file %p already-failed output stream, rolling on\n", fileData);
         } else {
+            int cond;
             end_msg.finalize = 1;
             end_msg.close = 1;
             end_msg.final_timestep = fileData->writerStep;
             add_int_attr(attrs, RANK_ATOM, fileData->rank);   
-            EVsubmit_general(fileData->finalizeSource, &end_msg, NULL, attrs);
+            EVsubmit_general(sub->finalizeSource, &end_msg, NULL, attrs);
             free_attr_list(attrs);
 
             fp_verbose(fileData, "Sent finalize message to readers \n");
 
             /*TODO:Very Bad!!! This means that our finalization is not going to be able to 
               differentiate between streams...but the API doesn't support that yet, so...*/
-            fp_verbose(fileData, "Waiting on condition %d for the reader to be done!\n", fileData->final_condition);
-            CMCondition_wait(flexpathWriteData.cm, fileData->final_condition);
+            cond = sub->final_condition;
+            if (cond != -1) {
+                fp_verbose(fileData, "Waiting on condition %d for the reader to be done!\n", cond);
+                CMCondition_wait(flexpathWriteData.cm, cond);
+            }
             fp_verbose(fileData, "Finished Wait for reader cohort to be finished!\n");
         }
 	fileData->finalized = 1;
