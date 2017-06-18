@@ -1513,6 +1513,11 @@ void update_cost (int ** conn, edge_cost_t ** cost_matrix,
 
         if (cost_matrix[n1][j].pq_node)
         {
+            // to be on the safe side, first change the priority.
+            // This is a fix for a bug from pqueue.
+            pqueue_change_priority (pq, cost_matrix[n1][j].cost,
+                                    cost_matrix[n1][j].pq_node);
+
             assert (!pqueue_remove(pq, cost_matrix[n1][j].pq_node));
             free (cost_matrix[n1][j].pq_node);
             cost_matrix[n1][j].pq_node = 0;
