@@ -20,6 +20,7 @@
 #include "public/adiost_callback_api.h"
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <inttypes.h>
 #include <time.h>
 #include "adios_clock.h"
