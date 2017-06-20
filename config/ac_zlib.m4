@@ -88,7 +88,9 @@ else
                  int level = 5;
                  int zerr = compress2 (out, out_len, in, in_len, level);
                  return (zerr != Z_OK);],
-                [AC_MSG_RESULT(yes)],
+                [AC_MSG_RESULT(yes)
+                 AM_CONDITIONAL(HAVE_ZLIB,true)
+                ]
                 [AM_CONDITIONAL(HAVE_ZLIB,false)
                  AC_MSG_RESULT(no)
                 ])
