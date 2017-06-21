@@ -2028,6 +2028,8 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     
     fp->mystep++;
 
+    adiosfile->current_step = fp->mystep;
+    adiosfile->last_step = adiosfile->current_step;
 
     //Check to see if we have the next steps global metadata
     fp_verbose(fp, "Waiting for global metadata in timestep:%d\n", fp->mystep);
