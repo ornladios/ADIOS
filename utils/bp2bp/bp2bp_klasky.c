@@ -136,7 +136,7 @@ int main (int argc, char ** argv)
       }
       /* First create all of the groups */
       // now I need to create this group in the file that will be written
-      adios_declare_group(&m_adios_group,f->group_namelist[gidx],"",adios_flag_yes);
+      adios_declare_group(&m_adios_group,f->group_namelist[gidx],"",adios_stat_default);
       adios_select_method (m_adios_group, argv[4], "", "");
       
       // for each variable, I need to know how  much to read in... I have a buffer, so I can

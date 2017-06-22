@@ -296,7 +296,7 @@ int process_metadata(int step)
     // get groupname of stream, then declare for output
     adios_get_grouplist(f, &group_namelist);
     print0("Group name is %s\n", group_namelist[0]);
-    adios_declare_group(&gh,group_namelist[0],"",adios_flag_yes);
+    adios_declare_group(&gh,group_namelist[0],"",adios_stat_default);
 
 
     varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);

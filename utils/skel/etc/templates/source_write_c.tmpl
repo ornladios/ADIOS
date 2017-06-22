@@ -65,7 +65,7 @@ int64_t skel_adios_group;
 int color = skel_mpi_rank / 2;
 
 adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, $bpy.get_buf_size_mb());
-adios_declare_group (&skel_adios_group, "${bpy.get_group_name()}", "", adios_flag_no);
+adios_declare_group (&skel_adios_group, "${bpy.get_group_name()}", "", adios_stat_no);
 
 char paramstring[<%= len(self.bpy.get_parameters()) + 64 %>];
 //sprintf (paramstring, "color:%i;%s", color, "$bpy.get_parameters()");
