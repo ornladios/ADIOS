@@ -192,7 +192,7 @@ void print_written_info()
     }
 }
 
-int print_varinfo (ADIOS_FILE *f, int start_step) 
+void print_varinfo (ADIOS_FILE *f, int start_step) 
 {
     ADIOS_VARINFO * v;
     int i,j,k;
@@ -315,7 +315,7 @@ int read_stepbystep ()
 
 
 
-int print_scalar (ADIOS_FILE *f, char * name) 
+void print_scalar (ADIOS_FILE *f, char * name) 
 {
     ADIOS_VARINFO * v;
     int i,j,k;
