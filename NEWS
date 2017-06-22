@@ -1,4 +1,13 @@
-    - added LZ4 compression transform by René Widera HZDR, Germany
+1.12.0 Release June 2017
+     - added LZ4 compression transform by René Widera HZDR, Germany
+     - added SZ compression transform
+     - Support for burst buffer on Summitdev@OLCF, Cori@NERSC
+     - New Flexpath staging method
+     - Performance tools interface API
+     - fix: cmake build broken since 1.11.0. Also include building the test suite
+     - fix: for >2GB block reads
+     - fix: time-aggregation works with writing multiple files over the course of running 
+     - fix: python interface
 
 1.11.1 Release January 2017
     - fix: able to read from a BP file when the index itself is > 2GB
