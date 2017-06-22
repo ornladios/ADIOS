@@ -290,13 +290,16 @@ elif [ `hostname -f | cut -c 1-9` == "summitdev" ]; then
         TARGET=`echo $MLIST | grep " pgi\/" | sed "s/^.* pgi\/.*/pgi/"`
         if [ -z $TARGET ]; then
             TARGET=`echo $MLIST | grep " gcc\/" | sed "s/^.* gcc\/.*/gcc/"`
+            if [ -z $TARGET ]; then
+                TARGET=`echo $MLIST | grep " clang\/" | sed "s/^.* clang\/.*/clang/"`
+            fi
         fi
     fi
     echo "Configure on Summitdev for $TARGET env."
 
-    export MPICC=mpicc
-    export MPCXX=mpic++
-    export MPIFC=mpif90
+    export CC=mpicc
+    export CXX=mpic++
+    export FC=mpif90
     export CFLAGS="-g -O0"
 
     if [ "$TARGET" == "xl" ]; then
@@ -306,6 +309,9 @@ elif [ `hostname -f | cut -c 1-9` == "summitdev" ]; then
         export DATASPACES_DIR=/ccs/proj/e2e/dataspaces/summitdev/1.6.1/pgi
     elif [ "$TARGET" == "gcc" ]; then
         export DATASPACES_DIR=/ccs/proj/e2e/dataspaces/summitdev/1.6.1/gcc
+    elif [ "$TARGET" == "clang" ]; then
+        export BUILD_FORTRAN=OFF
+        unset DATASPACES_DIR
     fi
 
     export INSTALL_PREFIX=/ccs/proj/e2e/pnorbert/ADIOS/summitdev.$TARGET  

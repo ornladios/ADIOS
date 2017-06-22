@@ -339,11 +339,15 @@ elif [ `hostname -f | cut -c 1-9` == "summitdev" ]; then
         TARGET=`echo $MLIST | grep " pgi\/" | sed "s/^.* pgi\/.*/pgi/"`
         if [ -z $TARGET ]; then
             TARGET=`echo $MLIST | grep " gcc\/" | sed "s/^.* gcc\/.*/gcc/"`
+            if [ -z $TARGET ]; then
+                TARGET=`echo $MLIST | grep " clang\/" | sed "s/^.* clang\/.*/clang/"`
+            fi
         fi
     fi
     echo "Configure on Summitdev for $TARGET env."
     
     unset WITH_DATASPACES
+    FORTRAN_BUILD="--enable-fortran"
     if [ "$TARGET" == "xl" ]; then
         export MPICC=mpicc
         export MPCXX=mpic++
@@ -375,11 +379,21 @@ elif [ `hostname -f | cut -c 1-9` == "summitdev" ]; then
         export CFLAGS="-g -O0"
         DATASPACES_DIR=/ccs/proj/e2e/dataspaces/summitdev/1.6.1/gcc
         #WITH_DATASPACES="--with-dataspaces=$DATASPACES_DIR --with-dimes=$DATASPACES_DIR"
+    elif [ "$TARGET" == "clang" ]; then
+        export CC=clang
+        export CXX=clang++
+        export MPICC=mpicc
+        export MPCXX=mpic++
+        export CFLAGS="-g -O0"
+        DATASPACES_DIR=/ccs/proj/e2e/dataspaces/summitdev/1.6.1/clang
+        FORTRAN_BUILD="--disable-fortran"
+        #WITH_DATASPACES="--with-dataspaces=$DATASPACES_DIR --with-dimes=$DATASPACES_DIR"
     fi
 
     ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/summitdev.$TARGET  \
             --disable-maintainer-mode \
             --enable-dependency-tracking \
+            $FORTRAN_BUILD \
             --without-datatap  \
             $WITH_DATASPACES
 
