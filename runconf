@@ -638,7 +638,8 @@ elif [ `hostname | cut -c 1-4` == "cori" ]; then
     # CORI #
     ##########
     TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
-    echo "Configure on CORI for $TARGET env."
+    CPUARCH=`module list 2>&1 | grep -e craype-broadwell -e craype-haswell -e craype-mic-knl -e craype-ivybridge -e craype-intel-knc | sed -e "s/.*craype-//"`
+    echo "Configure on CORI for $TARGET env. for $CPUARCH CPU"
     export MPICC=cc
     export MPICXX=CC
     export MPIFC=ftn
@@ -678,7 +679,7 @@ elif [ `hostname | cut -c 1-4` == "cori" ]; then
 
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
-    ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/1.12/cori/$TARGET \
+    ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/1.12/cori/$TARGET.$CPUARCH \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --with-lustre=/usr \
