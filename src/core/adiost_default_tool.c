@@ -276,7 +276,7 @@ void print_timer(const char *_name, adiost_timer_index_t index) {
 }
 
 /* This function is for printing a counter */
-void print_counter(const char *_name, adiost_timer_index_t index) {
+void print_counter(const char *_name, adiost_counter_index_t index) {
     if (adiost_counters_count[index] > 0ULL) {
         debug_print("%s: %s, %" PRIu64 " calls, %" PRIu64 " bytes\n",
             program_invocation_short_name, _name,
