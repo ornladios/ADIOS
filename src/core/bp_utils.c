@@ -823,7 +823,9 @@ int bp_read_minifooter (BP_FILE * bp_struct)
        It also sets b->change_endianness */
     /* Note that b is not sent over to processes, only the minifooter and then b->buff (the footer) */
     b->offset = MINIFOOTER_SIZE - 4;
-    adios_parse_version (b, &mh->version);
+    uint32_t v;
+    adios_parse_version (b, &v);
+    mh->version = v;
     mh->change_endianness = b->change_endianness;
 
     // validity check
