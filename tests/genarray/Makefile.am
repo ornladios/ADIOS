@@ -31,15 +31,15 @@ copyarray2D_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 
 FC=$(MPIFC)
 
-genarray.F90: gwrite_genarray.fh
-copyarray.F90: gwrite_genarray.fh gread_genarray.fh
-
-gwrite_genarray.fh: genarray3d.xml
-	rm -f gwrite_genarray.fh gread_genarray.fh
-	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/genarray3d.xml
-gread_genarray.fh: genarray3d.xml
-	rm -f gwrite_genarray.fh gread_genarray.fh
-	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/genarray3d.xml
+#genarray.F90: gwrite_genarray.fh
+#copyarray.F90: gwrite_genarray.fh gread_genarray.fh
+#
+#gwrite_genarray.fh: genarray3d.xml
+#	rm -f gwrite_genarray.fh gread_genarray.fh
+#	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/genarray3d.xml
+#gread_genarray.fh: genarray3d.xml
+#	rm -f gwrite_genarray.fh gread_genarray.fh
+#	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/genarray3d.xml
 
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
