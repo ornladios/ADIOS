@@ -104,6 +104,7 @@ typedef struct _array_displ
 
 typedef struct _flexpath_var
 {
+    int is_attr;
     int id;
     char *varname;
     char *varpath;
@@ -173,7 +174,6 @@ typedef struct _flexpath_reader_file
     int num_vars;
     uint64_t data_read; // for perf measurements.
     double time_in; // for perf measurements.
-    int inq_var_ready_flag; //This is the variable we will check for setting flexpath_vars
     pthread_mutex_t queue_mutex;
     pthread_cond_t queue_condition;
 } flexpath_reader_file;
@@ -194,6 +194,7 @@ flexpath_read_data* fp_read_data = NULL;
 static atom_t RANK_ATOM = -1;
 static atom_t TIMESTEP_ATOM = -1;
 static atom_t SCALAR_ATOM = -1;
+static atom_t NATTRS = -1;
 static atom_t CM_TRANSPORT = -1;
 
 /********** Helper functions. **********/
@@ -313,7 +314,31 @@ flexpath_var *
 find_fp_var(flexpath_var * var_list, const char * varname)
 {
     while (var_list) {
+	if (!var_list->is_attr && !strcmp(varname, var_list->varname)) {
+	    return var_list;
+	}
+	var_list = var_list->next;
+    }
+    return NULL;
+}
+
+flexpath_var *
+find_any_var(flexpath_var * var_list, const char * varname)
+{
+    while (var_list) {
 	if (!strcmp(varname, var_list->varname)) {
+	    return var_list;
+	}
+	var_list = var_list->next;
+    }
+    return NULL;
+}
+
+flexpath_var *
+find_fp_attr(flexpath_var * var_list, const char * varname)
+{
+    while (var_list) {
+	if (var_list->is_attr && !strcmp(varname, var_list->varname)) {
 	    return var_list;
 	}
 	var_list = var_list->next;
@@ -1017,7 +1042,7 @@ need_writer(
 }
 
 flexpath_var*
-setup_flexpath_vars(FMField *f, int *num)
+setup_flexpath_vars(FMField *f, int *num, int nattrs)
 {
     flexpath_var *vars = NULL;
     int var_count = 0;
@@ -1027,6 +1052,11 @@ setup_flexpath_vars(FMField *f, int *num)
 	flexpath_var *curr_var = new_flexpath_var(unmangle,
 						  var_count,
 						  f->field_size);
+	if (var_count < nattrs) {
+	    curr_var->is_attr = 1;
+	} else {
+	    curr_var->id -= nattrs;
+	}
 	curr_var->num_chunks = 1;
 	curr_var->chunks =  malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
 	memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
@@ -1370,9 +1400,11 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     int writer_rank;
     int timestep;
     int only_scalars = 0;
+    int nattrs = 0;
     get_int_attr(attrs, RANK_ATOM, &writer_rank);
     get_int_attr(attrs, TIMESTEP_ATOM, &timestep);
     get_int_attr(attrs, SCALAR_ATOM, &only_scalars);
+    get_int_attr(attrs, NATTRS, &nattrs);
     /* fprintf(stderr, "\treader rank:%d:got data from writer:%d:step:%d\n", */
     /* 	    fp->rank, writer_rank, fp->mystep); */
     FMContext context = CMget_FMcontext(cm);
@@ -1391,21 +1423,28 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         pthread_mutex_lock(&(fp->queue_mutex));
         create_flexpath_var_for_timestep(fp, timestep);
         timestep_separated_lists * ts_var_list = find_var_list(fp, timestep);
-	ts_var_list->var_list = setup_flexpath_vars(f, &var_count);
+	ts_var_list->var_list = setup_flexpath_vars(f, &var_count, nattrs);
         pthread_mutex_unlock(&(fp->queue_mutex));
 
 	adiosfile->var_namelist = malloc(var_count * sizeof(char *));
+	adiosfile->attr_namelist = malloc(nattrs * sizeof(char *));
 	int i = 0;
 	while (f->field_name != NULL) {
 	    char *unmangle = flexpath_unmangle(f->field_name);
-	    if (strncmp(unmangle, "FPDIM", 5)) {
-		adiosfile->var_namelist[i++] = unmangle;
+	    if (i < nattrs) {
+		adiosfile->attr_namelist[i++] = unmangle;
 	    } else {
-		free(unmangle);
+		if (strncmp(unmangle, "FPDIM", 5)) {
+		    adiosfile->var_namelist[i - nattrs] = unmangle;
+		    i++;
+		} else {
+		    free(unmangle);
+		}
 	    }
 	    f++;
 	}
-	adiosfile->nvars = var_count;
+	adiosfile->nvars = var_count - nattrs;
+	adiosfile->nattrs = nattrs;
 	fp->num_vars = var_count;
     }
 
@@ -1425,7 +1464,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
             create_flexpath_var_for_timestep(fp, timestep);
             ts_var_list = find_var_list(fp, timestep);
         }
-	flexpath_var * var = find_fp_var(ts_var_list->var_list, unmangle);
+	flexpath_var * var = find_any_var(ts_var_list->var_list, unmangle);
         pthread_mutex_unlock(&(fp->queue_mutex));
         free(unmangle);
 
@@ -1556,10 +1595,17 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	if (num_dims == 0) { // only worry about scalars
 	    flexpath_var_chunk *chunk = &var->chunks[0];
 	    if (!chunk->has_data) {
-		void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
-		chunk->data = malloc(f->field_size);
-		memcpy(chunk->data, tmp_data, f->field_size);
-		chunk->has_data = 1;
+		if (var->type != adios_string) {
+		    void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+		    chunk->data = malloc(f->field_size);
+		    memcpy(chunk->data, tmp_data, f->field_size);
+		    chunk->has_data = 1;
+		} else {
+		    void *xmit_str = get_FMPtrField_by_name(f, f->field_name, base_data, /*encoded (raw)*/1);
+		    chunk->data = strdup(xmit_str);
+		    chunk->has_data = 1;
+		}
+
 	    }
 	}
         //Clean up the temporary memory
@@ -1620,6 +1666,7 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
     RANK_ATOM = attr_atom_from_string(FP_RANK_ATTR_NAME);
     TIMESTEP_ATOM = attr_atom_from_string(FP_TIMESTEP);
     SCALAR_ATOM = attr_atom_from_string(FP_ONLY_SCALARS);
+    NATTRS = attr_atom_from_string(FP_NATTRS);
     CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
 
     fp_read_data = malloc(sizeof(flexpath_read_data));
@@ -1887,14 +1934,6 @@ adios_read_flexpath_open(const char * fname,
     
     fp->data_read = 0;
 
-
-    fp->data_read = 0;
-    // this has to change. Writer needs to have some way of
-    // taking the attributes out of the xml document
-    // and sending them over ffs encoded. Not yet implemented.
-    // the rest of this info for adiosfile gets filled in raw_handler.
-    adiosfile->nattrs = 0;
-    adiosfile->attr_namelist = NULL;
     // first step is at least one, otherwise raw_handler will not execute.
     // in reality, writer might be further along, so we might have to make
     // the writer explitly send across messages each time it calls close, to
@@ -2161,9 +2200,9 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
     flexpath_var *fpvar = curr_var_list->var_list;
 
-    //fp_verbose(fp, "entering schedule_read_byid, varid %d\n", varid);
+    fp_verbose(fp, "entering schedule_read_byid, varid %d\n", varid);
     while (fpvar) {
-        if (fpvar->id == varid)
+        if ((!fpvar->is_attr) && (fpvar->id == varid))
         	break;
         else
 	    fpvar=fpvar->next;
@@ -2324,18 +2363,26 @@ adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
 }
 
 int
-adios_read_flexpath_get_attr (int *gp, const char *attrname,
+adios_read_flexpath_get_attr (const ADIOS_FILE *adiosfile, const char *attrname,
                                  enum ADIOS_DATATYPES *type,
                                  int *size, void **data)
 {
-    //log_debug( "debug: adios_read_flexpath_get_attr\n");
-    // TODO: borrowed from dimes
-    adios_error(err_invalid_read_method,
-		"adios_read_flexpath_get_attr is not implemented.");
-    *size = 0;
-    *type = adios_unknown;
-    *data = 0;
-    return adios_errno;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
+
+    flexpath_var *fpvar = find_fp_attr(curr_var_list->var_list, attrname);
+
+    if (!fpvar) {
+        adios_error(err_invalid_attrid,
+		    "Invalid attribute id: %s\n",
+		   attrname);
+        return err_invalid_attrid;
+    }
+
+    *type = fpvar->type;
+    *size = fpvar->type_size;
+    *data = fpvar->chunks[0].data;
+    return 0;
 }
 
 int
@@ -2343,14 +2390,17 @@ adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 				   enum ADIOS_DATATYPES *type,
 				   int *size, void **data)
 {
-//    log_debug( "debug: adios_read_flexpath_get_attr_byid\n");
-    // TODO: borrowed from dimes
-    adios_error(err_invalid_read_method,
-		"adios_read_flexpath_get_attr_byid is not implemented.");
-    *size = 0;
-    *type = adios_unknown;
-    *data = 0;
-    return adios_errno;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    if (attrid >= 0 && attrid < adiosfile->nattrs) {
+	int ret = adios_read_flexpath_get_attr(adiosfile, adiosfile->attr_namelist[attrid],
+					       type, size, data);
+	//fp_verbose(fp, "leaving flexpath_inq_attr_byid\n");
+	return ret;
+    }
+    else {
+        adios_error(err_invalid_attrid, "FLEXPATH method: Cannot find attr %d\n", attrid);
+        return adios_errno;
+    }
 }
 
 ADIOS_VARINFO*
