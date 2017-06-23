@@ -33,3 +33,7 @@ set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/
 # LZ4 plugin:
 set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_lz4_write.c)
 set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_lz4_read.c)
+
+# Blosc plugin:
+set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_blosc_write.c)
+set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_blosc_read.c)

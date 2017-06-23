@@ -291,6 +291,12 @@
 /* Define to 1 if you have the <lz4.h> header file. */
 #cmakedefine HAVE_LZ4_H 1
 
+/* Define if you have BLOSC. */
+#cmakedefine HAVE_BLOSC 1
+
+/* Define to 1 if you have the <blosc.h> header file. */
+#cmakedefine HAVE_BLOSC_H 1
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
 
