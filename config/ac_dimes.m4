@@ -23,8 +23,10 @@ AM_CONDITIONAL(HAVE_DIMES,true)
 AC_ARG_WITH(dimes,
         [AS_HELP_STRING([--with-dimes=DIR],
            [Build the DIMES transport method. Point to the DIMES installation.])],
-        [DIMES_LDFLAGS="-L$withval/lib";
-         DIMES_CPPFLAGS="-I$withval/include";],
+        [DIMES_LIBS="-L$withval/lib -ldspaces -ldscommon -ldart";
+         DIMES_CPPFLAGS="-I$withval/include";
+         DSPACES_CONFIG="$withval/bin/dspaces_config";
+        ],
         [with_dimes=check])
 
 dnl If --without-dimes was given set HAVE_DIMES to false and do nothing more
@@ -69,32 +71,29 @@ else
             DIMES_LIBDIR="${DIMES}/lib"
     fi
 
-    dnl Add "-I" to DIMES_INCDIR.
-    if test -n "${DIMES_INCDIR}"; then
-            DIMES_CPPFLAGS="-I${DIMES_INCDIR}"
+	dnl 1.6.2 has a config file
+    if test -x "${DSPACES_CONFIG}"; then
+        DIMES_LIBS=$(${DSPACES_CONFIG} -l)
+        DIMES_CPPFLAGS=$(${DSPACES_CONFIG} -c)
     else
-            ac_dimes_ok=no
-    fi
 
-    dnl Add "-L" to DIMES_LIBDIR.
-    if test -n "${DIMES_LIBDIR}"; then
-            DIMES_LDFLAGS="-L${DIMES_LIBDIR}"
-    else
-            ac_dimes_ok=no
-    fi
+	    dnl Add "-I" to DIMES_INCDIR.
+	    if test -n "${DIMES_INCDIR}"; then
+	            DIMES_CPPFLAGS="-I${DIMES_INCDIR}"
+	    fi
+
+	    dnl Add "-L" to DIMES_LIBDIR.
+	    if test -n "${DIMES_LIBDIR}"; then
+	            DIMES_LDFLAGS="-L${DIMES_LIBDIR}"
+   	 	fi
+	fi
 
     save_CC="$CC"
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    if test "x${ac_portals_lib_ok}" == "xyes"; then 
-        dnl LIBS="$LIBS -ldart2 -lspaces"
-	echo "DIMES currently NOT supported for Cray Portals!"
-	AM_CONDITIONAL(HAVE_DIMES, false)
-    else
-        LIBS="-ldspaces -ldscommon -ldart $LIBS"
-    fi
-    LDFLAGS="$LDFLAGS $DIMES_LDFLAGS"
+    dnl LDFLAGS="$LDFLAGS $DIMES_LDFLAGS"
+    LIBS="$DIMES_LIBS $LIBS"
     CPPFLAGS="$CPPFLAGS $DIMES_CPPFLAGS"
     CC="$MPICC"
     
@@ -113,8 +112,7 @@ else
 	    dnl elif test "x${ac_pami_lib_ok}" == "xyes"; then
            AC_TRY_LINK([#include "dimes_interface.h"],
                     [int err; dimes_put_sync_all();],
-                    [AC_MSG_RESULT(yes)
-                     DIMES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AC_MSG_RESULT(yes)],
                     [AC_MSG_RESULT(no)
                      AM_CONDITIONAL(HAVE_DIMES,false)])
         dnl else

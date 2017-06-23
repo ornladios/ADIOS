@@ -26,8 +26,10 @@ AM_CONDITIONAL(HAVE_DATASPACES,true)
 AC_ARG_WITH(dataspaces,
         [AS_HELP_STRING([--with-dataspaces=DIR],
            [Build the DATASPACES transport method. Point to the DATASPACES installation.])],
-        [DATASPACES_LDFLAGS="-L$withval/lib";
-         DATASPACES_CPPFLAGS="-I$withval/include";],
+        [DATASPACES_LIBS="-L$withval/lib -ldspaces -ldscommon -ldart";
+         DATASPACES_CPPFLAGS="-I$withval/include";
+         DSPACES_CONFIG="$withval/bin/dspaces_config";
+        ],
         [with_dataspaces=check])
 
 dnl If --without-dataspaces was given set HAVE_DATASPACES to false and do nothing more
@@ -72,36 +74,29 @@ else
             DATASPACES_LIBDIR="${DATASPACES}/lib"
     fi
 
-    dnl Add "-I" to DATASPACES_INCDIR.
-    if test -n "${DATASPACES_INCDIR}"; then
-            DATASPACES_CPPFLAGS="-I${DATASPACES_INCDIR}"
+    dnl 1.6.2 has a config file
+    if test -x "${DSPACES_CONFIG}"; then
+        DATASPACES_LIBS=$(${DSPACES_CONFIG} -l)
+        DATASPACES_CPPFLAGS=$(${DSPACES_CONFIG} -c)
     else
-            ac_dataspaces_ok=no
-    fi
 
-    dnl Add "-L" to DATASPACES_LIBDIR.
-    if test -n "${DATASPACES_LIBDIR}"; then
-            DATASPACES_LDFLAGS="-L${DATASPACES_LIBDIR}"
-    else
-            ac_dataspaces_ok=no
+        dnl Add "-I" to DATASPACES_INCDIR.
+        if test -n "${DATASPACES_INCDIR}"; then
+                DATASPACES_CPPFLAGS="-I${DATASPACES_INCDIR}"
+        fi
+
+        dnl Add "-L" to DATASPACES_LIBDIR.
+        if test -n "${DATASPACES_LIBDIR}"; then
+                DATASPACES_LIBS="-L${DATASPACES_LIBDIR} -ldspaces -ldscommon -ldart"
+        fi
     fi
 
     save_CC="$CC"
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    dnl if test "x${ac_infiniband_lib_ok}" == "xyes"; then 
-    dnl     dnl LIBS="$LIBS -ldart -ldataspaces"
-    dnl     LIBS="$LIBS -ldspaces -ldscommon -ldart"
-    dnl elif test "x${ac_portals_lib_ok}" == "xyes"; then 
-    dnl     LIBS="$LIBS -ldart2 -lspaces"
-    dnl elif test "x${ac_dmcf_lib_ok}" == "xyes"; then
-    dnl     LIBS="$LIBS -ldspaces -ldscommon -ldart"
-    dnl else
-    dnl     LIBS="$LIBS -ldspaces -ldscommon -ldart"
-    dnl fi
-    LIBS="-ldspaces -ldscommon -ldart $LIBS"
-    LDFLAGS="$LDFLAGS $DATASPACES_LDFLAGS"
+    dnl LDFLAGS="$LDFLAGS $DATASPACES_LDFLAGS"
+    LIBS="$DATASPACES_LIBS $LIBS"
     CPPFLAGS="$CPPFLAGS $DATASPACES_CPPFLAGS"
     CC="$MPICC"
     
@@ -117,14 +112,13 @@ else
         dnl if test "x${ac_portals_lib_ok}" == "xyes"; then 
         dnl elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
         dnl elif test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
-	    dnl elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
-	    dnl elif test "x${ac_pami_lib_ok}" == "xyes"; then
+        dnl elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
+        dnl elif test "x${ac_pami_lib_ok}" == "xyes"; then
         dnl else
         dnl fi
             AC_TRY_LINK([#include "dataspaces.h"],
                     [int err; err = dspaces_init(1,1,0,"");],
-                    [AC_MSG_RESULT(yes)
-                     DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AC_MSG_RESULT(yes)],
                     [AC_MSG_RESULT(no)
                      AM_CONDITIONAL(HAVE_DATASPACES,false)])
     fi
