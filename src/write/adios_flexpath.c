@@ -106,7 +106,7 @@ typedef struct _flexpath_fm_structure {
     int size;
     unsigned char *buffer;
     FMFormat ioFormat;
-    attr_list attrList;	
+    int nattrs;
     LIST_HEAD(tableHead, _flexpath_name_table) nameList;
     LIST_HEAD(dims, _flexpath_dim_names) dimList;
 } FlexpathFMStructure;
@@ -181,6 +181,7 @@ static atom_t TIMESTEP_ATOM = -1;
 static atom_t SCALAR_ATOM = -1;
 static atom_t CM_TRANSPORT = -1;
 static atom_t QUEUE_SIZE = -1;
+static atom_t NATTRS = -1;
 
 // used for global communication and data structures
 FlexpathWriteData flexpathWriteData;
@@ -819,6 +820,7 @@ set_format(struct adios_group_struct *t,
     int fieldNo = 0;
     int altvarcount = 0;
     int i;
+    currentFm->nattrs = 0;
 
     struct adios_attribute_struct *attr;
     for (attr = t->attributes; attr != NULL; attr = attr->next, fieldNo++) {
@@ -842,11 +844,13 @@ set_format(struct adios_group_struct *t,
         }
 	field_list = (FMFieldList) realloc(field_list, sizeof(FMField) * (fieldNo + 2));
 
-	fp_verbose(fileData, "field: %s, %s, %d, %d\n", 
-		     field_list[fieldNo].field_name, 
-		     field_list[fieldNo].field_type,
-		     field_list[fieldNo].field_size,
-		     field_list[fieldNo].field_offset); 
+	fp_verbose(fileData, "Attribute %d -> field: %s, %s, %d, %d\n", 
+		   currentFm->nattrs,
+		   field_list[fieldNo].field_name, 
+		   field_list[fieldNo].field_type,
+		   field_list[fieldNo].field_size,
+		   field_list[fieldNo].field_offset); 
+	currentFm->nattrs++;
     }
 
     // for each type look through all the fields
@@ -1118,6 +1122,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     RANK_ATOM = attr_atom_from_string(FP_RANK_ATTR_NAME);
     TIMESTEP_ATOM = attr_atom_from_string(FP_TIMESTEP);
     SCALAR_ATOM = attr_atom_from_string(FP_ONLY_SCALARS);
+    NATTRS = attr_atom_from_string(FP_NATTRS);
     CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
     QUEUE_SIZE = attr_atom_from_string("queue_size");
 
@@ -1612,6 +1617,31 @@ free_data_buffer(void * event_data, void * client_data)
     free(event_data);
 }
 
+void
+set_attributes_in_buffer(FlexpathWriteFileData *fileData, struct adios_group_struct *group, char *buffer)
+{
+    struct adios_attribute_struct *attr;
+    FlexpathFMStructure* fm = fileData->fm;
+    FMFieldList flist = fm->format[0].field_list;
+    for (attr = group->attributes; attr != NULL; attr = attr->next) {
+	FMField *field = NULL;
+	char *fullname = append_path_name(attr->path, attr->name);
+	char *mangle_name = flexpath_mangle(fullname);
+	field = internal_find_field(mangle_name, flist);
+
+	if (field != NULL) {
+	    void *data = attr->value;
+	    if (attr->type == adios_string) {
+		char *tmpstr = strdup((char*)data);
+		if (!set_FMPtrField_by_name(flist, mangle_name, buffer, tmpstr)) 
+		    fp_verbose(fileData, "Set fmprtfield by name failed, name %s\n", mangle_name);
+	    } else {
+		memcpy(&buffer[field->field_offset], data, field->field_size);
+	    }
+	}
+    }
+}
+
 /*Flexpath_close:
  
     In this function we send out the global metadata and the scalars to our 
@@ -1636,6 +1666,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     //Timestep attr needed for raw handler on the reader side to determine which timestep the piece of data is 
     //refering too.
     add_int_attr(attrs, RANK_ATOM, fileData->rank);   
+    add_int_attr(attrs, NATTRS, fileData->fm->nattrs);
     set_int_attr(attrs, TIMESTEP_ATOM, fileData->writerStep);
 
     //We create two attr_lists because we reference count them underneath and the two messages that we
@@ -1650,6 +1681,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     gp->group_name = strdup(method->group->name);
     gp->process_id = fileData->rank;
     gp->step = fileData->writerStep;
+
+    set_attributes_in_buffer(fileData, method->group, fileData->fm->buffer);
 
     if (fileData->globalCount == 0 ) {
 	gp->num_vars = 0;

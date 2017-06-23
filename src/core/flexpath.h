@@ -16,6 +16,7 @@
 #define FP_NDIMS_ATTR_NAME "fp_ndims"
 #define FP_TIMESTEP "fp_timestep"
 #define FP_ONLY_SCALARS "fp_only_scalars"
+#define FP_NATTRS "fp_number_of_attrs"
 
 #define CLOSE_MSG 0
 #define OPEN_MSG 1
