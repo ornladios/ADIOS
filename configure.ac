@@ -139,6 +139,13 @@ else
     AM_CONDITIONAL(BUILD_MXML,false)
 fi
 
+AC_MSG_NOTICE([PTHREAD_LIBS=${PTHREAD_LIBS}])
+if test ! -z "${PTHREAD_LIBS}"; then
+    LIBS="${PTHREAD_LIBS} ${LIBS}"
+fi
+if test ! -z "${PTHREAD_CFLAGS}"; then
+    CFLAGS="$CFLAGS ${PTHREAD_CFLAGS}"
+fi
 
 # Make sure we find Python2
 m4_define_default([_AM_PYTHON_INTERPRETER_LIST],

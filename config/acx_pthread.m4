@@ -246,6 +246,7 @@ fi
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(PTHREAD_CFLAGS)
 AC_SUBST(PTHREAD_CC)
+AC_MSG_NOTICE([PTHREAD_LIBS=${PTHREAD_LIBS}])
 
 if test x"$acx_pthread_ok" = xyes; then
     AC_DEFINE(HAVE_PTHREAD,1,[Define if you have POSIX threads])
