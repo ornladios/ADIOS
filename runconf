@@ -50,8 +50,8 @@ if [ `hostname | cut -c 1-4` == "rhea" ]; then
     #module unload netcdf
     #module load szip
     #module load bzip2
-    module load dataspaces/1.6.1
-    module load flexpath/stable
+    module load dataspaces/1.6.2
+    module load flexpath/1.12
     module load alacrity/1.0.0
     module load fastbit/svn
     export MPICC=mpicc
@@ -127,6 +127,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
     module unload craype-mc8 craype-mc12
     module load craype-istanbul
     module load dataspaces # /1.6.1
+    module load flexpath # /1.12
     unset EXTRA_CFLAGS
     unset EXTRA_LIBS
     unset LDFLAGS
@@ -141,8 +142,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
         export EXTRA_CFLAGS="-fast"
         #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$target-cpu"
-        module load flexpath/stable
-        #WITHFLEX="--with-flexpath=$FLEXPATH_DIR"
+        WITHFLEX="--with-flexpath=$FLEXPATH_DIR"
     elif [ "$TARGET" == "gnu" ]; then
         #export CC=gcc
         #export FC=gfortran
@@ -153,7 +153,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         # NSSI/FLEXPATH/FASTBIT needs libstdc++
         export LDFLAGS="" 
         module load fastbit
-        WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
+        WITHFLEX="--with-flexpath=$FLEXPATH_DIR"
+        #WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
         # FASTBIT needs libstdc++
         WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
         #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
@@ -267,7 +268,8 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       module unload netcdf-hdf5parallel
       module unload hdf5-parallel
       module swap craype-interlagos craype-istanbul
-      module load dataspaces/1.6.0
+      module load dataspaces # /1.6.2
+      module load flexpath # /1.12
       module load fastbit
       WITHFASTBIT=""
       WITHALACRITY=""
@@ -280,6 +282,7 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           export MPICXX=CC
           # FASTBIT, ALACRITY need -pgcpplibs flag 
           WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/xk6/pgi"
+          export FLEXPATH="--with-flexpath=$FLEXPATH_DIR"
           export LDFLAGS="-pgc++libs" 
           unset EXTRA_LIBS 
       elif [ "$TARGET" == "gnu" ]; then
@@ -295,7 +298,8 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           #WITHFASTBIT="--with-fastbit=${FASTBIT_DIR}"
           #export LDFLAGS="-static -static-libstdc++"
           #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
-          export FLEXPATH="--with-flexpath=/ccs/proj/e2e/chaos/titan/gnu"
+          #export FLEXPATH="--with-flexpath=/ccs/proj/e2e/chaos/titan/gnu"
+          export FLEXPATH="--with-flexpath=$FLEXPATH_DIR"
           #module swap gcc gcc/4.4.4
       elif [ "$TARGET" == "cray" ]; then
           export EXTRA_CFLAGS="-h gnu"
@@ -960,7 +964,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export FC=gfortran
 
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    ${SRCDIR}/configure --prefix=/opt/adios/1.12 \
+    ${SRCDIR}/configure --prefix=/opt/adios \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-timers \
