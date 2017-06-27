@@ -83,12 +83,14 @@ Linux clusters and Mac OSX.
 %
 %
 \section {What's new in version 1.12}
-This release adds support for {\bf LZ4} lossless compression and {\bf SZ} error bounded lossy compression, provides a more robust version of {\bf FlexPath staging method}, and a {\bf performance profiling API} that performance tools like TAU and Vampir can use to gather information about ADIOS operations. The \verb+POSIX+ and \verb+MPI_AGGREGATE+ methods support writing to a distributed file system (e.g. Summit burst buffer) and an application can read it back as long as every process reads back the data generated on the same compute node. 
+This release adds support for {\bf LZ4} lossless compression and {\bf SZ} error bounded lossy compression, provides a more robust version of {\bf FlexPath staging method}, and a {\bf performance profiling API} that performance tools like TAU and Vampir can use to gather information about ADIOS operations. The \verb+POSIX+ and \verb+MPI_AGGREGATE+ methods support writing to a distributed file system (e.g. Summit@OLCF machine's burst buffer) and an application can read it back as long as every process reads back the data generated on the same compute node. 
+
+There is a new chapter in this manual that discusses using ADIOS with the burst buffer of the Summit@OLCF and Cori@NERSC supercomputers, see Chapter \ref{chapter-bb} .
 
 \begin{itemize}
-\item SZ lossy compression, see  \url{ https://collab.cels.anl.gov/display/ESR/SZ} for details.
+\item SZ lossy compression, see  \url{https://collab.cels.anl.gov/display/ESR/SZ} for details.
 \item LZ4 compression was added by a user of ADIOS, René Widera from HZDR, Germany
-\item Profiling API was added by Kevin Huck of the TAU team \url{ix.cs.uoregon.edu/~khuck}. Tool developers need to use the \verb+adiost_callback_api.h+. A basic default tool implementation is in \newline \verb+src/core/adiost_default_tool.c+
+\item Profiling API was added by Kevin Huck of the TAU team \url{http://ix.cs.uoregon.edu/~khuck}. Tool developers need to use the \verb+adiost_callback_api.h+. A basic default tool implementation is in \newline \verb+src/core/adiost_default_tool.c+
 \item The FLEXPATH staging method from Georgia Tech has been redesigned for more robust and faster data staging. The new version of the chaos library is required \url{https://anon@svn.research.cc.gatech.edu/kaos/chaos_base/trunk}
 \item Transport parameter \verb+"local-fs=1"+ will allow the \verb+POSIX+ and \verb+MPI_AGGREGATE+ methods write the output to a distributed file system. The output path is the same on all compute nodes. Any reader process will see the global arrays (definition) but only can successfully read that portion of the data that was written on the same compute node. Think of checkpoint/restart as an example.
 \item Bug fixes for time-aggregation, reading >2GB blocks from file, CMake build, etc.

@@ -1,0 +1,31 @@
+\chapter{Using Burst Buffers for I/O}
+\label{chapter-bb}
+
+We have some experience on using the new Burst Buffer technology. In this chapter we give specific advice on how to use ADIOS to write and read temporary data in a burst buffer. Currently, ADIOS does not have any "write-through" solution to use the burst buffer as caching, while storing data on a permanent file system. Rather, ADIOS supports scenarios where one wants just to write and read temporary data fast. Draining data from the burst buffer to a permanent storage is the user's task at the moment. Future ADIOS releases will utilize upcoming draining technologies to do this automatically. 
+
+There are two different approaches to burst buffers. One is built of local fast storage on compute nodes, where one can only read data which is locally available. The other one is a parallel file system built of fast SSDs, that behave just like permanent parallel file systems with two limitations: total size, and the amount of data allowed to be written in a day. 
+
+\section{Summit@OLCF}
+
+The future Summit supercomputer at OLCF will have a local NVRAM on each compute node. One can use ADIOS in scenarios where temporary data is written and read back later. For example, simulations with forward then backward simulation phases can store the outputs in the burst buffer and then read back the data backwards. Or checkpoint data can be written (regularly) provided the job script drains the last checkpoint to the permanent storage. 
+
+Our performance testing revealed that the best use of the burst buffer on Summit is to just write from every MPI task directly. That is, use the ADIOS POSIX transport for output to produce one file per MPI task. A special parameter for this transport (and for the MPI_AGGREGATE transport) is required: \verb+local-fs=1+ will make sure that every compute node will create the output directory for the individual files. 
+
+
+\begin{lstlisting}[language=XML]
+<transport group="writer" method="POSIX">local-fs=1</transport>
+\end{lstlisting}
+
+At reading time, every process must only read data which had been written on the local node, otherwise zero-filled arrays will be returned. ADIOS can open the \vberb+.bp+ file, which resides on the compute node where \verb+rank 0+ of the MPI application was writing the data, and distribute the metadata to every process. Thus, every process sees the global array definition but that does not mean it can read any piece of data. ADIOS does not have currently any reading transport to read data across nodes. 
+
+
+\section{Cori@NERSC}
+
+The Cori system has a global parallel file system built from SSDs. Any compute node has access to the whole burst buffer and therefore it is somewhat easier to use it for storing temporary data. A user can copy the data much later after the job termination to the disk based parallel file system (but before the data is purged according to NERSC policy).
+
+Here is our recommendation on how to configure ADIOS for writing to the burst buffer from the Haswell based compute nodes as well as from the KNL based compute nodes.
+
+
+
+
+
