@@ -19,7 +19,7 @@ At reading time, every process must only read data which had been written on the
 
 Fig. ~\ref{fig:summit} shows a performance result on Summit measured in June 2017. We tried to access ADIOS write/read performance by using 1 GB data per process. We used different number of processes (1, 5, 10, and 20 processes) per node over different number of parallel nodes, ranging from 1 up to 32 nodes. Since Burst Buffers are node-local, we was able to achieve almost linear performance on writing and reading. Compared with reading, writing performance is about 3.3x times better. While writing I/O is supported by system caches, reading I/O is not. 
 
-\begin{figure}[]
+\begin{figure}[h]
 \center
 \subfloat[]{
 \includegraphics[width=0.45\textwidth]{figures/Adios_write_on_Summitdev.pdf}
@@ -37,9 +37,26 @@ Fig. ~\ref{fig:summit} shows a performance result on Summit measured in June 201
 
 Unlike the node-local NVMes on Summit, the Cori system has a centralized global parallel file system built from SSDs. Any compute node has access to the whole burst buffer and therefore it is somewhat easier to use it for storing temporary data. A user can copy the data much later after the job termination to the disk based parallel file system (but before the data is purged according to NERSC policy).
 
-Here is our recommendation on how to configure ADIOS for writing to the burst buffer from the Haswell based compute nodes as well as from the KNL based compute nodes.
+\begin{wrapfigure}{l}{0.5\textwidth}
+\center
+%\subfloat[]{
+\includegraphics[width=0.45\textwidth]{figures/Adios_write_on_Cori.pdf}
+%\label{fig:summit_write}
+%}
+\caption{ADIOS performance with Burst Buffer on Cori as of Jun 2017. Cori has a centralized global parallel file system, called Burst Buffer.}
+\label{fig:cori}
+\end{wrapfigure}
 
+Here is our recommendation on how to configure ADIOS for writing to the burst buffer on Cori.
+As shown in \ref{fig:cori}, we measured ADIOS writing performance on Cori's KNL nodes with POSIX method. Among different number of writers (4, 16, 64, and 256) per node, we achieved the best performance with 16 writers per node. Although there are many different factors to consider, we recommend, in general, not to use too many writers (e.g., 256 writers) or too small number of writers (e.g, 4) per node with Burst Buffer.
 
+If you have to use full cores on KNL nodes, you may consider to use ADIOS's \verb+MPI_AGGREGATE+ transport method. With \verb+MPI_AGGREGATE+, you can control the number of writing processes with \verb+num_aggregators+ option. Also, please use \verb+striping=0+ option to use with Burst Buffer on Cori.
+
+For an example, if you have 100 compute nodes and want maintain 16 writers per node to write to Burst Buffer on Cori, you can use the following XML code:
+\begin{lstlisting}[language=XML]
+<transport group="writer" 
+	method="MPI_AGGREGATE">num_aggregators=1600;striping=0;</transport>
+\end{lstlisting}
 
 
 
