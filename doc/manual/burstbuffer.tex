@@ -7,21 +7,35 @@ There are two different approaches to burst buffers. One is built of local fast 
 
 \section{Summit@OLCF}
 
-The future Summit supercomputer at OLCF will have a local NVRAM on each compute node. One can use ADIOS in scenarios where temporary data is written and read back later. For example, simulations with forward then backward simulation phases can store the outputs in the burst buffer and then read back the data backwards. Or checkpoint data can be written (regularly) provided the job script drains the last checkpoint to the permanent storage. 
+The future Summit supercomputer at OLCF will have a Non-Volatile Memory (NVMe) storage device on each compute node. One can use ADIOS in scenarios where temporary data is written and read back later. For example, simulations with forward then backward simulation phases can store the outputs in the burst buffer and then read back the data backwards. Another example is checkpointing. Checkpoint data can be written (regularly) provided the job script drains the last checkpoint to the permanent storage. 
 
-Our performance testing revealed that the best use of the burst buffer on Summit is to just write from every MPI task directly. That is, use the ADIOS POSIX transport for output to produce one file per MPI task. A special parameter for this transport (and for the MPI_AGGREGATE transport) is required: \verb+local-fs=1+ will make sure that every compute node will create the output directory for the individual files. 
-
+Our performance testing revealed that the best use of the burst buffer on Summit is to just write from every MPI task directly. That is, use the ADIOS POSIX transport for output to produce one file per MPI task. Unlike using a parallel file system (e.g., Lustre), files written to Burst Buffers on Summit will not be shareable between nodes. Files in Burst Buffers are only visible to the processes on the same node. For this reason, a special parameter for this transport (and for the \verb+MPI_AGGREGATE+ transport) is required: \verb+local-fs=1+ will make sure that every compute node will create the own output directory for the individual files. 
 
 \begin{lstlisting}[language=XML]
 <transport group="writer" method="POSIX">local-fs=1</transport>
 \end{lstlisting}
 
-At reading time, every process must only read data which had been written on the local node, otherwise zero-filled arrays will be returned. ADIOS can open the \vberb+.bp+ file, which resides on the compute node where \verb+rank 0+ of the MPI application was writing the data, and distribute the metadata to every process. Thus, every process sees the global array definition but that does not mean it can read any piece of data. ADIOS does not have currently any reading transport to read data across nodes. 
+At reading time, every process must only read data which had been written on the local node, otherwise zero-filled arrays will be returned. ADIOS can open the \verb+.bp+ file, which resides on the compute node where \verb+rank 0+ of the MPI application was writing the data, and distribute the metadata to every process. Thus, every process sees the global array definition but that does not mean it can read any piece of data. ADIOS does not have currently any reading transport to read data across nodes. 
 
+Fig. ~\ref{fig:summit} shows a performance result on Summit measured in June 2017. We tried to access ADIOS write/read performance by using 1 GB data per process. We used different number of processes (1, 5, 10, and 20 processes) per node over different number of parallel nodes, ranging from 1 up to 32 nodes. Since Burst Buffers are node-local, we was able to achieve almost linear performance on writing and reading. Compared with reading, writing performance is about 3.3x times better. While writing I/O is supported by system caches, reading I/O is not. 
+
+\begin{figure}[]
+\center
+\subfloat[]{
+\includegraphics[width=0.45\textwidth]{figures/Adios_write_on_Summitdev.pdf}
+\label{fig:summit_write}
+}
+\subfloat[]{
+\includegraphics[width=0.45\textwidth]{figures/Adios_read_on_Summitdev.pdf}
+\label{fig:summit_read}
+}
+\caption{ADIOS performance with Burst Buffer on Summit-dev (Summit's early access system) as of Jun 2017. Summit-dev has node-local NVMes.}
+\label{fig:summit}
+\end{figure}
 
 \section{Cori@NERSC}
 
-The Cori system has a global parallel file system built from SSDs. Any compute node has access to the whole burst buffer and therefore it is somewhat easier to use it for storing temporary data. A user can copy the data much later after the job termination to the disk based parallel file system (but before the data is purged according to NERSC policy).
+Unlike the node-local NVMes on Summit, the Cori system has a centralized global parallel file system built from SSDs. Any compute node has access to the whole burst buffer and therefore it is somewhat easier to use it for storing temporary data. A user can copy the data much later after the job termination to the disk based parallel file system (but before the data is purged according to NERSC policy).
 
 Here is our recommendation on how to configure ADIOS for writing to the burst buffer from the Haswell based compute nodes as well as from the KNL based compute nodes.
 
