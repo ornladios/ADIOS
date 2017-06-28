@@ -2968,7 +2968,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         {
                             if (compress_delta)
                             {
-                                decompress (delta, nelems, 1e-3,
+                                decompress (delta, nelems, compr_tolerance,
                                             delta_compr, compr_size);
                             }
 
