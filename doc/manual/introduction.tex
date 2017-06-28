@@ -88,7 +88,7 @@ This release adds support for {\bf LZ4} lossless compression and {\bf SZ} error 
 There is a new chapter in this manual that discusses using ADIOS with the burst buffer of the Summit@OLCF and Cori@NERSC supercomputers, see Chapter \ref{chapter-bb} .
 
 \begin{itemize}
-\item SZ lossy compression, see  \url{https://collab.cels.anl.gov/display/ESR/SZ} for details.
+\item SZ lossy compression, see  \url{https://collab.cels.anl.gov/display/ESR/SZ} for details. Options in ADIOS are discussed in Chapter~\ref{sec:transform_plugins}.
 \item LZ4 compression was added by a user of ADIOS, René Widera from HZDR, Germany
 \item Profiling API was added by Kevin Huck of the TAU team \url{http://ix.cs.uoregon.edu/~khuck}. Tool developers need to use the \verb+adiost_callback_api.h+. A basic default tool implementation is in \newline \verb+src/core/adiost_default_tool.c+
 \item The FLEXPATH staging method from Georgia Tech has been redesigned for more robust and faster data staging. The new version of the chaos library is required \url{https://anon@svn.research.cc.gatech.edu/kaos/chaos_base/trunk}

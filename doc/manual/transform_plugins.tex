@@ -29,6 +29,7 @@ Available data transformation methods (in XML transform tags in <var> elements):
     "isobar"   : ISOBAR compression
     "alacrity" : ALACRITY indexing
     "zfp"      : zfp compression
+    "sz"       : sz compression
     "lz4"      : LZ4 compression
 \end{lstlisting}
 
@@ -92,8 +93,26 @@ but exemplify the three possibilities below:
 Rate means a constant number of bits will be kept per zfp-block, where the rate is $ kept \; bits/ (64*blocksize)$ for 64-bit doubles.
 The precision value is an integer, which sets a maximum number of bit planes to output (up to a max of 64 for floating point doubles) -- 
 this is equivalent to setting a relative precision.
-Accuracy specifies an absolute error toleranece.
+Accuracy specifies an absolute error tolerance.
 
+The SZ transform provides two high-level error bound modes, absolute and relative error, which can be specified with a real number by using \texttt{absolute} (equivalently \texttt{abs} or \texttt{accuracy}) and \texttt{relative} (or \texttt{rel}) keyword, respectively. An example is as follows:
+\begin{lstlisting}[language=XML]
+<var name="/temperature"
+     ...
+     transform="sz:absolute=0.0001"
+     transform="sz:relative=0.0001"
+     />
+\end{lstlisting}
+
+ADIOS SZ transform also provides a way to use a SZ config file as follows:
+\begin{lstlisting}[language=XML]
+<var name="/temperature"
+     ...
+     transform="sz:init=sz.config"
+     />
+\end{lstlisting}
+
+For more details on options, please refer to SZ web page \url{https://collab.cels.anl.gov/display/ESR/SZ} and README in the release.
 
 \begin{table}%
 \begin{tabular}{l|l|l}
@@ -108,6 +127,8 @@ szip & lossless compression & requires the szip external library \\
 lz4 & lossless compression & requires the lz4 external library \\
 \hline
 zfp & lossy compression & included with ADIOS \\
+\hline
+sz & lossy compression & requires the SZ external library \\
 \hline
 isobar & lossless compression & requires the isobar external library \\
 \hline

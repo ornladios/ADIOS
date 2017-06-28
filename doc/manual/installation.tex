@@ -362,6 +362,13 @@ To enable szip lossless compression, configure ADIOS with the following flag:
 --with-szip=DIR    Where DIR is the installation
                    directory of szip
 \end{lstlisting}
+\item
+To enable SZ lossy compression, configure ADIOS with the following flag:
+\begin{lstlisting}
+--with-sz=DIR      Where DIR is the installation
+                   directory of SZ
+\end{lstlisting}
+Note: SZ is available at \url{https://collab.cels.anl.gov/display/ESR/SZ}.
 \end{itemize}
 
 See Section~\ref{sec:transform_plugins} for instructions on invoking data transforms once they have been properly configured,
@@ -533,6 +540,7 @@ configure to build ADIOS and its support utilities:
 --with-alacrity=DIR      Location of ALACRITY library
 --with-fastbit=DIR      Location of the FastBit library
 --with-lz4=DIR      Location of LZ4 library
+--with-sz=DIR      Location of SZ library
 --with-bgq 	Whether to enable BGQ method or not on Bluegene/Q
 \end{lstlisting}
 
