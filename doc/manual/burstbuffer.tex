@@ -17,7 +17,7 @@ Our performance testing revealed that the best use of the burst buffer on Summit
 
 At reading time, every process must only read data which had been written on the local node, otherwise zero-filled arrays will be returned. ADIOS can open the \verb+.bp+ file, which resides on the compute node where \verb+rank 0+ of the MPI application was writing the data, and distribute the metadata to every process. Thus, every process sees the global array definition but that does not mean it can read any piece of data. ADIOS does not have currently any reading transport to read data across nodes. 
 
-Fig. ~\ref{fig:summit} shows a performance result on Summit measured in June 2017. We tried to access ADIOS write/read performance by using 1 GB data per process. We used different number of processes (1, 5, 10, and 20 processes) per node over different number of parallel nodes, ranging from 1 up to 32 nodes. Since Burst Buffers are node-local, we was able to achieve almost linear performance on writing and reading. Compared with reading, writing performance is about 3.3x times better. While writing I/O is supported by system caches, reading I/O is not. 
+Fig. ~\ref{fig:summit} shows some performance result on Summit measured in June 2017. We tried to assess the ADIOS write/read performance by writing/reading 1 GB data per process. We used different number of processes (1, 5, 10, and 20 processes) per node over different number of parallel nodes, ranging from 1 up to 32 nodes. Since Burst Buffers are node-local, we were able to achieve almost linear performance on writing and reading.  Note that writing performance is about 3.3x times better than reading in these tests. Writing performance is even better than the theoretically best raw throughput to the NVMe. This is because writing I/O is accelerated by system cache, while reading I/O is not. 
 
 \begin{figure}[h]
 \center
@@ -35,7 +35,7 @@ Fig. ~\ref{fig:summit} shows a performance result on Summit measured in June 201
 
 \section{Cori@NERSC}
 
-Unlike the node-local NVMes on Summit, the Cori system has a centralized global parallel file system built from SSDs. Any compute node has access to the whole burst buffer and therefore it is somewhat easier to use it for storing temporary data. A user can copy the data much later after the job termination to the disk based parallel file system (but before the data is purged according to NERSC policy).
+Unlike node-local NVMes on Summit, the Cori system has a centralized global parallel file system built from SSDs. Any compute node has access to the whole burst buffer and therefore it is somewhat easier to use it for storing temporary data. A user can copy the data after job termination to the disk based parallel file system (but before the data is purged according to NERSC policy).
 
 \begin{wrapfigure}{l}{0.5\textwidth}
 \center
@@ -48,11 +48,11 @@ Unlike the node-local NVMes on Summit, the Cori system has a centralized global 
 \end{wrapfigure}
 
 Here is our recommendation on how to configure ADIOS for writing to the burst buffer on Cori.
-As shown in \ref{fig:cori}, we measured ADIOS writing performance on Cori's KNL nodes with POSIX method. Among different number of writers (4, 16, 64, and 256) per node, we achieved the best performance with 16 writers per node. Although there are many different factors to consider, we recommend, in general, not to use too many writers (e.g., 256 writers) or too small number of writers (e.g, 4) per node with Burst Buffer.
+As shown in \ref{fig:cori}, we measured ADIOS writing performance on Cori's KNL nodes with POSIX method. Across different number of writers (4, 16, 64, and 256) per compute node, we achieved the best performance with 16 writers per node. Although there are many different factors to consider, we recommend, in general, not to use too many writers (e.g., 256 writers) or too small number of writers (e.g, 4) per node with Burst Buffer.
 
-If you have to use full cores on KNL nodes, you may consider to use ADIOS's \verb+MPI_AGGREGATE+ transport method. With \verb+MPI_AGGREGATE+, you can control the number of writing processes with \verb+num_aggregators+ option. Also, please use \verb+striping=0+ option to use with Burst Buffer on Cori.
+Applications that use all cores on KNL nodes for MPI tasks, should consider using the \verb+MPI_AGGREGATE+ transport method. One can specify the number of processes that actually write to the file system with the \verb+num_aggregators+ option. Also use the \verb+striping=0+ option to use with Burst Buffer on Cori. 
 
-For an example, if you have 100 compute nodes and want maintain 16 writers per node to write to Burst Buffer on Cori, you can use the following XML code:
+For an example, if the application runs on 100 compute nodes, the following transport settings in the XML configuration file maintains 16 writers per node to write to the Burst Buffer:
 \begin{lstlisting}[language=XML]
 <transport group="writer" 
 	method="MPI_AGGREGATE">num_aggregators=1600;striping=0;</transport>
