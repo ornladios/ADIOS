@@ -80,11 +80,11 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     char *sz_configfile = NULL;
     struct adios_transform_spec_kv_pair* param;
     int i = 0;
-    //log_debug("param_count: %d\n", var->transform_spec->param_count);
+    if (adios_verbose_level>7) log_debug("param_count: %d\n", var->transform_spec->param_count);
     for (i=0; i<var->transform_spec->param_count; i++)
     {
         param = &(var->transform_spec->params[i]);
-        //log_debug("param: %s\n", param->key);
+        if (adios_verbose_level>7) log_debug("param: %s %s\n", param->key, param->value);
         if (strcmp(param->key, "init") == 0)
         {
             use_configfile = 1;
@@ -196,6 +196,16 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         {
             sz.segment_size = atoi(param->value);
         }
+        else if (!strcmp(param->key, "abs") || !strcmp(param->key, "absolute") || !strcmp(param->key, "accuracy"))
+        {
+            sz.errorBoundMode = ABS;
+            sz.absErrBound = atof(param->value);
+        }
+        else if (!strcmp(param->key, "rel") || !strcmp(param->key, "relative"))
+        {
+            sz.errorBoundMode = REL;
+            sz.relBoundRatio = atof(param->value);
+        }
         else
         {
             log_warn("An unknown SZ parameter: %s\n", param->key);
@@ -210,25 +220,26 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     }
     else
     {
-      /*
-      log_debug("%s: %d\n", "sz.max_quant_intervals", sz.max_quant_intervals);
-      log_debug("%s: %d\n", "sz.quantization_intervals", sz.quantization_intervals);
-      log_debug("%s: %d\n", "sz.dataEndianType", sz.dataEndianType);
-      log_debug("%s: %d\n", "sz.sysEndianType", sz.sysEndianType);
-      log_debug("%s: %d\n", "sz.sol_ID", sz.sol_ID);
-      log_debug("%s: %d\n", "sz.layers", sz.layers);
-      log_debug("%s: %g\n", "sz.sampleDistance", sz.sampleDistance);
-      log_debug("%s: %g\n", "sz.predThreshold", sz.predThreshold);
-      log_debug("%s: %d\n", "sz.offset", sz.offset);
-      log_debug("%s: %d\n", "sz.szMode", sz.szMode);
-      log_debug("%s: %d\n", "sz.gzipMode", sz.gzipMode);
-      log_debug("%s: %d\n", "sz.errorBoundMode", sz.errorBoundMode);
-      log_debug("%s: %g\n", "sz.absErrBound", sz.absErrBound);
-      log_debug("%s: %g\n", "sz.relBoundRatio", sz.relBoundRatio);
-      log_debug("%s: %g\n", "sz.pw_relBoundRatio", sz.pw_relBoundRatio);
-      log_debug("%s: %d\n", "sz.segment_size", sz.segment_size);
-      */
-      SZ_Init_Params(&sz);
+        if (adios_verbose_level>7)
+        {
+            log_debug("%s: %d\n", "sz.max_quant_intervals", sz.max_quant_intervals);
+            log_debug("%s: %d\n", "sz.quantization_intervals", sz.quantization_intervals);
+            log_debug("%s: %d\n", "sz.dataEndianType", sz.dataEndianType);
+            log_debug("%s: %d\n", "sz.sysEndianType", sz.sysEndianType);
+            log_debug("%s: %d\n", "sz.sol_ID", sz.sol_ID);
+            log_debug("%s: %d\n", "sz.layers", sz.layers);
+            log_debug("%s: %g\n", "sz.sampleDistance", sz.sampleDistance);
+            log_debug("%s: %g\n", "sz.predThreshold", sz.predThreshold);
+            log_debug("%s: %d\n", "sz.offset", sz.offset);
+            log_debug("%s: %d\n", "sz.szMode", sz.szMode);
+            log_debug("%s: %d\n", "sz.gzipMode", sz.gzipMode);
+            log_debug("%s: %d\n", "sz.errorBoundMode", sz.errorBoundMode);
+            log_debug("%s: %g\n", "sz.absErrBound", sz.absErrBound);
+            log_debug("%s: %g\n", "sz.relBoundRatio", sz.relBoundRatio);
+            log_debug("%s: %g\n", "sz.pw_relBoundRatio", sz.pw_relBoundRatio);
+            log_debug("%s: %d\n", "sz.segment_size", sz.segment_size);
+        }
+        SZ_Init_Params(&sz);
     }
 
     // Get type info
