@@ -228,7 +228,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             log_debug("%s: %d\n", "sz.sysEndianType", sz.sysEndianType);
             log_debug("%s: %d\n", "sz.sol_ID", sz.sol_ID);
             log_debug("%s: %d\n", "sz.layers", sz.layers);
-            log_debug("%s: %g\n", "sz.sampleDistance", sz.sampleDistance);
+            log_debug("%s: %d\n", "sz.sampleDistance", sz.sampleDistance);
             log_debug("%s: %g\n", "sz.predThreshold", sz.predThreshold);
             log_debug("%s: %d\n", "sz.offset", sz.offset);
             log_debug("%s: %d\n", "sz.szMode", sz.szMode);
