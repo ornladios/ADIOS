@@ -611,6 +611,63 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
 
 
 
+elif [ `hostname | cut -c 1-5` == "theta" ]; then
+
+    ##########
+    # THETA  #
+    ##########
+    TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
+    CPUARCH=`module list 2>&1 | grep -e craype-broadwell -e craype-haswell -e craype-mic-knl -e craype-ivybridge -e craype-sandybridge -e craype-intel-knc | sed -e "s/.*craype-//"`
+    echo "Configure on THETA for $TARGET env. for $CPUARCH CPU"
+    export MPICC=cc
+    export MPICXX=CC
+    export MPIFC=ftn
+    module unload darshan
+    module unload hdf5
+    module unload netcdf
+    module unload hdf5-parallel
+    module unload netcdf-hdf5parallel
+    WITHDART=""
+    if [ "$TARGET" == "pgi" ]; then
+        export CC=pgcc
+        export CXX=pgCC
+        export FC=pgf90
+        export LDFLAGS="-pgc++libs" 
+    elif [ "$TARGET" == "gnu" ]; then
+        export CC=gcc
+        export CXX=g++
+        export FC=gfortran
+        export LDFLAGS=""
+    elif [ "$TARGET" == "intel" ]; then
+        export CC=icc
+        export CXX=icpc
+        export FC=ifort
+        export LDFLAGS=""
+    elif [ "$TARGET" == "cray" ]; then
+        export EXTRA_CFLAGS="-h gnu"
+        export CC=cc
+        export CXX=CC
+        export FC=ftn
+        export LDFLAGS=""
+        export EXTRA_CFLAGS="-h gnu"
+    else
+        echo "TARGET must be one of [ pgi | gnu | intel | cray ]"
+        exit 1
+    fi
+
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
+    ${SRCDIR}/configure --prefix=/home/pnorbert/sw/adios/1.12/theta/$TARGET.$CPUARCH \
+        --disable-maintainer-mode \
+        --enable-dependency-tracking \
+        --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
+        --with-cray-pmi-libdir=/opt/cray/pmi/default/lib64 \
+        --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+        --without-infiniband \
+        --without-hdf5 --without-netcdf
+
+
 elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
     #####################
     #  MIRA   BlueGene  #
