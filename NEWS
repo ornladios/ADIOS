@@ -2,11 +2,14 @@
      - added LZ4 compression transform by René Widera HZDR, Germany
      - added SZ compression transform
      - Support for burst buffer on Summitdev@OLCF, Cori@NERSC
-     - New Flexpath staging method
-     - Performance tools interface API
-     - fix: cmake build broken since 1.11.0. Also include building the test suite
+       - see Chapter 16 in the manual
+     - New Flexpath staging method from Georgia Tech, faster and more reliable
+     - Performance tools interface API by Kevin Huck of the TAU team
+     - fix: cmake build broken since 1.11.0. Also include building 
+            the test suite
      - fix: for >2GB block reads
-     - fix: time-aggregation works with writing multiple files over the course of running 
+     - fix: time-aggregation works with writing multiple files each 
+            contaning multiple steps
      - fix: python interface
 
 1.11.1 Release January 2017
