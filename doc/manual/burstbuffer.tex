@@ -17,21 +17,25 @@ Our performance testing revealed that the best use of the burst buffer on Summit
 
 At reading time, every process must only read data which had been written on the local node, otherwise zero-filled arrays will be returned. ADIOS can open the \verb+.bp+ file, which resides on the compute node where \verb+rank 0+ of the MPI application was writing the data, and distribute the metadata to every process. Thus, every process sees the global array definition but that does not mean it can read any piece of data. ADIOS does not have currently any reading transport to read data across nodes. 
 
-Fig. ~\ref{fig:summit} shows some performance result on Summit measured in June 2017. We tried to assess the ADIOS write/read performance by writing/reading 1 GB data per process. We used different number of processes (1, 5, 10, and 20 processes) per node over different number of parallel nodes, ranging from 1 up to 32 nodes. Since Burst Buffers are node-local, we were able to achieve almost linear performance on writing and reading.  Note that writing performance is about 3.3x times better than reading in these tests. Writing performance is even better than the theoretically best raw throughput to the NVMe. This is because writing I/O is accelerated by system cache, while reading I/O is not. 
-
 \begin{figure}[h]
 \center
-\subfloat[]{
-\includegraphics[width=0.45\textwidth]{figures/Adios_write_on_Summitdev.pdf}
+\subfloat[ADIOS Write]{
+\includegraphics[width=0.33\textwidth]{figures/Adios_write_on_Summitdev.pdf}
 \label{fig:summit_write}
 }
-\subfloat[]{
-\includegraphics[width=0.45\textwidth]{figures/Adios_read_on_Summitdev.pdf}
+\subfloat[ADIOS Read]{
+\includegraphics[width=0.33\textwidth]{figures/Adios_read_on_Summitdev.pdf}
 \label{fig:summit_read}
 }
-\caption{ADIOS performance with Burst Buffer on Summit-dev (Summit's early access system) as of Jun 2017. Summit-dev has node-local NVMes.}
+\subfloat[Writing with no system cache]{
+\includegraphics[width=0.33\textwidth]{figures/Adios_write_nocache_on_Summitdev.pdf}
+\label{fig:summit_read}
+}
+\caption{ADIOS performance of writing (a) and reading with Burst Buffer on Summit-dev (Summit's early access system) as of Jun 2017. Summit-dev has node-local NVMes. Writing performance is even better than the theoretically best raw throughput to the NVMe. This is because writing I/O is accelerated by system cache, while reading I/O is not. Without system cache effect, we observed the performance in (c). Measured with raw POSIX APIs with O\_DIRECT option.}
 \label{fig:summit}
 \end{figure}
+
+Fig. ~\ref{fig:summit} shows some performance result on Summit measured in June 2017. We tried to assess the ADIOS write/read performance by writing/reading 1 GB data per process. We used different number of processes (1, 5, 10, and 20 processes) per node over different number of parallel nodes, ranging from 1 up to 32 nodes. Since Burst Buffers are node-local, we were able to achieve almost linear performance on writing and reading.  Note that writing performance is about 3.3x times better than reading in these tests. Writing performance is even better than the theoretically best raw throughput to the NVMe. This is because writing I/O is accelerated by system cache, while reading I/O is not. Without system cache effect, we could achieve maximally around 65 GB/s in similar setting. We measured by using raw POSIX APIs with \verb+O_DIRECT+ option.
 
 \section{Cori@NERSC}
 
