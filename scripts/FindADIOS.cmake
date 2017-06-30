@@ -181,7 +181,7 @@ if(ADIOS_FOUND)
     message(STATUS "ADIOS DIRS to look for libs: ${ADIOS_LIBRARY_DIRS}")
 
     # parse all -lname libraries and find an absolute path for them
-    string(REGEX MATCHALL " -l([A-Za-z_0-9\\.-]+)" _ADIOS_LIBS " ${ADIOS_LINKFLAGS}")
+    string(REGEX MATCHALL " -l([A-Za-z_0-9\\.\\-\\+]+)" _ADIOS_LIBS " ${ADIOS_LINKFLAGS}")
     foreach(_LIB ${_ADIOS_LIBS})
         string(REPLACE " -l" "" _LIB ${_LIB})
 
@@ -203,7 +203,7 @@ if(ADIOS_FOUND)
     endforeach()
 
     #add libraries which are already using cmake format
-    string(REGEX MATCHALL "/([A-Za-z_0-9/\\.-]+)\\.([a|so]+)" _ADIOS_LIBS_SUB "${ADIOS_LINKFLAGS}")
+    string(REGEX MATCHALL "/([A-Za-z_0-9/\\.\\-\\+]+)\\.([a|so]+)" _ADIOS_LIBS_SUB "${ADIOS_LINKFLAGS}")
     foreach(foo ${_ADIOS_LIBS_SUB})
     if (EXISTS ${foo})
         message("Appending: ${foo}")
