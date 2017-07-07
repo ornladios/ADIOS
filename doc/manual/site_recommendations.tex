@@ -1,11 +1,44 @@
-\chapter{Using Burst Buffers for I/O}
+\chapter{Site-specific Recommendations}
+\label{site-recommendations}
+
+This chapter provides recommendations for tuning ADIOS to obtain optimal performance on different supercomputing sites across the globe, such as the Titan leadership class supercomputer at Oak Ridge National Lab (ORNL), Cori at NERSC etc.
+It will include optimizations for writing and reading to/from parallel file systems as well as to burst buffers that form the intermediate I/O layer between compute nodes and file system.
+
+
+\section{Optimizing access to the parallel file system}
+In this section, we provide suggestions and best practices when I/O is performed directly to a parallel file system.
+
+\subsection{Titan}
+
+\subsection{KNL Partition on Cori at NERSC}
+The Cori supercomputer at NERSC has a partition consisting of KNL CPUs.
+The underlying parallel file system is Lustre comprised of 248 OSTs (\url{http://www.nersc.gov/users/storage-and-file-systems/file-systems/ngfdrawings}).
+
+Based on an initial set of experiments that tested write performance, it is advisable to have more writers per node for smaller allocations, and fewer writers per node for larger allocations.
+Figure~\ref{fig:XgcKnlCori} shows the performance of the XGC Fusion application on Cori for different allocation sizes setup with varying number of writers (aggregators) per node.
+It can also be seen from the figure that that higher data sizes per node (1GB/node and higher) result in better write throughput as compared with smaller data sizes per node (100 MB/node).
+
+For example, for an allocation consisting of 500 nodes, a total maximum of 4000 aggregators must be used (500 nodes * 8 writers per node) as shown below. 
+\begin{lstlisting}[language=XML]
+<transport group="writer"
+    method="MPI_AGGREGATE">num_aggregators=4000;</transport>
+\end{lstlisting}
+
+\begin{wrapfigure}{H}{0.5\textwidth}
+\center
+\includegraphics[width=0.45\textwidth]{figures/xgc_knl_cori.png}
+\caption{Performance of the XGC application on Cori using KNL CPUs writing directly to the Lustre parallel file system. Experiments utilized a maximum of 200 OSTs. Optimal performance is obtained by having more writers per node for smaller node counts, whereas fewer writers per node perform well for larger allocations.}
+\label{fig:XgcKnlCori}
+\end{wrapfigure}
+
+\section{Optimizing I/O through the use of Burst Buffers}
 \label{chapter-bb}
 
 We have some experience on using the new Burst Buffer technology. In this chapter we give specific advice on how to use ADIOS to write and read temporary data in a burst buffer. Currently, ADIOS does not have any "write-through" solution to use the burst buffer as caching, while storing data on a permanent file system. Rather, ADIOS supports scenarios where one wants just to write and read temporary data fast. Draining data from the burst buffer to a permanent storage is the user's task at the moment. Future ADIOS releases will utilize upcoming draining technologies to do this automatically. 
 
 There are two different approaches to burst buffers. One is built of local fast storage on compute nodes, where one can only read data which is locally available. The other one is a parallel file system built of fast SSDs, that behave just like permanent parallel file systems with two limitations: total size, and the amount of data allowed to be written in a day. 
 
-\section{Summit@OLCF}
+\subsection{Summit@OLCF}
 
 The future Summit supercomputer at OLCF will have a Non-Volatile Memory (NVMe) storage device on each compute node. One can use ADIOS in scenarios where temporary data is written and read back later. For example, simulations with forward then backward simulation phases can store the outputs in the burst buffer and then read back the data backwards. Another example is checkpointing. Checkpoint data can be written (regularly) provided the job script drains the last checkpoint to the permanent storage. 
 
@@ -37,7 +70,7 @@ At reading time, every process must only read data which had been written on the
 
 Fig. ~\ref{fig:summit} shows some performance result on Summit measured in June 2017. We tried to assess the ADIOS write/read performance by writing/reading 1 GB data per process. We used different number of processes (1, 5, 10, and 20 processes) per node over different number of parallel nodes, ranging from 1 up to 32 nodes. Since Burst Buffers are node-local, we were able to achieve almost linear performance on writing and reading.  Note that writing performance is about 3.3x times better than reading in these tests. Writing performance is even better than the theoretically best raw throughput to the NVMe. This is because writing I/O is accelerated by system cache, while reading I/O is not. Without the system caching effect we could achieve up to 65 GB/s in similar application set-ups. This latter test was measured by using raw POSIX APIs with \verb+O_DIRECT+ option, not ADIOS.
 
-\section{Cori@NERSC}
+\subsection{Cori@NERSC}
 
 Unlike node-local NVMes on Summit, the Cori system has a centralized global parallel file system built from SSDs. Any compute node has access to the whole burst buffer and therefore it is somewhat easier to use it for storing temporary data. A user can copy the data after job termination to the disk based parallel file system (but before the data is purged according to NERSC policy).
 
