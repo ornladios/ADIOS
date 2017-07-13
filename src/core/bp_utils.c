@@ -22,6 +22,13 @@
 #include "core/adios_endianness.h"
 #include "core/adios_logger.h"
 #include "core/futils.h"
+#include <limits.h> // ULLONG_MAX
+
+/* dimension value indicating a joined dimension for local arrays.
+ * = 18446744073709551614ULL
+ */
+const uint64_t JoinedDimValue = (ULLONG_MAX-1);
+
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 
@@ -1453,7 +1460,6 @@ int bp_parse_attrs (BP_FILE * fh)
     return 0;
 }
 
-static const uint64_t JOINEDDIM = 18446744073709551614ULL;
 static void process_joined_array(struct adios_index_var_struct_v1 *v)
 {
     if (v->characteristics[0].value)  // scalar
@@ -1465,7 +1471,7 @@ static void process_joined_array(struct adios_index_var_struct_v1 *v)
     int i, j;
     for (i = 0; i < ndim; i++)
     {
-        if (v->characteristics[0].dims.dims[i*3+1] == JOINEDDIM)
+        if (v->characteristics[0].dims.dims[i*3+1] == JoinedDimValue)
         {
             joindim = i;
             log_debug("Variable %s is a Joined Array in dimension %d\n", v->var_name, i);
@@ -1495,6 +1501,10 @@ static void process_joined_array(struct adios_index_var_struct_v1 *v)
             //log_debug("    Calculated offset = %" PRIu64 "\n", offset);
             v->characteristics[i].dims.dims[joindim*3+2] = offset;
             offset += v->characteristics[i].dims.dims[joindim*3];
+        }
+        // Update global dimensions of all characteristics for the last time_index now
+        for (j = startidx; j < i; ++j) {
+            v->characteristics[j].dims.dims[joindim*3+1] = offset;
         }
     }
 }

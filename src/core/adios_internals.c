@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <assert.h>
 
+
 #include "public/adios.h"
 #include "core/adios_internals.h"
 #include "core/adios_bp_v1.h"
@@ -62,6 +63,20 @@ void adios_file_struct_init (struct adios_file_struct * fd)
     fd->attrs_start = 0;
     fd->nattrs_written = 0;
     fd->comm = MPI_COMM_NULL;
+}
+
+int adios_int_is_joineddim (const char * temp) // 1 == yes, 0 == no
+{
+    if (!temp)
+        return 1;
+
+    if (!strcasecmp(temp, "joineddim") ||
+        !strcasecmp(temp, "joined")
+        )
+    {
+        return 1;
+    }
+    return 0;
 }
 
 int adios_int_is_var (const char * temp) // 1 == yes, 0 == no
@@ -408,7 +423,11 @@ int adios_parse_dimension (const char * dimension
     dim->global_dimension.rank = 0;
     dim->global_dimension.var  = NULL;
     dim->global_dimension.attr = NULL;
-    if (adios_int_is_var (global_dimension))
+    if (adios_int_is_joineddim (global_dimension))
+    {
+        dim->global_dimension.rank = (uint64_t) JoinedDimValue;
+    }
+    else if (adios_int_is_var (global_dimension))
     {
         struct adios_var_struct * var = 0;
         var = adios_find_var_by_name (g, global_dimension);

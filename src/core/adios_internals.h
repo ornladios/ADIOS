@@ -33,6 +33,12 @@
  */
 #define MAX_MPIWRITE_SIZE 2130706432    /* 2GB - 16MB */
 
+
+/* dimension value indicating a joined dimension for local arrays.
+ * = 18446744073709551614ULL
+ */
+extern const uint64_t JoinedDimValue; // defined in bp_utils.c so that it is part of read-only lib too
+
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
                        ,adios_mode_read   = 2
                        ,adios_mode_update = 3 // not supported yet
