@@ -24,7 +24,7 @@ AM_CONDITIONAL(HAVE_ISOBAR,true)
 AC_ARG_WITH(isobar,
         [  --with-isobar=DIR      Location of ISOBAR library],
         [ISOBAR_LDFLAGS="-L$withval/lib";
-         ISOBAR_LIBS="-lisobar -lz";
+         ISOBAR_LIBS="-lisobar";
          ISOBAR_CPPFLAGS="-I$withval/include";],
         [with_isobar=no])
 
@@ -37,7 +37,7 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lisobar -lz"
+    LIBS="$LIBS -lisobar"
     LDFLAGS="$LDFLAGS $ISOBAR_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $ISOBAR_CPPFLAGS"
 
@@ -50,7 +50,7 @@ else
     # Check for the ISOBAR library and headers
     dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
     dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-    dnl        [ISOBAR_LIBS="-lisobar -lz"],
+    dnl        [ISOBAR_LIBS="-lisobar"],
     dnl        [AM_CONDITIONAL(HAVE_ISOBAR,false)])
 
     LIBS="$save_LIBS"
