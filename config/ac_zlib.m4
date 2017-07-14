@@ -90,7 +90,7 @@ else
                  return (zerr != Z_OK);],
                 [AC_MSG_RESULT(yes)
                  AM_CONDITIONAL(HAVE_ZLIB,true)
-                ]
+                ],
                 [AM_CONDITIONAL(HAVE_ZLIB,false)
                  AC_MSG_RESULT(no)
                 ])
