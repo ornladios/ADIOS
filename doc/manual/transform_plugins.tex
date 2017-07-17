@@ -31,6 +31,7 @@ Available data transformation methods (in XML transform tags in <var> elements):
     "zfp"      : zfp compression
     "sz"       : sz compression
     "lz4"      : LZ4 compression
+    "blosc"    : Blosc compression
 \end{lstlisting}
 
 
@@ -77,6 +78,38 @@ The following example will enable fast LZ4 compression for data larger than 4 Ki
      transform="lz4:threshold=4096,lvl=9"
 />
 \end{lstlisting}
+
+
+\href{https://github.com/Blosc/c-blosc}{Blosc} is a wrapper library which allows to use several fast lossless compression algorithms with a unified interface.
+Supported compression libraries are zlib, lz4, lz4hc, snappy, zstd and blosclz.
+Blosc allows to run all algorithms threaded to increase throughput and with pre-conditioner to increase the compression ratio.
+Note that from tests on the particle-in-cell code \href{http://picongpu.hzdr.de}{PIConGPU}, for floating point types the pre-conditioner \verb+shuffle=bit+ strongly increases the compression ratio.
+For (very) small variables a threshold can be defined in order to avoid overheads, variables smaller than the threshold will be stored uncompressed.
+The following example will enable fast (level=1) Blosc compression if the temperature variable is larger than 4 KiB with four threads per writer with the algorithm zstd and the bitshuffle pre-conditioner.
+
+\begin{lstlisting}[language=XML]
+<var name="/temperature"
+     ...
+     transform="blosc:threshold=4096,shuffle=bit,lvl=1,threads=4,compressor=zstd"
+/>
+\end{lstlisting}
+
+
+valid options:
+\begin{itemize}
+  \item \verb+shuffle+: default = \verb+no+
+  \begin{itemize}
+    \item \verb+no+ disable pre-conditioner
+    \item \verb+bit+ \href{http://blosc.org/blog/new-bitshuffle-filter.html}{shuffle bits and bytes}
+    \item \verb+byte+ shuffle bytes
+  \end{itemize}
+  \item \verb+compressor+: if blosc is compiled with all compression libraries, default = \verb+memcpy+\newline
+        available compressors: \verb+zlib+, \verb+lz4+, \verb+lz4hc+, \verb+snappy+, \verb+zstd+, \verb+blosclz+, \verb+memcpy+ (plain data copy)
+  \item \verb+lvl+: valid range \verb+[1;9]+, lower number means faster compression but lower compression ratio, default = \verb+1+ (fast)
+  \item \verb+threads+: valid range \verb+[1;number of native threads]+, default = \verb+1+
+  \item \verb+threshold+: in byte, valid range \verb+[1;2^31]+, default = \verb+128+
+\end{itemize}
+
 
 The zfp transform accommodates the three high-level compression modes of the zfp API: rate, precision, and accuracy.
 In the compression settings string, users specify one the compression modes followed by an \texttt{=} and a numerical value.
@@ -126,6 +159,8 @@ bzip2 & lossless compression & requires the bzip2 external library \\
 szip & lossless compression & requires the szip external library \\
 \hline
 lz4 & lossless compression & requires the lz4 external library \\
+\hline
+blosc & lossless compression & requires the blosc external library \\
 \hline
 zfp & lossy compression & included with ADIOS \\
 \hline

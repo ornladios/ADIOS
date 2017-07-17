@@ -14,3 +14,4 @@ REGISTER_TRANSFORM_PLUGIN(alacrity, "alacrity", "ncsu-alacrity", "ALACRITY index
 REGISTER_TRANSFORM_PLUGIN(zfp, "zfp", "zfp", "zfp compression")
 REGISTER_TRANSFORM_PLUGIN(sz, "sz", "sz", "sz compression")
 REGISTER_TRANSFORM_PLUGIN(lz4, "lz4", "lz4", "lz4 compression")
+REGISTER_TRANSFORM_PLUGIN(blosc, "blosc", "blosc", "blosc compression")
