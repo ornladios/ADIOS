@@ -1338,6 +1338,9 @@ CHECK_FUNCTION_EXISTS(strncpy HAVE_STRNCPY)
 # Define to 1 if you have the `strdup' function.
 CHECK_FUNCTION_EXISTS(strdup HAVE_STRDUP)
 
+# Define to 1 if you have the `strndup' function.
+CHECK_FUNCTION_EXISTS(strndup HAVE_STRNDUP)
+
 # Define to 1 if you have the `snprintf' function.
 CHECK_FUNCTION_EXISTS(snprintf HAVE_SNPRINTF)
 
