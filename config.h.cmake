@@ -254,9 +254,10 @@
 /* Define to 1 if you have the <string.h> header file. */
 #cmakedefine HAVE_STRING_H 1
 
-/*  to 1 if you have the `strncpy' function. */
+/*  to 1 if you have the `strncpy` function. */
 #cmakedefine HAVE_STRNCPY 1
 #cmakedefine HAVE_STRDUP 1
+#cmakedefine HAVE_STRNDUP 1
 #cmakedefine HAVE_SNPRINTF 1
 #cmakedefine HAVE_VSNPRINTF 1
 #cmakedefine HAVE_LONG_LONG 1

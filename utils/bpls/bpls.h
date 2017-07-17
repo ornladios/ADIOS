@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "adios_read.h"
+#include "config.h"
 
 /* definitions for bpls.c */
 #define myfree(p) if (p) { free(p); p=NULL; }
