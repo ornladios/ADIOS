@@ -1029,6 +1029,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-zlib \
         --with-bzip2 \
         --with-sz=/opt/SZ \
+        --with-blosc=/opt/blosc \
         --without-szip \
         --with-isobar=/opt/isobar \
         --with-flexpath=/opt/chaos \
