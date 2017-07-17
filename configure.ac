@@ -88,6 +88,7 @@ AC_C_INLINE
 
 dnl Checks for string functions.
 AC_CHECK_FUNCS(strdup)
+AC_CHECK_FUNCS(strndup)
 AC_CHECK_FUNCS(snprintf vsnprintf)
 
 dnl Check for "long long" support...
