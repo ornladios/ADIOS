@@ -107,6 +107,7 @@ set (transforms_read_SOURCES ${transforms_read_HDRS}
                           transforms/adios_transform_zfp_read.c
                           transforms/adios_transform_sz_read.c
                           transforms/adios_transform_lz4_read.c
+                          transforms/adios_transform_blosc_read.c
                           core/adios_selection_util.c
                           core/transforms/plugindetect/detect_plugin_read_hook_decls.h
                           core/transforms/plugindetect/detect_plugin_read_hook_reg.h
@@ -128,6 +129,7 @@ set (transforms_write_SOURCES ${transforms_write_HDRS}
                            transforms/adios_transform_zfp_write.c
                            transforms/adios_transform_sz_write.c
                            transforms/adios_transform_lz4_write.c
+                           transforms/adios_transform_blosc_write.c
                            ${transforms_write_method_SOURCES})
 
 #######Query source files
