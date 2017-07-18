@@ -1,2 +1,2 @@
 from .adios_mpi import *
-__version__ = '1.11.1.post1'
+__version__ = '1.12.0'
