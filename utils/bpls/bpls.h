@@ -32,7 +32,7 @@ typedef int bool;
 
 void init_globals(void);
 void processDimSpecs(void);
-void parseDimSpec(char *str, int *dims);
+void parseDimSpec(char *str, int64_t *dims);
 int compile_regexp_masks(void);
 void printSettings(void);
 int  doList(const char *path);

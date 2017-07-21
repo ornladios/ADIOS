@@ -73,7 +73,8 @@ bool show_decomp;          // show decomposition of arrays
 // other global variables
 char *prgname; /* argv[0] */
 //long timefrom, timeto;
-int  istart[MAX_DIMS], icount[MAX_DIMS], ndimsspecified=0;
+int64_t  istart[MAX_DIMS], icount[MAX_DIMS]; // negative values are allowed
+int ndimsspecified=0;
 regex_t varregex[MAX_MASKS]; // compiled regular expressions of varmask
 regex_t grpregex;            // compiled regular expressions of grpmask
 int  ncols = 6; // how many values to print in one row (only for -p)
@@ -381,16 +382,24 @@ void init_globals(void) {
     printByteAsChar      = false;
     show_decomp          = false;
     for (i=0; i<MAX_DIMS; i++) {
-        istart[i]  = 0;
-        icount[i]  = -1;  // read full var by default
+        istart[i]  = 0LL;
+        icount[i]  = -1LL;  // read full var by default
     }
     ndimsspecified = 0;
 }
 
 
-#define PRINT_DIMS32(str, v, n, loopvar) printf("%s = { ", str); \
+#define PRINT_DIMS_INT(str, v, n, loopvar) printf("%s = { ", str); \
     for (loopvar=0; loopvar<n;loopvar++) printf("%d ", v[loopvar]);    \
+        printf("}")
+
+#define PRINT_DIMS_UINT64(str, v, n, loopvar) printf("%s = { ", str); \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%" PRIu64 " ", v[loopvar]);    \
 printf("}")
+
+#define PRINT_DIMS_INT64(str, v, n, loopvar) printf("%s = { ", str); \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%" PRId64 " ", v[loopvar]);    \
+        printf("}")
 
 void printSettings(void) {
     int i;
@@ -405,10 +414,10 @@ void printSettings(void) {
     printf("  output : %s\n", (outpath ? outpath : "stdout"));
 
     if (start != NULL) {
-        PRINT_DIMS32("  start", istart, ndimsspecified,i); printf("\n");
+        PRINT_DIMS_INT64("  start", istart, ndimsspecified,i); printf("\n");
     }
     if (count != NULL) {
-        PRINT_DIMS32("  count", icount, ndimsspecified,i); printf("\n");
+        PRINT_DIMS_INT64("  count", icount, ndimsspecified,i); printf("\n");
     }
 
     if (longopt)
@@ -457,10 +466,10 @@ void print_file_size(uint64_t size)
 }
 
 
-static inline int ndigits (int n) 
+static inline int ndigits (int64_t n)
 {
     static char digitstr[32];
-    return snprintf (digitstr, 32, "%d", n);
+    return snprintf (digitstr, 32, "%" PRId64, n);
 }
 
 
@@ -638,14 +647,14 @@ int doList_group (ADIOS_FILE *fp)
                             if (istart[0] >= 0)
                                 time_start = istart[0];
                             else
-                                time_start = vi->nsteps - 1 + istart[0];
+                                time_start = vi->nsteps - 1 + (int)istart[0];
                         }
 
                         if (count != NULL) {
                             if(icount[0] > 0)
-                                time_end = time_start + icount[0];
+                                time_end = time_start + (int)icount[0];
                             else
-                                time_end = vi->nsteps + icount[0] + 1;
+                                time_end = vi->nsteps + (int)icount[0] + 1;
                         }
 
                         if (time_start < 0 || time_start >= vi->nsteps) {
@@ -1162,9 +1171,6 @@ int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
     return 0;
 }
 
-#define PRINT_DIMS64(str, v, n, loopvar) printf("%s = { ", str); \
-    for (loopvar=0; loopvar<n;loopvar++) printf("%" PRIu64 " ", v[loopvar]);    \
-printf("}")
 /** Read data of a variable and print 
  * Return: 0: ok, != 0 on error
  */
@@ -1308,8 +1314,8 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
 
         if (verbose>2) {
             printf("adios_read_var name=%s ", name);
-            PRINT_DIMS64("  start", s, tdims, j); 
-            PRINT_DIMS64("  count", c, tdims, j); 
+            PRINT_DIMS_UINT64("  start", s, tdims, j);
+            PRINT_DIMS_UINT64("  count", c, tdims, j);
             printf("  read %d elems\n", actualreadn);
         }
 
@@ -1922,7 +1928,7 @@ void print_decomp(ADIOS_VARINFO *vi)
 // parse a string "0, 3; 027" into an integer array
 // of [0,3,27] 
 // exits if parsing failes
-void parseDimSpec(char *str, int *dims)
+void parseDimSpec(char *str, int64_t *dims)
 {
     char *token, *saveptr;
     char *s;  // copy of s; strtok modifies the string
@@ -1933,7 +1939,7 @@ void parseDimSpec(char *str, int *dims)
     while (token != NULL && i < MAX_DIMS) {
         //printf("\t|%s|", token);
         errno = 0;
-        dims[i] = strtol(token, (char **)NULL, 0);
+        dims[i] = (int64_t) strtoll(token, (char **)NULL, 0);
         if (errno) {
             fprintf(stderr, "Error: could not convert field into a value: %s from \"%s\"\n", token, str);
             exit(200);
