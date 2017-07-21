@@ -668,7 +668,7 @@ elif [ `hostname | cut -c 1-5` == "theta" ]; then
         --without-hdf5 --without-netcdf
 
 
-elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
+elif [ `hostname -f | cut -c 1-4` == "mira" -o `hostname -f | cut -c 1-5` == "cetus" ]; then
     #####################
     #  MIRA   BlueGene  #
     #####################
@@ -685,8 +685,9 @@ elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
     export FC=xlf90_r
     export CC=xlc_r
 
-    ${SRCDIR}/configure --prefix=/home/qliu/4se/ADIOS \
+    ${SRCDIR}/configure --prefix=/home/pnorbert/sw/adios/xl \
             --disable-maintainer-mode \
+            --disable-timers \
             --enable-dependency-tracking \
             --without-datatap --without-infiniband --with-bgq
 
