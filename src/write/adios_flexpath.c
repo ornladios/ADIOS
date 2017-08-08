@@ -1097,7 +1097,7 @@ fp_verbose_wrapper(char *format, ...)
     static int MPI_rank = -1;
     if (fp_verbose_set == -1) {
         fp_verbose_set = (getenv("FLEXPATH_VERBOSE") != NULL);
-        MPI_Comm_rank(MPI_COMM_WORLD, &MPI_rank);
+        MPI_rank = flexpathWriteData.rank;
     }
     if (fp_verbose_set) {
         va_list args;
@@ -1138,9 +1138,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
 	int listened = 0;
 	while (listened == 0) {
 	    if (CMlisten(flexpathWriteData.cm) == 0) {
-		int rank;
-		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-		fprintf(stderr, "error: writer %d:pid:%d unable to initialize connection manager. Trying again.\n", rank, (int)getpid());
+		fprintf(stderr, "error: writer pid:%d unable to initialize connection manager. Trying again.\n", (int)getpid());
 	    } else {
 		listened = 1;
 	    }
@@ -1250,15 +1248,15 @@ adios_flexpath_open(struct adios_file_struct *fd,
 
         CMCondition_wait(flexpathWriteData.cm, condition);
         /* recv_buff and fileData->numBridges have been filled in by the reader_register_handler */
-        MPI_Bcast(&sub->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&sub->total_num_readers, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(recv_buff, sub->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&sub->numBridges, 1, MPI_INT, 0, fileData->mpiComm);
+        MPI_Bcast(&sub->total_num_readers, 1, MPI_INT, 0, fileData->mpiComm);
+        MPI_Bcast(recv_buff, sub->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, fileData->mpiComm);
         unlink(writer_info_filename);
     } else {
-        MPI_Bcast(&sub->numBridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast(&sub->total_num_readers, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&sub->numBridges, 1, MPI_INT, 0, fileData->mpiComm);
+        MPI_Bcast(&sub->total_num_readers, 1, MPI_INT, 0, fileData->mpiComm);
         recv_buff = (char *)malloc(sub->numBridges * CONTACT_LENGTH * sizeof(char));
-        MPI_Bcast(recv_buff, sub->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Bcast(recv_buff, sub->numBridges * CONTACT_LENGTH, MPI_CHAR, 0, fileData->mpiComm);
     }
 
     // build a bridge per line

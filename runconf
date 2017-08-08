@@ -5,6 +5,11 @@
 #
 
 SRCDIR=`dirname ${BASH_SOURCE[0]}`
+BUILD_FULL=true
+if [ x"$1" == x"lean" ]; then
+    BUILD_FULL=false
+    echo "Build ADIOS without extra packages"
+fi
 
 if [ `hostname | cut -c 1-4` == "rhea" ]; then
 
@@ -31,29 +36,32 @@ if [ `hostname | cut -c 1-4` == "rhea" ]; then
     #module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
-    module load hdf5/1.8.11
-    SEQ_HDF5_DIR=$HDF5_DIR
-    SEQ_HDF5_CLIB=$HDF5_CLIB
-    module unload hdf5
-    module load hdf5-parallel/1.8.11
-    PAR_HDF5_DIR=$HDF5_DIR
-    PAR_HDF5_CLIB=$HDF5_CLIB
-    module unload hdf5
-    # Seq. and Parallel NetCDF 4 
-    module load netcdf/4.1.3
-    SEQ_NC_DIR=$NETCDF_DIR
-    SEQ_NC_CLIB=$NETCDF_CLIB
-    module unload netcdf
-    #module load netcdf/4.1.3_par
-    #PAR_NC_DIR=$NETCDF_DIR
-    #PAR_NC_CLIB=$NETCDF_CLIB
-    #module unload netcdf
-    #module load szip
-    #module load bzip2
-    module load dataspaces/1.6.2
-    module load flexpath/1.12
-    module load alacrity/1.0.0
-    module load fastbit/svn
+
+    if [ $BUILD_FULL == "true" ]; then
+        module load hdf5/1.8.11
+        SEQ_HDF5_DIR=$HDF5_DIR
+        SEQ_HDF5_CLIB=$HDF5_CLIB
+        module unload hdf5
+        module load hdf5-parallel/1.8.11
+        PAR_HDF5_DIR=$HDF5_DIR
+        PAR_HDF5_CLIB=$HDF5_CLIB
+        module unload hdf5
+        # Seq. and Parallel NetCDF 4 
+        module load netcdf/4.1.3
+        SEQ_NC_DIR=$NETCDF_DIR
+        SEQ_NC_CLIB=$NETCDF_CLIB
+        module unload netcdf
+        #module load netcdf/4.1.3_par
+        #PAR_NC_DIR=$NETCDF_DIR
+        #PAR_NC_CLIB=$NETCDF_CLIB
+        #module unload netcdf
+        #module load szip
+        #module load bzip2
+        module load dataspaces/1.6.2
+        module load flexpath/1.12
+        module load alacrity/1.0.0
+        module load fastbit/svn
+    fi
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -79,7 +87,8 @@ if [ `hostname | cut -c 1-4` == "rhea" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" 
-    $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/rhea.$TARGET \
+    if [ $BUILD_FULL == "true" ]; then
+        $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/rhea.$TARGET \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-research-transports \
@@ -102,7 +111,16 @@ if [ `hostname | cut -c 1-4` == "rhea" ]; then
         #--with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
         #--with-fgr=/ccs/proj/e2e/qliu/tap \
         #--with-glib=/ccs/proj/e2e/qliu/glib
-        #--with-szip=$SZIP_DIR \
+        #--with-szip=$SZIP_DIR
+
+    else
+        $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/rhea.$TARGET \
+        --disable-maintainer-mode \
+        --enable-dependency-tracking \
+        --with-lustre \
+        --disable-timers --disable-timer-events
+
+    fi
 
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
@@ -126,8 +144,15 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
     module unload craype-ivybridge craype-sandybridge craype-haswell 
     module unload craype-mc8 craype-mc12
     module load craype-istanbul
-    module load dataspaces # /1.6.1
-    module load flexpath # /1.12
+    if [ $BUILD_FULL == "true" ]; then
+        module load dataspaces # /1.6.1
+        module load flexpath # /1.12
+        # NOTE hdf5-parallel module does not work with C++ compiler
+        #module load hdf5-parallel
+        #module load netcdf-hdf5parallel
+        #module load szip
+        #module load papi
+    fi
     unset EXTRA_CFLAGS
     unset EXTRA_LIBS
     unset LDFLAGS
@@ -137,12 +162,14 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
     export FC=ftn
     export CXX=CC
     if [ "$TARGET" == "pgi" ]; then
-        # FASTBIT needs libstdc++ and -pgcpplibs flag
-        export LDFLAGS="-pgc++libs" 
-        #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
+        if [ $BUILD_FULL == "true" ]; then
+            # FASTBIT needs libstdc++ and -pgcpplibs flag
+            export LDFLAGS="-pgc++libs" 
+            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$target-cpu"
+            WITHFLEX="--with-flexpath=$FLEXPATH_DIR"
+            #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
+        fi
         export EXTRA_CFLAGS="-fast"
-        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$target-cpu"
-        WITHFLEX="--with-flexpath=$FLEXPATH_DIR"
     elif [ "$TARGET" == "gnu" ]; then
         #export CC=gcc
         #export FC=gfortran
@@ -152,54 +179,62 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export MPICXX=CC
         # NSSI/FLEXPATH/FASTBIT needs libstdc++
         export LDFLAGS="" 
-        module load fastbit
-        WITHFLEX="--with-flexpath=$FLEXPATH_DIR"
-        #WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
-        # FASTBIT needs libstdc++
-        WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
-        #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
         export EXTRA_CFLAGS="-Ofast"
-        #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+        if [ $BUILD_FULL == "true" ]; then
+            module load fastbit
+            WITHFLEX="--with-flexpath=$FLEXPATH_DIR"
+            #WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
+            # FASTBIT needs libstdc++
+            WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
+            #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
+            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+        fi
     elif [ "$TARGET" == "cray" ]; then
         export EXTRA_CFLAGS="-h gnu"
     fi
  
-    # NOTE hdf5-parallel module does not work with C++ compiler
-    #module load hdf5-parallel
-    #module load netcdf-hdf5parallel
-    module load szip
-    #module load papi
     # use the two lines below for openmpi
     #export CC=mpicc
     #export FC=mpif90
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
     export CFLAGS="-fPIC -g ${EXTRA_CFLAGS}" 
-    LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
-    --enable-dependency-tracking \
-    --disable-maintainer-mode \
-    --with-cray-pmi=/opt/cray/pmi/default \
-    --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
-    --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
-    --with-dataspaces=$DATASPACES_DIR \
-    --with-dimes=$DATASPACES_DIR \
-    --without-infiniband \
-    $WITHFLEX \
-    $WITHFASTBIT \
-    --with-lustre \
-    --disable-timers --disable-timer-events \
-    --with-zlib --with-bzip2 
+    if [ $BUILD_FULL == "true" ]; then
+        LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
+        --enable-dependency-tracking \
+        --disable-maintainer-mode \
+        --with-cray-pmi=/opt/cray/pmi/default \
+        --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+        --with-dataspaces=$DATASPACES_DIR \
+        --with-dimes=$DATASPACES_DIR \
+        --without-infiniband \
+        $WITHFLEX \
+        $WITHFASTBIT \
+        --with-lustre \
+        --disable-timers --disable-timer-events \
+        --with-zlib --with-bzip2 
 
-    #--enable-skel-timing
-    #--with-fgr=/ccs/proj/e2e/qliu/tap \
-    #--with-glib=/ccs/proj/e2e/qliu/glib \
-    #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
-    #--with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
-    #--with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
-    #--with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
-    #--with-dimes=/ccs/proj/e2e/pnorbert/spaces/$TARGET
-    #--with-nssi=/ccs/proj/e2e/pnorbert/nssi/xt5/$TARGET \
-    #--with-datatap=/ccs/home/zf2/work/pe.$TARGET \
-    #--with-datatap=/ccs/proj/e2e/pnorbert/datatap/xt5/$TARGET \
+        #--enable-skel-timing
+        #--with-fgr=/ccs/proj/e2e/qliu/tap \
+        #--with-glib=/ccs/proj/e2e/qliu/glib \
+        #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
+        #--with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
+        #--with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
+        #--with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
+        #--with-dimes=/ccs/proj/e2e/pnorbert/spaces/$TARGET
+        #--with-nssi=/ccs/proj/e2e/pnorbert/nssi/xt5/$TARGET \
+        #--with-datatap=/ccs/home/zf2/work/pe.$TARGET \
+        #--with-datatap=/ccs/proj/e2e/pnorbert/datatap/xt5/$TARGET \
+
+    else
+        LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
+        --enable-dependency-tracking \
+        --disable-maintainer-mode \
+        --with-lustre \
+        --disable-timers --disable-timer-events \
+        --without-infiniband 
+
+    fi
 
 
 
@@ -668,7 +703,7 @@ elif [ `hostname | cut -c 1-5` == "theta" ]; then
         --without-hdf5 --without-netcdf
 
 
-elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
+elif [ `hostname -f | cut -c 1-4` == "mira" -o `hostname -f | cut -c 1-5` == "cetus" ]; then
     #####################
     #  MIRA   BlueGene  #
     #####################
@@ -685,8 +720,9 @@ elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
     export FC=xlf90_r
     export CC=xlc_r
 
-    ${SRCDIR}/configure --prefix=/home/qliu/4se/ADIOS \
+    ${SRCDIR}/configure --prefix=/home/pnorbert/sw/adios/xl \
             --disable-maintainer-mode \
+            --disable-timers \
             --enable-dependency-tracking \
             --without-datatap --without-infiniband --with-bgq
 
@@ -1021,7 +1057,8 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export FC=gfortran
 
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    ${SRCDIR}/configure --prefix=/opt/adios \
+    if [ $BUILD_FULL == "true" ]; then
+        ${SRCDIR}/configure --prefix=/opt/adios \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-timers \
@@ -1038,7 +1075,16 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-alacrity=/opt/alacrity \
         --with-hdf5=/opt/hdf5-1.8.17 \
         --with-phdf5=/opt/hdf5-1.8.17-parallel \
-        --with-netcdf=/opt/netcdf-4.4.0 \
+        --with-netcdf=/opt/netcdf-4.4.0 
+
+    else
+        ${SRCDIR}/configure --prefix=/opt/adios \
+        --disable-maintainer-mode \
+        --enable-dependency-tracking \
+        --with-lustre \
+        --disable-timers --disable-timer-events
+
+    fi
 
 
 else

@@ -1861,9 +1861,9 @@ adios_read_flexpath_open(const char * fname,
 
         // broadcast writer contact info to all reader ranks
         fp_verbose(fp, "Broadcasting writer data to all ranks!\n");
-        MPI_Bcast(&fp->num_bridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&fp->num_bridges, 1, MPI_INT, 0, fp->comm);
         
-        MPI_Bcast(send_buffer, fp->num_bridges*CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Bcast(send_buffer, fp->num_bridges*CONTACT_LENGTH, MPI_CHAR, 0, fp->comm);
         
 	// prepare to send all ranks contact info to writer root
         reader_register_msg reader_register;
@@ -1893,16 +1893,16 @@ adios_read_flexpath_open(const char * fname,
         free_attr_list(writer_rank0_contact);
 
         //CMConnection_close(conn);
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(fp->comm);
     } else {
         /* not rank 0 */
         fp_verbose(fp, "About to run the normal setup for bridges before MPI_Gather operation!\n");
         char *this_side_contact_buffer;
         MPI_Gather(data_contact_info, CONTACT_LENGTH, MPI_CHAR, recvbuf,
                    CONTACT_LENGTH, MPI_CHAR, 0, fp->comm);
-        MPI_Bcast(&fp->num_bridges, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(&fp->num_bridges, 1, MPI_INT, 0, fp->comm);
         this_side_contact_buffer = malloc(fp->num_bridges*CONTACT_LENGTH);
-        MPI_Bcast(this_side_contact_buffer, fp->num_bridges*CONTACT_LENGTH, MPI_CHAR, 0, MPI_COMM_WORLD);
+        MPI_Bcast(this_side_contact_buffer, fp->num_bridges*CONTACT_LENGTH, MPI_CHAR, 0, fp->comm);
         fp->bridges = malloc(sizeof(bridge_info) * fp->num_bridges);
         for (i = 0; i < fp->num_bridges; i++) {
             int their_stone;
@@ -1915,7 +1915,7 @@ adios_read_flexpath_open(const char * fname,
             fp->bridges[i].opened = 0;
             fp->bridges[i].scheduled = 0;
         }
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(fp->comm);
         fp_verbose(fp, "Past the MPI_Barrier on the non-root side\n");
     }
 
