@@ -70,10 +70,11 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     sz.relBoundRatio = 1E-3;
     sz.pw_relBoundRatio = 1E-5;
     sz.segment_size = 32;
+    sz.pwr_type = SZ_PWR_AVG_TYPE;
 
     unsigned char *bytes;
-    int outsize;
-    int r[5] = {0,0,0,0,0};
+    size_t outsize;
+    size_t r[5] = {0,0,0,0,0};
 
     /* SZ parameters */
     int use_configfile = 0;
@@ -196,6 +197,27 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         {
             sz.segment_size = atoi(param->value);
         }
+        else if (strcmp(param->key, "pwr_type") == 0)
+        {
+            int pwr_type = SZ_PWR_MIN_TYPE;
+            if (!strcmp(param->key, "MIN") || !strcmp(param->key, "SZ_PWR_MIN_TYPE"))
+            {
+              pwr_type = SZ_PWR_MIN_TYPE;
+            }
+            else if (!strcmp(param->key, "AVG") || !strcmp(param->key, "SZ_PWR_AVG_TYPE"))
+            {
+              pwr_type = SZ_PWR_AVG_TYPE;
+            }
+            else if (!strcmp(param->key, "MAX") || !strcmp(param->key, "SZ_PWR_MAX_TYPE"))
+            {
+              pwr_type = SZ_PWR_MAX_TYPE;
+            }
+            else
+            {
+              log_warn("An unknown pwr_type: %s\n", param->value);
+            }
+            sz.pwr_type = pwr_type;
+        }
         else if (!strcmp(param->key, "abs") || !strcmp(param->key, "absolute") || !strcmp(param->key, "accuracy"))
         {
             sz.errorBoundMode = ABS;
@@ -205,6 +227,11 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         {
             sz.errorBoundMode = REL;
             sz.relBoundRatio = atof(param->value);
+        }
+        else if (!strcmp(param->key, "pw") || !strcmp(param->key, "pwr") || !strcmp(param->key, "pwrel") || !strcmp(param->key, "pwrelative"))
+        {
+            sz.errorBoundMode = PW_REL;
+            sz.pw_relBoundRatio = atof(param->value);
         }
         else
         {
@@ -285,10 +312,10 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
     unsigned char *raw_buff = (unsigned char*) bytes;
 
-    int raw_size = outsize;
+    size_t raw_size = outsize;
     //log_debug("=== SZ compress ===\n");
     log_debug("%s: %d\n", "SZ dtype", dtype);
-    log_debug("%s: %d\n", "SZ out_size", raw_size);
+    log_debug("%s: %lu\n", "SZ out_size", raw_size);
     /*
     log_debug("%s: %d %d %d %d %d ... %d %d %d %d %d\n", "SZ out_buff",
               raw_buff[0], raw_buff[1], raw_buff[2], raw_buff[3], raw_buff[4],
@@ -300,7 +327,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     }
     log_debug("%s: %d\n", "SZ sum", sum);
      */
-    log_debug("%s: %d %d %d %d %d\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
+    log_debug("%s: %lu %lu %lu %lu %lu\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
     //log_debug("===================\n");
 
     // Output
