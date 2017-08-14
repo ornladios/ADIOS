@@ -1078,7 +1078,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-netcdf=/opt/netcdf-4.4.0 
 
     else
-        ${SRCDIR}/configure --prefix=/opt/adios \
+        ${SRCDIR}/configure --prefix=/opt/adios/lean \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --with-lustre \
