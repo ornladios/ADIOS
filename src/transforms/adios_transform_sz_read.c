@@ -39,7 +39,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
                                                            adios_transform_pg_read_request *completed_pg_reqgroup)
 {
     //log_debug("function: %s\n", __FUNCTION__);
-    int raw_size = (int) completed_pg_reqgroup->raw_var_length;
+    size_t raw_size = (size_t) completed_pg_reqgroup->raw_var_length;
     unsigned char *raw_buff = completed_pg_reqgroup->subreqs->data;
 
     // Get type info
@@ -66,7 +66,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
         return NULL;
     }
 
-    int r[5] = {0,0,0,0,0};
+    size_t r[5] = {0,0,0,0,0};
     int i = 0;
     for(i = 0; i < ndims; i++)
     {
@@ -89,7 +89,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     }
     //log_debug("=== SZ decompress ===\n");
     log_debug("%s: %d\n", "SZ dtype", dtype);
-    log_debug("%s: %d\n", "SZ raw_size", raw_size);
+    log_debug("%s: %lu\n", "SZ raw_size", raw_size);
     /*
     log_debug("%s: %d %d %d %d %d ... %d %d %d %d %d\n", "SZ out_buff",
               raw_buff[0], raw_buff[1], raw_buff[2], raw_buff[3], raw_buff[4],
@@ -101,7 +101,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     }
     log_debug("%s: %d\n", "SZ sum", sum);
      */
-    log_debug("%s: %d %d %d %d %d\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
+    log_debug("%s: %lu %lu %lu %lu %lu\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
     //log_debug("=====================\n");
 
     return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, orig_buff);
