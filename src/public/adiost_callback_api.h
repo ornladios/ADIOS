@@ -20,6 +20,8 @@
 #define ADIOST_WEAK
 #endif
 
+#include "adios_types.h"
+
 /****************************************************************************
  * iteration macros - to be expanded by other macros in multiple places
  ****************************************************************************/
@@ -33,7 +35,7 @@
 macro(adiost_event_thread,                  adiost_thread_callback_t,      1) \
 macro(adiost_event_open,                    adiost_open_callback_t,        3) \
 macro(adiost_event_close,                   adiost_file_callback_t,        5) \
-macro(adiost_event_write,                   adiost_file_callback_t,        10) \
+macro(adiost_event_write,                   adiost_write_callback_t,       10) \
 macro(adiost_event_read,                    adiost_file_callback_t,        12) \
 macro(adiost_event_advance_step,            adiost_file_callback_t,        14) \
 macro(adiost_event_group_size,              adiost_group_size_callback_t,  51) \
@@ -97,6 +99,16 @@ typedef void (*adiost_open_callback_t)(
 typedef void (*adiost_file_callback_t)(
     int64_t file_descriptor, 
     adiost_event_type_t type);
+
+/* Events: adios_write */
+typedef void (*adiost_write_callback_t)(
+    int64_t file_descriptor, 
+    adiost_event_type_t type,
+    const char * name, 
+    enum ADIOS_DATATYPES data_type, 
+    const int ndims, 
+    const char * dims, 
+    const void * value);
 
 /* Events: adios_group_size */
 typedef void (*adiost_group_size_callback_t)(

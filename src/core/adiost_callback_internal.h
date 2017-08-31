@@ -22,6 +22,7 @@
 #define ADIOST_EXPORT __attribute__((visibility("default")))
 #define ADIOST_WEAK __attribute__ (( weak )) 
 #include "public/adiost_callback_api.h"
+#include "adios_internals.h"
 
 /* Definitions */
 
@@ -57,6 +58,7 @@ extern adiost_callbacks_t adiost_callbacks;
 void adiost_pre_init(void);
 void adiost_post_init(void);
 void adiost_finalize(void);
+char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims);
 
 /* These variadic macros save us from having to add 4+ lines of source code
  * each time that we want to make an event callback. */
@@ -80,6 +82,24 @@ void adiost_finalize(void);
         adiost_callbacks.adiost_callback(__event)) { \
           adiost_callbacks.adiost_callback(__event)((int64_t)__fd, \
             adiost_event_exit, ##__VA_ARGS__); \
+    } \
+
+#define ADIOST_CALLBACK_WRITE_ENTER(__event, __fd, __v) \
+    if (adios_tool_enabled && \
+        adiost_callbacks.adiost_callback(__event)) { \
+          int __ndims = 0; \
+          char * __tmp = adiost_build_dimension_string(__v, &__ndims); \
+          adiost_callbacks.adiost_callback(__event)((int64_t)__fd, \
+            adiost_event_enter, __v->name, __v->type, __ndims, __tmp, __v->data); \
+    } \
+
+#define ADIOST_CALLBACK_WRITE_EXIT(__event, __fd, __v) \
+    if (adios_tool_enabled && \
+        adiost_callbacks.adiost_callback(__event)) { \
+          int __ndims = 0; \
+          char * __tmp = adiost_build_dimension_string(__v, &__ndims); \
+          adiost_callbacks.adiost_callback(__event)((int64_t)__fd, \
+            adiost_event_exit, __v->name, __v->type, __ndims, __tmp, __v->data); \
     } \
 
 #endif // #ifndef __ADIOST_CALLBACK_INTERNAL_H__

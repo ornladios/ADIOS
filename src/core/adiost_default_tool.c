@@ -158,7 +158,7 @@ ADIOST_EXTERN void my_close(int64_t file_descriptor, adiost_event_type_t type) {
     }
 }
 
-ADIOST_EXTERN void my_write( int64_t file_descriptor, adiost_event_type_t type) {
+ADIOST_EXTERN void my_write( int64_t file_descriptor, adiost_event_type_t type, const char * name, enum ADIOS_DATATYPES data_type, const int ndims, const char * dims, const void * value) {
     DEBUG_PRINT
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {

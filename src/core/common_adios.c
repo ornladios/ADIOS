@@ -616,7 +616,7 @@ int common_adios_write(struct adios_file_struct *fd, struct adios_var_struct *v,
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
   timer_start("adios_write");
 #endif
-  ADIOST_CALLBACK_ENTER(adiost_event_write, fd);
+  ADIOST_CALLBACK_WRITE_ENTER(adiost_event_write, fd, v);
   adios_errno = err_no_error;
   struct adios_method_list_struct *m = fd->group->methods;
 
@@ -784,7 +784,7 @@ int common_adios_write(struct adios_file_struct *fd, struct adios_var_struct *v,
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
   timer_stop("adios_write");
 #endif
-  ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+  ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write, fd, v);
   // printf ("var: %s written %d\n", v->name, v->write_count);
   return adios_errno;
 }
@@ -794,10 +794,10 @@ int common_adios_write_byid(struct adios_file_struct *fd,
                             struct adios_var_struct *v, const void *var) {
   struct adios_method_list_struct *m = fd->group->methods;
 
-  ADIOST_CALLBACK_ENTER(adiost_event_write, fd);
+  ADIOST_CALLBACK_WRITE_ENTER(adiost_event_write, fd, v);
   adios_errno = err_no_error;
   if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL) {
-    ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+    ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write, fd, v);
     return adios_errno;
   }
 
@@ -834,7 +834,7 @@ int common_adios_write_byid(struct adios_file_struct *fd,
               err_no_memory,
               "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
               element_size, v->name);
-          ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+          ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write, fd, v);
           return adios_errno;
         }
 
@@ -849,7 +849,7 @@ int common_adios_write_byid(struct adios_file_struct *fd,
               err_no_memory,
               "In adios_write, cannot allocate %lld bytes to copy string %s\n",
               element_size, v->name);
-          ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+          ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write, fd, v);
           return adios_errno;
         }
         ((char *)v->adata)[element_size] = 0;
@@ -873,7 +873,7 @@ int common_adios_write_byid(struct adios_file_struct *fd,
     adios_copy_var_written(fd, v);
   }
 
-  ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+  ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write, fd, v);
   return adios_errno;
 }
 
