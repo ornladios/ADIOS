@@ -582,12 +582,12 @@ flexpath_var_free(flexpath_var * tmpvars)
 	for (i=0; i<tmpvars->num_chunks; i++) {
 	    flexpath_var_chunk *chunk = &tmpvars->chunks[i];
 	    if (chunk->has_data) {
-		//free(chunk->data);
+		if (chunk->data) free(chunk->data);
 		chunk->data = NULL;
 		chunk->has_data = 0;
 	    }
 	}
-	
+	free(tmpvars->chunks);
 
 
         flexpath_var * tmp = tmpvars->next;
