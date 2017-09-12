@@ -1322,8 +1322,8 @@ adios_flexpath_open(struct adios_file_struct *fd,
     attr_list multiqueue_stone_attrs = EVextract_attr_list(flexpathWriteData.cm, sub->multiStone);
     add_int_attr(multiqueue_stone_attrs, QUEUE_SIZE, 0);   
 
-    sub->dataSource = EVcreate_submit_handle(flexpathWriteData.cm, sub->multiStone,
-                                             fileData->fm->format);
+    sub->dataSource = EVcreate_submit_handle_free(flexpathWriteData.cm, sub->multiStone,
+						  fileData->fm->format, data_free, fileData);
 
     sub->scalarDataSource = EVcreate_submit_handle(flexpathWriteData.cm, sub->splitStone,
                                                    fileData->fm->format);
@@ -1470,6 +1470,8 @@ adios_flexpath_write(
 	    }
 	}
     }
+    free(fullname);
+    free(mangle_name);
 }
 
 static void 
@@ -1512,7 +1514,8 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
             send_block = realloc(send_block, (send_count + ndims * 2) * sizeof(send_block[0]));
             memcpy(&send_block[send_count], local_dimensions, ndims * sizeof(send_block[0]));
             memcpy(&send_block[send_count+ndims], local_offsets, ndims * sizeof(send_block[0]));
-            
+	    if (local_offsets) free(local_offsets);
+	    if (local_dimensions) free(local_dimensions);
             
             offset_struct *ostruct = malloc(sizeof(offset_struct));
             ostruct->offsets_per_rank = ndims;
@@ -1536,6 +1539,7 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
     MPI_Allgather(send_block, send_count, MPI_UINT64_T,
                   comm_block, send_count, MPI_UINT64_T,
                   fileData->mpiComm);
+    free(send_block);
 
     pg = fd->pgs_written;
     int block_index = 0;
@@ -1615,6 +1619,26 @@ free_data_buffer(void * event_data, void * client_data)
     free(event_data);
 }
 
+static void
+free_gp_buffer(void * gp_data, void * client_data)
+{
+    evgroup *gp = (evgroup *) gp_data;
+    int i;
+    free(gp->group_name);
+    for (i=0; i < gp->num_vars; i++) {
+        int j;
+        free(gp->vars[i].name);
+        for (j=0 ; j< gp->vars[i].noffset_structs; j++) {
+            free(gp->vars[i].offsets[j].local_dimensions);
+            free(gp->vars[i].offsets[j].local_offsets);
+            free(gp->vars[i].offsets[j].global_dimensions);
+        }
+        if (gp->vars[i].offsets) free(gp->vars[i].offsets);
+    }
+    if (gp->vars) free(gp->vars);
+    free(gp);
+}
+
 void
 set_attributes_in_buffer(FlexpathWriteFileData *fileData, struct adios_group_struct *group, char *buffer)
 {
@@ -1625,6 +1649,7 @@ set_attributes_in_buffer(FlexpathWriteFileData *fileData, struct adios_group_str
 	FMField *field = NULL;
 	char *fullname = append_path_name(attr->path, attr->name);
 	char *mangle_name = flexpath_mangle(fullname);
+	free(fullname);
 	field = internal_find_field(mangle_name, flist);
 
 	if (field != NULL) {
@@ -1633,10 +1658,12 @@ set_attributes_in_buffer(FlexpathWriteFileData *fileData, struct adios_group_str
 		char *tmpstr = strdup((char*)data);
 		if (!set_FMPtrField_by_name(flist, mangle_name, buffer, tmpstr)) 
 		    fp_verbose(fileData, "Set fmprtfield by name failed, name %s\n", mangle_name);
+		free(tmpstr);
 	    } else {
 		memcpy(&buffer[field->field_offset], data, field->field_size);
 	    }
 	}
+	free(mangle_name);
     }
 }
 
@@ -1671,8 +1698,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     //send out have got to be different.  We want to identify what is the only scalars message on the 
     //reader side to process it differently.
     attr_list temp_attr_scalars = attr_copy_list(attrs);
-    attr_list temp_attr_noscalars = attr_copy_list(attrs);
-    
+    attr_list temp_attr_noscalars = attrs;
+
     // now gather offsets and send them via MPI to root
     evgroup *gp = malloc(sizeof(evgroup));    
     memset(gp, 0, sizeof(evgroup));
@@ -1701,7 +1728,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
 
     //Submit the messages that will get forwarded on immediately to the designated readers through split stone
-    EVsubmit_general(sub->offsetSource, gp, NULL, temp_attr_scalars);
+    EVsubmit_general(sub->offsetSource, gp, free_gp_buffer, temp_attr_scalars);
     EVsubmit_general(sub->scalarDataSource, temp, free_data_buffer, temp_attr_scalars);
 
     //Testing against the maxqueuesize
@@ -1725,7 +1752,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 
     //Full data is submitted to multiqueue stone
-    EVsubmit_general(sub->dataSource, buffer, free_data_buffer, temp_attr_noscalars);
+    EVsubmit(sub->dataSource, buffer, temp_attr_noscalars);
 
     free_attr_list(temp_attr_scalars);
     free_attr_list(temp_attr_noscalars);
