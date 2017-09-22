@@ -50,4 +50,4 @@ void print_endline(void);
 void print_stop(void);
 int print_data_hist(ADIOS_VARINFO * vi, char * varname);
 int print_data_characteristics(void * min, void * max, double * avg, double * std_dev, enum ADIOS_DATATYPES adiosvartype, bool allowformat);
-void print_decomp(ADIOS_VARINFO *vi);
+void print_decomp(ADIOS_FILE *fp, ADIOS_VARINFO *vi, char *name, bool timed);
