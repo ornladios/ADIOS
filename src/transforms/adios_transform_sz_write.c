@@ -80,7 +80,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     sz.relBoundRatio = 1E-3;
     sz.psnr = 80.0;
     sz.pw_relBoundRatio = 1E-5;
-    sz.segment_size = 5<<ndims;
+    sz.segment_size = (int)pow(5, (double)ndims);
     sz.pwr_type = SZ_PWR_MIN_TYPE;
 
     unsigned char *bytes;
@@ -274,8 +274,10 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             log_debug("%s: %d\n", "sz.errorBoundMode", sz.errorBoundMode);
             log_debug("%s: %g\n", "sz.absErrBound", sz.absErrBound);
             log_debug("%s: %g\n", "sz.relBoundRatio", sz.relBoundRatio);
+            log_debug("%s: %g\n", "sz.psnr", sz.psnr);
             log_debug("%s: %g\n", "sz.pw_relBoundRatio", sz.pw_relBoundRatio);
             log_debug("%s: %d\n", "sz.segment_size", sz.segment_size);
+            log_debug("%s: %d\n", "sz.pwr_type", sz.pwr_type);
         }
         SZ_Init_Params(&sz);
     }
