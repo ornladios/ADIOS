@@ -52,6 +52,16 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff = var->data;
 
+    // Get dimension info
+    struct adios_dimension_struct* d = var->pre_transform_dimensions;
+    int ndims = (uint) count_dimensions(d);
+    //log_debug("ndims: %d\n", ndims);
+    if (ndims > 5)
+    {
+        adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
+        return -1;
+    }
+
     sz_params sz;
     memset(&sz, 0, sizeof(sz_params));
     sz.max_quant_intervals = 65536;
@@ -68,9 +78,10 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     sz.errorBoundMode = ABS;
     sz.absErrBound = 1E-4;
     sz.relBoundRatio = 1E-3;
+    sz.psnr = 80.0;
     sz.pw_relBoundRatio = 1E-5;
-    sz.segment_size = 32;
-    sz.pwr_type = SZ_PWR_AVG_TYPE;
+    sz.segment_size = (int)pow(5, (double)ndims);
+    sz.pwr_type = SZ_PWR_MIN_TYPE;
 
     unsigned char *bytes;
     size_t outsize;
@@ -263,8 +274,10 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             log_debug("%s: %d\n", "sz.errorBoundMode", sz.errorBoundMode);
             log_debug("%s: %g\n", "sz.absErrBound", sz.absErrBound);
             log_debug("%s: %g\n", "sz.relBoundRatio", sz.relBoundRatio);
+            log_debug("%s: %g\n", "sz.psnr", sz.psnr);
             log_debug("%s: %g\n", "sz.pw_relBoundRatio", sz.pw_relBoundRatio);
             log_debug("%s: %d\n", "sz.segment_size", sz.segment_size);
+            log_debug("%s: %d\n", "sz.pwr_type", sz.pwr_type);
         }
         SZ_Init_Params(&sz);
     }
@@ -283,16 +296,6 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             adios_error(err_transform_failure, "No supported data type\n");
             return -1;
             break;
-    }
-
-    // Get dimension info
-    struct adios_dimension_struct* d = var->pre_transform_dimensions;
-    int ndims = (uint) count_dimensions(d);
-    //log_debug("ndims: %d\n", ndims);
-    if (ndims > 5)
-    {
-        adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
-        return -1;
     }
 
     // r[0] is the fastest changing dimension and r[4] is the lowest changing dimension
