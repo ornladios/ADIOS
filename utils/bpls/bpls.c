@@ -1447,7 +1447,7 @@ int readVarBlock(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, int block
         tidx = 1;
     }
 
-
+    int out_of_bound = 0;
     for (j=0; j<vi->ndim; j++) {
         if (istart[j+tidx] < 0)  // negative index means last-|index|
             st = vi->blockinfo[blockid].count[j]+istart[j+tidx];
@@ -1458,8 +1458,12 @@ int readVarBlock(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, int block
         else
             ct = icount[j+tidx];
 
-        if (ct > vi->blockinfo[blockid].count[j] - st)
+        if (st > vi->blockinfo[blockid].count[j]) {
+            out_of_bound = 1;
+        }
+        else if (ct > vi->blockinfo[blockid].count[j] - st) {
             ct = vi->blockinfo[blockid].count[j] - st;
+        }
         if (verbose>2)
             printf("    j=%d, st=%" PRIu64 " ct=%" PRIu64 "\n", j, st, ct);
 
@@ -1476,6 +1480,9 @@ int readVarBlock(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, int block
     }
 
     print_slice_info(vi->ndim, vi->blockinfo[blockid].count, false, vi->nsteps, start_t, count_t);
+
+    if (out_of_bound)
+        return 0;
 
     maxreadn = MAX_BUFFERSIZE/elemsize;
     if (nelems < maxreadn)
