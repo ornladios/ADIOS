@@ -4299,6 +4299,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 // NCSU - Timer series analysis, correlation
 double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
     int i,j;
 
     double avg_x = 0.0, avg_y = 0.0, avg_lag = 0.0;
@@ -4308,6 +4309,7 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
     if (vix == NULL)
     {
         fprintf(stderr, "Variable not defined\n");
+        ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
         return 0;
     }
 
@@ -4315,6 +4317,7 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
     if ((vix->timedim < 0) && (viy->timedim < 0))
     {
         fprintf(stderr, "Covariance must involve timeseries data\n");
+        ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
         return 0;
     }
 
@@ -4326,6 +4329,7 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
     { //global covariance
         if(viy == NULL) {
             fprintf(stderr, "Must have two variables for global covariance\n");
+            ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
             return 0;
         }
 
@@ -4344,6 +4348,7 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
             if(! (time_end+lag) > min)
             {
                 fprintf(stderr, "Must leave enough timesteps for lag\n");
+                ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
                 return 0;
             }
 
@@ -4418,8 +4423,10 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
             else
             {
                 fprintf (stderr, "Unknown characteristic\n");
+                ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
                 return 0;
             }
+            ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
             return cov / (sqrt (var_x) * sqrt (var_lag));
         }
         else
@@ -4491,14 +4498,17 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
             else
             {
                 fprintf (stderr, "Unknown characteristic\n");
+                ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
                 return 0;
             }
+            ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
             return cov / (sqrt (var_x) * sqrt (var_y));
         }
     }
     else
     {
         fprintf (stderr, "Time values out of bounds\n");
+        ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
         return 0;
     }
 }
@@ -4507,6 +4517,7 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
 //covariance(x,y) = sum(i=1,..N) [(x_1 - x_mean)(y_i - y_mean)]/N
 double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
     int i,j;
 
     double avg_x = 0.0, avg_y = 0.0, avg_lag = 0.0;
@@ -4515,6 +4526,7 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
     if (vix == NULL)
     {
         fprintf(stderr, "Variable not defined\n");
+        ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
         return 0;
     }
 
@@ -4522,6 +4534,7 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
     if ((vix->timedim < 0) && (viy->timedim < 0))
     {
         fprintf(stderr, "Covariance must involve timeseries data\n");
+        ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
         return 0;
     }
 
@@ -4533,6 +4546,7 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
     { //global covariance
         if(viy == NULL) {
             fprintf(stderr, "Must have two variables for global covariance\n");
+            ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
             return 0;
         }
 
@@ -4551,6 +4565,7 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
             if(! (time_end+lag) > min)
             {
                 fprintf(stderr, "Must leave enough timesteps for lag\n");
+                ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
                 return 0;
             }
 
@@ -4601,6 +4616,7 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
             else
             {
                 fprintf (stderr, "Unknown characteristic\n");
+                ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
                 return 0;
             }
         }
@@ -4657,6 +4673,7 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
             else
             {
                 fprintf (stderr, "Unknown characteristic\n");
+                ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
                 return 0;
             }
         }
@@ -4665,6 +4682,7 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
     {
         fprintf (stderr, "Time values out of bounds\n");
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_stat_cov, vix, viy, characteristic, time_start, time_end, lag);
     return cov;
 }
 #endif

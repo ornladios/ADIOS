@@ -38,8 +38,11 @@ const char adiost_enabled_env_var[] = {"ADIOS_TOOL"};
 /* forward declaration of the weak (default) tool */
 
 //extern __attribute__ (( weak )) adiost_initialize_t adiost_tool(void);
-//extern adiost_initialize_t adiost_tool(void);
-extern __attribute__((visibility("default"))) adiost_initialize_t __attribute__((weak)) adiost_tool(void);
+extern adiost_initialize_t default_adiost_tool(void);
+//extern __attribute__((visibility("default"))) adiost_initialize_t __attribute__((weak)) adiost_tool(void);
+
+/* function pointer to hold the tool function. */
+adiost_initialize_t (*my_adiost_tool)(void) = NULL;
 
 /* Pre-initialization. */
 
@@ -62,6 +65,13 @@ void adiost_pre_init(void) {
         tool_setting = adiost_enabled;
     }
 
+	// if a tool function is defined, assign our internal pointer to it.
+	if (adiost_tool != NULL) {
+	    my_adiost_tool = &adiost_tool;
+	} else {
+	    my_adiost_tool = &default_adiost_tool;
+	}
+
     // validate the input
     debug_print("%s: %s = %d\n", __func__, adiost_enabled_env_var, tool_setting);
     switch(tool_setting) {
@@ -69,8 +79,8 @@ void adiost_pre_init(void) {
             break;
         case adiost_unset:
         case adiost_enabled:
-            if (adiost_tool) {
-            	adiost_initialize_fn = adiost_tool();
+            if (my_adiost_tool) {
+            	adiost_initialize_fn = my_adiost_tool();
             	// if initialization is successful, we are enabled
             	if (adiost_initialize_fn) {
                 	adios_tool_enabled = 1;

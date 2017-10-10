@@ -173,6 +173,8 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     common_query_init(); 
 
     adiost_post_init();
+	// single event, no enter/exit
+    ADIOST_CALLBACK(adiost_event_read_init_method, method, comm, parameters);
     return retval;
 }
 
@@ -189,6 +191,8 @@ static int calc_hash_size(unsigned int nvars)
 
 int common_read_finalize_method(enum ADIOS_READ_METHOD method)
 {
+	// single event, no enter/exit
+    ADIOST_CALLBACK(adiost_event_read_finalize_method, method);
     adios_errno = err_no_error;
     int retval;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
@@ -383,12 +387,12 @@ ADIOS_FILE * common_read_open (const char * fname,
     struct common_read_internals_struct * internals; 
     long i;
 
-    ADIOST_CALLBACK_ENTER(adiost_event_open, fp, "", "", "");
+    ADIOST_CALLBACK_ENTER(adiost_event_read_open, method, comm, lock_mode, timeout_sec, fp);
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method,
             "Invalid read method (=%d) passed to adios_read_open().\n", (int)method);
-        ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
+        ADIOST_CALLBACK_EXIT(adiost_event_read_open, method, comm, lock_mode, timeout_sec, fp);
         return NULL;
     }
 
@@ -404,7 +408,7 @@ ADIOS_FILE * common_read_open (const char * fname,
         adios_error (err_invalid_read_method, 
             "Read method (=%d) passed to adios_read_open() is not provided "
             "by this build of ADIOS.\n", (int)method);
-        ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
+        ADIOST_CALLBACK_EXIT(adiost_event_read_open, method, comm, lock_mode, timeout_sec, fp);
         return NULL;
     }
 
@@ -419,7 +423,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     fp = adios_read_hooks[internals->method].adios_read_open_fn (fname, comm, lock_mode, timeout_sec);
     if (!fp) {
-        ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
+        ADIOST_CALLBACK_EXIT(adiost_event_read_open, method, comm, lock_mode, timeout_sec, fp);
         return fp;
     }
 
@@ -449,7 +453,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     common_read_link (fp);
 
-    ADIOST_CALLBACK_EXIT(adiost_event_open, fp, "", "", "");
+    ADIOST_CALLBACK_EXIT(adiost_event_read_open, method, comm, lock_mode, timeout_sec, fp);
     return fp;
 }
 
@@ -462,9 +466,11 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     struct common_read_internals_struct * internals; 
     long i;
 
+    ADIOST_CALLBACK_ENTER(adiost_event_read_open_file, fname, method, comm, fp);
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method,
             "Invalid read method (=%d) passed to adios_read_open_file().\n", (int)method);
+        ADIOST_CALLBACK_EXIT(adiost_event_read_open_file, fname, method, comm, fp);
         return NULL;
     }
 
@@ -489,12 +495,15 @@ ADIOS_FILE * common_read_open_file (const char * fname,
         adios_error (err_invalid_read_method, 
             "Read method (=%d) passed to adios_read_open_file() is not provided "
             "by this build of ADIOS.\n", (int)method);
+        ADIOST_CALLBACK_EXIT(adiost_event_read_open_file, fname, method, comm, fp);
         return NULL;
     }
 	
     fp = adios_read_hooks[internals->method].adios_read_open_file_fn (fname, comm);
-    if (!fp)
+    if (!fp) {
+        ADIOST_CALLBACK_EXIT(adiost_event_read_open_file, fname, method, comm, fp);
         return fp;
+    }
     
     fp->is_streaming = 0; // Mark file handle as not streaming
 
@@ -522,6 +531,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 
     common_read_link (fp);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_read_open_file, fname, method, comm, fp);
     return fp;
 }
 
@@ -540,7 +550,7 @@ int common_read_close (ADIOS_FILE *fp)
     struct common_read_internals_struct * internals;
     int retval;
 
-    ADIOST_CALLBACK_ENTER(adiost_event_close, fp);
+    ADIOST_CALLBACK_ENTER(adiost_event_close, (int64_t)fp);
 
     adios_errno = err_no_error;
     if (fp) {
@@ -580,7 +590,7 @@ int common_read_close (ADIOS_FILE *fp)
         retval = err_invalid_file_pointer;
     }
 
-    ADIOST_CALLBACK_EXIT(adiost_event_close, fp);
+    ADIOST_CALLBACK_EXIT(adiost_event_close, (int64_t)fp);
     return retval;
 }
 
@@ -641,7 +651,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
     int retval;
     long i;
     
-    ADIOST_CALLBACK_ENTER(adiost_event_advance_step, fp);
+    ADIOST_CALLBACK_ENTER(adiost_event_advance_step, fp, last, timeout_sec);
 
     adios_errno = err_no_error;
     if (fp) {
@@ -687,7 +697,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
         retval = err_invalid_file_pointer;
     }
 
-    ADIOST_CALLBACK_EXIT(adiost_event_advance_step, fp);
+    ADIOST_CALLBACK_EXIT(adiost_event_advance_step, fp, last, timeout_sec);
     return retval;
 }
 
@@ -695,6 +705,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 void common_read_release_step (ADIOS_FILE *fp)
 {
     struct common_read_internals_struct * internals;
+    ADIOST_CALLBACK(adiost_event_release_step, (int64_t)fp);
 
     adios_errno = err_no_error;
     if (fp) {
@@ -793,6 +804,7 @@ static int common_read_find_attr (int n, char ** namelist, const char *name, int
 ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
 {
     ADIOS_VARINFO * retval;
+    ADIOST_CALLBACK_ENTER(adiost_event_inq_var, fp, varname, retval);
 
     adios_errno = err_no_error;
     if (fp) {
@@ -806,6 +818,7 @@ ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var()\n");
         retval = NULL;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_inq_var, fp, varname, retval);
     return retval;
 }
 
@@ -839,12 +852,15 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
     struct common_read_internals_struct * internals;
 	ADIOS_VARINFO *vi;
     ADIOS_TRANSINFO *ti;
+    ADIOST_CALLBACK_ENTER(adiost_event_inq_var_byid, fp, varid, vi);
 
     internals = (struct common_read_internals_struct *)fp->internal_data;
 
     vi = common_read_inq_var_raw_byid(fp, varid);
-    if (vi == NULL)
+    if (vi == NULL) {
+        ADIOST_CALLBACK_EXIT(adiost_event_inq_var_byid, fp, varid, vi);
         return NULL;
+    }
 
     if (internals->data_view == LOGICAL_DATA_VIEW) { // Only translate the varinfo in logical view mode
     	// NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
@@ -855,6 +871,7 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
     	common_read_free_transinfo(vi, ti);
     }
 
+    ADIOST_CALLBACK_EXIT(adiost_event_inq_var_byid, fp, varid, vi);
     return vi;
 }
 
@@ -989,12 +1006,15 @@ int common_read_inq_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *v
 int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
                              int per_step_stat, int per_block_stat)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_inq_var_stat, fp, varinfo, per_step_stat, per_block_stat);
     if (!fp) {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_stat()\n");
+        ADIOST_CALLBACK_EXIT(adiost_event_inq_var_stat, fp, varinfo, per_step_stat, per_block_stat);
         return adios_errno;
     }
     if (!varinfo) {
         adios_error (err_invalid_argument, "Null pointer passed as varinfo to adios_inq_var_stat()\n");
+        ADIOST_CALLBACK_EXIT(adiost_event_inq_var_stat, fp, varinfo, per_step_stat, per_block_stat);
         return adios_errno;
     }
 
@@ -1008,6 +1028,7 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
     int retval = internals->read_hooks[internals->method].adios_inq_var_stat_fn (fp, varinfo, per_step_stat, per_block_stat);
     /* Translate back real varid to the group varid presented to the user */
     varinfo->varid = group_varid;
+    ADIOST_CALLBACK_EXIT(adiost_event_inq_var_stat, fp, varinfo, per_step_stat, per_block_stat);
     return retval;
 }
 
@@ -1015,12 +1036,15 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
 //   patch the original metadata in from the transform info
 int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_inq_var_blockinfo, fp, varinfo);
     if (!fp) {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_blockinfo()\n");
+        ADIOST_CALLBACK_EXIT(adiost_event_inq_var_blockinfo, fp, varinfo);
         return adios_errno;
     }
     if (!varinfo) {
         adios_error (err_invalid_argument, "Null pointer passed as varinfo to adios_inq_var_blockinfo()\n");
+        ADIOST_CALLBACK_EXIT(adiost_event_inq_var_blockinfo, fp, varinfo);
         return adios_errno;
     }
 
@@ -1038,6 +1062,7 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
             varinfo->blockinfo = NULL;
         } else {
             // return without modification
+            ADIOST_CALLBACK_EXIT(adiost_event_inq_var_blockinfo, fp, varinfo);
             return retval;
         }
     }
@@ -1048,8 +1073,10 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
         ti = common_read_inq_transinfo(fp, varinfo);
         if (ti && ti->transform_type != adios_transform_none) {
             retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
-            if (retval != err_no_error)
+            if (retval != err_no_error) {
+                ADIOST_CALLBACK_EXIT(adiost_event_inq_var_blockinfo, fp, varinfo);
                 return retval;
+			}
 
             patch_varinfo_with_transform_blockinfo(varinfo, ti);
         }
@@ -1063,6 +1090,7 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
         retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
     }
 
+    ADIOST_CALLBACK_EXIT(adiost_event_inq_var_blockinfo, fp, varinfo);
     return retval;
 }
 
@@ -1111,6 +1139,7 @@ static void common_read_free_blockinfo(ADIOS_VARBLOCK **varblock, int sum_nblock
 
 void common_read_free_varinfo (ADIOS_VARINFO *vp)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_free_varinfo, vp);
     if (vp) {
         common_read_free_blockinfo(&vp->blockinfo, vp->sum_nblocks);
 
@@ -1180,6 +1209,7 @@ void common_read_free_varinfo (ADIOS_VARINFO *vp)
         if (vp->attr_ids) MYFREE(vp->attr_ids);
         free(vp);
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_free_varinfo, vp);
 }
 
 // NCSU ALACRITY-ADIOS - Free transform info
@@ -1260,6 +1290,7 @@ int common_read_get_attr_mesh (const ADIOS_FILE * fp,
 
 int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_inq_var_meshinfo, fp, varinfo);
     enum ADIOS_DATATYPES attr_type;
     int  attr_size;
     int  read_fail = 0;
@@ -1281,6 +1312,7 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 //                     "No matching mesh for var %s.\n", 
 //                     var_nme);
         varinfo->meshinfo = NULL;
+        ADIOST_CALLBACK_EXIT(adiost_event_inq_var_meshinfo, fp, varinfo);
         return 1;
     }
     else
@@ -1302,6 +1334,7 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 //                         "Mesh %s for var %s is not stored in meshlist.\n", 
 //                         (char *)data, var_name);
             varinfo->meshinfo = NULL;
+            ADIOST_CALLBACK_EXIT(adiost_event_inq_var_meshinfo, fp, varinfo);
             return 1;
         }
     }
@@ -1340,6 +1373,7 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
                              "Centering info of var %s on mesh %s is required\n",
                              var_name, fp->mesh_namelist[varinfo->meshinfo->meshid]);
                 varinfo->meshinfo = NULL; 
+                ADIOST_CALLBACK_EXIT(adiost_event_inq_var_meshinfo, fp, varinfo);
                 return 1;
 //            }
 //        }
@@ -1360,10 +1394,12 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
                          "Centering method of var %s on mesh %s is not supported (point/cell).\n", 
                          var_name, fp->mesh_namelist[varinfo->meshinfo->meshid]);
             varinfo->meshinfo = NULL;
+            ADIOST_CALLBACK_EXIT(adiost_event_inq_var_meshinfo, fp, varinfo);
             return 1;
         }
     }
 
+    ADIOST_CALLBACK_EXIT(adiost_event_inq_var_meshinfo, fp, varinfo);
     return 0;
 }
 
@@ -1840,6 +1876,7 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
 
 ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_inq_mesh_byid, fp, meshid, NULL);
     enum ADIOS_DATATYPES attr_type;
     int attr_size;
     void * data = NULL;
@@ -1862,6 +1899,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
     {
         meshinfo->file_name = strdup((char *)data);
         // user has to open this file and call common_read_complete_meshinfo() again with both file pointers
+        ADIOST_CALLBACK_EXIT(adiost_event_inq_mesh_byid, fp, meshid, meshinfo);
         return meshinfo;
     }
 
@@ -1923,6 +1961,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         // user has to open this file and call common_read_complete_meshinfo() again with both file pointers
     }
 #endif
+    ADIOST_CALLBACK_EXIT(adiost_event_inq_mesh_byid, fp, meshid, meshinfo);
     return meshinfo;
 }
 
@@ -3476,6 +3515,7 @@ void common_read_free_linkinfo (ADIOS_LINK * linkinfo)
 
 void common_read_free_meshinfo (ADIOS_MESH * meshinfo)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_free_meshinfo, meshinfo);
     if(meshinfo)
     {
         int i = 0;
@@ -3558,6 +3598,7 @@ void common_read_free_meshinfo (ADIOS_MESH * meshinfo)
         }
         free (meshinfo);
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_free_meshinfo, meshinfo);
 }
 
 int common_read_schedule_read (const ADIOS_FILE      * fp,
@@ -3569,6 +3610,7 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
                                void                  * data)
 
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_schedule_read, fp, sel, varname, from_steps, nsteps, param, data);
     int retval = 0;
 
     adios_errno = err_no_error;
@@ -3583,6 +3625,7 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_schedule_read()\n");
         retval = err_invalid_file_pointer;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_schedule_read, fp, sel, varname, from_steps, nsteps, param, data);
     return retval;
 }
 
@@ -3597,6 +3640,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         void                  * data)
 
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_schedule_read_byid, fp, sel, varid, from_steps, nsteps, param, data);
     struct common_read_internals_struct * internals = (struct common_read_internals_struct *) fp->internal_data;
     int retval = 0; 
 
@@ -3669,6 +3713,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         retval = err_invalid_file_pointer;
     }
 
+    ADIOST_CALLBACK_EXIT(adiost_event_schedule_read_byid, fp, sel, varid, from_steps, nsteps, param, data);
     return retval;
 }
 
@@ -3679,7 +3724,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
     struct common_read_internals_struct * internals;
     int retval;
 
-    ADIOST_CALLBACK_ENTER(adiost_event_read, fp);
+    ADIOST_CALLBACK_ENTER(adiost_event_perform_reads, fp, blocking);
 
     adios_errno = err_no_error;
     if (fp) {
@@ -3699,12 +3744,13 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         retval = err_invalid_file_pointer;
     }
 
-    ADIOST_CALLBACK_EXIT(adiost_event_read, fp);
+    ADIOST_CALLBACK_EXIT(adiost_event_perform_reads, fp, blocking);
     return retval;
 }
 
 int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_check_reads, fp, chunk);
     struct common_read_internals_struct * internals;
     int retval;
 
@@ -3736,11 +3782,13 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_check_reads()\n");
         retval = err_invalid_file_pointer;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_check_reads, fp, chunk);
     return retval;
 }
 
 void common_read_free_chunk (ADIOS_VARCHUNK *chunk)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_free_chunk, chunk);
     /** Free the memory of a chunk allocated inside adios_check_reads().
      * It only frees the ADIOS_VARCHUNK struct and the ADIOS_SELECTION struct
      * pointed by the chunk. The data pointer should never be freed since
@@ -3753,6 +3801,7 @@ void common_read_free_chunk (ADIOS_VARCHUNK *chunk)
         }
         free(chunk);
      }
+    ADIOST_CALLBACK_EXIT(adiost_event_free_chunk, chunk);
 }
 
 
@@ -3762,6 +3811,7 @@ int common_read_get_attr (const ADIOS_FILE * fp,
                           int * size,
                           void ** data)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_get_attr, fp, attrname, type, size, data);
     int retval;
 
     adios_errno = err_no_error;
@@ -3776,6 +3826,7 @@ int common_read_get_attr (const ADIOS_FILE * fp,
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr()\n");
         retval = err_invalid_file_pointer;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_get_attr, fp, attrname, type, size, data);
     return retval;
 }
 
@@ -3786,6 +3837,7 @@ int common_read_get_attr_byid (const ADIOS_FILE * fp,
                                int * size,
                                void ** data)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_get_attr_byid, fp, attrid, type, size, data);
     struct common_read_internals_struct * internals;
     int retval;
 
@@ -3804,6 +3856,7 @@ int common_read_get_attr_byid (const ADIOS_FILE * fp,
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr_byid()\n");
         retval = err_invalid_file_pointer;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_get_attr_byid, fp, attrid, type, size, data);
     return retval;
 }
 
@@ -3849,6 +3902,7 @@ int common_read_type_size(enum ADIOS_DATATYPES type, const void *data)
 
 int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_get_grouplist, fp, group_namelist);
     struct common_read_internals_struct * internals;
     int retval;
 
@@ -3861,6 +3915,7 @@ int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist)
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_get_grouplist()\n");
         retval = err_invalid_file_pointer;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_get_grouplist, fp, group_namelist);
     return retval;
 }
 
@@ -3871,6 +3926,7 @@ int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist)
  */
 int common_read_group_view (ADIOS_FILE  *fp, int groupid)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_group_view, fp, groupid);
     struct common_read_internals_struct * internals;
     int retval, i;
 
@@ -3918,6 +3974,7 @@ int common_read_group_view (ADIOS_FILE  *fp, int groupid)
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_group_view()\n");
         retval = err_invalid_file_pointer;
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_group_view, fp, groupid);
     return retval;
 }
 

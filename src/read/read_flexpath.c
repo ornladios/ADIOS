@@ -1081,7 +1081,7 @@ setup_flexpath_vars(FMField *f, int *num, int nattrs)
 void
 send_finalize_msg(flexpath_reader_file *fp)
 {
-    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_finalize_msg, fp);
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_finalize_msg, (int64_t)fp);
     int i; 
     if((fp->rank / fp->num_bridges) == 0)
     {
@@ -1105,13 +1105,13 @@ send_finalize_msg(flexpath_reader_file *fp)
             EVsubmit(fp->bridges[send_to].finalize_source, &msg, NULL);
         }
     }
-    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_finalize_msg, fp);
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_finalize_msg, (int64_t)fp);
 }
 
 static void
 send_read_msg(flexpath_reader_file *fp, int index, int use_condition)
 {
-    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_read_msg, fp);
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_send_read_msg, (int64_t)fp);
     //Initial sanity check
     if(index >= fp->num_sendees)
     {
@@ -1147,13 +1147,13 @@ send_read_msg(flexpath_reader_file *fp, int index, int use_condition)
 	CMCondition_wait(fp_read_data->cm, msg->condition);
 	fp_verbose(fp, "Done with WAIT\n");
     }
-    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_read_msg, fp);
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_send_read_msg, (int64_t)fp);
 }
 
 void
 add_var_to_read_message(flexpath_reader_file *fp, int destination, char *varname)
 {
-    ADIOST_CALLBACK_ENTER(adiost_event_fp_add_var_to_read_msg, fp);
+    ADIOST_CALLBACK_ENTER(adiost_event_fp_add_var_to_read_msg, (int64_t)fp);
         int i = 0;
         int found = 0;
         int index = -1;
@@ -1189,7 +1189,7 @@ add_var_to_read_message(flexpath_reader_file *fp, int destination, char *varname
 	if (!fp->bridges[destination].opened) {
 	    fp->bridges[destination].opened = 1;
 	}
-    ADIOST_CALLBACK_EXIT(adiost_event_fp_add_var_to_read_msg, fp);
+    ADIOST_CALLBACK_EXIT(adiost_event_fp_add_var_to_read_msg, (int64_t)fp);
 }
 
 /********** EVPath Handlers **********/

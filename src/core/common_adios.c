@@ -725,7 +725,7 @@ int common_adios_write(struct adios_file_struct *fd, struct adios_var_struct *v,
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start("adios_transform");
 #endif
-    ADIOST_CALLBACK_ENTER(adiost_event_transform, fd);
+    ADIOST_CALLBACK_ENTER(adiost_event_transform, (int64_t)fd);
     int success = common_adios_write_transform_helper(fd, v);
     if (success) {
       // Make it appear as if the user had supplied the transformed data
@@ -737,7 +737,7 @@ int common_adios_write(struct adios_file_struct *fd, struct adios_var_struct *v,
           adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
       // FIXME: Reverse the transform metadata and write raw data as usual
     }
-    ADIOST_CALLBACK_EXIT(adiost_event_transform, fd);
+    ADIOST_CALLBACK_EXIT(adiost_event_transform, (int64_t)fd);
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop("adios_transform");
 #endif
@@ -1129,12 +1129,12 @@ int common_adios_close(struct adios_file_struct *fd) {
 #endif
   adios_errno = err_no_error;
 
-  ADIOST_CALLBACK_ENTER(adiost_event_close, fd);
+  ADIOST_CALLBACK_ENTER(adiost_event_close, (int64_t)fd);
   if (!fd) {
     adios_error(err_invalid_file_pointer,
                 "Invalid handle passed to adios_close\n");
 
-    ADIOST_CALLBACK_EXIT(adiost_event_close, fd);
+    ADIOST_CALLBACK_EXIT(adiost_event_close, (int64_t)fd);
     return adios_errno;
   }
 
@@ -1145,7 +1145,7 @@ int common_adios_close(struct adios_file_struct *fd) {
     timer_stop("adios_close");
     timer_stop("adios_open_to_close");
 #endif
-    ADIOST_CALLBACK_EXIT(adiost_event_close, fd);
+    ADIOST_CALLBACK_EXIT(adiost_event_close, (int64_t)fd);
     return 0;
   }
 
@@ -1460,7 +1460,7 @@ fd->current_pg->pg_start_in_file=%lld\n",
 // timer_reset_timers ();
 #endif
 
-  ADIOST_CALLBACK_EXIT(adiost_event_close, fd);
+  ADIOST_CALLBACK_EXIT(adiost_event_close, (int64_t)fd);
   return adios_errno;
 }
 
