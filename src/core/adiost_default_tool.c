@@ -122,12 +122,12 @@ void __timer_stop(adiost_timer_index_t index) {
     adiost_timers_count[index] = adiost_timers_count[index] + 1;
 }
 
-ADIOST_EXTERN void my_thread(adiost_event_type_t type, int64_t file_descriptor, char * name) {
+ADIOST_EXTERN void my_thread(adiost_event_type_t type, int64_t file_descriptor, const char * name) {
     DEBUG_PRINT
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_thread_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_thread_timer);
     }
 }
@@ -142,7 +142,7 @@ ADIOST_EXTERN void my_open ( adiost_event_type_t type, int64_t file_descriptor,
         debug_print("mode: %s!\n", mode);
         __timer_start(adiost_open_to_close_timer);
         __timer_start(adiost_open_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_open_timer);
     }
 }
@@ -152,28 +152,31 @@ ADIOST_EXTERN void my_close(adiost_event_type_t type, int64_t file_descriptor) {
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_close_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_close_timer);
         __timer_stop(adiost_open_to_close_timer);
     }
 }
 
-ADIOST_EXTERN void my_write( adiost_event_type_t type, int64_t file_descriptor, const char * name, enum ADIOS_DATATYPES data_type, const int ndims, const char * dims, const void * value) {
+ADIOST_EXTERN void my_write( adiost_event_type_t type, int64_t file_descriptor,
+    const char * name, enum ADIOS_DATATYPES data_type, const int ndims, 
+	const char * dims, const void * value) {
     DEBUG_PRINT
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_write_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_write_timer);
     }
 } 
 
-ADIOST_EXTERN void my_read( adiost_event_type_t type, int64_t file_descriptor ) {
+ADIOST_EXTERN void my_read( adiost_event_type_t type, int64_t file_descriptor,
+    const char * var_name, uint64_t read_size, const void * var) {
     DEBUG_PRINT
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_read_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_read_timer);
     }
 } 
@@ -184,7 +187,7 @@ ADIOST_EXTERN void my_advance_step( adiost_event_type_t type,
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_advance_step_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_advance_step_timer);
     }
 } 
@@ -195,7 +198,7 @@ ADIOST_EXTERN void my_group_size( adiost_event_type_t type,
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_group_size_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         debug_print("data size: %" PRIu64 "!\n", data_size); fflush(stdout);
         adiost_counters_accumulated[adiost_data_bytes_counter] = 
             adiost_counters_accumulated[adiost_data_bytes_counter] + data_size;
@@ -210,13 +213,12 @@ ADIOST_EXTERN void my_group_size( adiost_event_type_t type,
     }
 } 
 
-ADIOST_EXTERN void my_transform( adiost_event_type_t type,
-    int64_t file_descriptor) {
+ADIOST_EXTERN void my_transform( adiost_event_type_t type, int64_t var_id,
+    const char * transform_type_str) {
     DEBUG_PRINT
-    DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_transform_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_transform_timer);
     }
 } 
@@ -227,7 +229,7 @@ ADIOST_EXTERN void my_fp_send_read_msg(adiost_event_type_t type,
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_fp_send_read_msg_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_fp_send_read_msg_timer);
     }
 } 
@@ -238,7 +240,7 @@ ADIOST_EXTERN void my_fp_send_finalize_msg( adiost_event_type_t type,
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_fp_send_finalize_msg_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_fp_send_finalize_msg_timer);
     }
 } 
@@ -249,7 +251,7 @@ ADIOST_EXTERN void my_fp_add_var_to_read_msg(adiost_event_type_t type,
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_fp_add_var_to_read_msg_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_fp_add_var_to_read_msg_timer);
     }
 } 
@@ -260,7 +262,7 @@ ADIOST_EXTERN void my_fp_copy_buffer(adiost_event_type_t type,
     DEBUG_PRINT_FD
     if (type == adiost_event_enter) {
         __timer_start(adiost_fp_copy_buffer_timer);
-    } else {
+    } else if (type == adiost_event_exit) {
         __timer_stop(adiost_fp_copy_buffer_timer);
     }
 } 

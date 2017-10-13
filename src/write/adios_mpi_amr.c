@@ -950,7 +950,7 @@ void * adios_mpi_amr_do_open_thread (void * param)
                      td->md->subfile_name, e);
     }
 
-    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, __func__);
+    ADIOST_CALLBACK_EXIT(adiost_event_thread, NULL, __func__);
     return NULL;
 }
 
