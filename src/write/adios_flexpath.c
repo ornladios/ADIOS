@@ -485,6 +485,20 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 	*size += sizeof(int);
 	break;
 
+    case adios_unsigned_short:
+	field_list[fieldNo].field_type = strdup("unsigned integer");
+	field_list[fieldNo].field_size = sizeof(unsigned short);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(unsigned short);
+	break;
+	
+    case adios_short:
+	field_list[fieldNo].field_type = strdup("integer");
+	field_list[fieldNo].field_size = sizeof(short);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(short);
+	break;
+
     case adios_real:       
 	field_list[fieldNo].field_type = strdup("float");
 	field_list[fieldNo].field_size = sizeof(float);
@@ -525,6 +539,13 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 	field_list[fieldNo].field_size = sizeof(char);
 	field_list[fieldNo].field_offset = *size;
 	*size += sizeof(char);
+	break;
+
+    case adios_unsigned_byte:
+	field_list[fieldNo].field_type = strdup("char");
+	field_list[fieldNo].field_size = sizeof(char);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(unsigned char);
 	break;
 
     case adios_long:
@@ -714,6 +735,55 @@ set_field_type(int type, FMFieldList field_list, int fieldNo, char *dims, int al
         currentFm->size += sizeof(void *);
         break;
         
+    case adios_unsigned_byte:
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
+                     dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255, "*(char %s)",
+                     dims);
+        }
+        field_list[fieldNo].field_size = sizeof(unsigned char);
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
+    case adios_short:
+        // to distinguish on reader_side, I have to look at the size also
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "*(integer%s)", dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "integer%s", dims);
+        }
+        field_list[fieldNo].field_size = sizeof(short);
+	
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+	
+    case adios_unsigned_short: // needs to be unsigned integer in ffs
+        // to distinguish on reader_side, I have to look at the size also
+        field_list[fieldNo].field_type =
+            (char *) malloc(sizeof(char) * 255);
+        if (all_static) {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "*(unsigned integer%s)", dims);
+        } else {
+            snprintf((char *) field_list[fieldNo].field_type, 255,
+                     "unsigned integer%s", dims);
+        }		    
+        field_list[fieldNo].field_size = sizeof(unsigned short);
+	
+        field_list[fieldNo].field_offset = currentFm->size;
+        currentFm->size += sizeof(void *);
+        break;
+        
     case adios_long: // needs to be unsigned integer in ffs
         // to distinguish on reader_side, I have to look at the size also
         field_list[fieldNo].field_type =
@@ -778,13 +848,13 @@ set_field_type(int type, FMFieldList field_list, int fieldNo, char *dims, int al
         currentFm->size += sizeof(void *);
         break;
         
-    default:
-        fprintf(stderr, "Rejecting field %d, name %s\n", fieldNo, field_list[fieldNo].field_name);
-        adios_error(err_invalid_group, 
-                    "set_format: Unknown Type Error %d: name: %s\n", 
-                    type, field_list[fieldNo].field_name);
-        fieldNo--;	      
-        return 1;
+    /* default: */
+    /*     fprintf(stderr, "Rejecting field %d, name %s\n", fieldNo, field_list[fieldNo].field_name); */
+    /*     adios_error(err_invalid_group,  */
+    /*                 "set_format: Unknown Type Error %d: name: %s\n",  */
+    /*                 type, field_list[fieldNo].field_name); */
+    /*     fieldNo--;	       */
+    /*     return 1; */
         //break;
     }
     return 0;
@@ -1707,7 +1777,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     gp->process_id = fileData->rank;
     gp->step = fileData->writerStep;
 
-    set_attributes_in_buffer(fileData, method->group, fileData->fm->buffer);
+    set_attributes_in_buffer(fileData, method->group, (char*)fileData->fm->buffer);
 
     if (fileData->globalCount == 0 ) {
 	gp->num_vars = 0;
