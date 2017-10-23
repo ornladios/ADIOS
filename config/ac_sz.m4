@@ -24,7 +24,7 @@ AM_CONDITIONAL(HAVE_SZ,true)
 AC_ARG_WITH(sz,
         [  --with-sz=DIR      Location of SZ library],
         [SZ_LDFLAGS="-L$withval/lib";
-         SZ_LIBS="-lsz -lzlib";
+         SZ_LIBS="-lSZ -lzlib";
          SZ_CPPFLAGS="-I$withval/include";],
         [with_sz=no])
 
@@ -37,7 +37,7 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lsz -lzlib"
+    LIBS="$LIBS -lSZ -lzlib"
     LDFLAGS="$LDFLAGS $SZ_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $SZ_CPPFLAGS"
 
@@ -50,7 +50,7 @@ else
     # Check for the SZ library and headers
     dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
     dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-    dnl        [SZ_LIBS="-lsz"],
+    dnl        [SZ_LIBS="-lSZ"],
     dnl        [AM_CONDITIONAL(HAVE_SZ,false)])
 
     LIBS="$save_LIBS"
