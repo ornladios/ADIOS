@@ -1558,6 +1558,7 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
     int send_count = 0;   /* dimension count, sending size and offset per */
     uint64_t *send_block = malloc(1);
     
+    memset(gbl_vars, 0, sizeof(global_var));
     while (pg) {
         struct adios_var_struct * list = pg->vars_written;
         while (list) {
@@ -1594,6 +1595,7 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
                 
             num_gbl_vars++;
             gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
+	    memset(&gbl_vars[num_gbl_vars-1], 0, sizeof(global_var));
             gbl_vars[num_gbl_vars - 1].name = fullname;
             gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
             gbl_vars[num_gbl_vars - 1].offsets = ostruct;
@@ -1728,7 +1730,6 @@ set_attributes_in_buffer(FlexpathWriteFileData *fileData, struct adios_group_str
 		char *tmpstr = strdup((char*)data);
 		if (!set_FMPtrField_by_name(flist, mangle_name, buffer, tmpstr)) 
 		    fp_verbose(fileData, "Set fmprtfield by name failed, name %s\n", mangle_name);
-		free(tmpstr);
 	    } else {
 		memcpy(&buffer[field->field_offset], data, field->field_size);
 	    }
