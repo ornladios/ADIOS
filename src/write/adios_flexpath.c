@@ -727,7 +727,7 @@ set_field_type(int type, FMFieldList field_list, int fieldNo, char *dims, int al
             snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
                      dims);
         } else {
-            snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
+            snprintf((char *) field_list[fieldNo].field_type, 255, "char%s",
                      dims);
         }
         field_list[fieldNo].field_size = sizeof(char);
@@ -742,7 +742,7 @@ set_field_type(int type, FMFieldList field_list, int fieldNo, char *dims, int al
             snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
                      dims);
         } else {
-            snprintf((char *) field_list[fieldNo].field_type, 255, "*(char %s)",
+            snprintf((char *) field_list[fieldNo].field_type, 255, "char %s",
                      dims);
         }
         field_list[fieldNo].field_size = sizeof(unsigned char);
@@ -1001,9 +1001,7 @@ set_format(struct adios_group_struct *t,
 	    }
 	    v_offset *= -1;
 		  
-	    while (currentFm->size % 8 != 0) {
-		currentFm->size ++;					
-	    }
+	    currentFm->size = (currentFm->size + 7) & ~7;
 		  
             set_field_type(adios_var->type, field_list, fieldNo, dims, all_static, currentFm);
         }        
