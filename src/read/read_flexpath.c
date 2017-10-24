@@ -2381,7 +2381,17 @@ adios_read_flexpath_get_attr (const ADIOS_FILE *adiosfile, const char *attrname,
 
     *type = fpvar->type;
     *size = fpvar->type_size;
-    *data = fpvar->chunks[0].data;
+    if (fpvar->type == adios_string) {
+	*data = strdup(fpvar->chunks[0].data);
+	*size = strlen(fpvar->chunks[0].data) +1;
+    } else {
+	*data = (void*)malloc(*size);
+	if (*data) memcpy(*data, fpvar->chunks[0].data, *size);
+    } 
+    if (!(*data)) {
+        adios_error (err_no_memory, "Could not allocate memory for attribute info.\n");
+        return adios_errno;
+    }
     return 0;
 }
 
