@@ -56,6 +56,7 @@ int common_adios_init(const char *config, MPI_Comm comm) {
   adiost_pre_init();
   adios_parse_config(config, comm);
   adiost_post_init();
+  ADIOST_CALLBACK(adiost_event_init, config, comm);
   return adios_errno;
 }
 
@@ -67,11 +68,13 @@ int common_adios_init_noxml(MPI_Comm comm) {
   adiost_pre_init();
   adios_local_config(comm);
   adiost_post_init();
+  ADIOST_CALLBACK(adiost_event_init_noxml, comm);
   return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_finalize(int mype) {
+  ADIOST_CALLBACK_ENTER(adiost_event_finalize, mype);
   struct adios_method_list_struct *m;
   struct adios_group_list_struct *g;
 
@@ -109,6 +112,7 @@ int common_adios_finalize(int mype) {
   timer_finalize();
 #endif
 
+  ADIOST_CALLBACK_EXIT(adiost_event_finalize, mype);
   adiost_finalize();
   return adios_errno;
 }
@@ -142,7 +146,7 @@ int common_adios_open(int64_t *fd_p, const char *group_name, const char *name,
   timer_start("adios_open_to_close");
   timer_start("adios_open");
 #endif
-  ADIOST_CALLBACK_ENTER(adiost_event_open, *fd_p, group_name, name, file_mode);
+  ADIOST_CALLBACK_ENTER(adiost_event_open, *fd_p, group_name, name, file_mode, comm);
 
   struct adios_group_struct *g = NULL;
   struct adios_method_list_struct *methods = NULL;
@@ -159,7 +163,7 @@ int common_adios_open(int64_t *fd_p, const char *group_name, const char *name,
                 "adios_open: try to open file %s with undefined group: %s\n",
                 name, group_name);
     *fd_p = 0;
-    ADIOST_CALLBACK_EXIT(adiost_event_open, *fd_p, group_name, name, file_mode);
+    ADIOST_CALLBACK_EXIT(adiost_event_open, *fd_p, group_name, name, file_mode, comm);
     return adios_errno;
   }
 
@@ -436,7 +440,7 @@ int common_adios_open(int64_t *fd_p, const char *group_name, const char *name,
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
   timer_stop("adios_open");
 #endif
-  ADIOST_CALLBACK_EXIT(adiost_event_open, *fd_p, group_name, name, file_mode);
+  ADIOST_CALLBACK_EXIT(adiost_event_open, *fd_p, group_name, name, file_mode, comm);
   return adios_errno;
 }
 
@@ -448,7 +452,7 @@ int common_adios_group_size(int64_t fd_p, uint64_t data_size,
   timer_start("adios_group_size");
 #endif
   // printf("enter adios_group_size datasize= %llu\n", data_size);
-  ADIOST_CALLBACK_ENTER(adiost_event_group_size, fd_p, data_size, *total_size);
+  ADIOST_CALLBACK_ENTER(adiost_event_group_size, fd_p, data_size, total_size);
 
   adios_errno = err_no_error;
   struct adios_file_struct *fd;
@@ -457,7 +461,7 @@ int common_adios_group_size(int64_t fd_p, uint64_t data_size,
   if (!fd) {
     adios_error(err_invalid_file_pointer,
                 "Invalid handle passed to adios_group_size\n");
-    ADIOST_CALLBACK_EXIT(adiost_event_group_size, fd_p, data_size, *total_size);
+    ADIOST_CALLBACK_EXIT(adiost_event_group_size, fd_p, data_size, total_size);
     return adios_errno;
   }
 
@@ -467,13 +471,13 @@ int common_adios_group_size(int64_t fd_p, uint64_t data_size,
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop("adios_group_size");
 #endif
-    ADIOST_CALLBACK_EXIT(adiost_event_group_size, fd_p, data_size, *total_size);
+    ADIOST_CALLBACK_EXIT(adiost_event_group_size, fd_p, data_size, total_size);
     return err_no_error;
   }
 
   if (fd->buffer_size == 0) {
     *total_size = 0;
-    ADIOST_CALLBACK_EXIT(adiost_event_group_size, fd_p, data_size, *total_size);
+    ADIOST_CALLBACK_EXIT(adiost_event_group_size, fd_p, data_size, total_size);
     return err_no_error;
   }
 
@@ -517,7 +521,7 @@ int common_adios_group_size(int64_t fd_p, uint64_t data_size,
   // each var will be added to the buffer by the adios_write calls
   // attributes will be added by adios_close
 
-  ADIOST_CALLBACK_EXIT(adiost_event_group_size, fd_p, data_size, *total_size);
+  ADIOST_CALLBACK_EXIT(adiost_event_group_size, fd_p, data_size, total_size);
   return adios_errno;
 }
 
@@ -616,7 +620,7 @@ int common_adios_write(struct adios_file_struct *fd, struct adios_var_struct *v,
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
   timer_start("adios_write");
 #endif
-  ADIOST_CALLBACK_ENTER(adiost_event_write, fd);
+  ADIOST_CALLBACK_WRITE_ENTER(adiost_event_write, fd, v);
   adios_errno = err_no_error;
   struct adios_method_list_struct *m = fd->group->methods;
 
@@ -725,7 +729,7 @@ int common_adios_write(struct adios_file_struct *fd, struct adios_var_struct *v,
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start("adios_transform");
 #endif
-    ADIOST_CALLBACK_ENTER(adiost_event_transform, fd);
+    ADIOST_CALLBACK_ENTER(adiost_event_transform, (int64_t)fd);
     int success = common_adios_write_transform_helper(fd, v);
     if (success) {
       // Make it appear as if the user had supplied the transformed data
@@ -737,7 +741,7 @@ int common_adios_write(struct adios_file_struct *fd, struct adios_var_struct *v,
           adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
       // FIXME: Reverse the transform metadata and write raw data as usual
     }
-    ADIOST_CALLBACK_EXIT(adiost_event_transform, fd);
+    ADIOST_CALLBACK_EXIT(adiost_event_transform, (int64_t)fd);
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop("adios_transform");
 #endif
@@ -784,7 +788,7 @@ int common_adios_write(struct adios_file_struct *fd, struct adios_var_struct *v,
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
   timer_stop("adios_write");
 #endif
-  ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+  ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write, fd, v);
   // printf ("var: %s written %d\n", v->name, v->write_count);
   return adios_errno;
 }
@@ -794,10 +798,10 @@ int common_adios_write_byid(struct adios_file_struct *fd,
                             struct adios_var_struct *v, const void *var) {
   struct adios_method_list_struct *m = fd->group->methods;
 
-  ADIOST_CALLBACK_ENTER(adiost_event_write, fd);
+  ADIOST_CALLBACK_WRITE_ENTER(adiost_event_write_byid, fd, v);
   adios_errno = err_no_error;
   if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL) {
-    ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+    ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write_byid, fd, v);
     return adios_errno;
   }
 
@@ -834,7 +838,7 @@ int common_adios_write_byid(struct adios_file_struct *fd,
               err_no_memory,
               "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
               element_size, v->name);
-          ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+          ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write_byid, fd, v);
           return adios_errno;
         }
 
@@ -849,7 +853,7 @@ int common_adios_write_byid(struct adios_file_struct *fd,
               err_no_memory,
               "In adios_write, cannot allocate %lld bytes to copy string %s\n",
               element_size, v->name);
-          ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+          ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write_byid, fd, v);
           return adios_errno;
         }
         ((char *)v->adata)[element_size] = 0;
@@ -873,7 +877,7 @@ int common_adios_write_byid(struct adios_file_struct *fd,
     adios_copy_var_written(fd, v);
   }
 
-  ADIOST_CALLBACK_EXIT(adiost_event_write, fd);
+  ADIOST_CALLBACK_WRITE_EXIT(adiost_event_write_byid, fd, v);
   return adios_errno;
 }
 
@@ -925,13 +929,13 @@ int common_adios_get_write_buffer(int64_t fd_p, const char *name,
 
 int common_adios_read(int64_t fd_p, const char *name, void *buffer,
                       uint64_t buffer_size) {
-  ADIOST_CALLBACK_ENTER(adiost_event_read, fd_p);
+  ADIOST_CALLBACK_ENTER(adiost_event_read, fd_p, name, buffer, buffer_size);
   struct adios_file_struct *fd = (struct adios_file_struct *)fd_p;
   adios_errno = err_no_error;
   if (!fd) {
     adios_error(err_invalid_file_pointer,
                 "Invalid handle passed to adios_group_size\n");
-    ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p);
+    ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p, name, buffer, buffer_size);
 
     return adios_errno;
   }
@@ -940,7 +944,7 @@ int common_adios_read(int64_t fd_p, const char *name, void *buffer,
 
   if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL) {
     // nothing to do so just return
-    ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p);
+    ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p, name, buffer, buffer_size);
     return err_no_error;
   }
 
@@ -948,7 +952,7 @@ int common_adios_read(int64_t fd_p, const char *name, void *buffer,
     adios_error(err_invalid_file_mode,
                 "read attempted on %s which was opened for write\n", fd->name);
 
-    ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p);
+    ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p, name, buffer, buffer_size);
     return adios_errno;
   }
 
@@ -970,11 +974,11 @@ int common_adios_read(int64_t fd_p, const char *name, void *buffer,
     adios_error(err_invalid_varname, "var %s in file %s not found on read\n",
                 name, fd->name);
 
-    ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p);
+    ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p, name, buffer, buffer_size);
     return adios_errno;
   }
 
-  ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p);
+  ADIOST_CALLBACK_EXIT(adiost_event_read, fd_p, name, buffer, buffer_size);
   return adios_errno;
 }
 
@@ -1129,12 +1133,12 @@ int common_adios_close(struct adios_file_struct *fd) {
 #endif
   adios_errno = err_no_error;
 
-  ADIOST_CALLBACK_ENTER(adiost_event_close, fd);
+  ADIOST_CALLBACK_ENTER(adiost_event_close, (int64_t)fd);
   if (!fd) {
     adios_error(err_invalid_file_pointer,
                 "Invalid handle passed to adios_close\n");
 
-    ADIOST_CALLBACK_EXIT(adiost_event_close, fd);
+    ADIOST_CALLBACK_EXIT(adiost_event_close, (int64_t)fd);
     return adios_errno;
   }
 
@@ -1145,7 +1149,7 @@ int common_adios_close(struct adios_file_struct *fd) {
     timer_stop("adios_close");
     timer_stop("adios_open_to_close");
 #endif
-    ADIOST_CALLBACK_EXIT(adiost_event_close, fd);
+    ADIOST_CALLBACK_EXIT(adiost_event_close, (int64_t)fd);
     return 0;
   }
 
@@ -1460,7 +1464,7 @@ fd->current_pg->pg_start_in_file=%lld\n",
 // timer_reset_timers ();
 #endif
 
-  ADIOST_CALLBACK_EXIT(adiost_event_close, fd);
+  ADIOST_CALLBACK_EXIT(adiost_event_close, (int64_t)fd);
   return adios_errno;
 }
 

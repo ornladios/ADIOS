@@ -12,11 +12,13 @@
 
 #include "public/adios_error.h"
 #include "core/a2sel.h"
+#include "core/adiost_callback_internal.h"
 
 extern int adios_errno;
 
 ADIOS_SELECTION * a2sel_boundingbox (int ndim, const uint64_t *start, const uint64_t *count)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_selection_boundingbox, ndim, start, count, NULL);
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
@@ -29,12 +31,14 @@ ADIOS_SELECTION * a2sel_boundingbox (int ndim, const uint64_t *start, const uint
     } else {
         adios_error(err_no_memory, "Cannot allocate memory for bounding box selection\n");
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_selection_boundingbox, ndim, start, count, sel);
     return sel;
 }
 
 ADIOS_SELECTION * a2sel_points (int ndim, uint64_t npoints, const uint64_t *points,
                                 ADIOS_SELECTION * container, int free_points_on_delete)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_selection_points, ndim, npoints, points, container, free_points_on_delete, NULL);
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
@@ -47,11 +51,13 @@ ADIOS_SELECTION * a2sel_points (int ndim, uint64_t npoints, const uint64_t *poin
     } else {
         adios_error(err_no_memory, "Cannot allocate memory for points selection\n");
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_selection_points, ndim, npoints, points, container, free_points_on_delete, sel);
     return sel;
 }
 
 ADIOS_SELECTION * a2sel_writeblock (int index)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_selection_writeblock, index, NULL);
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
@@ -65,11 +71,13 @@ ADIOS_SELECTION * a2sel_writeblock (int index)
     } else {
         adios_error(err_no_memory, "Cannot allocate memory for writeblock selection\n");
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_selection_writeblock, index, sel);
     return sel;
 }
 
 ADIOS_SELECTION * a2sel_auto (char *hints)
 {
+    ADIOST_CALLBACK_EXIT(adiost_event_selection_auto, hints, NULL);
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
@@ -78,11 +86,13 @@ ADIOS_SELECTION * a2sel_auto (char *hints)
     } else {
         adios_error(err_no_memory, "Cannot allocate memory for auto selection\n");
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_selection_auto, hints, sel);
     return sel;
 }
 
 void a2sel_free (ADIOS_SELECTION *sel)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_selection_delete, sel);
     if (!sel)
         return;
     if (sel->type == ADIOS_SELECTION_POINTS)
@@ -109,6 +119,7 @@ void a2sel_free (ADIOS_SELECTION *sel)
         }
     }
     free(sel);
+    ADIOST_CALLBACK_EXIT(adiost_event_selection_delete, sel);
 }
 
 ADIOS_SELECTION * a2sel_copy (const ADIOS_SELECTION * sel)

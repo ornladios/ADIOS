@@ -38,8 +38,11 @@ const char adiost_enabled_env_var[] = {"ADIOS_TOOL"};
 /* forward declaration of the weak (default) tool */
 
 //extern __attribute__ (( weak )) adiost_initialize_t adiost_tool(void);
-//extern adiost_initialize_t adiost_tool(void);
-extern __attribute__((visibility("default"))) adiost_initialize_t __attribute__((weak)) adiost_tool(void);
+extern adiost_initialize_t default_adiost_tool(void);
+//extern __attribute__((visibility("default"))) adiost_initialize_t __attribute__((weak)) adiost_tool(void);
+
+/* function pointer to hold the tool function. */
+adiost_initialize_t (*my_adiost_tool)(void) = NULL;
 
 /* Pre-initialization. */
 
@@ -62,6 +65,13 @@ void adiost_pre_init(void) {
         tool_setting = adiost_enabled;
     }
 
+	// if a tool function is defined, assign our internal pointer to it.
+	if (adiost_tool != NULL) {
+	    my_adiost_tool = &adiost_tool;
+	} else {
+	    my_adiost_tool = &default_adiost_tool;
+	}
+
     // validate the input
     debug_print("%s: %s = %d\n", __func__, adiost_enabled_env_var, tool_setting);
     switch(tool_setting) {
@@ -69,8 +79,8 @@ void adiost_pre_init(void) {
             break;
         case adiost_unset:
         case adiost_enabled:
-            if (adiost_tool) {
-            	adiost_initialize_fn = adiost_tool();
+            if (my_adiost_tool) {
+            	adiost_initialize_fn = my_adiost_tool();
             	// if initialization is successful, we are enabled
             	if (adiost_initialize_fn) {
                 	adios_tool_enabled = 1;
@@ -181,5 +191,62 @@ static adiost_interface_fn_t adiost_fn_lookup(const char *s)
     //FOREACH_ADIOST_PLACEHOLDER_FN(adiost_interface_fn)
 
     return (adiost_interface_fn_t) 0;
+}
+
+char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) { 
+    // I hate to use a fixed length string, but...
+    char tmpstr[1024] = {0};
+    *ndims = 0;
+    if (v->dimensions == NULL) {
+        return strdup("");
+    }
+    char dims[256] = {0};
+    char global_dims[256] = {0};
+    char local_offsets[256] = {0};
+    struct adios_dimension_struct * tmp = v->dimensions;
+    char delimiter = '[';
+    while (tmp != NULL) {
+        *ndims = *ndims + 1;
+        // just a regular old number? Get its value.
+        if (tmp->dimension.rank > 0) {
+            sprintf(dims, "%s%c%lu", dims, delimiter, tmp->dimension.rank);
+        // another ADIOS variable? Get its name.
+        } else if (tmp->dimension.var != NULL) {
+            sprintf(dims, "%s%c%s", dims, delimiter, tmp->dimension.var->name);
+        // another ADIOS attribute? Get its name.
+        } else if (tmp->dimension.attr != NULL) {
+            sprintf(dims, "%s%c%s", dims, delimiter, tmp->dimension.attr->name);
+        }
+        // just a regular old number? Get its value.
+        if (tmp->global_dimension.rank > 0) {
+            sprintf(global_dims, "%s%c%lu", global_dims, delimiter, tmp->global_dimension.rank);
+        // another ADIOS variable? Get its name.
+        } else if (tmp->global_dimension.var != NULL) {
+            sprintf(global_dims, "%s%c%s", global_dims, delimiter, tmp->global_dimension.var->name);
+        // another ADIOS attribute? Get its name.
+        } else if (tmp->global_dimension.attr != NULL) {
+            sprintf(global_dims, "%s%c%s", global_dims, delimiter, tmp->global_dimension.attr->name);
+        }
+        // just a regular old number? Get its value.
+        if (tmp->local_offset.rank > 0) {
+            sprintf(local_offsets, "%s%c%lu", local_offsets, delimiter, tmp->local_offset.rank);
+        // another ADIOS variable? Get its name.
+        } else if (tmp->local_offset.var != NULL) {
+            sprintf(local_offsets, "%s%c%s", local_offsets, delimiter, tmp->local_offset.var->name);
+        // another ADIOS attribute? Get its name.
+        } else if (tmp->local_offset.attr != NULL) {
+            sprintf(local_offsets, "%s%c%s", local_offsets, delimiter, tmp->local_offset.attr->name);
+        }
+        // move on to the next dimension?
+        delimiter = ',';
+        tmp = tmp->next;
+    }
+    delimiter = ']';
+    sprintf(dims, "%s%c", dims, delimiter);
+    sprintf(global_dims, "%s%c", global_dims, delimiter);
+    sprintf(local_offsets, "%s%c", local_offsets, delimiter);
+    // build the whole thing
+    sprintf(tmpstr, "%s;%s;%s", dims, global_dims, local_offsets);
+    return strdup(tmpstr);
 }
 

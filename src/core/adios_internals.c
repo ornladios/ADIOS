@@ -38,6 +38,8 @@
 #include "core/transforms/adios_transforms_write.h"
 #include "core/transforms/adios_transforms_specparse.h"
 
+#include "adiost_callback_internal.h"
+
 struct adios_method_list_struct * adios_methods = 0;
 struct adios_group_list_struct * adios_groups = 0;
 
@@ -994,6 +996,7 @@ int adios_common_define_attribute (int64_t group, const char * name
         ,const char * var
         )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_attribute, group, name, path, type, value, var);
     struct adios_group_struct * g = (struct adios_group_struct *) group;
     struct adios_attribute_struct * attr = (struct adios_attribute_struct *)
         malloc (sizeof (struct adios_attribute_struct));
@@ -1016,6 +1019,7 @@ int adios_common_define_attribute (int64_t group, const char * name
             free (attr->path);
             free (attr);
 
+            ADIOST_CALLBACK_EXIT(adiost_event_define_attribute, group, name, path, type, value, var);
             return 0;
         }
         attr->type = type;
@@ -1036,6 +1040,7 @@ int adios_common_define_attribute (int64_t group, const char * name
             free (attr->path);
             free (attr);
 
+            ADIOST_CALLBACK_EXIT(adiost_event_define_attribute, group, name, path, type, value, var);
             return 0;
         }
     }
@@ -1057,6 +1062,7 @@ int adios_common_define_attribute (int64_t group, const char * name
             free (attr->path);
             free (attr);
 
+            ADIOST_CALLBACK_EXIT(adiost_event_define_attribute, group, name, path, type, value, var);
             return 0;
         }
     }
@@ -1067,6 +1073,7 @@ int adios_common_define_attribute (int64_t group, const char * name
 
     adios_append_attribute (&g->attributes, attr, ++g->member_count);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_define_attribute, group, name, path, type, value, var);
     return 1;
 }
 
@@ -1079,6 +1086,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
         ,const void * values
         )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_attribute_byvalue, group, name, path, type, nelems, values);
     struct adios_group_struct * g = (struct adios_group_struct *) group;
     struct adios_attribute_struct * attr = (struct adios_attribute_struct *)
         malloc (sizeof (struct adios_attribute_struct));
@@ -1093,6 +1101,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
                     "type attribute\n",
                     name);
             free (attr);
+            ADIOST_CALLBACK_EXIT(adiost_event_define_attribute_byvalue, group, name, path, type, nelems, values);
             return 0;
         }
         attr->type = type;
@@ -1109,6 +1118,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
                             "Not enough memory to copy string array attribute %s/%s\n", 
                             path, name);
                     free (attr);
+                    ADIOST_CALLBACK_EXIT(adiost_event_define_attribute_byvalue, group, name, path, type, nelems, values);
                     return 0;
                 }
                 attr->data_size = total_length;
@@ -1138,6 +1148,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
                     "value attribute\n", name);
             free (attr->value);
             free (attr);
+            ADIOST_CALLBACK_EXIT(adiost_event_define_attribute_byvalue, group, name, path, type, nelems, values);
             return 0;
         }
         attr->name = strdup (name);
@@ -1149,6 +1160,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
                 "Attribute element %s has invalid "
                 "value attribute\n", name);
         free (attr);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_attribute_byvalue, group, name, path, type, nelems, values);
         return 0;
     }
 
@@ -1157,6 +1169,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
 
     adios_append_attribute (&g->attributes, attr, ++g->member_count);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_define_attribute_byvalue, group, name, path, type, nelems, values);
     return 1;
 }
 
@@ -1388,6 +1401,7 @@ int adios_common_declare_group (int64_t * id, const char * name
         ,enum ADIOS_STATISTICS_FLAG stats
         )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_declare_group, id, name, time_index_name, stats);
     struct adios_group_struct * g = (struct adios_group_struct *)
         malloc (sizeof (struct adios_group_struct));
 
@@ -1437,6 +1451,7 @@ int adios_common_declare_group (int64_t * id, const char * name
 
     adios_append_group (g);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_declare_group, id, name, time_index_name, stats);
     return 1;
 }
 
@@ -1893,6 +1908,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
         ,const char * local_offsets
         )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_var, group_id, name, path, type, dimensions, global_dimensions, local_offsets);
     struct adios_group_struct * t = (struct adios_group_struct *) group_id;
     struct adios_var_struct * v = (struct adios_var_struct *)
         malloc (sizeof (struct adios_var_struct));
@@ -2004,6 +2020,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
                 adios_error (err_no_memory,
                         "config.xml: out of memory in adios_common_define_var\n");
 
+                ADIOST_CALLBACK_EXIT(adiost_event_define_var, group_id, name, path, type, dimensions, global_dimensions, local_offsets);
                 return 0;
             }
             char * dim = 0;
@@ -2029,6 +2046,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
                 a2s_cleanup_dimensions (g_dim_tokens, g_dim_count);
                 a2s_cleanup_dimensions (lo_dim_tokens, lo_dim_count);
 
+                ADIOST_CALLBACK_EXIT(adiost_event_define_var, group_id, name, path, type, dimensions, global_dimensions, local_offsets);
                 return 0;
             }
 
@@ -2051,12 +2069,14 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     v->id = ++t->member_count;
     adios_append_var (t, v);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_define_var, group_id, name, path, type, dimensions, global_dimensions, local_offsets);
     return (int64_t)v;
 }
 
 /* Set the transformation method for a variable. Only one transformation will work for each variable */
 int adios_common_set_transform (int64_t var_id, const char *transform_type_str)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_set_transform, var_id, transform_type_str);
     struct adios_var_struct * v = (struct adios_var_struct *)var_id;
     assert (v);
     // NCSU ALACRITY-ADIOS - parse transform type string, and call the transform layer to
@@ -2072,6 +2092,7 @@ int adios_common_set_transform (int64_t var_id, const char *transform_type_str)
     // This function sets the transform_type field. It does nothing if transform_type is none.
     // Note: ownership of the transform_spec struct is given to this function
     v = adios_transform_define_var(v);
+    ADIOST_CALLBACK_EXIT(adiost_event_set_transform, var_id, transform_type_str);
     return adios_errno;
 }
 
@@ -6295,6 +6316,7 @@ int queue_dequeue (Queue * queue, void ** data)
 // Functions for non-XML API fo ADIOS Schema some of which are also called from functions in adios_internals_mxml.c
 int adios_common_define_schema_version (struct adios_group_struct * new_group, char * schema_version)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_schema_version, (int64_t)new_group, schema_version);
     int64_t p_new_group = (int64_t) new_group;
 
     if (strcasecmp (schema_version,"")){
@@ -6336,6 +6358,7 @@ int adios_common_define_schema_version (struct adios_group_struct * new_group, c
         }
         free(ver);
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_define_schema_version, (int64_t)new_group, schema_version);
     return 0;
 }
 
@@ -6347,6 +6370,7 @@ int adios_common_define_mesh_timeSeriesFormat (const char * timeseries,
                                                const char * name
                                               )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_mesh_timeseriesformat, timeseries, (int64_t)new_group, name);
     char * d1;                     // save of strdup
     int64_t p_new_group = (int64_t) new_group;
     char * format_att_nam = 0;     // extension format .xxxx att name
@@ -6357,6 +6381,7 @@ int adios_common_define_mesh_timeSeriesFormat (const char * timeseries,
     // varname.XXXX.png where XXXX is the time step padded with 0s
     // We do not fail if this is not given as variables all have nsteps
     if (!timeseries || !strcmp(timeseries,"")){
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timeseriesformat, timeseries, (int64_t)new_group, name);
         return 1;
     }
 
@@ -6372,6 +6397,7 @@ int adios_common_define_mesh_timeSeriesFormat (const char * timeseries,
         free(format_att_val);
     }
     free (d1);
+    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timeseriesformat, timeseries, (int64_t)new_group, name);
     return 1;
 }
 
@@ -6381,6 +6407,7 @@ int adios_common_define_mesh_timeScale (const char * timescale,
                                         const char * name
                                        )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_mesh_timescale, timescale, (int64_t)new_group, name);
     char * c;                      // comma location
     char * d1;                     // save of strdup
     int64_t p_new_group = (int64_t) new_group;
@@ -6412,6 +6439,7 @@ int adios_common_define_mesh_timeScale (const char * timescale,
        */
     if (!timescale || !strcmp(timescale,"")){
 //        printf("time-scale attribute for mesh: %s not provided.\n", name);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timescale, timescale, (int64_t)new_group, name);
         return 1;
     }
 
@@ -6435,6 +6463,7 @@ int adios_common_define_mesh_timeScale (const char * timescale,
                           c, name);
                 free (d1);
 
+                ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timescale, timescale, (int64_t)new_group, name);
                 return 0;
 
             }else{
@@ -6542,11 +6571,13 @@ int adios_common_define_mesh_timeScale (const char * timescale,
     }else{
         printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
         free(d1);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timescale, timescale, (int64_t)new_group, name);
         return 0;
     }
 
     free (d1);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timescale, timescale, (int64_t)new_group, name);
     return 1;
 }
 
@@ -6568,6 +6599,7 @@ int adios_common_define_mesh_timeSteps (const char * timesteps,
                                         const char * name
                                        )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_mesh_timesteps, timesteps, (int64_t)new_group, name);
     char * c;                      // comma location
     char * d1;                     // save of strdup
     int64_t p_new_group = (int64_t) new_group;
@@ -6599,6 +6631,7 @@ int adios_common_define_mesh_timeSteps (const char * timesteps,
        */
     if (!timesteps || !strcmp(timesteps,"")){
 //        printf("time-steps for mesh %s attribute not provided.\n", name);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timesteps, timesteps, (int64_t)new_group, name);
         return 1;
     }
 
@@ -6619,6 +6652,7 @@ int adios_common_define_mesh_timeSteps (const char * timesteps,
                           c, name);
                 free (d1);
 
+                ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timesteps, timesteps, (int64_t)new_group, name);
                 return 0;
 
             }else{
@@ -6715,11 +6749,13 @@ int adios_common_define_mesh_timeSteps (const char * timesteps,
     }else{
         printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
         free(d1);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timesteps, timesteps, (int64_t)new_group, name);
         return 0;
     }
 
     free (d1);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_timesteps, timesteps, (int64_t)new_group, name);
     return 1;
 }
 
@@ -6734,6 +6770,7 @@ int adios_common_define_mesh_uniform (char * dimensions,
                                       int64_t group_id
                                      )
 {   
+    ADIOST_CALLBACK_ENTER(adiost_event_define_mesh_uniform, dimensions, origin, spacing, maximum, nspace, group_id, name);
     struct adios_group_struct * new_group = (struct adios_group_struct *) group_id;
     char * mpath = 0;
     mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/type")+1);
@@ -6742,8 +6779,10 @@ int adios_common_define_mesh_uniform (char * dimensions,
     strcat (mpath, "/type");
     adios_common_define_attribute (group_id, mpath, "", adios_string, "uniform", "");
 
-    if (!adios_define_mesh_uniform_dimensions (dimensions, new_group, name))
+    if (!adios_define_mesh_uniform_dimensions (dimensions, new_group, name)) {
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_uniform, dimensions, origin, spacing, maximum, nspace, group_id, name);
         return 1;
+    }
 
     adios_define_mesh_uniform_origins (origin, new_group, name);
     
@@ -6754,6 +6793,7 @@ int adios_common_define_mesh_uniform (char * dimensions,
     adios_define_mesh_nspace (nspace, new_group, name);
 
     free (mpath);   
+    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_uniform, dimensions, origin, spacing, maximum, nspace, group_id, name);
     return 0;
 }
 
@@ -6766,6 +6806,7 @@ int adios_common_define_mesh_rectilinear (char * dimensions,
                                           int64_t group_id
                                          )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_mesh_rectilinear, dimensions, coordinates, nspace, group_id, name);
     struct adios_group_struct * new_group = (struct adios_group_struct *) group_id;
     char * mpath = 0;
     mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/type")+1);
@@ -6774,26 +6815,33 @@ int adios_common_define_mesh_rectilinear (char * dimensions,
     strcat (mpath, "/type");
     adios_common_define_attribute (group_id, mpath, "", adios_string, "rectilinear", "");
 
-    if (!adios_define_mesh_rectilinear_dimensions (dimensions, new_group, name))
+    if (!adios_define_mesh_rectilinear_dimensions (dimensions, new_group, name)) {
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_rectilinear, dimensions, coordinates, nspace, group_id, name);
         return 1;
+	}
 
     // Determine if it is the multi-var or single-var case
     char *p;
     // If we do not find "," in the coordinates
     if (!(p = strstr(coordinates, ",")))
     {
-        if (!adios_define_mesh_rectilinear_coordinatesSingleVar (coordinates, new_group, name))
+        if (!adios_define_mesh_rectilinear_coordinatesSingleVar (coordinates, new_group, name)) {
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_rectilinear, dimensions, coordinates, nspace, group_id, name);
             return 1;
+		}
     }
     else
     {
-        if (!adios_define_mesh_rectilinear_coordinatesMultiVar (coordinates, new_group, name))
+        if (!adios_define_mesh_rectilinear_coordinatesMultiVar (coordinates, new_group, name)) {
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_rectilinear, dimensions, coordinates, nspace, group_id, name);
             return 1;
+		}
     }
 
     adios_define_mesh_nspace (nspace, new_group, name);
 
     free (mpath);
+    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_rectilinear, dimensions, coordinates, nspace, group_id, name);
     return 0;
 }
 
@@ -6806,6 +6854,7 @@ int adios_common_define_mesh_structured (char * dimensions,
                                          int64_t group_id
                                         )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_mesh_structured, dimensions, points, nspace, group_id, name);
     struct adios_group_struct * new_group = (struct adios_group_struct *) group_id;
     char * mpath = 0;
     mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/type")+1);
@@ -6815,36 +6864,46 @@ int adios_common_define_mesh_structured (char * dimensions,
     adios_common_define_attribute (group_id, mpath, "", adios_string, "structured", "");
 
     if (dimensions){
-        if (!adios_define_mesh_structured_dimensions (dimensions, new_group, name))
+        if (!adios_define_mesh_structured_dimensions (dimensions, new_group, name)) {
+		    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_structured, dimensions, points, nspace, group_id, name);
             return 0;
+		}
     }else{
         log_warn ("config.xml: value attribute on "
                   "dimensions required (%s)\n", name);
-
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_structured, dimensions, points, nspace, group_id, name);
         return 0;
     }
 
     if (nspace){
-//        if (!adios_define_mesh_structured_nspace (nspace, new_group, name))
-          if (!adios_define_mesh_nspace (nspace, new_group, name))
+//      if (!adios_define_mesh_structured_nspace (nspace, new_group, name))
+        if (!adios_define_mesh_nspace (nspace, new_group, name)) {
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_structured, dimensions, points, nspace, group_id, name);
             return 0;
+		}
     }
     if (points){
         char *p;
         // If we do find "," in points (single-var case)
         if (!(p = strstr(points, ","))){
-            if (!adios_define_mesh_structured_pointsSingleVar (points, new_group, name))
+            if (!adios_define_mesh_structured_pointsSingleVar (points, new_group, name)) {
+                ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_structured, dimensions, points, nspace, group_id, name);
                 return 0;
+			}
         }else{
-            if (!adios_define_mesh_structured_pointsMultiVar (points, new_group, name))
+            if (!adios_define_mesh_structured_pointsMultiVar (points, new_group, name)) {
+                ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_structured, dimensions, points, nspace, group_id, name);
                 return 0;
+			}
         }
     }else{
         log_warn ("config.xml: value on "
                   "points required for mesh type=structured (%s)\n", name);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_structured, dimensions, points, nspace, group_id, name);
         return 0;
     }
     free (mpath);
+    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_structured, dimensions, points, nspace, group_id, name);
     return 1;
 }
 
@@ -6858,6 +6917,7 @@ int adios_common_define_mesh_unstructured (char * points,
                                            const char * name,
                                            int64_t group_id)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
     struct adios_group_struct * new_group = (struct adios_group_struct *) group_id;
     char * mpath = 0;
     mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/type")+1);
@@ -6868,45 +6928,57 @@ int adios_common_define_mesh_unstructured (char * points,
     if (nspace && *nspace != 0)
     {
 //        if (!adios_define_mesh_unstructured_nspace (nspace, new_group, name))
-            if (!adios_define_mesh_nspace (nspace, new_group, name))
-            return 0;
+            if (!adios_define_mesh_nspace (nspace, new_group, name)) {
+                ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
+                return 0;
+			}
     }
     if (npoints && *npoints != 0)
     {
-        if (!adios_define_mesh_unstructured_npoints (npoints, new_group, name))
+        if (!adios_define_mesh_unstructured_npoints (npoints, new_group, name)) {
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
             return 0;
+		}
 
     }
     if (points && *points != 0){
         char *p;
         // If we do find "," in points (single-var case)
         if (!(p = strstr(points, ","))){
-            if (!adios_define_mesh_unstructured_pointsSingleVar (points, new_group, name))
+            if (!adios_define_mesh_unstructured_pointsSingleVar (points, new_group, name)) {
+                ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
                 return 0;
+			}
         }else{
-            if (!adios_define_mesh_unstructured_pointsMultiVar (points, new_group, name))
+            if (!adios_define_mesh_unstructured_pointsMultiVar (points, new_group, name)) {
+                ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
                 return 0;
+			}
         }
     }else{
         log_warn ("config.xml: value on "
                   "points required for mesh type=structured (%s)\n", name);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
         return 0;
     }
     if (!data){
         log_warn ("config.xml: data attribute on "
                   "uniform-cells required (%s)\n", name);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
         return 0;
     }
     if (!count) 
     {
         log_warn ("config.xml: count attribute on "
                   "uniform-cells required (%s)\n", name);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
         return 0;
     }
     if (!type)
     {
         log_warn ("config.xml: type attribute on "
                   "uniform-cells required (%s)\n", name);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
         return 0;
     }
     char *pt;
@@ -6915,35 +6987,44 @@ int adios_common_define_mesh_unstructured (char * points,
         if ( (pt = strstr(count,",")) ){
             log_warn ("count value on uniform-cells (check data value)"
                       " should not contain ',' (%s)\n",name);
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
             return 0;
         }
         if ( (pt = strstr(type,",")) ){
             log_warn ("type value on uniform-cells (check data value)"
                       " should not contain ',' (%s)\n", name);
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
             return 0;
         }
         if (!adios_define_mesh_unstructured_uniformCells (count, data, type
                     , new_group
                     ,name
                     )
-           )
+           ) {
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
             return 0;
+		}
         // Mixed cells calse
     }else{
         if (!(pt = strstr(count,","))){
             log_warn ("count value on mixed-cells (check data value)"
                       " should contain ',' (%s)\n", name);
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
             return 0;
         }
         if (!(pt = strstr(type,","))){
             log_warn ("type value on mixed-cells (check data value)"
                       " should contain ',' (%s)\n", name);
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
             return 0;
         }
         if (!adios_define_mesh_unstructured_mixedCells (count, data, type
-                    , new_group, name))
+                    , new_group, name)) {
+            ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
             return 0;
+		}
     }
+    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_unstructured, points, data, count, type, npoints, nspace, group_id, name);
     return 1;
 }
 
@@ -7073,6 +7154,7 @@ int adios_common_define_var_timesteps (const char * timesteps,
                                        const char * path
                                       )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_var_timesteps, timesteps, (int64_t)new_group, name);
     char * c;                      // comma location
     char * d1;                     // save of strdup
     int64_t p_new_group = (int64_t) new_group;
@@ -7103,6 +7185,7 @@ int adios_common_define_var_timesteps (const char * timesteps,
        in ADIOS_inq_var = # of times the var was written
        */
     if (!timesteps || !strcmp(timesteps,"")){
+        ADIOST_CALLBACK_EXIT(adiost_event_define_var_timesteps, timesteps, p_new_group, name);
         return 1;
     }
 
@@ -7123,6 +7206,7 @@ int adios_common_define_var_timesteps (const char * timesteps,
                           c, name);
                 free (d1);
 
+                ADIOST_CALLBACK_EXIT(adiost_event_define_var_timesteps, timesteps, p_new_group, name);
                 return 0;
 
             }else{
@@ -7219,11 +7303,13 @@ int adios_common_define_var_timesteps (const char * timesteps,
     }else{
         printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
         free(d1);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_var_timesteps, timesteps, p_new_group, name);
         return 0;
     }
 
     free (d1);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_define_var_timesteps, timesteps, p_new_group, name);
     return 1;
 }
 
@@ -7234,6 +7320,7 @@ int adios_common_define_var_timeseriesformat (const char * timeseries,
                                               const char * path
                                              )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_var_timeseriesformat, timeseries, (int64_t)new_group, name);
     char * d1;                     // save of strdup
     int64_t p_new_group = (int64_t) new_group;
     char * format_att_nam = 0;     // extension format .xxxx att name
@@ -7244,6 +7331,7 @@ int adios_common_define_var_timeseriesformat (const char * timeseries,
     // varname.XXXX.png where XXXX is the time step padded with 0s
     // We do not fail if this is not given as variables all have nsteps
     if (!timeseries || !strcmp(timeseries,"")){
+         ADIOST_CALLBACK_EXIT(adiost_event_define_var_timeseriesformat, timeseries, p_new_group, name);
         return 1;
     }
 
@@ -7257,6 +7345,7 @@ int adios_common_define_var_timeseriesformat (const char * timeseries,
         free(format_att_val);
     }
     free (d1);
+    ADIOST_CALLBACK_EXIT(adiost_event_define_var_timeseriesformat, timeseries, p_new_group, name);
     return 1;
 }
 
@@ -7267,6 +7356,7 @@ int adios_common_define_var_timescale (const char * timescale,
                                        const char * path
                                       )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_var_timescale, timescale, (int64_t)new_group, name);
     char * c;                      // comma location
     char * d1;                     // save of strdup
     int64_t p_new_group = (int64_t) new_group;
@@ -7298,6 +7388,7 @@ int adios_common_define_var_timescale (const char * timescale,
        in ADIOS_inq_var = # of times the var was written
        */
     if (!timescale || !strcmp(timescale,"")){
+        ADIOST_CALLBACK_EXIT(adiost_event_define_var_timescale, timescale, p_new_group, name);
         return 1;
     }
 
@@ -7322,6 +7413,7 @@ int adios_common_define_var_timescale (const char * timescale,
                           c, name);
                 free (d1);
 
+                ADIOST_CALLBACK_EXIT(adiost_event_define_var_timescale, timescale, p_new_group, name);
                 return 0;
 
             }else{
@@ -7431,11 +7523,13 @@ int adios_common_define_var_timescale (const char * timescale,
     }else{
         printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
         free(d1);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_var_timescale, timescale, p_new_group, name);
         return 0;
     }
 
     free (d1);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_define_var_timescale, timescale, p_new_group, name);
     return 1;
 }
 
@@ -7445,6 +7539,7 @@ int adios_common_define_var_hyperslab ( const char * hyperslab,
                                         const char * name,
                                         const char * path)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_var_hyperslab, hyperslab, (int64_t)new_group, name);
     char * c;                      // comma location
     char * d1;                     // save of strdup
     int64_t p_new_group = (int64_t) new_group;
@@ -7475,6 +7570,7 @@ int adios_common_define_var_hyperslab ( const char * hyperslab,
        in ADIOS_inq_var = # of times the var was written
        */
     if (!hyperslab || !strcmp(hyperslab,"")){
+        ADIOST_CALLBACK_EXIT(adiost_event_define_var_hyperslab, hyperslab, p_new_group, name);
         return 1;
     }
 
@@ -7534,11 +7630,13 @@ int adios_common_define_var_hyperslab ( const char * hyperslab,
     }else{
         printf("Error: hyperslab format not recognized.\nPlease check documentation for hyperslab formatting.\n");
         free(d1);
+        ADIOST_CALLBACK_EXIT(adiost_event_define_var_hyperslab, hyperslab, p_new_group, name);
         return 0;
     }
 
     free (d1);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_define_var_hyperslab, hyperslab, p_new_group, name);
     return 1;
 
 }
@@ -8383,28 +8481,33 @@ int adios_define_mesh_unstructured_mixedCells (const char * count,
 // called by NO-XML API
 int adios_common_define_var_mesh (int64_t group_id, const char * varname, const char * meshname, const char * path)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_var_mesh, group_id, varname, meshname);
     char *mpath = 0;
     mpath = malloc(strlen("/adios_schema")+strlen(varname)+1);
     strcpy(mpath,varname);
     strcat(mpath,"/adios_schema");
     adios_common_define_attribute (group_id, mpath, path, adios_string, meshname, "");
     free (mpath);
+    ADIOST_CALLBACK_EXIT(adiost_event_define_var_mesh, group_id, varname, meshname);
     return 0;
 }
 
 int adios_common_define_var_centering (int64_t group_id, const char * varname, const char * centering, const char * path)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_var_centering, group_id, varname, centering);
     char *mpath = 0;
     mpath = malloc(strlen("/adios_schema/centering")+strlen(varname)+1);
     strcpy(mpath,varname);
     strcat(mpath,"/adios_schema/centering");
     adios_common_define_attribute (group_id, mpath, path, adios_string, centering, "");
     free (mpath);
+    ADIOST_CALLBACK_EXIT(adiost_event_define_var_centering, group_id, varname, centering);
     return 0;
 }
 
 int adios_common_define_mesh_group (int64_t group_id, const char * name, const char * group)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_define_mesh_group, group, group_id, name);
     char * mpath = 0;
     mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/mesh-group")+1);
     strcpy (mpath, "/adios_schema/");
@@ -8413,10 +8516,12 @@ int adios_common_define_mesh_group (int64_t group_id, const char * name, const c
 //    adios_conca_mesh_att_nam(&group, name, "mesh-group");
     adios_common_define_attribute (group_id, mpath, "", adios_string, group, "");
     free (mpath);
+    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_group, group, group_id, name);
     return 0;
 }
 
 int adios_common_define_mesh_file (int64_t group_id, char * name, char * file){
+    ADIOST_CALLBACK_ENTER(adiost_event_define_mesh_file, group_id, name, file);
     char * mpath = 0;
     mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/mesh-file")+1);
     strcpy (mpath, "/adios_schema/");
@@ -8424,6 +8529,7 @@ int adios_common_define_mesh_file (int64_t group_id, char * name, char * file){
     strcat (mpath, "/mesh-file");
     adios_common_define_attribute (group_id, mpath, "", adios_string, file, "");
     free (mpath);
+    ADIOST_CALLBACK_EXIT(adiost_event_define_mesh_file, group_id, name, file);
     return 0;
 }
 
