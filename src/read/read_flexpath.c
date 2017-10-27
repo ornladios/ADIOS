@@ -799,6 +799,12 @@ enum ADIOS_DATATYPES ffs_type_to_adios_type(const char *ffs_type, int size)
         if (size == sizeof(int)) {
             free(free_pointer);
             return adios_integer;
+        } else if (size == sizeof(short)) {
+            free(free_pointer);
+            return adios_short;
+        } else if (size == sizeof(char)) {
+            free(free_pointer);
+            return adios_byte;
         } else if (size == sizeof(long)) {
             free(free_pointer);
             return adios_long;
@@ -810,6 +816,12 @@ enum ADIOS_DATATYPES ffs_type_to_adios_type(const char *ffs_type, int size)
         } else if (size == sizeof(unsigned long)) {
             free(free_pointer);
             return adios_unsigned_long;
+        } else if (size == sizeof(unsigned short)) {
+            free(free_pointer);
+            return adios_unsigned_short;
+        } else if (size == sizeof(unsigned char)) {
+            free(free_pointer);
+            return adios_unsigned_byte;
         }
     } else if (!strcmp("float", filtered_type)) {
         free(free_pointer);
@@ -1466,13 +1478,13 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         }
 	flexpath_var * var = find_any_var(ts_var_list->var_list, unmangle);
         pthread_mutex_unlock(&(fp->queue_mutex));
-        free(unmangle);
 
     	if (!var) {
     	    adios_error(err_file_open_error,
-    			"file not opened correctly.  var does not match format.\n");
+    			"Flexpath error:  Variable \"%s\" not found.\n", unmangle);
     	    return err_file_open_error;
     	}
+        free(unmangle);
 
 	int num_dims = 0;
 	if (f->field_type) {
@@ -1879,6 +1891,11 @@ adios_read_flexpath_open(const char * fname,
         CMFormat format = CMregister_simple_format(fp_read_data->cm, "Flexpath reader register", reader_register_field_list, sizeof(reader_register_msg));
         attr_list writer_rank0_contact = attr_list_from_string(fp->bridges[0].contact);
         CMConnection conn = CMget_conn (fp_read_data->cm, writer_rank0_contact);
+	if (!conn) {
+	    fp_verbose(fp, "Flexpath failed to contact the writer at its contact point!  Open failed.");
+	    adios_errno = err_end_of_stream;
+	    return NULL;
+	}
         fp->go_cond = CMCondition_get(fp_read_data->cm, conn);
         CMwrite(conn, format, &reader_register);
 
@@ -2235,8 +2252,13 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	// but dataspaces doesn't have local arrays so there
 	// are no use cases for it.
 	uint64_t *starts = calloc(fpvar->ndims, sizeof(uint64_t));
-	uint64_t *counts = calloc(fpvar->ndims, sizeof(uint64_t));
-	memcpy(counts, fpvar->global_dims, fpvar->ndims*sizeof(uint64_t));
+	uint64_t *counts;
+	if (fpvar->global_dims) {
+	    counts = calloc(fpvar->ndims, sizeof(uint64_t));
+	    memcpy(counts, fpvar->global_dims, fpvar->ndims*sizeof(uint64_t));
+	} else {
+	    counts = NULL;
+	}
 	fpvar->sel = a2sel_boundingbox(fpvar->ndims, starts, counts);
     } else {
 	fpvar->sel = a2sel_copy(sel);

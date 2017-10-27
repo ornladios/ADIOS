@@ -742,7 +742,7 @@ set_field_type(int type, FMFieldList field_list, int fieldNo, char *dims, int al
             snprintf((char *) field_list[fieldNo].field_type, 255, "*(char%s)",
                      dims);
         } else {
-            snprintf((char *) field_list[fieldNo].field_type, 255, "char %s",
+            snprintf((char *) field_list[fieldNo].field_type, 255, "char%s",
                      dims);
         }
         field_list[fieldNo].field_size = sizeof(unsigned char);
