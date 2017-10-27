@@ -2192,9 +2192,38 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 }
 
 int
-adios_read_flexpath_inq_var_blockinfo(const ADIOS_FILE* fp,
+adios_read_flexpath_inq_var_blockinfo(const ADIOS_FILE* adiosfile,
 				      ADIOS_VARINFO* varinfo)
-{ /*log_debug( "flexpath:adios function inq var block info\n");*/ return 0; }
+{ 
+    int i;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    fp_verbose(fp, "Entering inq_var_blockingo\n");
+    timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
+    flexpath_var *fpvar = curr_var_list->var_list;
+    while (fpvar) {
+        if ((!fpvar->is_attr) && (fpvar->id == varinfo->varid))
+        	break;
+        else
+	    fpvar=fpvar->next;
+    }
+    if (!fpvar) {
+        adios_error(err_invalid_varid,
+		    "Invalid variable id: %d\n",
+		    varinfo->varid);
+        return 1;
+    }
+
+    varinfo->blockinfo = (ADIOS_VARBLOCK *) malloc (sizeof(ADIOS_VARBLOCK)); // just one block
+    varinfo->blockinfo->start = (uint64_t *) malloc (fpvar->ndims * sizeof(uint64_t));
+    varinfo->blockinfo->count = (uint64_t *) malloc (fpvar->ndims * sizeof(uint64_t));
+    for (i = 0; i<fpvar->ndims; i++) {
+        varinfo->blockinfo->start[i] = 0;
+        varinfo->blockinfo->count[i] = fpvar->global_dims[i];
+    }
+    varinfo->blockinfo->process_id = 0;
+    varinfo->blockinfo->time_index = fp->mystep;
+    return 0;
+}
 
 int
 adios_read_flexpath_inq_var_stat(const ADIOS_FILE* fp,
