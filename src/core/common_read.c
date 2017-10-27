@@ -3812,7 +3812,7 @@ int common_read_get_attr (const ADIOS_FILE * fp,
                           int * size,
                           void ** data)
 {
-    ADIOST_CALLBACK_ENTER(adiost_event_get_attr, fp, attrname, type, size, data);
+    ADIOST_CALLBACK_ENTER(adiost_event_get_attr, fp, attrname, type, size, (const void**)data);
     int retval;
 
     adios_errno = err_no_error;
@@ -3827,7 +3827,7 @@ int common_read_get_attr (const ADIOS_FILE * fp,
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr()\n");
         retval = err_invalid_file_pointer;
     }
-    ADIOST_CALLBACK_EXIT(adiost_event_get_attr, fp, attrname, type, size, data);
+    ADIOST_CALLBACK_EXIT(adiost_event_get_attr, fp, attrname, type, size, (const void**)data);
     return retval;
 }
 
@@ -3838,7 +3838,7 @@ int common_read_get_attr_byid (const ADIOS_FILE * fp,
                                int * size,
                                void ** data)
 {
-    ADIOST_CALLBACK_ENTER(adiost_event_get_attr_byid, fp, attrid, type, size, data);
+    ADIOST_CALLBACK_ENTER(adiost_event_get_attr_byid, fp, attrid, type, size, (const void**)data);
     struct common_read_internals_struct * internals;
     int retval;
 
@@ -3857,7 +3857,7 @@ int common_read_get_attr_byid (const ADIOS_FILE * fp,
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr_byid()\n");
         retval = err_invalid_file_pointer;
     }
-    ADIOST_CALLBACK_EXIT(adiost_event_get_attr_byid, fp, attrid, type, size, data);
+    ADIOST_CALLBACK_EXIT(adiost_event_get_attr_byid, fp, attrid, type, size, (const void**)data);
     return retval;
 }
 
@@ -3903,7 +3903,7 @@ int common_read_type_size(enum ADIOS_DATATYPES type, const void *data)
 
 int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist)
 {
-    ADIOST_CALLBACK_ENTER(adiost_event_get_grouplist, fp, group_namelist);
+    ADIOST_CALLBACK_ENTER(adiost_event_get_grouplist, fp, (const char***)group_namelist);
     struct common_read_internals_struct * internals;
     int retval;
 
@@ -3916,7 +3916,7 @@ int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist)
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_get_grouplist()\n");
         retval = err_invalid_file_pointer;
     }
-    ADIOST_CALLBACK_EXIT(adiost_event_get_grouplist, fp, group_namelist);
+    ADIOST_CALLBACK_EXIT(adiost_event_get_grouplist, fp, (const char***)group_namelist);
     return retval;
 }
 
