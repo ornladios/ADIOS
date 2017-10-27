@@ -2286,7 +2286,9 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	    counts = calloc(fpvar->ndims, sizeof(uint64_t));
 	    memcpy(counts, fpvar->global_dims, fpvar->ndims*sizeof(uint64_t));
 	} else {
-	    counts = NULL;
+	    adios_error(err_out_of_bound,
+			"No selection specified and local arrays were used - Not valid for flexpath transport.\n");
+	    return err_out_of_bound;
 	}
 	fpvar->sel = a2sel_boundingbox(fpvar->ndims, starts, counts);
     } else {
