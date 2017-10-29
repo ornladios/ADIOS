@@ -14,6 +14,7 @@
 #include <unistd.h> 
 #include <libgen.h>
 #include <locale.h>
+#include <getopt.h>
 #include "mpi.h"
 #include "adios.h"
 #include "adios_read.h"

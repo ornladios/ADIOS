@@ -38,8 +38,8 @@ else
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
     LIBS="$LIBS -lzfp"
-    LDFLAGS="$LDFLAGS $FDR_LDFLAGS"
-    CPPFLAGS="$CPPFLAGS $FDR_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $ZFP_LDFLAGS"
+    CPPFLAGS="$CPPFLAGS $ZFP_CPPFLAGS"
     
     # Check for the ZFP library and headers
     LIBS="$save_LIBS"

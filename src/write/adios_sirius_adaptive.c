@@ -11,6 +11,7 @@
 #include <mxml.h>
 #include <glib.h>
 #include <zfp.h>
+#include <zmq.h>
 #include <omp.h>
 
 // see if we have MPI or other tools
@@ -757,6 +758,11 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
                                   ,comm
                                   );
             }
+
+            // ZMQ init
+            void * context = zmq_ctx_new ();
+            void * requester = zmq_socket (context, ZMQ_REQ);
+            zmq_connect (requester, "tcp://localhost:5555");
 
             break;
         }

@@ -895,6 +895,23 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
+elif [ `hostname | cut -c 1-3` == "bde" ]; then
+
+    #########################
+    #       BDE testbed     #
+    #########################
+    echo "Configure on BDE"
+    export CC=mpicc
+    export CFLAGS="-g -O3 -fPIC -fopenmp -std=c99"
+    export EXTRA_LIBS="-lstdc++ -lm"
+    ${SRCDIR}/configure --prefix=/home/gary/ADIOS.install \
+        --enable-dependency-tracking \
+        --with-glib=/home/gary/glib \
+        --with-mxml=/home/gary/mxml \
+        --with-zfp=/home/gary/zfp \
+        --with-zmq=/home/gary/zmq
+        #--with-hdf5=/home/thkorde/local \
+        #--with-netcdf=/home/thkorde/local
 
 elif [ `hostname | cut -c 1-2` == "ln" ]; then
     #######################

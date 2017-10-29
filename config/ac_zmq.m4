@@ -37,12 +37,12 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lzmq"
+    LIBS="$LIBS -lzmq $EXTRA_LIBS"
     LDFLAGS="$LDFLAGS $ZMQ_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $ZMQ_CPPFLAGS"
     
     # Check for the ZMQ library and headers
-    LIBS="$save_LIBS"
+    LIBS="$save_LIBS $EXTRA_LIBS"
     LDFLAGS="$save_LDFLAGS"
     CPPFLAGS="$save_CPPFLAGS"
     
