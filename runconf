@@ -951,21 +951,20 @@ elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
         #--with-phdf5=/usr/local \
         #--with-netcdf=/usr 
 
-
-elif [ `hostname | cut -c 1-7` == "nostril" ]; then
+elif [ `hostname | cut -c 1-13` == "whoopingcough" ]; then
 
     #########################
     # Dave's workstation    #
     #########################
-    echo "Configure on Nostril"
+    echo "Configure on Whoopingcough"
     export CC=mpicc
-    export CFLAGS="-fPIC"
-    ${SRCDIR}/configure --prefix=/apps/adios/trunk \
+    export CFLAGS="-fPIC -g"
+    ${SRCDIR}/configure --prefix=/apps/adios/install \
         --enable-dependency-tracking \
-        --without-netcdf --without-nc4par --without-hdf5 --without-phdf5
+        --without-netcdf --without-nc4par --without-hdf5 --without-phdf5 \
+        --with-dataspaces=/apps/dataspaces
         #--with-hdf5=/usr/local/hdf5-serial\
         #--with-phdf5=/usr/local \
-
 
 elif [ `hostname | cut -c 1-6` == "tomato" ]; then
 
