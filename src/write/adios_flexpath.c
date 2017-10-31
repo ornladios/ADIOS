@@ -1597,7 +1597,6 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
             gbl_vars[num_gbl_vars - 1].name = fullname;
             gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
             gbl_vars[num_gbl_vars - 1].offsets = ostruct;
-
             send_count += ndims * 2;
             list=list->next;
         }
@@ -1618,6 +1617,11 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
         struct adios_var_struct * list = pg->vars_written;
         while (list) {
             int i, ndims = get_dim_count(list);
+            uint64_t *local_offsets = NULL;
+            uint64_t *local_dimensions = NULL;
+            uint64_t *global_dimensions = NULL; // same at each rank.
+            ndims = get_var_offsets(list, g, &local_offsets, 
+                                        &local_dimensions, &global_dimensions);
 
             if (ndims == 0) {
                 list=list->next;
