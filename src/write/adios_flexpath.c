@@ -1462,7 +1462,7 @@ adios_flexpath_write(
     FlexpathWriteFileData* fileData = find_open_file(method->group->name);
     FlexpathFMStructure* fm = fileData->fm;
 
-    fp_verbose(fileData, " adios_flexpath_write called\n");
+//    fp_verbose(fileData, " adios_flexpath_write called for variable %s\n", f->name);
     if (fm == NULL)
     {
 	log_error("adios_flexpath_write: something has gone wrong with format registration: %s\n", 
@@ -1838,6 +1838,7 @@ extern void
 adios_flexpath_finalize(int mype, struct adios_method_struct *method) 
 {
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
+    if (!fileData) return;
     fp_verbose(fileData, "adios_flexpath_finalize called\n");
     subscriber_info sub = fileData->subscribers;
 
