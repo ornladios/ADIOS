@@ -896,6 +896,7 @@ ADIOS_VARINFO *convert_var_info(flexpath_var *fpvar, ADIOS_VARINFO *v,
             memcpy(v->dims, fpvar->global_dims, cpysize);
         } else {
             v->global = 0;
+	    memcpy(v->dims, fpvar->local_dims, cpysize);
         }
     }
     return v;
@@ -959,10 +960,11 @@ find_displacement(array_displacements *list, int rank, int num_displ)
 array_displacements*
 get_writer_displacements(
     int writer_rank,
-    const ADIOS_SELECTION * sel,
+    flexpath_var *fpvar,
     global_var* gvar,
     uint64_t *size)
 {
+    ADIOS_SELECTION *sel = fpvar->sel;
     int ndims = sel->u.bb.ndim;
     //where do I free these?
     array_displacements *displ = malloc(sizeof(array_displacements));
@@ -974,31 +976,43 @@ get_writer_displacements(
     memset(displ->count, 0, sizeof(uint64_t) * ndims);
 
     displ->ndims = ndims;
-    uint64_t *offsets = gvar->offsets[0].local_offsets;
-    uint64_t *local_dims = gvar->offsets[0].local_dimensions;
-    uint64_t pos = writer_rank * gvar->offsets[0].offsets_per_rank;
+    uint64_t *offsets;
+    uint64_t *local_dims;
+    uint64_t pos;
 
     int i;
     int _size = 1;
-    for (i=0; i<ndims; i++) {
-	if (sel->u.bb.start[i] >= offsets[pos+i]) {
-	    int start = sel->u.bb.start[i] - offsets[pos+i];
-	    displ->start[i] = start;
+    if (gvar) {
+	offsets = gvar->offsets[0].local_offsets;
+	local_dims = gvar->offsets[0].local_dimensions;
+	pos = writer_rank * gvar->offsets[0].offsets_per_rank;
+	for (i=0; i<ndims; i++) {
+	    if (sel->u.bb.start[i] >= offsets[pos+i]) {
+		int start = sel->u.bb.start[i] - offsets[pos+i];
+		displ->start[i] = start;
+	    }
+	    
+
+	    if ((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) <=
+		(offsets[pos+i] + local_dims[pos+i] - 1)) {
+		int count = ((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) -
+			     offsets[pos+i]) - displ->start[i] + 1;
+		displ->count[i] = count;
+	    } else {
+		int count = (local_dims[pos+i] - 1) - displ->start[i] + 1;
+		displ->count[i] = count;
+	    }
+
+
+	    _size *= displ->count[i];
 	}
-
-
-	if ((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) <=
-	   (offsets[pos+i] + local_dims[pos+i] - 1)) {
-	    int count = ((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) -
-			 offsets[pos+i]) - displ->start[i] + 1;
-	    displ->count[i] = count;
-	} else {
-	    int count = (local_dims[pos+i] - 1) - displ->start[i] + 1;
-	    displ->count[i] = count;
+    } else {
+	/* local variable */
+	for (i-0; i < ndims; i++) {
+	    displ->start[i] = 0;
+	    displ->count[i] = fpvar->local_dims[i];
+	    _size *= displ->count[i];
 	}
-
-
-	_size *= displ->count[i];
     }
     *size = _size;
     return displ;
@@ -1014,6 +1028,9 @@ need_writer(
 {
     //select var from group
     global_var *gvar = find_gbl_var(gp->vars, varname, gp->num_vars);
+    
+    /* local variable, not write-block selection, need rank 0 */
+    if (!gvar) return (fp->rank == 0);
 
     //for each dimension
     int i=0;
@@ -1054,7 +1071,7 @@ need_writer(
 }
 
 flexpath_var*
-setup_flexpath_vars(FMField *f, int *num, int nattrs)
+setup_flexpath_vars(flexpath_reader_file *fp, FMField *f, int *num, int nattrs)
 {
     flexpath_var *vars = NULL;
     int var_count = 0;
@@ -1235,7 +1252,7 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 
     curr->metadata = msg;
     //Made for debugging purposes, not needed but worked too hard to remove
-    /*if(fp->rank == 1)
+    /*if(fp->rank == 0)
     {
         printf("Group message_info****************\n");
         printf("Condition: %d\n", msg->condition);
@@ -1265,7 +1282,7 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
             }
         }
     }
-*/
+    */
     
     pthread_mutex_unlock(&(fp->queue_mutex));
     return 0;
@@ -1435,7 +1452,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         pthread_mutex_lock(&(fp->queue_mutex));
         create_flexpath_var_for_timestep(fp, timestep);
         timestep_separated_lists * ts_var_list = find_var_list(fp, timestep);
-	ts_var_list->var_list = setup_flexpath_vars(f, &var_count, nattrs);
+	ts_var_list->var_list = setup_flexpath_vars(fp, f, &var_count, nattrs);
         pthread_mutex_unlock(&(fp->queue_mutex));
 
 	adiosfile->var_namelist = malloc(var_count * sizeof(char *));
@@ -1503,9 +1520,34 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	flexpath_var_chunk *curr_chunk = &var->chunks[0];
 	int i;
 
+	if (only_scalars && var->ndims) {
+	    /* we have to setup the dimensionality of the variable */
+	    var->local_dims = malloc(num_dims * sizeof(var->local_dims[0]));
+	    var->array_size = var->type_size;
+	    fp_verbose(fp, "Setting up dimensionality for variable %s, dimensions %d\n", var->varname, var->ndims);
+	    for (i=0; i<num_dims; i++) {
+		char *dim = dims[i];
+		FMField *temp_field = find_field_by_name(dim, struct_list[0].field_list);
+		uint64_t lval = 1;
+		if (!temp_field) {
+		    lval = atol(dim);
+		} else {
+		    int *temp_data = get_FMfieldAddr_by_name
+			(
+			    temp_field,
+			    temp_field->field_name,
+			    base_data
+			    );
+		    
+		    lval = (uint64_t)(*temp_data);
+		}
+		var->local_dims[i] = lval;
+		var->array_size = var->array_size * lval;
+	    }
+	}
 	// Has the var been scheduled
 	if (var->sel) {
-            //fp_verbose(fp, "Vars have been scheduled for timestep:%d\n", timestep);
+            //fp_verbose(fp, "Var %s have been scheduled for timestep:%d\n", var->varname, timestep);
 	    if (var->sel->type == ADIOS_SELECTION_WRITEBLOCK) {
                 //fp_verbose(fp, "Var is type selection_writeblock for scalars!\n");
 		if (num_dims == 0) { // writeblock selection for scalar
@@ -1520,6 +1562,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
                     //fp_verbose(fp, "Var is type selection_writeblock for arrays!\n");
 		    if (var->sel->u.block.index == writer_rank) {
 			var->array_size = var->type_size;
+			if (num_dims) var->local_dims = 
+					  malloc(num_dims * sizeof(var->local_dims[0]));
 			for (i=0; i<num_dims; i++) {
 			    char *dim = dims[i];
 			    FMField *temp_field = find_field_by_name(dim, struct_list[0].field_list);
@@ -1536,6 +1580,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 				    );
 
 				uint64_t dim = (uint64_t)(*temp_data);
+				var->local_dims[i] = dim;
 				var->array_size = var->array_size * dim;
 			    }
 			}
@@ -1552,6 +1597,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
                 //fp_verbose(fp, "Var is type selection_boundingbox for arrays!\n");
 		if (var->ndims > 0) { // arrays
 		    int i;
+	    if (num_dims) var->local_dims = 
+					  malloc(num_dims * sizeof(var->local_dims[0]));
 		    global_var *gv = find_gbl_var(fp->current_global_info->vars,
 						  var->varname,
 						  fp->current_global_info->num_vars);
@@ -1559,11 +1606,11 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    array_displacements *disp = find_displacement(var->displ,
 								  writer_rank,
 								  var->num_displ);
-		    if (disp) { // does this writer hold a chunk we've asked for
+		    if (gv && disp) { // does this writer hold a chunk we've asked for
                         //fp_verbose(fp, "Var is in the displacement, it should have data that we've asked for!\n");
 
 			//if(fp->rank == 0)
-			    //print_displacement(disp, fp->rank);
+			//print_displacement(disp, fp->rank);
 
 			uint64_t *global_sel_start = var->sel->u.bb.start;
 			uint64_t *global_sel_count = var->sel->u.bb.count;
@@ -1642,9 +1689,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
             CMCondition_signal(fp_read_data->cm, curr_var_list->req_cond.condition);
         }
 
-    }
-    else
-    {
+    } else {
         fp_verbose(fp, "Only scalars message received for timestep:%d from writer %d\n", timestep, writer_rank);
         pthread_mutex_lock(&(fp->queue_mutex));
         timestep_separated_lists * ts_var_list = find_var_list(fp, timestep);
@@ -2242,11 +2287,11 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 				       void *data)
 {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-    fp_verbose(fp, "Entering schedule_read_by_id\n");
+    //fp_verbose(fp, "Entering schedule_read_by_id\n");
     timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
     flexpath_var *fpvar = curr_var_list->var_list;
 
-    fp_verbose(fp, "entering schedule_read_byid, varid %d\n", varid);
+    //fp_verbose(fp, "entering schedule_read_byid, varid %d\n", varid);
     while (fpvar) {
         if ((!fpvar->is_attr) && (fpvar->id == varid))
         	break;
@@ -2307,7 +2352,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 			"No process exists on the writer side matching the index.\n");
 	    return err_out_of_bound;
 	}
-        fp_verbose(fp, "Adding var to read message for ADIOS_SELECTION_WRITEBLOCK for writer_index: %d\n", writer_index);
+        //fp_verbose(fp, "Adding var to read message for ADIOS_SELECTION_WRITEBLOCK for writer_index: %d\n", writer_index);
 	add_var_to_read_message(fp, writer_index, fpvar->varname);
 	break;
     }
@@ -2317,7 +2362,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
         if (fpvar->ndims == 0) {
 	    if (chunk->has_data) {
 		memcpy(data, chunk->data, fpvar->type_size);
-                fp_verbose(fp, "Grabbing scalar data immediately, no need for message!\n");
+                //fp_verbose(fp, "Grabbing scalar data immediately, no need for message!\n");
 	    } else {
 		printf("Trying to schedule read on scalar %s, no data fpvar %p, chunk %p\n", fpvar->varname, fpvar, chunk);
 	    }
@@ -2343,22 +2388,22 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
                     destination = j;
                     global_var *gvar = find_gbl_var(the_gp->vars, fpvar->varname, the_gp->num_vars);
                     // displ is freed in release_step.
-                    array_displacements *displ = get_writer_displacements(j, fpvar->sel, gvar, &_pos);
-                    displ->pos = pos;
-                    _pos *= (uint64_t)fpvar->type_size;
-                    pos += _pos;
-
-                    all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
-                    //TODO: Figure this out with Greg...
-                    all_disp[need_count-1] = *displ;
-                    fp_verbose(fp, "Adding var to read message for ADIOS_SELECTION_BOUNDINGBOX for writer: %d\n", j);
-                    add_var_to_read_message(fp, j, fpvar->varname);
-                    //free displ
-                    if(displ) {
-                        //if(displ->start) free(displ->start);
-                        //if(displ->count) free(displ->count);
-                        free(displ);
-                    }
+		    array_displacements *displ = get_writer_displacements(j, fpvar, gvar, &_pos);
+		    displ->pos = pos;
+		    _pos *= (uint64_t)fpvar->type_size;
+		    pos += _pos;
+		    
+		    all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
+		    //TODO: Figure this out with Greg...
+		    all_disp[need_count-1] = *displ;
+		    //fp_verbose(fp, "Adding var to read message for ADIOS_SELECTION_BOUNDINGBOX for writer: %d\n", j);
+		    add_var_to_read_message(fp, j, fpvar->varname);
+		    //free displ
+		    if(displ) {
+			//if(displ->start) free(displ->start);
+			//if(displ->count) free(displ->count);
+			free(displ);
+		    }
                 }
             }
             if (all_disp == NULL) {
@@ -2384,7 +2429,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	break;
     }
     }
-    fp_verbose(fp, "exiting schedule_read_byid\n");
+    //fp_verbose(fp, "exiting schedule_read_byid\n");
     return 0;
 }
 
@@ -2397,7 +2442,7 @@ adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
 			void * data)
 {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-    fp_verbose(fp, "entering schedule_read, var: %s\n", varname);
+    //fp_verbose(fp, "entering schedule_read, var: %s\n", varname);
     timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
 
     flexpath_var *fpvar = find_fp_var(curr_var_list->var_list, varname);
@@ -2411,7 +2456,7 @@ adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
 
     int id = fpvar->id;
 
-    fp_verbose(fp, "Calling read_by_id, var: %d\n", id);
+    //fp_verbose(fp, "Calling read_by_id, var: %d\n", id);
     return adios_read_flexpath_schedule_read_byid(adiosfile, sel, id, from_steps, nsteps, data);
 }
 
@@ -2472,7 +2517,7 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     ADIOS_VARINFO *v = NULL;
 
-    fp_verbose(fp, "entering flexpath_inq_var, varname: %s\n", varname);
+    //fp_verbose(fp, "entering flexpath_inq_var, varname: %s\n", varname);
 
     timestep_separated_lists * ts_var_list = flexpath_get_curr_timestep_list(fp);
     flexpath_var *fpvar = find_fp_var(ts_var_list->var_list, varname);
@@ -2487,7 +2532,7 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
         }
 
 	v = convert_var_info(fpvar, v, varname, adiosfile);
-	fp_verbose(fp, "leaving flexpath_inq_var\n");
+	//fp_verbose(fp, "leaving flexpath_inq_var\n");
     }
     else {
         adios_error(err_invalid_varname, "Cannot find var %s\n", varname);
