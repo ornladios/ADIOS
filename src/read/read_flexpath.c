@@ -2242,7 +2242,7 @@ adios_read_flexpath_inq_var_blockinfo(const ADIOS_FILE* adiosfile,
 { 
     int i;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-    fp_verbose(fp, "Entering inq_var_blockingo\n");
+    fp_verbose(fp, "Entering inq_var_blockinfo\n");
     timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
     flexpath_var *fpvar = curr_var_list->var_list;
     while (fpvar) {
@@ -2263,7 +2263,7 @@ adios_read_flexpath_inq_var_blockinfo(const ADIOS_FILE* adiosfile,
     varinfo->blockinfo->count = (uint64_t *) malloc (fpvar->ndims * sizeof(uint64_t));
     for (i = 0; i<fpvar->ndims; i++) {
         varinfo->blockinfo->start[i] = 0;
-        varinfo->blockinfo->count[i] = fpvar->global_dims[i];
+        varinfo->blockinfo->count[i] = fpvar->global_dims ? fpvar->global_dims[i] : fpvar->local_dims[i];
     }
     varinfo->blockinfo->process_id = 0;
     varinfo->blockinfo->time_index = fp->mystep;
