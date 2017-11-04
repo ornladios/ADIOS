@@ -1008,7 +1008,7 @@ get_writer_displacements(
 	}
     } else {
 	/* local variable */
-	for (i-0; i < ndims; i++) {
+	for (i=0; i < ndims; i++) {
 	    displ->start[i] = 0;
 	    displ->count[i] = fpvar->local_dims[i];
 	    _size *= displ->count[i];
@@ -1530,7 +1530,14 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		FMField *temp_field = find_field_by_name(dim, struct_list[0].field_list);
 		uint64_t lval = 1;
 		if (!temp_field) {
-		    lval = atol(dim);
+                    char *end;
+		    lval = strtol(dim, &end, 10);
+                    if ((end == dim) || (*end != 0)) {
+                        adios_error(err_corrupted_variable,
+                                    "Dimension value \"%s\" not a fieldname or simple numeric value\n",
+                                    dim);
+                       lval = -1;
+                    }
 		} else {
 		    int *temp_data = get_FMfieldAddr_by_name
 			(
@@ -1567,10 +1574,16 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 			for (i=0; i<num_dims; i++) {
 			    char *dim = dims[i];
 			    FMField *temp_field = find_field_by_name(dim, struct_list[0].field_list);
+                            uint64_t lval;
 			    if (!temp_field) {
-				adios_error(err_corrupted_variable,
-					    "Could not find fieldname: %s\n",
-					    dim);
+                                char *end;
+                                lval = strtol(dim, &end, 10);
+                                if ((end == dim) || (*end != 0)) {
+                                    adios_error(err_corrupted_variable,
+                                                "Dimension value \"%s\" not a fieldname or simple numeric value\n",
+                                                dim);
+                                    lval = -1;
+                                }
 			    } else {
 				int *temp_data = get_FMfieldAddr_by_name
 				    (
@@ -1579,10 +1592,10 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 					base_data
 				    );
 
-				uint64_t dim = (uint64_t)(*temp_data);
-				var->local_dims[i] = dim;
-				var->array_size = var->array_size * dim;
+				lval = (uint64_t)(*temp_data);
 			    }
+                            var->local_dims[i] = lval;
+                            var->array_size = var->array_size * lval;
 			}
 			void *arrays_data  = get_FMPtrField_by_name(f,
 								    f->field_name,
