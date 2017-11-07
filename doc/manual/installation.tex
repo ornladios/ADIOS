@@ -12,6 +12,7 @@ http://www.olcf.ornl.gov/center-projects/adios
 \section{Quick Installation}
 At the minimum, MPI C/C++ compilers and Python 2.x are needed to build ADIOS. 
 A Fortran90 compiler and mpif90 compilers are needed to build the Fortran libraries and examples.
+Also, the Matlab and Python wrappers require relocatable library code, so compile the ADIOS code with the \verb+-fPIC+ flag.
 
 \subsection{Quick installation with Automake}
 
@@ -19,7 +20,7 @@ To get started with ADIOS, the following steps can be used to configure, build,
 test, and install the ADIOS library, header files, and support programs. We suggest to use the \verb+-fPIC+ flag to build a library that can be used by python, Matlab, VisIt or anything that relies on shared libraries.
 
 \begin{lstlisting}
-cd adios-1.12.0
+cd adios-1.13.0
 mkdir build
 cd build
 ../configure -prefix=<install-dir> CFLAGS="-fPIC"
@@ -77,6 +78,7 @@ Titan are as follows:
 export CC=cc
 export CXX=CC
 export FC=ftn
+export CFLAGS="-fPIC"
 ./configure --prefix = <location for ADIOS software installation>
 \end{lstlisting}
 %            --with-mxml=<location of mini-xml installation>
@@ -89,22 +91,15 @@ CMake is an alternative way used to configure, build, test, and install the ADIO
 header files, and support programs. CMake 2.8.0 or higher is required to build ADIOS.
 
 \begin{lstlisting}
-cd adios-1.12.0/
-source cmake_init
+cd adios-1.13.0/
 mkdir build
 cd build
-cmake ..
+../cmake_init
 make
 \end{lstlisting}
 
 Note: The \verb+cmake_init+ batch script is set up for our machines. You need to
 set up the appropriate environment variables and configure options for your system.
-
-The nice and highly recommended feature of CMake is the ability of out-of-source build.
-More specifically, all generated temporary files, binary executables and new files are within
-the "build" folder, a completely separate directory, which will make the source tree without cluttering up. To do this,
-first create a separate build directory (see "mkdir build")
-and then switch to the build directory and run cmake with an argument for the ADIOS source directory.
 
 If crossing-compiling is required for a certain system, for example the intel compiler on Titan,
 there is another cmake variable CMAKE\_TOOLCHAIN\_FILE need to be initialized. This changes the cmake
@@ -125,6 +120,7 @@ need to be set. The required commands for ADIOS installation on Titan are as fol
 export CC=cc
 export CXX=CC
 export FC=ftn
+export CFLAGS="-fPIC"
 cmake <ADIOS_SOURCEDIR>
 \end{lstlisting}
 %export MXML_DIR=<location of mini-xml installation>
@@ -148,7 +144,7 @@ cmake <ADIOS_SOURCEDIR>
 
 
 \section{ADIOS Dependencies}
-At the minimum, MPI C/C++ compilers and Python 2.x are needed to build ADIOS. 
+At the minimum, MPI C/C++ compilers and Python 2.7 or 3.x are needed to build ADIOS. 
 A Fortran90 compiler and mpif90 compilers are needed to build the Fortran libraries and examples. 
 Everything else below is optional.
 
@@ -281,10 +277,10 @@ At present, the easiest way to get EVPath is to build it directly for your envir
    wget http://www.cc.gatech.edu/systems/projects/EVPath/chaos_bootstrap.pl
 \end{lstlisting}
 to download a bootstrapping perl script.  Then to configure a build
-environment compatible with ADIOS 1.12, run the bootstrap script with
-``adios-1.12'' as a version tag:
+environment compatible with ADIOS 1.13, run the bootstrap script with
+``adios-1.13'' as a version tag:
 \begin{lstlisting}
-  perl ./chaos_bootstrap.pl adios-1.12 [optional install directory]
+  perl ./chaos_bootstrap.pl adios-1.13 [optional install directory]
 \end{lstlisting}
 
 If you leave off the the \verb+[optional install directory]+ argument, the
