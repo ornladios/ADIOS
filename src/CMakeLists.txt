@@ -878,6 +878,8 @@ set(libadios_internal_nompi_a_SOURCES core/mpidummy.c
                                     core/adios_clock.c
                                     core/qhashtbl.c
                                     core/futils.c
+                                    core/adiost_callback_internal.c
+                                    core/adiost_default_tool.c 
                                     core/adios_transport_hooks.c)
 
 if(BUILD_WRITE)
