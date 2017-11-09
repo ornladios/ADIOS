@@ -38,6 +38,7 @@ if [ `hostname | cut -c 1-4` == "rhea" ]; then
     #   parallel hdf5 (for PHDF5 method)
 
     if [ $BUILD_FULL == "true" ]; then
+        echo "Load modules for full build"
         module load hdf5/1.8.11
         SEQ_HDF5_DIR=$HDF5_DIR
         SEQ_HDF5_CLIB=$HDF5_CLIB
@@ -88,6 +89,7 @@ if [ `hostname | cut -c 1-4` == "rhea" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" 
     if [ $BUILD_FULL == "true" ]; then
+        echo "Configure for full build"
         $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/rhea.$TARGET \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
@@ -114,6 +116,7 @@ if [ `hostname | cut -c 1-4` == "rhea" ]; then
         #--with-szip=$SZIP_DIR
 
     else
+        echo "Configure for lean build"
         $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/rhea.$TARGET \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
@@ -158,6 +161,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
     unset LDFLAGS
     unset WITHFLEX
     unset WITHFASTBIT
+    unset WITHSZ
     export CC=cc
     export FC=ftn
     export CXX=CC
@@ -168,6 +172,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
             #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$target-cpu"
             WITHFLEX="--with-flexpath=$FLEXPATH_DIR"
             #export EXTRA_LIBS="/opt/gcc/4.9.0/snos/lib64/libstdc++.a"
+            export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
+            WITHSZ="--with-sz=/sw/xk6/adios/SZ/1.4.10.0/pgi16.10.0"
         fi
         export EXTRA_CFLAGS="-fast"
     elif [ "$TARGET" == "gnu" ]; then
@@ -185,9 +191,10 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
             WITHFLEX="--with-flexpath=$FLEXPATH_DIR"
             #WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
             # FASTBIT needs libstdc++
-            WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
+            #WITHFASTBIT="--with-fastbit=$FASTBIT_DIR"
             #export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
             #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+            WITHSZ="--with-sz=/sw/xk6/adios/SZ/1.4.10.0/gnu4.9.3"
         fi
     elif [ "$TARGET" == "cray" ]; then
         export EXTRA_CFLAGS="-h gnu"
@@ -210,6 +217,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         --without-infiniband \
         $WITHFLEX \
         $WITHFASTBIT \
+        $WITHSZ \
         --with-lustre \
         --disable-timers --disable-timer-events \
         --with-zlib --with-bzip2 
@@ -494,6 +502,7 @@ elif [ `hostname | cut -c 1-4` == "sith" ]; then
     WITHFGR=""
     WITHFASTBIT=""
     WITHALACRITY=""
+    WITHSZ=""
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
         export CXX=pgc++
@@ -502,6 +511,7 @@ elif [ `hostname | cut -c 1-4` == "sith" ]; then
         WITHFGR="--with-fgr=/ccs/proj/e2e/qliu/tap" 
         WITHALACRITY="--with-alacrity=/ccs/proj/e2e/ncsu/alacrity/sith/pgi"
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.4.7"
+        WITHSZ="--with-sz=/ccs/proj/e2e/SZ/1.4.10.0/sith/pgi16.9"
         #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.pgi"
         #DATASPACES_DIR="/ccs/home/hbui/usr/software/dataspaces-dev"
     elif [ "$TARGET" == "gnu" ]; then
@@ -524,13 +534,14 @@ elif [ `hostname | cut -c 1-4` == "sith" ]; then
         echo "TARGET must be pgi or gnu or intel"
         exit 1
     fi
-        
+    
     $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/sith.$TARGET \
         --config-cache \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre \
+        $WITHSZ  
         #--with-zlib \
         #--with-bzip2=$BZIP2_DIR \
         #--with-dataspaces=$DATASPACES_DIR \
