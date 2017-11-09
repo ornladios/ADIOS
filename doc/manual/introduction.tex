@@ -83,6 +83,18 @@ Linux clusters and Mac OSX.
 %
 \section {What's new in version 1.13}
 
+\begin{itemize}
+\item Added {\bf blosc} compression transform by René Widera HZDR, Germany
+\item TAU now can profile ADIOS in applications, by Kevin Huck of the TAU team
+\item Updated to use SZ v1.4.11 compression
+\item \verb+bpls -dD+ option to dump data in per-writer fashion (aka reading with writeblock selection)
+\item fix: bug fixes to new Flexpath staging method (MPI communicator, memory leaks)
+\item fix: bpls command-line allows for large integers to dump data from >2GB blocks
+\item support for JoinedArray, where per-writer data blocks are virtually merged into
+	a global array by ADIOS at read time for easier reading. See \verb+examples/C/joined-array+ in the source.
+
+\end{itemize}
+
 %
 %
 \section {What's new in version 1.12}
