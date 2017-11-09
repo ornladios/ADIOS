@@ -1075,6 +1075,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --disable-timer-events \
         --with-zlib \
         --with-bzip2 \
+        --with-lz4 \
         --with-sz=/opt/SZ \
         --with-blosc=/opt/blosc \
         --without-szip \
