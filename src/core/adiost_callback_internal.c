@@ -269,9 +269,7 @@ char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) {
 // For example, Clang on OSX requires this symbol to be defined.
 // To ensure that the tool can instantiate its own definition, only create a
 // weak definition when required, such as with clang.
-#if defined(__clang__)
 ADIOST_EXPORT ADIOST_WEAK_PRE adiost_initialize_t adiost_tool(void) ADIOST_WEAK_POST
 {
     return NULL;
 }
-#endif
