@@ -37,9 +37,7 @@ const char adiost_enabled_env_var[] = {"ADIOS_TOOL"};
 
 /* forward declaration of the weak (default) tool */
 
-//extern __attribute__ (( weak )) adiost_initialize_t adiost_tool(void);
 extern adiost_initialize_t default_adiost_tool(void);
-//extern __attribute__((visibility("default"))) adiost_initialize_t __attribute__((weak)) adiost_tool(void);
 
 /* function pointer to hold the tool function. */
 adiost_initialize_t (*my_adiost_tool)(void) = NULL;
@@ -66,7 +64,12 @@ void adiost_pre_init(void) {
     }
 
 	// if a tool function is defined, assign our internal pointer to it.
+    // for clang, we always have a weak definition, so prevent compiler warning.
+#if defined(__clang__)
+	if (true) {
+#else
 	if (adiost_tool != NULL) {
+#endif
 	    my_adiost_tool = &adiost_tool;
 	} else {
 	    my_adiost_tool = &default_adiost_tool;
@@ -209,7 +212,11 @@ char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) {
         *ndims = *ndims + 1;
         // just a regular old number? Get its value.
         if (tmp->dimension.rank > 0) {
+#if defined(__clang__)
+            sprintf(dims, "%s%c%llu", dims, delimiter, tmp->dimension.rank);
+#else
             sprintf(dims, "%s%c%lu", dims, delimiter, tmp->dimension.rank);
+#endif
         // another ADIOS variable? Get its name.
         } else if (tmp->dimension.var != NULL) {
             sprintf(dims, "%s%c%s", dims, delimiter, tmp->dimension.var->name);
@@ -219,7 +226,11 @@ char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) {
         }
         // just a regular old number? Get its value.
         if (tmp->global_dimension.rank > 0) {
+#if defined(__clang__)
+            sprintf(global_dims, "%s%c%llu", global_dims, delimiter, tmp->global_dimension.rank);
+#else
             sprintf(global_dims, "%s%c%lu", global_dims, delimiter, tmp->global_dimension.rank);
+#endif
         // another ADIOS variable? Get its name.
         } else if (tmp->global_dimension.var != NULL) {
             sprintf(global_dims, "%s%c%s", global_dims, delimiter, tmp->global_dimension.var->name);
@@ -229,7 +240,11 @@ char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) {
         }
         // just a regular old number? Get its value.
         if (tmp->local_offset.rank > 0) {
+#if defined(__clang__)
+            sprintf(local_offsets, "%s%c%llu", local_offsets, delimiter, tmp->local_offset.rank);
+#else
             sprintf(local_offsets, "%s%c%lu", local_offsets, delimiter, tmp->local_offset.rank);
+#endif
         // another ADIOS variable? Get its name.
         } else if (tmp->local_offset.var != NULL) {
             sprintf(local_offsets, "%s%c%s", local_offsets, delimiter, tmp->local_offset.var->name);
@@ -250,3 +265,13 @@ char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) {
     return strdup(tmpstr);
 }
 
+// Create a weak definition for the tool, some compiler/systems require it.
+// For example, Clang on OSX requires this symbol to be defined.
+// To ensure that the tool can instantiate its own definition, only create a
+// weak definition when required, such as with clang.
+#if defined(__clang__)
+ADIOST_EXPORT ADIOST_WEAK_PRE adiost_initialize_t adiost_tool(void) ADIOST_WEAK_POST
+{
+    return NULL;
+}
+#endif
