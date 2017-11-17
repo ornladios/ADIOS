@@ -1598,6 +1598,7 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
     int commsize = fileData->size;
     int send_count = 0;   /* dimension count, sending size and offset per */
     uint64_t *send_block = malloc(1);
+    int i;
     
     memset(gbl_vars, 0, sizeof(global_var));
     while (pg) {
@@ -1698,7 +1699,7 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
     }
     gp->write_bitfields = malloc(fileData->fm->write_bitfield.len * sizeof(send_block[0]) * commsize);
     gp->bitfield_len = fileData->fm->write_bitfield.len * commsize;
-    for (int i=0; i < commsize; i++) {
+    for (i=0; i < commsize; i++) {
         memcpy(&gp->write_bitfields[i * fileData->fm->write_bitfield.len], &comm_block[i*send_count + block_index],
                fileData->fm->write_bitfield.len * sizeof(send_block[0]));
     }
@@ -1839,12 +1840,13 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     set_attributes_in_buffer(fileData, method->group, (char*)fileData->fm->buffer);
 
     if (fileData->globalCount == 0 ) {
+	int i;
 	gp->num_vars = 0;
 	gp->vars = NULL;
         // duplicate write_bitfield here
         gp->write_bitfields = malloc(fileData->fm->write_bitfield.len * sizeof(uint64_t) * fileData->size);
         gp->bitfield_len = fileData->fm->write_bitfield.len * fileData->size;
-        for (int i=0; i < fileData->size; i++) {
+        for (i=0; i < fileData->size; i++) {
             memcpy(&gp->write_bitfields[i * fileData->fm->write_bitfield.len], fileData->fm->write_bitfield.array,
                    fileData->fm->write_bitfield.len * sizeof(uint64_t));
     }
