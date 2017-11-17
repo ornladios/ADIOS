@@ -15,6 +15,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 // evpath libraries
 #include <ffs.h>
@@ -187,6 +188,7 @@ typedef struct _local_read_data
 
     // EVPath stuff
     CManager cm;
+    int open_file_count;
 } flexpath_read_data;
 
 flexpath_read_data* fp_read_data = NULL;
@@ -402,6 +404,8 @@ static void dump_timestep_separated_lists(flexpath_reader_file *fp)
         fprintf(stderr, "\n");
     }
 }
+
+static void set_nvars_and_nattrs(ADIOS_FILE *adiosfile);
 
 static timestep_separated_lists *
 flexpath_get_curr_timestep_list(flexpath_reader_file *fp)
@@ -1073,7 +1077,8 @@ need_writer(
 flexpath_var*
 setup_flexpath_vars(flexpath_reader_file *fp, FMField *f, int *num, int nattrs)
 {
-    flexpath_var *vars = NULL;
+    flexpath_var *last = NULL;
+    flexpath_var *first = NULL;
     int var_count = 0;
 
     while (f->field_name != NULL) {
@@ -1091,9 +1096,14 @@ setup_flexpath_vars(flexpath_reader_file *fp, FMField *f, int *num, int nattrs)
 	memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
 	curr_var->sel = NULL;
 	curr_var->type = ffs_type_to_adios_type(f->field_type, f->field_size);
-	flexpath_var *temp = vars;
-	curr_var->next = temp;
-	vars = curr_var;
+        if (last == NULL) {
+            first = curr_var;
+            last = curr_var;
+        } else {
+            last->next = curr_var;
+            curr_var->next = NULL;
+            last = curr_var;
+        }
 	if (strncmp(unmangle, "FPDIM", 5)) {
 	    var_count++;
 	}
@@ -1101,7 +1111,7 @@ setup_flexpath_vars(flexpath_reader_file *fp, FMField *f, int *num, int nattrs)
         free(unmangle);
     }
     *num = var_count;
-    return vars;
+    return first;
 }
 
 
@@ -1251,8 +1261,9 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     }
 
     curr->metadata = msg;
+#ifdef GROUP_DEBUG
     //Made for debugging purposes, not needed but worked too hard to remove
-    /*if(fp->rank == 0)
+    if(fp->rank == 0)
     {
         printf("Group message_info****************\n");
         printf("Condition: %d\n", msg->condition);
@@ -1273,16 +1284,28 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
                 printf("\t\t\t\tLocal_dimensions: ");
                 int k;
                 for(k = 0; k < msg->vars->offsets->total_offsets; k++)
-                    printf("%ld ", msg->vars->offsets->local_dimensions[k]);
+                    printf("%" PRId64 " ", msg->vars->offsets->local_dimensions[k]);
 
                 printf("\n\t\t\t\tLocal_offsets: ");
                 for(k = 0; k < msg->vars->offsets->total_offsets; k++)
-                    printf("%ld ", msg->vars->offsets->local_offsets[k]);
+                    printf("%" PRId64 " ", msg->vars->offsets->local_offsets[k]);
                 printf("\n");
             }
         }
+        for (int i = 0; i < fp->num_bridges; i++) {
+            int individual_bitfield_len = msg->bitfield_len / fp->num_bridges;
+            printf("Writer %d wrote elements : ", i);
+            for (int j = 0; j < sizeof(msg->write_bitfields[0]) * individual_bitfield_len * 8; j++) {
+                int element = i * individual_bitfield_len + j / 64;
+                int bit = j % 64;
+                if (msg->write_bitfields[element] & (((uint64_t)1) << bit)) {
+                    printf(" %d ", j);
+                }
+            }
+            printf("\n");
+        }
     }
-    */
+#endif
     
     pthread_mutex_unlock(&(fp->queue_mutex));
     return 0;
@@ -2020,6 +2043,7 @@ adios_read_flexpath_open(const char * fname,
     adiosfile->version = -1;
     adiosfile->file_size = 0;
     adios_errno = err_no_error;
+    set_nvars_and_nattrs(adiosfile);
     fp_verbose(fp, "leaving flexpath_open\n");
     return adiosfile;
 }
@@ -2050,17 +2074,10 @@ adios_flexpath_create_feedback_source(ADIOS_FILE *adiosfile, FMStructDescList fo
 
 int adios_read_flexpath_finalize_method ()
 {
-    /* oddly, ADIOS doesn't let us close a single file.  Instead, this finalizes all operations.  Commented out below is the body that we should have when we can close a file. */
-
-    /* flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh; */
-    /* int i; */
-    /* for (i=0; i<fp->num_bridges; i++) { */
-    /*     if (fp->bridges[i].created && !fp->bridges[i].opened) { */
-    /* 	    fp_verbose(fp, "sending open msg in flexpath_release_step\n"); */
-    /* 	    send_finalize_msg(fp, i); */
-    /*     } */
-    /* } */
-    return 1;
+    CManager_close(fp_read_data->cm);
+    free(fp_read_data);
+    fp_read_data = NULL;
+    return 0;
 }
 
 
@@ -2080,6 +2097,42 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     pthread_mutex_lock(&(fp->queue_mutex));
     cleanup_flexpath_vars(fp, fp->mystep);
     pthread_mutex_unlock(&(fp->queue_mutex));
+}
+
+static int
+query_bitfield(uint64_t *b, int bfield_len, int the_bit)
+{
+    int element = the_bit / (sizeof(b[0]) * 8);
+    int bit = the_bit % (sizeof(b[0]) * 8);
+    if (element >= bfield_len) {
+        return -1;
+    }
+    return (b[element] | (1<<bit));
+}
+
+#define TestBit(A,k)    (( A[(k/64)] & (1 << (k%64)) ) != 0)
+static void
+set_nvars_and_nattrs(ADIOS_FILE *adiosfile)
+{
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    evgroup * gp = fp->current_global_info;
+    timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
+    flexpath_var *fpvar = curr_var_list->var_list;
+    int var_count = 0;
+    int attr_count = 0;
+
+    while (fpvar) {
+        if (query_bitfield(gp->write_bitfields, gp->bitfield_len, fpvar->id)) {
+            if (fpvar->is_attr) {
+                attr_count++;
+            } else {
+                var_count++;
+            }
+        }
+        fpvar=fpvar->next;
+    }
+    adiosfile->nvars = var_count;
+    adiosfile->nattrs = attr_count;
 }
 
 int
@@ -2121,18 +2174,14 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
                     "Global metadata removed: %d\t\tFlexpath vars removed: %d\n", global_data_cleaned, flexpath_var_cleaned);
     pthread_mutex_unlock(&(fp->queue_mutex));
 
-    //Fix the last of the info the reader will need, this locks and unlocks the mutex so that's why we have it out here
-
-    //Wait for all readers to reach this step, this should change in extended version
-    //MPI_Barrier(fp->comm);
-
+    set_nvars_and_nattrs(adiosfile);
     return 0;
 }
 
 int adios_read_flexpath_close(ADIOS_FILE * fp)
 {
     flexpath_reader_file *file = (flexpath_reader_file*)fp->fh;
-
+    fp_verbose(file, "entering adios_read_flexpath_close\n");
     MPI_Barrier(file->comm);
 
     
@@ -2145,7 +2194,6 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     */
 
     flexpath_free_filedata(file);
-    CManager_close(fp_read_data->cm);
 
     //Cleaning the ADIOS FILE
 
@@ -2291,32 +2339,41 @@ adios_read_flexpath_inq_var_stat(const ADIOS_FILE* fp,
 { /*log_debug( "flexpath:adios function inq var stat\n");*/ return 0; }
 
 
-int
-adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
-				       const ADIOS_SELECTION *sel,
-				       int varid,
-				       int from_steps,
-				       int nsteps,
-				       void *data)
+static int
+get_Nth_written_item(const  ADIOS_FILE *adiosfile, int count, int attr)
+{
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    evgroup * gp = fp->current_global_info;
+    timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
+    flexpath_var *fpvar = curr_var_list->var_list;
+    int element_count = gp->bitfield_len / fp->num_bridges;
+    int written_count = 0;
+
+    if (element_count < ((count + 63) / 64)) {printf("Return -1\n");return -1;}
+    while (fpvar) {
+        if ((fpvar->is_attr == attr) && query_bitfield(gp->write_bitfields, gp->bitfield_len, fpvar->id)) {
+            if (written_count == count) {
+                return fpvar->id;
+            }
+            written_count++;
+        }
+        fpvar=fpvar->next;
+    }
+    return -1;
+}
+
+static int
+adios_read_flexpath_schedule_read_fpvar(const ADIOS_FILE *adiosfile,
+                                        const ADIOS_SELECTION *sel,
+                                        flexpath_var *fpvar,
+                                        int from_steps,
+                                        int nsteps,
+                                        void *data)
 {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     //fp_verbose(fp, "Entering schedule_read_by_id\n");
     timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
-    flexpath_var *fpvar = curr_var_list->var_list;
-
-    //fp_verbose(fp, "entering schedule_read_byid, varid %d\n", varid);
-    while (fpvar) {
-        if ((!fpvar->is_attr) && (fpvar->id == varid))
-        	break;
-        else
-	    fpvar=fpvar->next;
-    }
-    if (!fpvar) {
-        adios_error(err_invalid_varid,
-		    "Invalid variable id: %d\n",
-		    varid);
-        return err_invalid_varid;
-    }
+    evgroup *gp = fp->current_global_info ;
 
     //store the user allocated buffer.
     flexpath_var_chunk *chunk = &fpvar->chunks[0];
@@ -2344,9 +2401,14 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	    counts = calloc(fpvar->ndims, sizeof(uint64_t));
 	    memcpy(counts, fpvar->global_dims, fpvar->ndims*sizeof(uint64_t));
 	} else {
-	    adios_error(err_out_of_bound,
-			"No selection specified and local arrays were used - Not valid for flexpath transport.\n");
-	    return err_out_of_bound;
+            if (fpvar->ndims > 0) {
+                adios_error(err_out_of_bound,
+                            "No selection specified and local arrays were used - Not valid for flexpath transport.\n");
+                return err_out_of_bound;
+            } else {
+                counts = NULL;
+                starts = NULL;
+            }
 	}
 	fpvar->sel = a2sel_boundingbox(fpvar->ndims, starts, counts);
     } else {
@@ -2447,6 +2509,37 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 }
 
 int
+adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
+				       const ADIOS_SELECTION *sel,
+				       int varid,
+				       int from_steps,
+				       int nsteps,
+				       void *data)
+{
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    //fp_verbose(fp, "Entering schedule_read_by_id\n");
+    timestep_separated_lists * curr_var_list = flexpath_get_curr_timestep_list(fp);
+    flexpath_var *fpvar = curr_var_list->var_list;
+    evgroup *gp = fp->current_global_info ;
+
+    int var_index = get_Nth_written_item(adiosfile, varid, 0);
+    //fp_verbose(fp, "entering schedule_read_byid, varid %d\n", varid);
+    while (fpvar) {
+        if ((!fpvar->is_attr) && (fpvar->id == var_index))
+        	break;
+        else
+	    fpvar=fpvar->next;
+    }
+    if (!fpvar) {
+        adios_error(err_invalid_varid,
+		    "Invalid variable id: %d\n",
+		    varid);
+        return err_invalid_varid;
+    }
+    return adios_read_flexpath_schedule_read_fpvar(adiosfile, sel, fpvar, from_steps, nsteps, data);
+}
+
+int
 adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
 			const ADIOS_SELECTION * sel,
 			const char * varname,
@@ -2470,7 +2563,7 @@ adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
     int id = fpvar->id;
 
     //fp_verbose(fp, "Calling read_by_id, var: %d\n", id);
-    return adios_read_flexpath_schedule_read_byid(adiosfile, sel, id, from_steps, nsteps, data);
+    return adios_read_flexpath_schedule_read_fpvar(adiosfile, sel, fpvar, from_steps, nsteps, data);
 }
 
 int
@@ -2512,8 +2605,9 @@ adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 				   int *size, void **data)
 {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-    if (attrid >= 0 && attrid < adiosfile->nattrs) {
-	int ret = adios_read_flexpath_get_attr(adiosfile, adiosfile->attr_namelist[attrid],
+    int attr_index = get_Nth_written_item(adiosfile, attrid, 1);
+    if (attr_index >= 0) {
+	int ret = adios_read_flexpath_get_attr(adiosfile, adiosfile->attr_namelist[attr_index],
 					       type, size, data);
 	//fp_verbose(fp, "leaving flexpath_inq_attr_byid\n");
 	return ret;
@@ -2530,7 +2624,7 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     ADIOS_VARINFO *v = NULL;
 
-    //fp_verbose(fp, "entering flexpath_inq_var, varname: %s\n", varname);
+    fp_verbose(fp, "entering flexpath_inq_var, varname: %s\n", varname);
 
     timestep_separated_lists * ts_var_list = flexpath_get_curr_timestep_list(fp);
     flexpath_var *fpvar = find_fp_var(ts_var_list->var_list, varname);
@@ -2545,7 +2639,7 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
         }
 
 	v = convert_var_info(fpvar, v, varname, adiosfile);
-	//fp_verbose(fp, "leaving flexpath_inq_var\n");
+	fp_verbose(fp, "leaving flexpath_inq_var\n");
     }
     else {
         adios_error(err_invalid_varname, "Cannot find var %s\n", varname);
@@ -2557,14 +2651,17 @@ ADIOS_VARINFO*
 adios_read_flexpath_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
 {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-    //fp_verbose(fp, "entering flexpath_inq_var_byid, varid: %d\n", varid);
-    if (varid >= 0 && varid < adiosfile->nvars) {
-	ADIOS_VARINFO *v = adios_read_flexpath_inq_var(adiosfile, adiosfile->var_namelist[varid]);
-	//fp_verbose(fp, "leaving flexpath_inq_var_byid\n");
+    fp_verbose(fp, "entering flexpath_inq_var_byid, varid: %d\n", varid);
+    int var_index = get_Nth_written_item(adiosfile, varid, 0);
+    fp_verbose(fp, "entering flexpath_inq_var_byid, varindex is : %d\n", var_index);
+    if (var_index >= 0) {
+	ADIOS_VARINFO *v = adios_read_flexpath_inq_var(adiosfile, adiosfile->var_namelist[var_index]);
+	fp_verbose(fp, "leaving flexpath_inq_var_byid with varname %s\n", adiosfile->var_namelist[var_index]);
 	return v;
     }
     else {
         adios_error(err_invalid_varid, "FLEXPATH method: Cannot find var %d\n", varid);
+        fp_verbose(fp, "Leaving flexpath_inq_var_byid with NULL\n");
         return NULL;
     }
 }

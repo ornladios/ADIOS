@@ -100,14 +100,19 @@ typedef struct _flexpath_dim_names {
     LIST_ENTRY(_flexpath_dim_names) entries;
 } FlexpathDimNames;
 
+typedef struct bitfield {
+    int len;
+    uint64_t *array;
+} bitfield;
+
 // structure for file data (metadata and buffer)
 typedef struct _flexpath_fm_structure {
     FMStructDescRec *format;
     int size;
     unsigned char *buffer;
+    bitfield write_bitfield;
     FMFormat ioFormat;
     int nattrs;
-    LIST_HEAD(tableHead, _flexpath_name_table) nameList;
     LIST_HEAD(dims, _flexpath_dim_names) dimList;
 } FlexpathFMStructure;
 
@@ -175,6 +180,36 @@ typedef struct _flexpath_write_data {
     CManager cm;
 } FlexpathWriteData;
 
+static void
+set_bitfield(bitfield *b, int the_bit)
+{
+    int element = the_bit / (sizeof(b->array[0]) * 8);
+    int bit = the_bit % (sizeof(b->array[0]) * 8);
+    if (element >= b->len) {
+        b->array = realloc(b->array, sizeof(b->array[0]) * (element + 1));
+    }
+    b->array[element] |= (1<<bit);
+}
+
+static void
+clear_bitfield(bitfield *b)
+{
+    memset(b->array, 0, b->len * sizeof(b->array[0]));
+}
+
+static void
+init_bitfield(bitfield *b, int max)
+{
+    int len = 1;
+    if (max > sizeof(b->array[0]) * 8) {
+        len = (max + (sizeof(b->array[0]) * 8) - 1 ) / (sizeof(b->array[0]) * 8);
+    }
+    b->len = len;
+    b->array = realloc(b->array, sizeof(b->array[0]) * len);
+    clear_bitfield(b);
+}
+
+
 /************************* Global Variable Declarations *************************/
 static atom_t RANK_ATOM = -1;
 static atom_t TIMESTEP_ATOM = -1;
@@ -184,7 +219,7 @@ static atom_t QUEUE_SIZE = -1;
 static atom_t NATTRS = -1;
 
 // used for global communication and data structures
-FlexpathWriteData flexpathWriteData;
+FlexpathWriteData flexpathWriteData = {0, NULL, NULL};
 
 /**************************** Function Definitions *********************************/
 static void 
@@ -584,14 +619,18 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 }
 
 // find a field in a given field list
-static FMField*
+static int
 internal_find_field(char *name, FMFieldList flist) 
 {
-    FMField *f = flist;
-    while (f->field_name != NULL && strcmp(f->field_name, name)) {
-	f++;
+    int i = 0;
+    while (flist[i].field_name != NULL && strcmp(flist[i].field_name, name)) {
+        i++;
     }
-    return f;
+    if (flist[i].field_name == NULL) {
+        return -1;
+    } else {
+        return i;
+    }
 }
 
 // generic memory check for after mallocs
@@ -869,7 +908,6 @@ set_format(struct adios_group_struct *t,
 {
     FMStructDescRec *format = calloc(4, sizeof(FMStructDescRec));
     FlexpathFMStructure *currentFm = calloc(1, sizeof(FlexpathFMStructure));
-    LIST_INIT(&currentFm->nameList);
     LIST_INIT(&currentFm->dimList);
     currentFm->format = format;
     format[0].format_name = strdup(t->name);
@@ -1043,7 +1081,7 @@ set_format(struct adios_group_struct *t,
     format[1].struct_size = sizeof(complex_dummy);
     format[2].struct_size = sizeof(double_complex_dummy);
     currentFm->buffer = calloc(1, currentFm->size);
-
+    init_bitfield(&currentFm->write_bitfield, fieldNo);
     return currentFm;
 }
 
@@ -1183,6 +1221,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
 {
     static cod_extern_entry externs[] = {   {"fp_verbose", (void*) 0},    {NULL, NULL}};
     // global data structure creation
+    if (flexpathWriteData.cm != NULL) return;
     flexpathWriteData.rank = -1;
     flexpathWriteData.openFiles = NULL;
 
@@ -1362,7 +1401,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
     }
 
     fileData->fm = set_format(t, fields, fileData);
-
+    
     // attach rank attr and add file to open list
     fileData->name = strdup(method->group->name);
     fileData->adios_file_data = fd;
@@ -1462,7 +1501,7 @@ adios_flexpath_write(
     FlexpathWriteFileData* fileData = find_open_file(method->group->name);
     FlexpathFMStructure* fm = fileData->fm;
 
-//    fp_verbose(fileData, " adios_flexpath_write called for variable %s\n", f->name);
+    fp_verbose(fileData, " adios_flexpath_write called for variable %s\n", f->name);
     if (fm == NULL)
     {
 	log_error("adios_flexpath_write: something has gone wrong with format registration: %s\n", 
@@ -1472,11 +1511,15 @@ adios_flexpath_write(
     
     FMFieldList flist = fm->format[0].field_list;
     FMField *field = NULL;
+    int field_num;
     char *fullname = append_path_name(f->path, f->name);
     char *mangle_name = flexpath_mangle(fullname);
-    field = internal_find_field(mangle_name, flist);
+    field_num = internal_find_field(mangle_name, flist);
 
-    if (field != NULL) {
+    if (field_num != -1) {
+        field = &flist[field_num];
+        set_bitfield(&fm->write_bitfield, field_num);
+
 	//scalar quantity
 	if (!f->dimensions) {
 	    if (data) {
@@ -1602,8 +1645,13 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
         }
         pg = pg->next;
     }
-    int buf_size = send_count * commsize * sizeof(uint64_t);                
-    uint64_t *comm_block = malloc(buf_size);
+    
+    send_block = realloc(send_block, (send_count + fileData->fm->write_bitfield.len) * sizeof(send_block[0]));
+    memcpy(&send_block[send_count], fileData->fm->write_bitfield.array, 
+           fileData->fm->write_bitfield.len * sizeof(send_block[0]));
+    send_count += fileData->fm->write_bitfield.len;
+    int recv_size = send_count * commsize * sizeof(uint64_t);                
+    uint64_t *comm_block = malloc(recv_size);
 
     MPI_Allgather(send_block, send_count, MPI_UINT64_T,
                   comm_block, send_count, MPI_UINT64_T,
@@ -1642,22 +1690,27 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
             }
             gbl_vars[gbl_var_index].offsets->local_offsets = all_offsets;
             gbl_vars[gbl_var_index].offsets->local_dimensions = all_local_dims;
-
             gbl_var_index++;
             block_index += ndims * 2;
             list=list->next;
         }
-        
         pg = pg->next;
     }
-    
+    gp->write_bitfields = malloc(fileData->fm->write_bitfield.len * sizeof(send_block[0]) * commsize);
+    gp->bitfield_len = fileData->fm->write_bitfield.len * commsize;
+    for (int i=0; i < commsize; i++) {
+        memcpy(&gp->write_bitfields[i * fileData->fm->write_bitfield.len], &comm_block[i*send_count + block_index],
+               fileData->fm->write_bitfield.len * sizeof(send_block[0]));
+    }
     free(comm_block);
+    clear_bitfield(&fileData->fm->write_bitfield);
     if (num_gbl_vars == 0) {
         free(gbl_vars);
         gbl_vars = NULL;
     }
     gp->num_vars = num_gbl_vars;
     gp->vars = gbl_vars;
+    
     //fileData->gp = gp;       
 }
 
@@ -1721,21 +1774,24 @@ set_attributes_in_buffer(FlexpathWriteFileData *fileData, struct adios_group_str
     FMFieldList flist = fm->format[0].field_list;
     for (attr = group->attributes; attr != NULL; attr = attr->next) {
 	FMField *field = NULL;
+        int field_num;
 	char *fullname = append_path_name(attr->path, attr->name);
 	char *mangle_name = flexpath_mangle(fullname);
 	free(fullname);
-	field = internal_find_field(mangle_name, flist);
+	field_num = internal_find_field(mangle_name, flist);
+        if (field_num != -1) {
+            set_bitfield(&fm->write_bitfield, field_num);
+            field = &flist[field_num];
 
-	if (field != NULL) {
-	    void *data = attr->value;
-	    if (attr->type == adios_string) {
-		char *tmpstr = strdup((char*)data);
-		if (!set_FMPtrField_by_name(flist, mangle_name, buffer, tmpstr)) 
-		    fp_verbose(fileData, "Set fmprtfield by name failed, name %s\n", mangle_name);
-	    } else {
-		memcpy(&buffer[field->field_offset], data, field->field_size);
-	    }
-	}
+            void *data = attr->value;
+            if (attr->type == adios_string) {
+                char *tmpstr = strdup((char*)data);
+                if (!set_FMPtrField_by_name(flist, mangle_name, buffer, tmpstr)) 
+                    fp_verbose(fileData, "Set fmprtfield by name failed, name %s\n", mangle_name);
+            } else {
+                memcpy(&buffer[field->field_offset], data, field->field_size);
+            }
+        }
 	free(mangle_name);
     }
 }
@@ -1785,6 +1841,13 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     if (fileData->globalCount == 0 ) {
 	gp->num_vars = 0;
 	gp->vars = NULL;
+        // duplicate write_bitfield here
+        gp->write_bitfields = malloc(fileData->fm->write_bitfield.len * sizeof(uint64_t) * fileData->size);
+        gp->bitfield_len = fileData->fm->write_bitfield.len * fileData->size;
+        for (int i=0; i < fileData->size; i++) {
+            memcpy(&gp->write_bitfields[i * fileData->fm->write_bitfield.len], fileData->fm->write_bitfield.array,
+                   fileData->fm->write_bitfield.len * sizeof(uint64_t));
+    }
     } else {    
         //Synchronization point due to MPI_All_Gather operation
         exchange_dimension_data(fd, gp, fileData);
