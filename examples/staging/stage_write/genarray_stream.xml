@@ -16,6 +16,7 @@
 
 
     <!-- Auxiliary variables for global array indexing -->
+    <var name="off_not_found" path="/aux" type="integer"/>
     <var name="offx" path="/aux" type="integer"/>
     <var name="offy" path="/aux" type="integer"/>
     <var name="offz" path="/aux" type="integer"/>

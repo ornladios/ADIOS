@@ -1282,7 +1282,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
     }
 
     // file creation
-    if (find_open_file(method->group->name)) {
+    if (find_open_file(fd->name)) {
         // stream already open
         return 0;
     }
@@ -1403,7 +1403,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
     fileData->fm = set_format(t, fields, fileData);
     
     // attach rank attr and add file to open list
-    fileData->name = strdup(method->group->name);
+    fileData->name = strdup(fd->name);
     fileData->adios_file_data = fd;
     add_open_file(fileData);
     // Template for all other attrs set here
@@ -1498,7 +1498,7 @@ adios_flexpath_write(
     const void *data, 
     struct adios_method_struct *method) 
 {
-    FlexpathWriteFileData* fileData = find_open_file(method->group->name);
+    FlexpathWriteFileData* fileData = find_open_file(fd->name);
     FlexpathFMStructure* fm = fileData->fm;
 
     fp_verbose(fileData, " adios_flexpath_write called for variable %s\n", f->name);
@@ -1813,7 +1813,7 @@ extern void
 adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) 
 {
     attr_list attrs = create_attr_list();
-    FlexpathWriteFileData *fileData = find_open_file(method->group->name);
+    FlexpathWriteFileData *fileData = find_open_file(fd->name);
     subscriber_info sub = fileData->subscribers;
 
     fp_verbose(fileData, " adios_flexpath_close called\n");

@@ -1240,6 +1240,7 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     evgroup *msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
+    fp_verbose(fp, "Received a group message for timestep %d from writer %d\n", msg->step, msg->process_id);
     if (fp->group_name == NULL) {
         fp->group_name = strdup(msg->group_name);
     }
@@ -1457,6 +1458,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     get_int_attr(attrs, TIMESTEP_ATOM, &timestep);
     get_int_attr(attrs, SCALAR_ATOM, &only_scalars);
     get_int_attr(attrs, NATTRS, &nattrs);
+    fp_verbose(fp, "Received a data message for timestep %d from writer %d, only_scalars %d\n", timestep, writer_rank, only_scalars);
     /* fprintf(stderr, "\treader rank:%d:got data from writer:%d:step:%d\n", */
     /* 	    fp->rank, writer_rank, fp->mystep); */
     FMContext context = CMget_FMcontext(cm);
