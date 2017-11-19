@@ -941,7 +941,7 @@ set_format(struct adios_group_struct *t,
 	    }
 	}
 	field_list[fieldNo].field_name = mangle_name;
-	if (!attr->nelems) {
+	if ((attr->nelems == 0) || (attr->nelems == 1)) {
 	    // set the field type size and offset approrpriately
 	    set_field(attr->type, &field_list, fieldNo, &currentFm->size);
 	} else {
@@ -1478,6 +1478,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
 
     if (fileData->rank == 0) {
         reader_go_msg go_msg;
+        memset(&go_msg, 0, sizeof(go_msg));
         go_msg.reader_file = sub->reader_file;
         go_msg.start_timestep = 0;
         CMFormat format = CMregister_simple_format(flexpathWriteData.cm, "Flexpath reader go", reader_go_field_list, sizeof(reader_go_msg));
