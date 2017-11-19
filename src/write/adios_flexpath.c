@@ -1632,6 +1632,7 @@ exchange_dimension_data(struct adios_file_struct *fd, evgroup *gp, FlexpathWrite
 	    if (local_dimensions) free(local_dimensions);
             
             offset_struct *ostruct = malloc(sizeof(offset_struct));
+            memset(ostruct, 0, sizeof(offset_struct));
             ostruct->offsets_per_rank = ndims;
             ostruct->total_offsets = ndims * commsize;
             ostruct->global_dimensions = global_dimensions;
