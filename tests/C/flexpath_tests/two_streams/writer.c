@@ -59,9 +59,7 @@ create_and_write_stream(char *filename, MPI_Comm  comm)
     adios_define_var (adios_grp, "var_1d_array", "", adios_double, "10", "global_bounds", "offsets");
     
     // open our group and transport method associated with it
-    printf("Calling adios_open for filename %s\n", filename);
     adios_open (&adios_handle, "temperature", filename, "w", comm);
-    printf("return from adios_open for filename %s\n", filename);
     // NX, size, rank, global_bounds, offsets,var_1d_array
     uint64_t adios_groupsize = 4 + 4 + 4 + 4 + 4 + NX * 8;
     uint64_t adios_totalsize = 0;
@@ -111,16 +109,14 @@ int main(int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    printf("Calling adios_init\n");
-    if (!adios_init_noxml(comm)) printf("ADIOS INIT FAILED\n");
+    if (adios_init_noxml(comm)) printf("ADIOS INIT FAILED\n");
 
-    printf("after adios_init\n");
     // returns 0 (buffer allocated) or 1 (seems everything fine)
     // I guess size of the buffer in MB
     adios_set_max_buffer_size (20);
     
     create_and_write_stream(filename, comm);
-    printf("FINISH FIRST FILE, STARTING SECOND\n");
+
     create_and_write_stream(filename2, comm);
 
     // clean and finalize the system
