@@ -19,7 +19,7 @@
 #define DEBUG
 
 //! Debug printing verbosity
-#define DBG_LEVEL   DBG_DEBUG
+#define DBG_LEVEL   DBG_MESSAGE
 
 // New debug messaging state. There is no sense of a "level" for debugging. Each of these define the
 // purpose of the messages and is enabled/disabled per file
