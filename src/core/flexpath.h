@@ -107,6 +107,8 @@ typedef struct _evgroup {
     int process_id;
     char *group_name;
     global_var* vars;
+    int bitfield_len;
+    uint64_t *write_bitfields;
 } evgroup, *evgroup_ptr;
 
  
@@ -192,6 +194,8 @@ static FMField evgroup_field_list[]=
     {"process_id", "integer", sizeof(int), FMOffset(evgroup_ptr, process_id)},
     {"group_name", "string", sizeof(char*), FMOffset(evgroup_ptr, group_name)},
     {"vars", "global_var[num_vars]", sizeof(global_var), FMOffset(evgroup_ptr, vars)},
+    {"bitfield_len", "integer", sizeof(int), FMOffset(evgroup_ptr, bitfield_len)},
+    {"write_bitfields", "integer[bitfield_len]", sizeof(uint64_t), FMOffset(evgroup_ptr, write_bitfields)},
     {NULL, NULL, 0, 0}
 };
 

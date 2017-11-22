@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #define adiost_get_callback_success 1
 #define adiost_get_callback_failure 0

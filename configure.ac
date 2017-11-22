@@ -949,6 +949,7 @@ AC_CONFIG_FILES([Makefile
                  tests/C/flexpath_tests/maya_noxml/Makefile
                  tests/C/flexpath_tests/scalar/Makefile
                  tests/C/flexpath_tests/local_arrays/Makefile
+                 tests/C/flexpath_tests/two_streams/Makefile
                  tests/C/fgr_tests/Makefile
                  tests/C/query/Makefile
                  tests/C/query/common/Makefile
