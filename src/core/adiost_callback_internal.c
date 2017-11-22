@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #define adiost_get_callback_success 1
 #define adiost_get_callback_failure 0
@@ -209,7 +210,7 @@ char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) {
         *ndims = *ndims + 1;
         // just a regular old number? Get its value.
         if (tmp->dimension.rank > 0) {
-            sprintf(dims, "%s%c%lu", dims, delimiter, tmp->dimension.rank);
+            sprintf(dims, "%s%c%" PRIu64, dims, delimiter, tmp->dimension.rank);
         // another ADIOS variable? Get its name.
         } else if (tmp->dimension.var != NULL) {
             sprintf(dims, "%s%c%s", dims, delimiter, tmp->dimension.var->name);
@@ -219,7 +220,7 @@ char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) {
         }
         // just a regular old number? Get its value.
         if (tmp->global_dimension.rank > 0) {
-            sprintf(global_dims, "%s%c%lu", global_dims, delimiter, tmp->global_dimension.rank);
+            sprintf(global_dims, "%s%c%" PRIu64, global_dims, delimiter, tmp->global_dimension.rank);
         // another ADIOS variable? Get its name.
         } else if (tmp->global_dimension.var != NULL) {
             sprintf(global_dims, "%s%c%s", global_dims, delimiter, tmp->global_dimension.var->name);
@@ -229,7 +230,7 @@ char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) {
         }
         // just a regular old number? Get its value.
         if (tmp->local_offset.rank > 0) {
-            sprintf(local_offsets, "%s%c%lu", local_offsets, delimiter, tmp->local_offset.rank);
+            sprintf(local_offsets, "%s%c%" PRIu64, local_offsets, delimiter, tmp->local_offset.rank);
         // another ADIOS variable? Get its name.
         } else if (tmp->local_offset.var != NULL) {
             sprintf(local_offsets, "%s%c%s", local_offsets, delimiter, tmp->local_offset.var->name);
