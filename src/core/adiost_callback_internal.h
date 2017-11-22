@@ -18,15 +18,6 @@
  */
 
 #include <stddef.h>
-// we want our implementation of the tool to be weak, and exported.
-#define ADIOST_EXPORT __attribute__((visibility("default")))
-#if defined(__clang__)
-#define ADIOST_WEAK_PRE 
-#define ADIOST_WEAK_POST __attribute__((weak_import))
-#else
-#define ADIOST_WEAK_PRE __attribute__ (( weak )) 
-#define ADIOST_WEAK_POST 
-#endif
 #include "public/adiost_callback_api.h"
 #include "adios_internals.h"
 

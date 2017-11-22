@@ -13,11 +13,14 @@
  ****************************************************************************/
 
 #include <stdint.h>
-#ifndef ADIOST_EXPORT 
-#define ADIOST_EXPORT 
-#endif
-#ifndef ADIOST_WEAK
-#define ADIOST_WEAK
+// we want our implementation of the tool to be weak, and exported.
+#define ADIOST_EXPORT __attribute__((visibility("default")))
+#if defined(__clang__)
+#define ADIOST_WEAK_PRE 
+#define ADIOST_WEAK_POST __attribute__((weak_import))
+#else
+#define ADIOST_WEAK_PRE __attribute__ (( weak )) 
+#define ADIOST_WEAK_POST 
 #endif
 
 #include "adios_types.h"
@@ -673,7 +676,7 @@ ADIOST_API_FUNCTION(void, adiost_initialize, (
 ));
 
 /* initialization interface - to be defined by tool */
-ADIOST_EXPORT adiost_initialize_t ADIOST_WEAK adiost_tool(void);
+ADIOST_EXPORT ADIOST_WEAK_PRE adiost_initialize_t adiost_tool(void) ADIOST_WEAK_POST;
 
 /* Registering a callback function */
 ADIOST_API_FUNCTION(int, adiost_set_callback, (

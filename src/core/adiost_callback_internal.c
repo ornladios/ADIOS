@@ -67,9 +67,9 @@ void adiost_pre_init(void) {
 	// if a tool function is defined, assign our internal pointer to it.
     // for clang, we always have a weak definition, so prevent compiler warning.
 #if defined(__clang__)
-	if (true) {
+	if (adiost_tool() != NULL) {
 #else
-	if (adiost_tool != NULL) {
+	if ((adiost_tool != NULL) && (adiost_tool() != NULL)){
 #endif
 	    my_adiost_tool = &adiost_tool;
 	} else {
