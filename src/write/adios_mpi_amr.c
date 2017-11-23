@@ -922,7 +922,6 @@ void * adios_mpi_amr_do_mkdir (char * path)
 
 void * adios_mpi_amr_do_open_thread (void * param)
 {
-    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, __func__);
     struct adios_MPI_thread_data_open * td = (struct adios_MPI_thread_data_open *) param;
     int err;
 
@@ -950,8 +949,17 @@ void * adios_mpi_amr_do_open_thread (void * param)
                      td->md->subfile_name, e);
     }
 
-    ADIOST_CALLBACK_EXIT(adiost_event_thread, NULL, __func__);
     return NULL;
+}
+
+/* This is so we can time the worker thread,
+ * and distinguish it from a direct function call. */
+void * adios_mpi_amr_do_open_thread_threaded (void * param)
+{
+    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, __func__); 
+    void * rv = adios_mpi_amr_do_open_thread (param);
+    ADIOST_CALLBACK_EXIT(adiost_event_thread, NULL, __func__); 
+    return rv;
 }
 
 // reopen a subfile for append and read/build the existing index
@@ -1049,7 +1057,6 @@ void * adios_mpi_amr_do_reopen_thread (void * param)
 
 void * adios_mpi_amr_do_write_thread (void * param)
 {
-    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, __func__);
     struct adios_MPI_thread_data_write * td = (struct adios_MPI_thread_data_write *) param;
 
     uint64_t count = adios_mpi_amr_striping_unit_write(
@@ -1066,8 +1073,16 @@ void * adios_mpi_amr_do_write_thread (void * param)
             count, td->total_data_size);
     }
 
-    ADIOST_CALLBACK_EXIT(adiost_event_thread, NULL, __func__);
     return NULL;
+}
+
+/* This is so we can time the worker thread,
+ * and distinguish it from a direct function call. */
+void * adios_mpi_amr_do_write_thread_threaded (void * param) {
+    ADIOST_CALLBACK_ENTER(adiost_event_thread, NULL, __func__);
+    void * rv = adios_mpi_amr_do_write_thread (param);
+    ADIOST_CALLBACK_EXIT(adiost_event_thread, NULL, __func__);
+    return rv;
 }
 
 void adios_mpi_amr_init (const PairStruct * parameters
@@ -1311,7 +1326,7 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
                 if (md->g_threading)
                 {
                     pthread_create (&md->g_sot, NULL
-                            ,adios_mpi_amr_do_open_thread
+                            ,adios_mpi_amr_do_open_thread_threaded
                             ,(void *) md->open_thread_data
                             );
                 }
@@ -1954,7 +1969,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 if (md->g_threading)
                 {
                     pthread_create (&md->g_swt, NULL
-                            ,adios_mpi_amr_do_write_thread
+                            ,adios_mpi_amr_do_write_thread_threaded
                             ,(void *) &write_thread_data
                             );
                 }
@@ -2474,7 +2489,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 if (md->g_threading)
                 {
                     pthread_create (&md->g_swt, NULL
-                            ,adios_mpi_amr_do_write_thread
+                            ,adios_mpi_amr_do_write_thread_threaded
                             ,(void *) &write_thread_data
                             );
                 }
