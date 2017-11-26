@@ -9,13 +9,14 @@ fi
 reader_prog="reader""$postfix"
 writer_prog="writer""$postfix"
 qflag=no;
+vflag=no;
 transport="flx"
 timeout="60"
 nr="2"
 nw="2"
 debugger="gdb"
 
-gdb -v >/dev/null 2>&1 || { echo "status was $?"; debugger="lldb"; }
+gdb -v >/dev/null 2>&1 || { debugger="lldb"; }
 $debugger -v >/dev/null 2>&1 || { debugger="not found"; }
 
 usage() 
@@ -59,6 +60,7 @@ do
          exit 0 
          ;; 
     (-q) qflag=yes;;
+    (-v) vflag=yes;;
     (-r) reader_prog="$2"; shift;;
     (-w) writer_prog="$2"; shift;;
     (-n) nw="$2"; nr="$2"; shift;;
@@ -77,28 +79,28 @@ do
     shift
 done
 
-echo "NR is $nr NW is $nw"
-
 # remove any lingering flexpath startup files
 rm -f *writer_info.txt *writer_ready.txt *reader_info.txt *reader_ready.txt
 
 # Spawn the writer
 if [ "$writer_mode" = "debug" ]; then
     if [ "$debugger" = "lldb" ]; then
-	echo "	(mpirun -q -n $nr xterm -e lldb ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
-	(mpirun -q -n $nr xterm -e lldb ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+	echo "	(mpirun -q -n $wr xterm -e lldb ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
+	(mpirun -q -n $nw xterm -e lldb ./$writer_prog -- -t $transport 2>&1 1>/dev/null) & writer_pid=$!
     elif [ "$debugger" = "gdb" ]; then
-	echo "(mpirun -q -n $nr xterm -e gdb -args ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
-	(mpirun -q -n $nr xterm -e gdb -args ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+	echo "(mpirun -q -n $nw xterm -e gdb -args ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
+	(mpirun -q -n $wr xterm -e gdb -args ./$writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
     else 
 	echo "Unknown debugger \"$debugger\"";
     fi
 elif [ "$writer_mode" = "valgrind" ]; then 
-    echo "Doing     (mpirun -q -n $nr xterm -hold -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!"
-    (mpirun -q -n $nr xterm -hold -sl 10000 -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!
+    echo "Doing     (mpirun -q -n $nw xterm -hold -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!"
+    (mpirun -q -n $nw xterm -hold -sl 10000 -e valgrind --tool=memcheck ./$writer_prog -t $transport ) & writer_pid=$!
 else
-    echo "Doing        (mpirun -q -n $nw $writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!"
-    (mpirun -q -n $nw $writer_prog -t $transport 2>&1 1>/dev/null) & writer_pid=$!
+    if [ $vflag == "yes" ]; then
+	echo "Doing        (mpirun -q -n $nw ./$writer_prog -t $transport ) & writer_pid=$!"
+    fi
+    (mpirun -q -n $nw ./$writer_prog -t $transport ) & writer_pid=$!
 fi
 
 
@@ -116,11 +118,16 @@ if [ "$reader_mode" = "debug" ]; then
 elif [ "$reader_mode" = "valgrind" ]; then 
     (mpirun -q -n $nr xterm -hold -sl 10000 -e valgrind --tool=memcheck ./$reader_prog -t $transport ) & reader_pid=$!
 else
+    if [ $vflag == "yes" ]; then
+	echo "Doing (mpirun -q -n $nr ./$reader_prog -t $transport 2>&1 1>/dev/null) & reader_pid=$!"
+    fi
     (mpirun -q -n $nr ./$reader_prog -t $transport 2>&1 1>/dev/null) & reader_pid=$!
 fi
 
 # in the background, sleep for timeout secs then kill that processes
-echo "Sleeping for $timeout"
+    if [ $vflag == "yes" ]; then
+	echo "Sleeping for $timeout"
+    fi
 (sleep $timeout && kill -9 $reader_pid && kill -9 $writer_pid 2>/dev/null) & waiter=$!
 
 # wait on our worker process and return the exitcode

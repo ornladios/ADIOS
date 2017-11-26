@@ -57,10 +57,12 @@ typedef enum mpi_operation MPI_Op;
 #define MPI_CHAR                    2
 #define MPI_DOUBLE                  3
 #define MPI_UINT64_T                4
+#define MPI_UNSIGNED_LONG_LONG      8
 
 #define MPI_ANY_SOURCE              0
 #define MPI_ANY_TAG                 0
 
+#define MPI_FILE_NULL               0
 
 #define MPI_MAX_PROCESSOR_NAME      32
 int MPI_Init(int *argc, char ***argv);

@@ -52,6 +52,16 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff = var->data;
 
+    // Get dimension info
+    struct adios_dimension_struct* d = var->pre_transform_dimensions;
+    int ndims = (uint) count_dimensions(d);
+    //log_debug("ndims: %d\n", ndims);
+    if (ndims > 5)
+    {
+        adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
+        return -1;
+    }
+
     sz_params sz;
     memset(&sz, 0, sizeof(sz_params));
     sz.max_quant_intervals = 65536;
@@ -68,23 +78,25 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     sz.errorBoundMode = ABS;
     sz.absErrBound = 1E-4;
     sz.relBoundRatio = 1E-3;
+    sz.psnr = 80.0;
     sz.pw_relBoundRatio = 1E-5;
-    sz.segment_size = 32;
+    sz.segment_size = (int)pow(5, (double)ndims);
+    sz.pwr_type = SZ_PWR_MIN_TYPE;
 
     unsigned char *bytes;
-    int outsize;
-    int r[5] = {0,0,0,0,0};
+    size_t outsize;
+    size_t r[5] = {0,0,0,0,0};
 
     /* SZ parameters */
     int use_configfile = 0;
     char *sz_configfile = NULL;
     struct adios_transform_spec_kv_pair* param;
     int i = 0;
-    //log_debug("param_count: %d\n", var->transform_spec->param_count);
+    if (adios_verbose_level>7) log_debug("param_count: %d\n", var->transform_spec->param_count);
     for (i=0; i<var->transform_spec->param_count; i++)
     {
         param = &(var->transform_spec->params[i]);
-        //log_debug("param: %s\n", param->key);
+        if (adios_verbose_level>7) log_debug("param: %s %s\n", param->key, param->value);
         if (strcmp(param->key, "init") == 0)
         {
             use_configfile = 1;
@@ -196,6 +208,42 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         {
             sz.segment_size = atoi(param->value);
         }
+        else if (strcmp(param->key, "pwr_type") == 0)
+        {
+            int pwr_type = SZ_PWR_MIN_TYPE;
+            if (!strcmp(param->key, "MIN") || !strcmp(param->key, "SZ_PWR_MIN_TYPE"))
+            {
+              pwr_type = SZ_PWR_MIN_TYPE;
+            }
+            else if (!strcmp(param->key, "AVG") || !strcmp(param->key, "SZ_PWR_AVG_TYPE"))
+            {
+              pwr_type = SZ_PWR_AVG_TYPE;
+            }
+            else if (!strcmp(param->key, "MAX") || !strcmp(param->key, "SZ_PWR_MAX_TYPE"))
+            {
+              pwr_type = SZ_PWR_MAX_TYPE;
+            }
+            else
+            {
+              log_warn("An unknown pwr_type: %s\n", param->value);
+            }
+            sz.pwr_type = pwr_type;
+        }
+        else if (!strcmp(param->key, "abs") || !strcmp(param->key, "absolute") || !strcmp(param->key, "accuracy"))
+        {
+            sz.errorBoundMode = ABS;
+            sz.absErrBound = atof(param->value);
+        }
+        else if (!strcmp(param->key, "rel") || !strcmp(param->key, "relative"))
+        {
+            sz.errorBoundMode = REL;
+            sz.relBoundRatio = atof(param->value);
+        }
+        else if (!strcmp(param->key, "pw") || !strcmp(param->key, "pwr") || !strcmp(param->key, "pwrel") || !strcmp(param->key, "pwrelative"))
+        {
+            sz.errorBoundMode = PW_REL;
+            sz.pw_relBoundRatio = atof(param->value);
+        }
         else
         {
             log_warn("An unknown SZ parameter: %s\n", param->key);
@@ -210,25 +258,28 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     }
     else
     {
-      /*
-      log_debug("%s: %d\n", "sz.max_quant_intervals", sz.max_quant_intervals);
-      log_debug("%s: %d\n", "sz.quantization_intervals", sz.quantization_intervals);
-      log_debug("%s: %d\n", "sz.dataEndianType", sz.dataEndianType);
-      log_debug("%s: %d\n", "sz.sysEndianType", sz.sysEndianType);
-      log_debug("%s: %d\n", "sz.sol_ID", sz.sol_ID);
-      log_debug("%s: %d\n", "sz.layers", sz.layers);
-      log_debug("%s: %g\n", "sz.sampleDistance", sz.sampleDistance);
-      log_debug("%s: %g\n", "sz.predThreshold", sz.predThreshold);
-      log_debug("%s: %d\n", "sz.offset", sz.offset);
-      log_debug("%s: %d\n", "sz.szMode", sz.szMode);
-      log_debug("%s: %d\n", "sz.gzipMode", sz.gzipMode);
-      log_debug("%s: %d\n", "sz.errorBoundMode", sz.errorBoundMode);
-      log_debug("%s: %g\n", "sz.absErrBound", sz.absErrBound);
-      log_debug("%s: %g\n", "sz.relBoundRatio", sz.relBoundRatio);
-      log_debug("%s: %g\n", "sz.pw_relBoundRatio", sz.pw_relBoundRatio);
-      log_debug("%s: %d\n", "sz.segment_size", sz.segment_size);
-      */
-      SZ_Init_Params(&sz);
+        if (adios_verbose_level>7)
+        {
+            log_debug("%s: %d\n", "sz.max_quant_intervals", sz.max_quant_intervals);
+            log_debug("%s: %d\n", "sz.quantization_intervals", sz.quantization_intervals);
+            log_debug("%s: %d\n", "sz.dataEndianType", sz.dataEndianType);
+            log_debug("%s: %d\n", "sz.sysEndianType", sz.sysEndianType);
+            log_debug("%s: %d\n", "sz.sol_ID", sz.sol_ID);
+            log_debug("%s: %d\n", "sz.layers", sz.layers);
+            log_debug("%s: %d\n", "sz.sampleDistance", sz.sampleDistance);
+            log_debug("%s: %g\n", "sz.predThreshold", sz.predThreshold);
+            log_debug("%s: %d\n", "sz.offset", sz.offset);
+            log_debug("%s: %d\n", "sz.szMode", sz.szMode);
+            log_debug("%s: %d\n", "sz.gzipMode", sz.gzipMode);
+            log_debug("%s: %d\n", "sz.errorBoundMode", sz.errorBoundMode);
+            log_debug("%s: %g\n", "sz.absErrBound", sz.absErrBound);
+            log_debug("%s: %g\n", "sz.relBoundRatio", sz.relBoundRatio);
+            log_debug("%s: %g\n", "sz.psnr", sz.psnr);
+            log_debug("%s: %g\n", "sz.pw_relBoundRatio", sz.pw_relBoundRatio);
+            log_debug("%s: %d\n", "sz.segment_size", sz.segment_size);
+            log_debug("%s: %d\n", "sz.pwr_type", sz.pwr_type);
+        }
+        SZ_Init_Params(&sz);
     }
 
     // Get type info
@@ -247,25 +298,15 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             break;
     }
 
-    // Get dimension info
-    struct adios_dimension_struct* d = var->pre_transform_dimensions;
-    int ndims = (uint) count_dimensions(d);
-    //log_debug("ndims: %d\n", ndims);
-    if (ndims > 5)
-    {
-        adios_error(err_transform_failure, "No more than 5 dimension is supported.\n");
-        return -1;
-    }
-
-    int ii = 0;
+    // r[0] is the fastest changing dimension and r[4] is the lowest changing dimension
+    // In C, r[0] is the last dimension. In Fortran, r[0] is the first dimension
     for (i=0; i<ndims; i++)
     {
         uint dsize = (uint) adios_get_dim_value(&d->dimension);
         if (fd->group->adios_host_language_fortran == adios_flag_yes)
-            ii = ndims - 1 - i;
+            r[i] = dsize;
         else
-            ii = i;
-        r[ii] = dsize;
+            r[ndims-i-1] = dsize;
         d = d->next;
     }
 
@@ -274,10 +315,10 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
     unsigned char *raw_buff = (unsigned char*) bytes;
 
-    int raw_size = outsize;
+    size_t raw_size = outsize;
     //log_debug("=== SZ compress ===\n");
     log_debug("%s: %d\n", "SZ dtype", dtype);
-    log_debug("%s: %d\n", "SZ out_size", raw_size);
+    log_debug("%s: %lu\n", "SZ out_size", raw_size);
     /*
     log_debug("%s: %d %d %d %d %d ... %d %d %d %d %d\n", "SZ out_buff",
               raw_buff[0], raw_buff[1], raw_buff[2], raw_buff[3], raw_buff[4],
@@ -289,7 +330,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     }
     log_debug("%s: %d\n", "SZ sum", sum);
      */
-    log_debug("%s: %d %d %d %d %d\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
+    log_debug("%s: %lu %lu %lu %lu %lu\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
     //log_debug("===================\n");
 
     // Output

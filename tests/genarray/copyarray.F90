@@ -204,7 +204,18 @@ subroutine readArray()
 ! TODO: Fix this to use the new read API
 
     call adios_open (adios_handle, group, inputfile, "r", group_comm, adios_err)
-#include "gread_genarray.fh"
+    call adios_selection_writeblock (s, rank)
+    call adios_schedule_read (fp, s, "var1", 0, 1, double_xyz, adios_err)
+    call adios_schedule_read (fp, s, "var2", 0, 1, double_xyz, adios_err)
+    call adios_schedule_read (fp, s, "var3", 0, 1, double_xyz, adios_err)
+    call adios_schedule_read (fp, s, "var4", 0, 1, double_xyz, adios_err)
+    call adios_schedule_read (fp, s, "var5", 0, 1, double_xyz, adios_err)
+    call adios_schedule_read (fp, s, "var6", 0, 1, double_xyz, adios_err)
+    call adios_schedule_read (fp, s, "var7", 0, 1, double_xyz, adios_err)
+    call adios_schedule_read (fp, s, "var8", 0, 1, double_xyz, adios_err)
+    call adios_schedule_read (fp, s, "var9", 0, 1, double_xyz, adios_err)
+    call adios_perform_reads (fp, adios_err)
+    call adios_selection_delete (s)
     call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
     cache_end_time = MPI_WTIME()
     cache_total_time = cache_end_time - cache_start_time
@@ -234,7 +245,52 @@ subroutine writeArray()
 
     group = "genarray"
     call adios_open (adios_handle, group, outputfile, "w", group_comm, adios_err)
-#include "gwrite_genarray.fh"
+    adios_groupsize = 0
+    adios_groupsize = adios_groupsize + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz)
+    call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
+    call adios_write (adios_handle, "/dimensions/gndx", gndx, adios_err)
+    call adios_write (adios_handle, "/dimensions/gndy", gndy, adios_err)
+    call adios_write (adios_handle, "/dimensions/gndz", gndz, adios_err)
+    call adios_write (adios_handle, "/info/nproc", nproc, adios_err)
+    call adios_write (adios_handle, "/info/npx", npx, adios_err)
+    call adios_write (adios_handle, "/info/npy", npy, adios_err)
+    call adios_write (adios_handle, "/info/npz", npz, adios_err)
+    call adios_write (adios_handle, "/aux/offx", offx, adios_err)
+    call adios_write (adios_handle, "/aux/offy", offy, adios_err)
+    call adios_write (adios_handle, "/aux/offz", offz, adios_err)
+    call adios_write (adios_handle, "/aux/ndx", ndx, adios_err)
+    call adios_write (adios_handle, "/aux/ndy", ndy, adios_err)
+    call adios_write (adios_handle, "/aux/ndz", ndz, adios_err)
+    call adios_write (adios_handle, "/var/var1", double_xyz, adios_err)
+    call adios_write (adios_handle, "/var/var2", double_xyz, adios_err)
+    call adios_write (adios_handle, "/var/var3", double_xyz, adios_err)
+    call adios_write (adios_handle, "/var/var4", double_xyz, adios_err)
+    call adios_write (adios_handle, "/var/var5", double_xyz, adios_err)
+    call adios_write (adios_handle, "/var/var6", double_xyz, adios_err)
+    call adios_write (adios_handle, "/var/var7", double_xyz, adios_err)
+    call adios_write (adios_handle, "/var/var8", double_xyz, adios_err)
+    call adios_write (adios_handle, "/var/var9", double_xyz, adios_err)
     call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
     cache_end_time = MPI_WTIME()
     cache_total_time = cache_end_time - cache_start_time

@@ -280,7 +280,7 @@ void onSelection(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int timestep, char* 
       sum_nb += nb; sum_nk += nk, sum_no += no;
 
       adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 500); // +5MB for extra room in buffer
-      adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_flag_yes);
+      adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_stat_default);
       adios_select_method (gAdios_group, "MPI", "", "");
 
       adios_open (&gAdios_write_file, gGroupNameFastbitIdx, gIdxFileName, "w", MPI_COMM_WORLD);
@@ -790,14 +790,14 @@ int main (int argc, char** argv)
   
   /*
   adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, (f->file_size)*2/1048576 + 5); // +5MB for extra room in buffer
-  adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_flag_yes);
+  adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_stat_default);
   adios_select_method (gAdios_group, "MPI", "", "");
   */
   gIdxFileName = fastbit_adios_util_getFastbitIndexFileName(argv[1]);
   unlink(gIdxFileName);
 
       //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 500); // +5MB for extra room in buffer
-      adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_flag_yes);
+      adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_stat_default);
       adios_select_method (gAdios_group, "MPI", "", "");
 
       adios_open (&gAdios_write_file, gGroupNameFastbitIdx, gIdxFileName, "w", MPI_COMM_WORLD);

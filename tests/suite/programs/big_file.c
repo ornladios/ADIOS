@@ -178,13 +178,13 @@ int write_file (int step)
     adios_open (&fh, "bigdata", FILENAME, (step ? "a" : "w"), comm);
     
     groupsize  = (4 + NBLOCKS*2) * sizeof(int);             // dimensions 
-    log ("  groupsize calculated = %llu\n", groupsize);
+    log ("  groupsize calculated = %" PRIu64 "\n", groupsize);
     groupsize += ldim1 * ldim2 * sizeof(int);     // 2D  blocks
     //groupsize +=1024;
-    log ("  groupsize calculated = %llu\n", groupsize);
+    log ("  groupsize calculated = %" PRIu64 "\n", groupsize);
 
     adios_group_size (fh, groupsize, &totalsize);
-    log ("  groupsize %llu, totalsize %llu\n", groupsize, totalsize);
+    log ("  groupsize %" PRIu64 ", totalsize %" PRIu64 "\n", groupsize, totalsize);
 
     v = VALUE(rank, step);
     log ("  Write data to %s\n", FILENAME);
@@ -238,7 +238,7 @@ int write_file (int step)
 #define CHECK_ARRAY(VARNAME,A,N,VALUE,STEP,i) \
     for (i=0;i<N;i++) \
         if (A[i] != VALUE) { \
-            printE ("%s[%d] step %d: wrote %d but read %d\n",VARNAME,i,STEP,VALUE,A[i]);\
+            printE ("%s[%ld] step %d: wrote %d but read %d\n",VARNAME,(unsigned long int)i,STEP,VALUE,A[i]);\
             err = 104; \
             /*goto endread;*/\
             break; \
@@ -249,7 +249,7 @@ int write_file (int step)
     for (i=0;i<DIM1;i++) {\
         for (j=0;j<DIM2;j++) {\
             if (A[k] != VALUE) { \
-                printE ("%s[%d,%d] step %d: wrote %d but read %d\n",VARNAME,i,j,STEP,VALUE,A[k]);\
+                printE ("%s[%ld,%ld] step %d: wrote %d but read %d\n",VARNAME,(unsigned long int)i,(unsigned long int)j,STEP,VALUE,A[k]);\
                 err = 104; \
                /*goto endread;*/\
                i=DIM1; /*break to end */\
@@ -310,7 +310,7 @@ int read_file ()
         set_offsets();
         start[0] = offs1;
         start[1] = offs2;
-        log ("    Step %d bounding box start={%llu,%llu}, count={%llu,%llu}\n", 
+        log ("    Step %d bounding box start={%" PRIu64 ",%" PRIu64 "}, count={%" PRIu64 ",%" PRIu64 "}\n", 
              step, start[0], start[1], count[0], count[1]);
         sel2 = adios_selection_boundingbox (2, start, count); 
 

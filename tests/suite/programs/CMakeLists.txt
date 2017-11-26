@@ -23,7 +23,9 @@ set (WRITE_PROGS1 local_array_time
   set_path_var
   steps_write
   blocks
-  build_standard_dataset)
+  build_standard_dataset
+  test_singlevalue
+  joinedarray)
 
 set(WRITE_PROGS2 adios_staged_read
                  adios_staged_read_v2 
@@ -75,3 +77,5 @@ file(COPY adios_amr_write.xml adios_amr_write_2vars.xml posix_method.xml
           path_test.xml adios_transforms.xml set_path.xml set_path_var.xml
           two_groups.xml
      DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs)
+
+add_subdirectory(examples)

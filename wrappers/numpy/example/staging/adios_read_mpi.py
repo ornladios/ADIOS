@@ -22,15 +22,16 @@ print ">>> Method:", method, init
 ad.read_init(method, parameters=init)
 
 f = ad.file("temp.bp", method, is_stream=True, timeout_sec = 10.0)
-f.printself()
+print f
 
 i = 0
 while True:
     print ">>> step:", i
     v = f.var['temperature']
-    v.printself()
+    print v
 
-    val = v.read(nsteps=1)
+    #val = v.read(nsteps=1)
+    val = v[1:2, 1:5]
     print val
 
     if (f.advance() < 0):

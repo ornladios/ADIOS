@@ -22,6 +22,13 @@
 #include "core/adios_endianness.h"
 #include "core/adios_logger.h"
 #include "core/futils.h"
+#include <limits.h> // ULLONG_MAX
+
+/* dimension value indicating a joined dimension for local arrays.
+ * = 18446744073709551614ULL
+ */
+const uint64_t JoinedDimValue = (ULLONG_MAX-1);
+
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 
@@ -152,6 +159,31 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
 
 }
 
+/* Convert 'step' to time, which is used in ADIOS internals.
+ * 'step' should start from 0.
+ */
+int get_time_from_pglist(struct bp_index_pg_struct_v1 * pgs, int step)
+{
+    int i = 0;
+    int prev_ti = 0, counter = 0;
+
+    while (pgs != NULL)
+    {
+        if (pgs->time_index != prev_ti)
+        {
+            counter ++;
+            if (counter == (step + 1))
+            {
+                return pgs->time_index;
+            }
+            prev_ti = pgs->time_index;
+        }
+        pgs = pgs->next;
+    }
+    return -1;
+
+}
+
 /* This routine converts "step" to "time", which is an ADIOS internal thing.
  * The calculated "time" is needed by other BP routines to figure 
  * correct piece of var index to process.
@@ -197,7 +229,7 @@ int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
     return adios_step_to_time_v1 (fp, v, from_steps);
 }
 
-int bp_read_open (const char * filename,
+static int bp_read_open (const char * filename,
           MPI_Comm comm,
           BP_FILE * fh)
 {
@@ -229,6 +261,44 @@ int bp_read_open (const char * filename,
     return 0;
 }
 
+static int bp_read_open_rootonly (const char * filename,
+          MPI_Comm comm,
+          BP_FILE * fh)
+{
+    int  err;
+    int  rank;
+
+    MPI_Comm_rank (comm, &rank);
+
+    // variable definition
+    MPI_Offset  file_size = 0;
+
+    if (rank == 0)
+    {
+        // open a file by one processor then broadcast the size and the success
+        err = MPI_File_open (MPI_COMM_SELF, (char *) filename, MPI_MODE_RDONLY,
+                (MPI_Info) MPI_INFO_NULL, &(fh->mpi_fh));
+        if (err == MPI_SUCCESS) {
+            MPI_File_get_size (fh->mpi_fh, &file_size);
+            err = 0;
+        }
+    }
+    MPI_Bcast (&err, 1, MPI_INT, 0, comm);
+    MPI_Bcast (&file_size, 1, MPI_UNSIGNED_LONG_LONG, 0, comm);
+    fh->b->file_size = file_size;
+    fh->mfooter.file_size = file_size;
+    if (err)
+    {
+        char e [MPI_MAX_ERROR_STRING];
+        int len = 0;
+        memset (e, 0, MPI_MAX_ERROR_STRING);
+        MPI_Error_string (err, e, &len);
+        adios_error (err_file_open_error, "MPI open failed for %s: '%s'\n", filename, e);
+        return adios_flag_no;
+    }
+    return err;
+}
+
 /* This routine does the parallel bp file open and index parsing.
  */
 int bp_open (const char * fname,
@@ -241,7 +311,7 @@ int bp_open (const char * fname,
 
     adios_buffer_struct_init (fh->b);
 
-    if (bp_read_open (fname, comm, fh))
+    if (bp_read_open_rootonly (fname, comm, fh))
     {
         return -1;
     }
@@ -257,6 +327,21 @@ int bp_open (const char * fname,
 
     /* Broadcast to all other processors */
     MPI_Bcast (&fh->mfooter, sizeof (struct bp_minifooter), MPI_BYTE, 0, comm);
+
+    if (fh->mfooter.pgs_index_offset > 0)
+    {
+        /* This BP file has data not just metadata. We need to open it
+         * by every reader process.
+         * This check is equivalent to has_subfiles(fh) but this makes it more
+         * secure for future if a metadata+data BP file will ever have subfiles.
+         */
+        if (rank == 0)
+            MPI_File_close(&fh->mpi_fh);
+        if (bp_read_open (fname, comm, fh))
+        {
+            return -1;
+        }
+    }
 
     uint64_t footer_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
@@ -435,6 +520,7 @@ BP_FILE * BP_FILE_alloc (const char * fname, MPI_Comm comm)
     fh->subfile_handles.warning_printed = 0;
     fh->subfile_handles.head = NULL;
     fh->subfile_handles.tail = NULL;
+    fh->mpi_fh = MPI_FILE_NULL;
     return fh;
 }
 
@@ -518,7 +604,7 @@ int bp_close (BP_FILE * fh)
     MPI_File mpi_fh = fh->mpi_fh;
 
     adios_errno = 0;
-    if (fh->mpi_fh)
+    if (fh->mpi_fh != MPI_FILE_NULL)
         MPI_File_close (&mpi_fh);
 
     close_all_BP_subfiles (fh);
@@ -744,7 +830,9 @@ int bp_read_minifooter (BP_FILE * bp_struct)
        It also sets b->change_endianness */
     /* Note that b is not sent over to processes, only the minifooter and then b->buff (the footer) */
     b->offset = MINIFOOTER_SIZE - 4;
-    adios_parse_version (b, &mh->version);
+    uint32_t v;
+    adios_parse_version (b, &v);
+    mh->version = v;
     mh->change_endianness = b->change_endianness;
 
     // validity check
@@ -1372,6 +1460,56 @@ int bp_parse_attrs (BP_FILE * fh)
     return 0;
 }
 
+static void process_joined_array(struct adios_index_var_struct_v1 *v)
+{
+    if (v->characteristics[0].value)  // scalar
+        return;
+    if (!is_global_array(&(v->characteristics[0])))
+        return;
+    int ndim = v->characteristics[0].dims.count;
+    int joindim = -1;
+    int i, j;
+    for (i = 0; i < ndim; i++)
+    {
+        if (v->characteristics[0].dims.dims[i*3+1] == JoinedDimValue)
+        {
+            joindim = i;
+            log_debug("Variable %s is a Joined Array in dimension %d\n", v->var_name, i);
+            break;
+        }
+    }
+    if (joindim >= 0)
+    {
+        uint64_t offset = 0;
+        uint32_t timeidx = v->characteristics[0].time_index;
+        log_debug("  Calculate joined array offsets for %" PRIu64 " blocks\n", v->characteristics_count);
+        //log_debug("  Time index start from %d\n", v->characteristics[0].time_index);
+        int startidx = 0; // first characteristics for the current time_index
+        for (i = 0; i < v->characteristics_count; ++i)
+        {
+            if (v->characteristics[i].time_index > timeidx)
+            {
+                //log_debug("  Time index change to %d\n", v->characteristics[i].time_index);
+                // Update global dimensions of all characteristics for this time_index now
+                for (j = startidx; j < i; ++j) {
+                    v->characteristics[j].dims.dims[joindim*3+1] = offset;
+                }
+                timeidx = v->characteristics[i].time_index;
+                offset = 0;
+                startidx = i;
+            }
+            //log_debug("    Calculated offset = %" PRIu64 "\n", offset);
+            v->characteristics[i].dims.dims[joindim*3+2] = offset;
+            offset += v->characteristics[i].dims.dims[joindim*3];
+        }
+        // Update global dimensions of all characteristics for the last time_index now
+        for (j = startidx; j < i; ++j) {
+            v->characteristics[j].dims.dims[joindim*3+1] = offset;
+        }
+    }
+}
+
+
 /*******************/
 /* Parse VARIABLES */
 /*******************/
@@ -1489,6 +1627,7 @@ int bp_parse_vars (BP_FILE * fh)
                         (*root)->characteristics [j].time_index);*/
             }
         }
+        process_joined_array((*root));
         root = &(*root)->next;
     }
 
@@ -2010,7 +2149,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     else
     {
         allstep = 0;
-        t = get_time (var_root, tostep);
+        t = get_time_from_pglist (fh->pgs_root, tostep);
     }
 
     /* Prepare vars */

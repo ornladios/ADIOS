@@ -36,10 +36,6 @@
 #define TRANSPORT "MPI"
 #endif
 
-//! options how verbose is ADIOS (see  adios_read_init_method)
-//! 0=quiet, ..., 4=debug
-#define ADIOS_OPTIONS "verbose=4; show hidden_attrs"
-
 //! defines if the test passed
 #define TEST_PASSED 0
 //! defines if the test failed

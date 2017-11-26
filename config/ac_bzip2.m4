@@ -91,7 +91,9 @@ else
                  int bzerr = BZ2_bzBuffToBuffCompress (
                                out, out_len, in, in_len, blocksize100k, 0, 30);
                  return (bzerr != BZ_OK);],
-                [AC_MSG_RESULT(yes)],
+                [AC_MSG_RESULT(yes)
+                 AM_CONDITIONAL(HAVE_BZIP2,true)
+                ],
                 [AM_CONDITIONAL(HAVE_BZIP2,false)
                  AC_MSG_RESULT(no)
                 ])

@@ -6,7 +6,8 @@ AUTOMAKE_OPTIONS = no-dependencies
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp -p $(srcdir)/*.xml $(builddir)
 
-check_PROGRAMS = global_array_time_write_C global_array_time_read_as_file_C global_array_time_read_as_stream_C
+check_PROGRAMS = global_array_time_write_C global_array_time_read_as_file_C global_array_time_read_as_stream_C \
+                 global_array_time_write_multifile_C
 
 global_array_time_write_C_SOURCES = global_array_time_write_C.c
 global_array_time_write_C_LDADD = $(top_builddir)/src/libadios.a
@@ -15,6 +16,12 @@ global_array_time_write_C_LDADD += $(ADIOSLIB_LDADD)
 global_array_time_write_C.o: gwrite_restart.ch
 gwrite_restart.ch: global_array_time_C.xml
 	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/global_array_time_C.xml
+
+global_array_time_write_multifile_C_SOURCES = global_array_time_write_multifile_C.c
+global_array_time_write_multifile_C_LDADD = $(top_builddir)/src/libadios.a
+global_array_time_write_multifile_C_LDFLAGS = $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
+global_array_time_write_multifile_C_LDADD += $(ADIOSLIB_LDADD)
+global_array_time_write_multifile_C.o: gwrite_restart.ch
 
 global_array_time_read_as_file_C_SOURCES = global_array_time_read_as_file_C.c
 global_array_time_read_as_file_C_LDADD = $(top_builddir)/src/libadiosread.a

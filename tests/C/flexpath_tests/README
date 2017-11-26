@@ -22,8 +22,6 @@ Existing Directories
   
 * maya_noxml - inspired by maya; same variables written multiple times (doesn't work with Flexpath)
 
-* maya_append - inspired by maya; testing the append mode (doesn't work with Flexpath)
-  
 How to build and clean the build 
 --------------------------------
 # build
@@ -74,7 +72,6 @@ TEST_PASSED 1D_arr_global: rank 0
 TEST_PASSED 1D_arr_global: rank 1
 TEST_PASSED 1D_arr_global_noxml: rank 0
 TEST_PASSED 1D_arr_global_noxml: rank 1
-TEST_PASSED maya_append: rank 0
 TEST_PASSED maya_noxml: rank 0
 
 FLEXPATH transport (2013-09-04) - my laptop
@@ -86,7 +83,7 @@ TEST_PASSED 1D_arr_global: rank 1
 TEST_PASSED 1D_arr_global_noxml: rank 0
 TEST_PASSED 1D_arr_global_noxml: rank 1
 
-maya_append and maya_noxml tests failed
+maya_noxml tests failed
 
 Some tests produced message
 

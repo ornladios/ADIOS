@@ -180,10 +180,10 @@ void print_written_info()
     printf ("\n------- Information recorded on rank 0 (read will compare to this info)  --------\n");
     for (s = 0; s < nsteps; s++) {
         printf ("Step %d:\n", s);
-        printf ("  Global dim = %llu\n", gdims[s]);
+        printf ("  Global dim = %" PRIu64 "\n", gdims[s]);
         for (r = 0; r < size; r++) {
             for (b = 0; b < nblocks_per_step; b++) {
-                printf ("  rank %d: block %d: size=%llu, offset=%llu\n", r, b+1, 
+                printf ("  rank %d: block %d: size=%" PRIu64 ", offset=%" PRIu64 "\n", r, b+1, 
                         block_count  [s*nblocks_per_step*size + nblocks_per_step*r + b],
                         block_offset [s*nblocks_per_step*size + nblocks_per_step*r + b]
                        );
@@ -192,7 +192,7 @@ void print_written_info()
     }
 }
 
-int print_varinfo (ADIOS_FILE *f, int start_step) 
+void print_varinfo (ADIOS_FILE *f, int start_step) 
 {
     ADIOS_VARINFO * v;
     int i,j,k;
@@ -202,10 +202,10 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
     adios_inq_var_stat (f, v, 0, 1);
 
     printf ("ndim = %d\n",  v->ndim);
-    printf ("dims[%llu]",  v->dims[0]);
+    printf ("dims[%" PRIu64 "]",  v->dims[0]);
     if (v->dims[0] != gdims[start_step]) 
     {
-        printf ("\tERROR: expected [%llu]", gdims[start_step]);
+        printf ("\tERROR: expected [%" PRIu64 "]", gdims[start_step]);
         nerrors++;
     }
     printf("\n");
@@ -215,7 +215,7 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
     for (i = 0; i < v->nsteps; i++) {
         printf ("  nblocks[%d] = %d\n", i, v->nblocks[i]);
         for (j = 0; j < v->nblocks[i]; j++) {
-            printf("    block %2d: [%llu:%llu]", j,
+            printf("    block %2d: [%" PRIu64 ":%" PRIu64 "]", j,
                         v->blockinfo[k].start[0],
                         v->blockinfo[k].start[0] + v->blockinfo[k].count[0]-1);
             
@@ -223,7 +223,7 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
                 v->blockinfo[k].count[0] != block_count  [(start_step+i)*nblocks_per_step*size + j] ) 
             {
                 nerrors++;
-                printf ("\tERROR: expected [%llu:%llu]",
+                printf ("\tERROR: expected [%" PRIu64 ":%" PRIu64 "]",
                     block_offset [(start_step+i)*nblocks_per_step*size + j],
                     block_offset [(start_step+i)*nblocks_per_step*size + j] + 
                       block_count  [(start_step+i)*nblocks_per_step*size + j] -1
@@ -315,7 +315,7 @@ int read_stepbystep ()
 
 
 
-int print_scalar (ADIOS_FILE *f, char * name) 
+void print_scalar (ADIOS_FILE *f, char * name) 
 {
     ADIOS_VARINFO * v;
     int i,j,k;
@@ -359,7 +359,7 @@ int print_scalar (ADIOS_FILE *f, char * name)
                     nerrors++;
                     printf ("\tERROR expected = [");
                     for (j=0; j < v->nsteps; j++) {
-                        printf ("%llu", block_offset [j*nblocks_per_step*size + i]);
+                        printf ("%" PRIu64, block_offset [j*nblocks_per_step*size + i]);
                         if (j < v->nsteps-1) printf(",");
                     }
                     printf("]");
@@ -391,7 +391,7 @@ int print_scalar (ADIOS_FILE *f, char * name)
                     if (data[0] != 
                         block_offset [j*nblocks_per_step*size + i]) 
                     {
-                        printf ("\tERROR expected = %llu", 
+                        printf ("\tERROR expected = %" PRIu64, 
                                 block_offset [j*nblocks_per_step*size + i]);
                         nerrors++;
                     }
@@ -419,7 +419,7 @@ int print_scalar (ADIOS_FILE *f, char * name)
                 if (*(int*)stat->blocks->mins[blockid] != 
                         block_offset [j*nblocks_per_step*size + i]) 
                 {
-                    printf ("\tERROR expected = %llu", 
+                    printf ("\tERROR expected = %" PRIu64, 
                             block_offset [j*nblocks_per_step*size + i]);
                     nerrors++;
                 }
@@ -499,7 +499,7 @@ int read_scalar_stepbystep ()
             if (value != 
                     block_count [f->current_step*nblocks_per_step*size]) 
             {
-                printf ("\tERROR expected = %llu", 
+                printf ("\tERROR expected = %" PRIu64, 
                         block_count [f->current_step*nblocks_per_step*size]);
                 nerrors++;
             }

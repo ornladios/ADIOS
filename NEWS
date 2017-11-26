@@ -1,4 +1,26 @@
-    - added LZ4 compression transform by René Widera HZDR, Germany
+1.13.0 Release November 2017
+     - added blosc compression transform by René Widera HZDR, Germany
+     - TAU now can profile ADIOS in applications, by Kevin Huck of the TAU team
+     - update to use SZ v1.4.11 in compression
+     - bpls -dD option to dump data in per-writer fashion (aka reading with writeblock selection)
+     - fix: bug fixes to new Flexpath staging method (MPI communicator, memory leaks)
+     - fix: bpls command-line allows for large integers to dump data from >2GB blocks
+     - support for JoinedArray, where per-writer data blocks are virtually merged into
+       a global array by ADIOS at read time for easier reading. 
+
+1.12.0 Release June 2017
+     - added LZ4 compression transform by René Widera HZDR, Germany
+     - added SZ compression transform
+     - Support for burst buffer on Summitdev@OLCF, Cori@NERSC
+       - see Chapter 16 in the manual
+     - New Flexpath staging method from Georgia Tech, faster and more reliable
+     - Performance tools interface API by Kevin Huck of the TAU team
+     - fix: cmake build broken since 1.11.0. Also include building 
+            the test suite
+     - fix: for >2GB block reads
+     - fix: time-aggregation works with writing multiple files each 
+            contaning multiple steps
+     - fix: python interface
 
 1.11.1 Release January 2017
     - fix: able to read from a BP file when the index itself is > 2GB

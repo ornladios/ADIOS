@@ -24,6 +24,7 @@ cp $SRCDIR/programs/examples/global_array_time/global_array_time_read_as_file_C 
 cp $SRCDIR/programs/examples/global_array_time/global_array_time_read_as_stream_C .
 cp $SRCDIR/programs/examples/global_array_time/global_array_time_C.xml .
 cp $SRCDIR/programs/examples/global_array_time/global_array_time_aggr_C.xml .
+cp $SRCDIR/programs/examples/global_array_time/global_array_time_write_multifile_C .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
@@ -94,7 +95,7 @@ $TRUNKDIR/utils/bpls/bpls -la ../global_array_time_C.bp -D -d temperature -n 10 
 for BUFSIZE in 3000 300000 10000 1000 0 ; do
             
     echo "  Run time-aggregation with buffer size = $BUFSIZE"
-    cat ../global_array_time_aggr_C.xml | sed -e "s/buffer-size=[0-9]*/buffer-size=$BUFSIZE/" > global_array_time_C.xml
+    cat ../global_array_time_aggr_C.xml | sed -e "s/buffer-size=\"[0-9]*\"/buffer-size=\"$BUFSIZE\"/" > global_array_time_C.xml
     $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ../global_array_time_write_C
     EX=$?
     if [ ! -f global_array_time_C.bp ]; then
@@ -123,6 +124,72 @@ for BUFSIZE in 3000 300000 10000 1000 0 ; do
         echo "to      \"bpls -la $PWD/../global_array_time_C_$BUFSIZE.bp -D -d temperature -n 10\" "
         exit 1
     fi
+done
+
+
+popd >/dev/null
+
+
+##################################################################################
+# run the time-aggregation test where multiple output files are written over time
+# Check if we have the correct number of steps in each file
+
+echo "Run C global_array_time_write_C with time-aggregation turned on in subdir time_aggr_multifile/ with various buffer sizes:"
+mkdir -p time_aggr_multifile
+pushd time_aggr_multifile >/dev/null
+
+for BUFSIZE in 3000 300000 10000 1000 0 ; do
+            
+	echo "  Run multi-file time-aggregation with buffer size = $BUFSIZE"
+    cat ../global_array_time_aggr_C.xml | sed -e "s/buffer-size=\"[0-9]*\"/buffer-size=\"$BUFSIZE\"/" > global_array_time_aggr_C.xml
+	$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ../global_array_time_write_multifile_C
+    EX=$?
+    if [ $EX != 0 ]; then
+    	echo "ERROR: global_array_time_write_multifile_C failed. Exit code=$EX"
+        exit 1
+    fi
+
+    if [ ! -f global_array_time_C_1.bp ]; then
+        echo "ERROR: global_array_time_write_C failed. global_array_time_C_1.bp file is missing"
+        exit 1
+    fi
+    if [ ! -f global_array_time_C_2.bp ]; then
+        echo "ERROR: global_array_time_write_C failed. global_array_time_C_2.bp file is missing"
+        exit 1
+    fi
+    if [ ! -f global_array_time_C_3.bp ]; then
+        echo "ERROR: global_array_time_write_C failed. global_array_time_C_3.bp file is missing"
+        exit 1
+    fi
+
+	ADIR=bufsize_$BUFSIZE
+	mkdir $ADIR
+    mv global_array_time_aggr_C.xml $ADIR
+    mv global_array_time_C_*.bp  $ADIR
+    pushd $ADIR >/dev/null 
+
+    echo "    Check output with bpls"
+    N1=`$TRUNKDIR/utils/bpls/bpls -l global_array_time_C_1.bp temperature | cut -d 'e' -f 5 | cut -d '*' -f 1`
+    N2=`$TRUNKDIR/utils/bpls/bpls -l global_array_time_C_2.bp temperature | cut -d 'e' -f 5 | cut -d '*' -f 1`
+    N3=`$TRUNKDIR/utils/bpls/bpls -l global_array_time_C_3.bp temperature | cut -d 'e' -f 5 | cut -d '*' -f 1`
+	echo $N1 > steps.txt
+	echo $N2 >> steps.txt
+	echo $N3 >> steps.txt
+			
+    if [ "$N1" -ne "10" ]; then
+    	echo "ERROR: Expected 10 steps in global_array_time_C_1.bp. Instead got $N1 steps."
+        exit 1
+    fi
+    if [ "$N2" -ne "10" ]; then
+    	echo "ERROR: Expected 10 steps in global_array_time_C_2.bp. Instead got $N2 steps."
+        exit 1
+    fi
+    if [ "$N3" -ne "5" ]; then
+    	echo "ERROR: Expected 5 steps in global_array_time_C_3.bp. Instead got $N3 steps."
+        exit 1
+    fi
+    popd >/dev/null
+    
 done
 
 

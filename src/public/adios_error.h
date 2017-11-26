@@ -102,9 +102,9 @@ enum ADIOS_ERRCODES {
     err_no_matching_mesh_var                  = -147, // no mesh is associated to var
     err_mesh_missing                          = -148, // mesh is missing in meshlist
     err_mesh_name_attr_missing                = -149, // mesh attr is missing
-    err_mesh_unstructured_invaid_points       = -150, // points were invalid
-    err_mesh_unstructured_invaid_num_points   = -151, // number of points is invalid
-    err_mesh_unstructured_invaid_dim_points   = -152, // dim of points is invalid
+    err_mesh_unstructured_invalid_points       = -150, // points were invalid
+    err_mesh_unstructured_invalid_num_points   = -151, // number of points is invalid
+    err_mesh_unstructured_invalid_dim_points   = -152, // dim of points is invalid
     err_mesh_unstructured_missing_one_points  = -153, // one of the points is not defined
     err_mesh_unstructured_missing_points      = -154, // points are not defined
     err_mesh_unstructured_missing_ncsets      = -155, // ncsets was not defined 
@@ -141,8 +141,8 @@ enum ADIOS_ERRCODES {
     err_mesh_structured_missing_dims          = -191, // dimensions are not defined
     err_mesh_structured_missing_one_dim       = -192, // one of the dimensions is not defined
     err_mesh_structured_invalid_dim           = -193, // could not read the dim value
-    err_mesh_structured_invaid_dim_points     = -194, // # of points were invalid
-    err_mesh_structured_invaid_points         = -195, // points were invalid
+    err_mesh_structured_invalid_dim_points     = -194, // # of points were invalid
+    err_mesh_structured_invalid_points         = -195, // points were invalid
     err_mesh_structured_missing_one_points    = -196, // one of the points is not defined
     err_mesh_structured_missing_points        = -197, // points are not defined
     err_mesh_structured_invalid_num_points    = -198, // number of points is invalid

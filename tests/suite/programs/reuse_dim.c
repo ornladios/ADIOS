@@ -64,6 +64,7 @@ void fini_vars()
     free (r2);
 }
 
+int declare_group ();
 int write_file (char *fname);
 int read_file (char *fname);
 

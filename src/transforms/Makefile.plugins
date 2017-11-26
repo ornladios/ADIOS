@@ -37,3 +37,7 @@ transforms_read_method_SOURCES += transforms/adios_transform_sz_read.c
 # LZ4 plugin:
 transforms_write_method_SOURCES += transforms/adios_transform_lz4_write.c
 transforms_read_method_SOURCES += transforms/adios_transform_lz4_read.c
+
+# Blosc plugin:
+transforms_write_method_SOURCES += transforms/adios_transform_blosc_write.c
+transforms_read_method_SOURCES += transforms/adios_transform_blosc_read.c

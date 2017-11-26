@@ -162,7 +162,7 @@ int main (int argc, char ** argv) {
         /* First create all of the groups */
         // now I need to create this group in the file that will be written
 
-        adios_declare_group(&new_adios_group,f->group_namelist[gidx],"",adios_flag_yes);
+        adios_declare_group(&new_adios_group,f->group_namelist[gidx],"",adios_stat_default);
 
 
         if(strcmp(argv[5],"MPI_LUSTRE")!=0)   //see whether or not the user uses MPI_LUSTRE method

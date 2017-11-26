@@ -244,7 +244,7 @@ int write_file (int step)
     //groupsize +=1024;
 
     adios_group_size (fh, groupsize, &totalsize);
-    log ("  groupsize %lld, totalsize %lld\n", groupsize, totalsize);
+    log ("  groupsize %" PRIu64 ", totalsize %" PRIu64 "\n", groupsize, totalsize);
 
     adios_write (fh, "gdim1", &gdim1);
     adios_write (fh, "gdim2", &gdim2);

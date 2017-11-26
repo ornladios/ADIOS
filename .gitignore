@@ -146,6 +146,8 @@ examples/C/query/query_table
 examples/C/query/query_vars
 examples/C/query/write_table
 examples/C/query/write_vars
+examples/C/joined-array/joined-array
+examples/C/time_aggregation/time_aggregation_no_xml
 examples/Fortran/arrays/arrays_read
 examples/Fortran/arrays/arrays_write
 examples/Fortran/global-array-time/adios_globaltime
@@ -186,6 +188,8 @@ tests/suite/programs/set_path_var
 tests/suite/programs/transforms_specparse
 tests/C/flexpath_tests/1D_arr_global/reader_global
 tests/C/flexpath_tests/1D_arr_global/writer_global
+tests/C/flexpath_tests/two_streams/reader_two_streams
+tests/C/flexpath_tests/two_streams/writer_two_streams
 tests/C/flexpath_tests/1D_arr_global_noxml/reader_global_noxml
 tests/C/flexpath_tests/1D_arr_global_noxml/writer_global_noxml
 tests/C/flexpath_tests/maya_append/reader_maya

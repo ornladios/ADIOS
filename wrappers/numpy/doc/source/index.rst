@@ -17,6 +17,7 @@ Quick Start Guide
 
    quick
    build
+   gallery
    ref
 
 Indices and tables

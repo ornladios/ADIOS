@@ -29,6 +29,8 @@
 #include "dmalloc.h"
 #endif
 
+#include "adiost_callback_internal.h"
+
 static enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;
 // NCSU ALACRITY-ADIOS: Need these to be extern so they can be accessed by both adios_internals.c and here
 extern struct adios_method_list_struct * adios_methods;
@@ -2078,7 +2080,7 @@ static int parseTimeAggregation (mxml_node_t * node, int rank)
     else {
         char *end;
         errno = 0;
-        bufsize = strtoll(buffersize, &end, 10);
+        bufsize = strtoull(buffersize, &end, 10);
         if (errno || (end != 0 && *end != '\0')) {
             adios_error (err_invalid_buffer_size, "config.xml: time-aggregation buffer size cannot be parsed: %s\n", buffersize);
             return 0;
@@ -2580,6 +2582,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
         ,const char * base_path, int iters
         )
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_select_method, group_id, method, parameters, base_path);
     struct adios_group_struct * g;
     struct adios_method_struct * new_method;
     int requires_group_comm = 0;
@@ -2621,6 +2624,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
         free (new_method->parameters);
         free (new_method);
 
+        ADIOST_CALLBACK_EXIT(adiost_event_select_method, group_id, method, parameters, base_path);
         return 0;
     }
 
@@ -2636,6 +2640,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
         free (new_method->parameters);
         free (new_method);
 
+        ADIOST_CALLBACK_EXIT(adiost_event_select_method, group_id, method, parameters, base_path);
         return 0;
     }
     else
@@ -2653,6 +2658,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
             free (new_method->parameters);
             free (new_method);
 
+            ADIOST_CALLBACK_EXIT(adiost_event_select_method, group_id, method, parameters, base_path);
             return 0;
         }
         adios_add_method_to_group (&g->methods, new_method);
@@ -2661,6 +2667,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
 
     adios_append_method (new_method);
 
+    ADIOST_CALLBACK_EXIT(adiost_event_select_method, group_id, method, parameters, base_path);
     return 1;
 }
 

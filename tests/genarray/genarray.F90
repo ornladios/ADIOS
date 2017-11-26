@@ -182,7 +182,52 @@ subroutine writeArray()
         group = "genarray"
         write (outfilename,'(a,".",i3.3,".bp")') trim(outputfile),tstep
         call adios_open (adios_handle, group, outfilename, mode, group_comm, adios_err)
-#include "gwrite_genarray.fh"
+        adios_groupsize = 0
+        adios_groupsize = adios_groupsize + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 4_8 &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz) &
+                + 8_8 * (ndx) * (ndy) * (ndz)
+        call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
+        call adios_write (adios_handle, "/dimensions/gndx", gndx, adios_err)
+        call adios_write (adios_handle, "/dimensions/gndy", gndy, adios_err)
+        call adios_write (adios_handle, "/dimensions/gndz", gndz, adios_err)
+        call adios_write (adios_handle, "/info/nproc", nproc, adios_err)
+        call adios_write (adios_handle, "/info/npx", npx, adios_err)
+        call adios_write (adios_handle, "/info/npy", npy, adios_err)
+        call adios_write (adios_handle, "/info/npz", npz, adios_err)
+        call adios_write (adios_handle, "/aux/offx", offx, adios_err)
+        call adios_write (adios_handle, "/aux/offy", offy, adios_err)
+        call adios_write (adios_handle, "/aux/offz", offz, adios_err)
+        call adios_write (adios_handle, "/aux/ndx", ndx, adios_err)
+        call adios_write (adios_handle, "/aux/ndy", ndy, adios_err)
+        call adios_write (adios_handle, "/aux/ndz", ndz, adios_err)
+        call adios_write (adios_handle, "/var/var1", double_xyz, adios_err)
+        call adios_write (adios_handle, "/var/var2", double_xyz, adios_err)
+        call adios_write (adios_handle, "/var/var3", double_xyz, adios_err)
+        call adios_write (adios_handle, "/var/var4", double_xyz, adios_err)
+        call adios_write (adios_handle, "/var/var5", double_xyz, adios_err)
+        call adios_write (adios_handle, "/var/var6", double_xyz, adios_err)
+        call adios_write (adios_handle, "/var/var7", double_xyz, adios_err)
+        call adios_write (adios_handle, "/var/var8", double_xyz, adios_err)
+        call adios_write (adios_handle, "/var/var9", double_xyz, adios_err)
         call adios_close (adios_handle, adios_err)
         call MPI_BARRIER(MPI_COMM_WORLD,ierr)
         io_end_time = MPI_WTIME()
@@ -251,9 +296,9 @@ subroutine processArgs()
         call getarg(5, ndx_str)
         call getarg(6, ndy_str)
         call getarg(7, ndz_str)
-        read (ndx_str,'(i6)') ndx
-        read (ndy_str,'(i6)') ndy
-        read (ndz_str,'(i6)') ndz
+        read (ndx_str,'(i12)') ndx
+        read (ndy_str,'(i12)') ndy
+        read (ndz_str,'(i12)') ndz
         inputfile=char(0)
         common_size = .true.
         call getarg(8, time_str)

@@ -1,0 +1,25 @@
+include_directories(${PROJECT_SOURCE_DIR}/src/public)
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/test/C/flexpath_tests/include)
+include_directories(${PROJECT_BINARY_DIR}/src/public)
+link_directories(${PROJECT_SOURCE_DIR}/src)
+link_directories(${PROJECT_BINARY_DIR}/src)
+
+
+<<<<<<< bd72262bb89b1bbd8ece53de2004f77b69137b01
+add_executable(writer writer.c)
+target_link_libraries(writer adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES}) 
+
+add_executable(reader reader.c)
+target_link_libraries(reader adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+=======
+add_executable(arrays_writer writer.c)
+set_target_properties(arrays_writer PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+target_link_libraries(arrays_writer adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES}) 
+
+add_executable(arrays_reader reader.c)
+set_target_properties(arrays_reader PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+target_link_libraries(arrays_reader adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+>>>>>>> fix cmake compile
+
+file(COPY arrays.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/C/flexpath_tests/global_range_select)

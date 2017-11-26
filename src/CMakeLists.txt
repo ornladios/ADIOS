@@ -107,6 +107,7 @@ set (transforms_read_SOURCES ${transforms_read_HDRS}
                           transforms/adios_transform_zfp_read.c
                           transforms/adios_transform_sz_read.c
                           transforms/adios_transform_lz4_read.c
+                          transforms/adios_transform_blosc_read.c
                           core/adios_selection_util.c
                           core/transforms/plugindetect/detect_plugin_read_hook_decls.h
                           core/transforms/plugindetect/detect_plugin_read_hook_reg.h
@@ -128,6 +129,7 @@ set (transforms_write_SOURCES ${transforms_write_HDRS}
                            transforms/adios_transform_zfp_write.c
                            transforms/adios_transform_sz_write.c
                            transforms/adios_transform_lz4_write.c
+                           transforms/adios_transform_blosc_write.c
                            ${transforms_write_method_SOURCES})
 
 #######Query source files
@@ -186,6 +188,8 @@ if(BUILD_WRITE)
                      core/a2sel.c
                      core/adios_clock.c
                      core/qhashtbl.c
+                     core/adiost_callback_internal.c
+                     core/adiost_default_tool.c
                      read/read_bp.c
                      read/read_bp_staged.c
                      read/read_bp_staged1.c
@@ -230,6 +234,8 @@ if(BUILD_WRITE)
                      core/a2sel.c
                      core/adios_clock.c
                      core/qhashtbl.c
+                     core/adiost_callback_internal.c
+                     core/adiost_default_tool.c
                      read/read_bp.c
                      read/read_bp_staged.c
                      read/read_bp_staged1.c
@@ -265,6 +271,8 @@ if(BUILD_WRITE)
                        core/a2sel.c
                        core/adios_clock.c
                        core/qhashtbl.c
+                       core/adiost_callback_internal.c
+                       core/adiost_default_tool.c
                        read/read_bp.c
                        read/read_bp_staged.c
                        read/read_bp_staged1.c
@@ -517,7 +525,8 @@ set(include_HEADERS ${include_HEADERS} public/adios.h
                    public/adios_link.h
                    public/adios_read_ext.h
                    public/adios_query.h
-                   public/adios_transform_methods.h)
+                   public/adios_transform_methods.h
+                   public/adiost_callback_api.h)
 
 set(libadiosread_a_SOURCES core/adios_bp_v1.c
                       core/adios_endianness.c
@@ -540,6 +549,8 @@ set(libadiosread_a_SOURCES core/adios_bp_v1.c
                       core/a2sel.c
                       core/adios_clock.c
                       core/qhashtbl.c
+                      core/adiost_callback_internal.c
+                      core/adiost_default_tool.c
                       read/read_bp.c
                       read/read_bp_staged.c
                       read/read_bp_staged1.c)
@@ -608,6 +619,8 @@ if(BUILD_FORTRAN)
                       core/a2sel.c
                       core/adios_clock.c
                       core/qhashtbl.c
+                      core/adiost_callback_internal.c
+                      core/adiost_default_tool.c
                       read/read_bp.c
                       read/read_bp_staged.c
                       read/read_bp_staged1.c)
@@ -732,6 +745,8 @@ set(libadiosread_nompi_a_SOURCES core/mpidummy.c
                       core/a2sel.c
                       core/adios_clock.c
                       core/qhashtbl.c
+                      core/adiost_callback_internal.c
+                      core/adiost_default_tool.c
                       read/read_bp.c)
 
 if(HAVE_DMALLOC)
@@ -795,6 +810,8 @@ if(BUILD_FORTRAN)
                           core/a2sel.c
                           core/adios_clock.c
                           core/qhashtbl.c
+                          core/adiost_callback_internal.c
+                          core/adiost_default_tool.c
                           read/read_bp.c)
     if(HAVE_DATASPACES)
         set(FortranReadSeqLibSource ${FortranReadSeqLibSource} read/read_dataspaces.c)
@@ -861,6 +878,8 @@ set(libadios_internal_nompi_a_SOURCES core/mpidummy.c
                                     core/adios_clock.c
                                     core/qhashtbl.c
                                     core/futils.c
+                                    core/adiost_callback_internal.c
+                                    core/adiost_default_tool.c 
                                     core/adios_transport_hooks.c)
 
 if(BUILD_WRITE)

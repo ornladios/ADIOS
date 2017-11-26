@@ -31,9 +31,7 @@ int bp_get_characteristics_data (void ** ptr_data,
                 int data_size,
                 enum ADIOS_DATATYPES type);
 int bp_read_close (struct adios_bp_buffer_struct_v1 * b);
-int bp_read_open (const char * filename,
-        MPI_Comm comm,
-        BP_FILE * fh);
+
 MPI_File * get_BP_subfile_handle(BP_FILE *fh, uint32_t file_index);
 void add_BP_subfile_handle (struct BP_FILE *fh, struct BP_file_handle * n);
 void close_all_BP_subfiles (BP_FILE * fh);

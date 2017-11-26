@@ -65,8 +65,10 @@ struct adios_POSIX_data_struct
     int rank;
     int size;
 #endif
-    int g_have_mdf;
+    int g_have_mdf; // = 1 write global metadata file
+    int local_fs; // = N  every N processes are writing to a local file system
     int file_is_open; // = 1 if in append mode we leave the file open (close at finalize)
+    char *filename; // remember the currently opened filename to recognize when user suddenly changes to another one
     int index_is_in_memory; // = 1 when index is kept in memory, no need to read from file. =1 after first 'append/update' is completed but not after first 'write'.
     uint64_t pg_start_next; // remember end of PG data for future append steps
 
@@ -100,10 +102,46 @@ void adios_posix_init (const PairStruct * parameters
     p->size = 0;
 #endif
     p->g_have_mdf = 1;
+    p->local_fs = 0; // only rank 0 creates the directory for sub-files
     p->file_is_open = 0;  // = 1 when posix file is open (used in append mode only)
+    p->filename = NULL;
     p->index_is_in_memory = 0; 
     p->pg_start_next = 0;
     p->total_bytes_written = 0;
+
+
+    // process user parameters
+    const PairStruct *ps = parameters;
+    while (ps) {
+        if (!strcasecmp (ps->name, "have_metadata_file")) 
+        {
+            errno = 0;
+            p->g_have_mdf = strtol(ps->value, NULL, 10);
+            if (!errno) {
+                log_debug ("Parameter 'have_metadata_file' set to %d for POSIX write method\n",
+                           p->g_have_mdf);
+            } else {
+                log_error ("Invalid 'have_metadata_file' parameter given to the POSIX write "
+                           "method: '%s'\n", ps->value);
+            }
+        } 
+        else if (!strcasecmp (ps->name, "local-fs")) 
+        {
+            errno = 0;
+            p->local_fs = strtol(ps->value, NULL, 10);
+            if (!errno) {
+                log_debug ("Parameter 'local-fs' set to %d for POSIX write method\n",
+                           p->local_fs);
+            } else {
+                log_error ("Invalid 'local-fs' parameter given to the POSIX write "
+                           "method: '%s'\n", ps->value);
+            }
+        } else {
+            log_error ("Parameter name %s is not recognized by the POSIX write "
+                        "method\n", ps->name);
+        }
+        ps = ps->next;
+    }
 }
 
 
@@ -129,25 +167,6 @@ int adios_posix_open (struct adios_file_struct * fd
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
 
-    char *temp_string, *m_size;
-
-    temp_string = a2s_trim_spaces (method->parameters);
-    if ( (m_size = strstr (temp_string, "have_metadata_file")) )
-    {
-        char * m = strchr (m_size, '=');
-        char * n = strtok (m, ";");
-
-        if (!n)
-            p->g_have_mdf = atoi (n + 1);
-        else
-            p->g_have_mdf = atoi (m + 1);
-    }
-    else
-    {
-        // by default, write metadata file. 
-        p->g_have_mdf = 1;
-    }
-    free (temp_string);
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     int timer_count = 8;
@@ -247,6 +266,27 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
     fd->subfile_index = p->rank; // Only if HAVE_MPI
 #endif
 
+    // if an app writes multiple files with each multiple steps,
+    // i.e. with a w,a,a,a then w to another filename pattern, then
+    // we need to free up stuff kept in memory about the previous file
+    if (!p->filename) {
+        //printf ("ADIOS POSIX Open: First filename %s\n", subfile_name);
+        p->filename = strdup(subfile_name);
+    } else if (strcmp(subfile_name, p->filename)) {
+        //printf ("ADIOS POSIX Open: Change filename %s\n", subfile_name);
+        if (p->file_is_open) {
+            //printf ("ADIOS POSIX Open: Clear up previous file %s\n", p->filename);
+            adios_clear_index_v1 (p->index); // append and update methods never cleared the index and kept file open
+            adios_posix_close_internal (&p->b);
+            p->file_is_open = 0;
+            p->index_is_in_memory = 0;
+            p->b.end_of_pgs = 0;
+        }
+        free (p->filename);
+        p->filename = strdup(subfile_name);
+    }
+
+
     p->total_bytes_written = 0; // counts bytes written only in this open()..close() step
 
     switch (fd->mode)
@@ -256,7 +296,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
             p->b.f = open (subfile_name, O_RDONLY | O_LARGEFILE);
             if (p->b.f == -1)
             {
-                fprintf (stderr, "ADIOS POSIX: file not found: %s\n", fd->name);
+                log_error("ADIOS POSIX: file not found: %s\n", fd->name);
 
                 free (subfile_name);
 
@@ -276,8 +316,15 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
             // create dir to keep all the subfiles
             if (p->group_comm != MPI_COMM_SELF)
             {
-                if (p->rank == 0)
+                /* p->local_fs controls who creates directories.
+                   local_fs = 0 means only rank 0 does
+                   local_fs = N means every Nth rank does
+                */
+                if ( (p->local_fs == 0 && p->rank == 0) ||
+                     (p->local_fs > 0 && p->rank % p->local_fs == 0)
+                   )
                 {
+                    log_debug ("ADIOS POSIX: mkdir by rank %d\n", p->rank);
                     char * dir_name = malloc (strlen (fd->name) + 4 + 1);
                     sprintf (dir_name, "%s%s"
                                      , fd->name
@@ -298,7 +345,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
                             );
             if (p->b.f == -1)
             {
-                fprintf (stderr, "adios_posix_open failed for "
+                log_error("adios_posix_open failed for "
                                  "base_path %s, subfile name %s\n"
                         ,method->base_path, subfile_name
                         );
@@ -323,7 +370,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
                              );
                     if (p->mf == -1)
                     {
-                        fprintf (stderr, "adios_posix_open failed for "
+                        log_error("adios_posix_open failed for "
                                          "base_path %s, metadata file name %s\n"
                                 ,method->base_path, mdfile_name
                                 );
@@ -383,7 +430,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
                     if (p->b.f == -1)
                     {
-                        fprintf (stderr, "adios_posix_open failed to create  file %s\n" ,subfile_name);
+                        log_error("adios_posix_open failed to create  file %s\n" ,subfile_name);
 
                         free (subfile_name);
                         free (mdfile_name);
@@ -415,7 +462,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
                             );
                     if (p->mf == -1)
                     {
-                        fprintf (stderr, "adios_posix_open failed to create  file %s\n" ,mdfile_name);
+                        log_error("adios_posix_open failed to create  file %s\n" ,mdfile_name);
                         free (subfile_name);
                         free (mdfile_name);
 
@@ -483,7 +530,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
                             break;
 
                         default:
-                            fprintf (stderr, "Unknown bp version: %d.  "
+                            log_error("Unknown bp version: %d.  "
                                     "Cannot append\n"
                                     ,version
                                     );
@@ -515,7 +562,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
 
         default:
         {
-            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+            log_error("Unknown file mode: %d\n", fd->mode);
 
             free (subfile_name);
             free (mdfile_name);
@@ -601,7 +648,7 @@ void adios_posix_get_write_buffer (struct adios_file_struct * fd
         if (!*buffer)
         {
             adios_method_buffer_free (mem_allowed);
-            fprintf (stderr, "Out of memory allocating %" PRIu64 " bytes for %s\n"
+            log_error("Out of memory allocating %" PRIu64 " bytes for %s\n"
                     ,*size, v->name
                     );
             v->got_buffer = adios_flag_no;
@@ -622,7 +669,7 @@ void adios_posix_get_write_buffer (struct adios_file_struct * fd
     else
     {
         adios_method_buffer_free (mem_allowed);
-        fprintf (stderr, "OVERFLOW: Cannot allocate requested buffer of %" PRIu64 " "
+        log_error("OVERFLOW: Cannot allocate requested buffer of %" PRIu64 " "
                          "bytes for %s\n"
                 ,*size
                 ,v->name
@@ -660,6 +707,8 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
     off_t offset = fd->current_pg->pg_start_in_file;
 
     /* FIXME: what is this check? Should never happen ? */
+    //printf ("%s: p->b.end_of_pgs = %" PRIu64 " fd->current_pg->pg_start_in_file = %"
+    //        PRIu64 "\n", __func__, p->b.end_of_pgs, fd->current_pg->pg_start_in_file);
     assert (p->b.end_of_pgs <= fd->current_pg->pg_start_in_file);
     if (p->b.end_of_pgs > fd->current_pg->pg_start_in_file)
         offset = p->b.end_of_pgs;
@@ -849,7 +898,7 @@ static void adios_posix_do_read (struct adios_file_struct * fd
         }
 
         default:
-            fprintf (stderr, "POSIX read: file version unknown: %u\n", version);
+            log_error("POSIX read: file version unknown: %u\n", version);
             return;
     }
 
@@ -940,7 +989,7 @@ void adios_posix_close (struct adios_file_struct * fd
 
                     recv_buffer = malloc (total_size);
                     START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gatherv (&size, 0, MPI_BYTE
+                    MPI_Gatherv (buffer, 0, MPI_BYTE // 0 == index_sizes[0]
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, p->group_comm
                                 );
@@ -1002,7 +1051,7 @@ void adios_posix_close (struct adios_file_struct * fd
                     STOP_TIMER (ADIOS_TIMER_IO);
                     if (s != global_index_buffer_offset)
                     {
-                        fprintf (stderr, "POSIX method tried to write %" PRIu64 ", "
+                        log_error("POSIX method tried to write %" PRIu64 ", "
                                          "only wrote %" PRId64 ". %s:%d\n"
                                          ,fd->bytes_written
                                          ,(int64_t)s
@@ -1017,13 +1066,13 @@ void adios_posix_close (struct adios_file_struct * fd
                 {
                     START_TIMER (ADIOS_TIMER_COMM);
                     // Added this explicit cast to avoid truncation of low-order bytes on BGP
-                    int i_buffer_size = (int) buffer_offset;
-                    MPI_Gather (&i_buffer_size, 1, MPI_INT
+                    int i_buffer_offset = (int) buffer_offset;
+                    MPI_Gather (&i_buffer_offset, 1, MPI_INT
                                ,0, 0, MPI_INT
                                ,0, p->group_comm
                                );
 
-                    MPI_Gatherv (buffer, i_buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, i_buffer_offset, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, p->group_comm
                                 );
@@ -1098,7 +1147,7 @@ void adios_posix_close (struct adios_file_struct * fd
                     int * index_offsets = malloc (4 * p->size);
                     char * recv_buffer = 0;
                     int i;
-                    uint32_t size = buffer_size;
+                    uint32_t size = buffer_offset;
                     uint32_t total_size = 0;
 
                     // Need to make a temporary copy of p->index and merge
@@ -1125,10 +1174,9 @@ void adios_posix_close (struct adios_file_struct * fd
                     }
 
                     recv_buffer = malloc (total_size);
-                    memcpy (recv_buffer, buffer, index_sizes[0]);
 
                     START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gatherv (&size, 0, MPI_BYTE
+                    MPI_Gatherv (buffer, index_sizes[0], MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, p->group_comm
                                 );
@@ -1194,7 +1242,7 @@ void adios_posix_close (struct adios_file_struct * fd
                     STOP_TIMER (ADIOS_TIMER_IO);
                     if (s != global_index_buffer_offset)
                     {
-                        fprintf (stderr, "POSIX method tried to write %" PRIu64 ", "
+                        log_error("POSIX method tried to write %" PRIu64 ", "
                                          "only wrote %" PRId64 ", Mode: a. %s:%d\n"
                                          ,global_index_buffer_offset
                                          ,(int64_t)s
@@ -1211,12 +1259,14 @@ void adios_posix_close (struct adios_file_struct * fd
                 else
                 {
                     START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gather (&buffer_size, 1, MPI_INT
+                    // Added this explicit cast to avoid truncation of low-order bytes on BGP
+                    int i_buffer_offset = (int) buffer_offset;
+                    MPI_Gather (&i_buffer_offset, 1, MPI_INT
                                ,0, 0, MPI_INT
                                ,0, p->group_comm
                                );
 
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, i_buffer_offset, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, p->group_comm
                                 );
@@ -1252,7 +1302,7 @@ void adios_posix_close (struct adios_file_struct * fd
 
         default:
         {
-            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+            log_error("Unknown file mode: %d\n", fd->mode);
 
             return;
         }
@@ -1287,6 +1337,11 @@ void adios_posix_finalize (int mype, struct adios_method_struct * method)
     p->index_is_in_memory = 0; 
 
     adios_free_index_v1 (p->index);
+
+    if (p->filename) {
+        free (p->filename);
+        p->filename = NULL;
+    }
 
     if (adios_posix_initialized)
         adios_posix_initialized = 0;

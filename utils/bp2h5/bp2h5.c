@@ -37,7 +37,7 @@
 #include "adios_types.h"
 
 #include "hdf5.h"
-//#include "hdf5_hl.h"
+#include "H5LTpublic.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -94,7 +94,7 @@ int main (int argc, char ** argv)
 {
     int         gidx, i, j;
     MPI_Comm    comm_dummy = MPI_COMM_WORLD;  /* MPI_Comm is defined through adios_read.h */
-    uint64_t    count[MAX_DIMS];
+    hsize_t     count[MAX_DIMS];
     herr_t      h5_err;
     char        h5name[256],aname[256],fname[256];
     int         h5i, level;

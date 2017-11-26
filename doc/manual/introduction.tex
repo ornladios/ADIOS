@@ -79,9 +79,42 @@ Linux clusters and Mac OSX.
 %    \item A staging area for data querying, analysis, and in situ visualization.
 %\end{itemize}
 
+%
+%
+\section {What's new in version 1.13}
+
+\begin{itemize}
+\item Added {\bf blosc} compression transform by René Widera HZDR, Germany
+\item TAU now can profile ADIOS in applications, by Kevin Huck of the TAU team
+\item Updated to use SZ v1.4.11 compression
+\item \verb+bpls -dD+ option to dump data in per-writer fashion (aka reading with writeblock selection)
+\item fix: bug fixes to new Flexpath staging method (MPI communicator, memory leaks)
+\item fix: bpls command-line allows for large integers to dump data from >2GB blocks
+\item support for JoinedArray, where per-writer data blocks are virtually merged into
+	a global array by ADIOS at read time for easier reading. See \verb+examples/C/joined-array+ in the source.
+
+\end{itemize}
 
 %
 %
+\section {What's new in version 1.12}
+This release adds support for {\bf LZ4} lossless compression and {\bf SZ} error bounded lossy compression, provides a more robust version of {\bf FlexPath staging method}, and a {\bf performance profiling API} that performance tools like TAU and Vampir can use to gather information about ADIOS operations. The \verb+POSIX+ and \verb+MPI_AGGREGATE+ methods support writing to a distributed file system (e.g. Summit@OLCF machine's burst buffer) and an application can read it back as long as every process reads back the data generated on the same compute node. 
+
+A new chapter has been added in the user manual that discusses optimal ways of performing I/O using ADIOS on different supercomputing sites across the world.
+It includes recommendations on using burst buffers on the Summit@OLCF and Cori@NERSC supercomputers.
+For more information, see chapter \ref{site-recommendations}.
+
+\begin{itemize}
+\item SZ lossy compression, see  \url{https://collab.cels.anl.gov/display/ESR/SZ} for details. Options in ADIOS are discussed in Chapter~\ref{sec:transform_plugins}.
+\item LZ4 compression was added by a user of ADIOS, René Widera from HZDR, Germany
+\item Profiling API was added by Kevin Huck of the TAU team \url{http://ix.cs.uoregon.edu/~khuck}. Tool developers need to use the \verb+adiost_callback_api.h+. A basic default tool implementation is in \newline \verb+src/core/adiost_default_tool.c+
+\item The FLEXPATH staging method from Georgia Tech has been redesigned for more robust and faster data staging. The new version of the chaos library is required \url{https://anon@svn.research.cc.gatech.edu/kaos/chaos_base/trunk}
+\item Transport parameter \verb+"local-fs=1"+ will allow the \verb+POSIX+ and \verb+MPI_AGGREGATE+ methods write the output to a distributed file system. The output path is the same on all compute nodes. Any reader process will see the global arrays (definition) but only can successfully read that portion of the data that was written on the same compute node. Think of checkpoint/restart as an example.
+\item Bug fixes for time-aggregation, reading >2GB blocks from file, CMake build, etc.
+\end{itemize}
+
+
+
 \section {What's new in version 1.11}
 Two new features in this release are {\bf time aggregation} and the {\bf ZFP lossy compression transformation}. Time aggregation allows for buffering a small/frequently written dataset for multiple output steps and flush to disk less frequently. The buffer size is controlled by the user. Optionally the aggregated group can be forced to flush when another group (e.g. checkpoint) is written. 
 Lossy compression allows for reducing output data much further than what's available with the current lossless compression transformations. ZFP gives control to the user to set the required accuracy in the output dataset.  

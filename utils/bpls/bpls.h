@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include "adios_read.h"
+#include "config.h"
 
 /* definitions for bpls.c */
 #define myfree(p) if (p) { free(p); p=NULL; }
@@ -31,7 +32,7 @@ typedef int bool;
 
 void init_globals(void);
 void processDimSpecs(void);
-void parseDimSpec(char *str, int *dims);
+void parseDimSpec(char *str, int64_t *dims);
 int compile_regexp_masks(void);
 void printSettings(void);
 int  doList(const char *path);
@@ -49,4 +50,4 @@ void print_endline(void);
 void print_stop(void);
 int print_data_hist(ADIOS_VARINFO * vi, char * varname);
 int print_data_characteristics(void * min, void * max, double * avg, double * std_dev, enum ADIOS_DATATYPES adiosvartype, bool allowformat);
-void print_decomp(ADIOS_VARINFO *vi);
+void print_decomp(ADIOS_FILE *fp, ADIOS_VARINFO *vi, char *name, bool timed);

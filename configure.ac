@@ -1,4 +1,4 @@
-AC_INIT([adios], [1.11.1])
+AC_INIT([adios], [1.13.0])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
@@ -88,6 +88,7 @@ AC_C_INLINE
 
 dnl Checks for string functions.
 AC_CHECK_FUNCS(strdup)
+AC_CHECK_FUNCS(strndup)
 AC_CHECK_FUNCS(snprintf vsnprintf)
 
 dnl Check for "long long" support...
@@ -139,6 +140,13 @@ else
     AM_CONDITIONAL(BUILD_MXML,false)
 fi
 
+AC_MSG_NOTICE([PTHREAD_LIBS=${PTHREAD_LIBS}])
+if test ! -z "${PTHREAD_LIBS}"; then
+    LIBS="${PTHREAD_LIBS} ${LIBS}"
+fi
+if test ! -z "${PTHREAD_CFLAGS}"; then
+    CFLAGS="$CFLAGS ${PTHREAD_CFLAGS}"
+fi
 
 # Make sure we find Python2
 m4_define_default([_AM_PYTHON_INTERPRETER_LIST],
@@ -180,6 +188,7 @@ AC_ALACRITY
 AC_FASTBIT
 AC_BGQ
 AC_LZ4
+AC_BLOSC
 
 
 AC_ZFP
@@ -710,6 +719,28 @@ if test -z "${HAVE_LZ4_TRUE}"; then
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${LZ4_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${LZ4_LIBS}"
 fi
+if test -z "${HAVE_BLOSC_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DBLOSC ${BLOSC_CPPFLAGS}"
+    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${BLOSC_CFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${BLOSC_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${BLOSC_LIBS}"
+    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} -DBLOSC ${BLOSC_CPPFLAGS}"
+    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${BLOSC_CFLAGS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${BLOSC_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${BLOSC_LIBS}"
+    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} -DBLOSC ${BLOSC_CPPFLAGS}"
+    ADIOSLIB_INT_CFLAGS="${ADIOSLIB_INT_CFLAGS} ${BLOSC_CFLAGS}"
+    ADIOSLIB_INT_LDFLAGS="${ADIOSLIB_INT_LDFLAGS} ${BLOSC_LDFLAGS}"
+    ADIOSLIB_INT_LDADD="${ADIOSLIB_INT_LDADD} ${BLOSC_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} -DBLOSC ${BLOSC_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${BLOSC_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${BLOSC_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${BLOSC_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} -DBLOSC ${BLOSC_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${BLOSC_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${BLOSC_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${BLOSC_LIBS}"
+fi
 if test -z "${HAVE_ZFP_TRUE}"; then
     ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${ZFP_LDFLAGS}"
     ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${ZFP_LIBS}"
@@ -916,9 +947,9 @@ AC_CONFIG_FILES([Makefile
                  tests/C/flexpath_tests/1D_arr_global_noxml/Makefile
                  tests/C/flexpath_tests/global_range_select/Makefile
                  tests/C/flexpath_tests/maya_noxml/Makefile
-                 tests/C/flexpath_tests/maya_append/Makefile
                  tests/C/flexpath_tests/scalar/Makefile
                  tests/C/flexpath_tests/local_arrays/Makefile
+                 tests/C/flexpath_tests/two_streams/Makefile
                  tests/C/fgr_tests/Makefile
                  tests/C/query/Makefile
                  tests/C/query/common/Makefile
@@ -969,6 +1000,7 @@ AC_CONFIG_FILES([Makefile
                  examples/C/manual/Makefile
                  examples/C/global-array/Makefile
                  examples/C/global-array-time/Makefile
+                 examples/C/joined-array/Makefile
                  examples/C/stat/Makefile
                  examples/C/read_all/Makefile
                  examples/C/schema/Makefile
@@ -1312,6 +1344,17 @@ if test -z "${HAVE_LZ4_TRUE}"; then
     echo
 else
     echo "  - No LZ4 to build LZ4 transform method"
+fi
+
+if test -z "${HAVE_BLOSC_TRUE}"; then
+    echo "  - BLOSC";
+    echo "      - BLOSC_CFLAGS = $BLOSC_CFLAGS";
+    echo "      - BLOSC_CPPFLAGS = $BLOSC_CPPFLAGS";
+    echo "      - BLOSC_LDFLAGS = $BLOSC_LDFLAGS";
+    echo "      - BLOSC_LIBS = $BLOSC_LIBS";
+    echo
+else
+    echo "  - No Blosc to build Blosc transform method"
 fi
 
 if test -z "${BUILD_ZFP_TRUE}"; then

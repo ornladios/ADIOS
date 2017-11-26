@@ -170,7 +170,7 @@ diag_t gen_1D_array_int(int *p_arr, int arr_len, int rank){
  *         DIAG_ERR if some errors, e.g., the option has not been found
  *
  */
-diag_t get_options(struct adios_tsprt_opts * p_tsprt_opts, int argc, char ** argv, int *p_show_help){
+diag_t get_options(struct adios_tsprt_opts * p_tsprt_opts, int argc, char ** argv, int *p_show_help, int *p_verbose){
 
 	diag_t diag = DIAG_OK;
 	int c;
@@ -182,16 +182,16 @@ diag_t get_options(struct adios_tsprt_opts * p_tsprt_opts, int argc, char ** arg
 	// assume that no showing help
 	*p_show_help = 0;
 
-	while( (c = getopt(argc, argv, "ht:")) != -1){
+	while( (c = getopt(argc, argv, "hvt:")) != -1){
 		switch(c){
 		case 'h':
 			*p_show_help = 1;
 			break;
+		case 'v':
+			*p_verbose = 1;
+			break;
 		case 't':
 			cvalue = optarg;
-			// by default I set adios options to be verbosed
-			// TODO might be changed to the actual option
-			strcpy(p_tsprt_opts->adios_options, "verbose=4; show hidden_attrs");
 
 			if (strcmp(cvalue, "flx") == 0){
 				p_tsprt_opts->method = ADIOS_READ_METHOD_FLEXPATH;

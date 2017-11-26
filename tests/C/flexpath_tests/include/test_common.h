@@ -19,7 +19,7 @@
 #define DEBUG
 
 //! Debug printing verbosity
-#define DBG_LEVEL   DBG_DEBUG
+#define DBG_LEVEL   DBG_MESSAGE
 
 // New debug messaging state. There is no sense of a "level" for debugging. Each of these define the
 // purpose of the messages and is enabled/disabled per file
@@ -46,15 +46,29 @@
 
 #define p_test_failed(fmt, args...)                             \
     do {                                                  \
-	 fprintf(stderr, "%s " fmt, DBG_TEST_FAILED_STR,  ##args);	\
+	 fprintf(stderr, "%s "fmt, DBG_TEST_FAILED_STR,  ##args);	\
          fflush(stdout);  											\
     } while(0)
 
 #define p_test_passed(fmt, args...)                             \
+    do {if(test_verbose){					   \
+         fprintf(stderr, "%s "fmt, DBG_TEST_PASSED_STR,  ##args);  \
+         fflush(stdout);  											\
+	}} while(0)
+
+#define test_failed(prog_name, rank)                             \
     do {                                                  \
-         fprintf(stderr, "%s " fmt, DBG_TEST_PASSED_STR,  ##args);  \
+	 fprintf(stdout, "%s\t\tProgram name: %s\tRank: %d\n", DBG_TEST_FAILED_STR, prog_name, rank);	\
          fflush(stdout);  											\
     } while(0)
+
+#define test_passed(prog_name, rank)                             \
+    do {                                                  \
+         fprintf(stdout, "%s\t\tProgram name: %s\tRank: %d\n", DBG_TEST_PASSED_STR, prog_name, rank);  \
+         fflush(stdout);  											\
+    } while(0)
+
+
 
 
 
@@ -109,14 +123,16 @@
  *
  * The macro causes to return DIAG_ERR if getting options returned errors
  */
-#define GET_ENTRY_OPTIONS(adios_opts, help_string) \
+static int test_verbose = 0;
+
+#define GET_ENTRY_OPTIONS(adios_opts, help_string)	\
 	if (1 == argc){ \
 		p_error("See '-h' for options. At least transport param needs to be specified. Quitting ...\n"); \
 		return DIAG_ERR; \
 	} \
 	do { \
 		int show_help = 0; \
-		if( DIAG_OK != get_options(&adios_opts, argc, argv, &show_help) ){ \
+		if( DIAG_OK != get_options(&adios_opts, argc, argv, &show_help, &test_verbose) ){ \
 			p_error("Got from get_options(). Quitting ...\n."); \
 			return DIAG_ERR; \
 		} \

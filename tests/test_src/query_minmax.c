@@ -197,12 +197,12 @@ int write_file (int step)
     adios_open (&fh, "query_minmax", FILENAME, (step ? "a" : "w"), comm);
     
     groupsize  = (4 + nblocks*2) * sizeof(int);             // dimensions
-    log ("  groupsize calculated = %llu\n", groupsize);
+    log ("  groupsize calculated = %" PRIu64 "\n", groupsize);
     groupsize += nblocks * ldim1 * ldim2 * sizeof(float);     // 2D  blocks
-    log ("  groupsize calculated = %llu\n", groupsize);
+    log ("  groupsize calculated = %" PRIu64 "\n", groupsize);
 
     adios_group_size (fh, groupsize, &totalsize);
-    log ("  groupsize %llu, totalsize %llu\n", groupsize, totalsize);
+    log ("  groupsize %" PRIu64 ", totalsize %" PRIu64 "\n", groupsize, totalsize);
 
     tb = MPI_Wtime();
     for (i=0; i<N; i++) {
@@ -296,7 +296,7 @@ int query_test (ADIOS_FILE *f, ADIOS_SELECTION *boxsel)
 
         // retrieve the whole query result at once
         int64_t batchSize = N*N;
-        log ("    set upper limit to total number of blocks in array  = %lld\n", batchSize);
+        log ("    set upper limit to total number of blocks in array  = %" PRId64 "\n", batchSize);
 
         teb = MPI_Wtime();
         ADIOS_QUERY_RESULT *result = adios_query_evaluate(q, boxsel, step, batchSize);

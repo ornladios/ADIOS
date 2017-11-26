@@ -31,6 +31,8 @@
 #include "dmalloc.h"
 #endif
 
+#include "adiost_callback_internal.h"
+
 extern struct adios_transport_struct * adios_transports;
 extern int adios_errno;
 
@@ -74,8 +76,10 @@ int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
 ///////////////////////////////////////////////////////////////////////////////
 void adios_set_max_buffer_size (uint64_t max_buffer_size_MB)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_set_max_buffer_size, max_buffer_size_MB);
     if (max_buffer_size_MB > 0)
         adios_databuffer_set_max_size (max_buffer_size_MB * 1024L * 1024L);
+    ADIOST_CALLBACK_EXIT(adiost_event_set_max_buffer_size, max_buffer_size_MB);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -348,6 +352,7 @@ int adios_delete_vardefs (int64_t id)
 // It is simply the product of local dimensions and byte-size of type
 uint64_t adios_expected_var_size (int64_t var_id)
 {
+    ADIOST_CALLBACK_ENTER(adiost_event_expected_var_size, var_id);
     adios_errno = err_no_error;
     uint64_t size = 0;
     if (var_id != 0) {
@@ -386,6 +391,7 @@ uint64_t adios_expected_var_size (int64_t var_id)
         adios_error (err_invalid_varid, "%s called with invalid variable ID\n", __func__);
     }
 
+    ADIOST_CALLBACK_EXIT(adiost_event_expected_var_size, var_id);
     return size;
 }
 

@@ -177,11 +177,12 @@ int main(int argc, char ** argv){
 	uint64_t adios_totalsize = 0;
 
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%" PRIu64 ", adios_totalsize=%" PRIu64 ", retval=%d\n",
-				rank, adios_groupsize, adios_totalsize, retval);
+	if (test_verbose) {
+            fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%" PRIu64 ", adios_totalsize=%" PRIu64 ", retval=%d\n",
+                    rank, adios_groupsize, adios_totalsize, retval);
 
-	printf("Writing checkpoint to file %s using the %s method: group size is %" PRIu64 ", total size is %" PRIu64 ". \n", FILE_NAME, adios_opts.transport, adios_groupsize, adios_totalsize);
-
+            printf("Writing checkpoint to file %s using the %s method: group size is %" PRIu64 ", total size is %" PRIu64 ". \n", FILE_NAME, adios_opts.transport, adios_groupsize, adios_totalsize);
+        }
 
     // arbitrary, but this is what I am getting from Maya
 	// the number of patches I want to write
@@ -288,8 +289,9 @@ int main(int argc, char ** argv){
     	WRITE_FULLPATH(shapepath, dim_3_uint64_t);
     }
 
-	fprintf(stderr, "Rank=%d committed write\n", rank);
-
+	if (test_verbose) {
+            fprintf(stderr, "Rank=%d committed write\n", rank);
+        }
 	free(my_data);
 	my_data = NULL;
 
@@ -298,8 +300,6 @@ int main(int argc, char ** argv){
 	// clean and finalize the system
 	adios_finalize(rank);
 	MPI_Finalize();
-
-	printf("\n");
 
 	return 0;
 }
