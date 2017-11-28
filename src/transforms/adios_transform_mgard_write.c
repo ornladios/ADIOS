@@ -87,7 +87,6 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
         ncol = (int) adios_get_dim_value(&d->dimension);
         nrow = (int) adios_get_dim_value(&d->next->dimension);
     }
-    log_debug("nrow,ncol: %d,%d\n", ncol, nrow);
 
     struct adios_transform_spec_kv_pair* param;
     int i = 0;
@@ -102,16 +101,37 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
             tol = atof(param->value);
         }
     }
-    log_debug("tol: %g\n", tol);
 
     unsigned char* mgard_comp_buff;
     mgard_comp_buff = mgard_compress(iflag, input_buff, &out_size,  nrow,  ncol, &tol );
-    log_debug("out_size: %d\n", out_size);
+    //out_size = 15671;
+    //mgard_comp_buff = malloc(out_size);
+    //memset(mgard_comp_buff, 0xFF, out_size);
+
+    log_debug("%s: %d,%d\n", "MGARD now,ncol", nrow, ncol);
+    log_debug("%s: %g\n", "MGARD tol", tol);
+    log_debug("%s: %d\n", "MGARD out_size", out_size);
+    log_debug("%s: %p\n", "MGARD output buffer", mgard_comp_buff);
+
+    FILE *qfile;
+    char fname[80];
+    sprintf(fname, "input_type%d_%dx%d.dat", iflag, nrow, ncol);
+    log_debug("%s: %s\n", "MGARD save", fname);
+    qfile = fopen (fname, "wb");
+    fwrite (input_buff, 1, nrow*ncol*8, qfile);
+    fclose(qfile);
+
+    double *v = (double*) input_buff;
+    log_debug("%s: %g %g %g %g %g ... %g %g %g %g %g\n", "MGARD input_buff",
+              v[0], v[1], v[2], v[3], v[4],
+              v[nrow*ncol-5], v[nrow*ncol-4], v[nrow*ncol-3], v[nrow*ncol-2], v[nrow*ncol-1]);
 
     // Output
     uint64_t output_size = (uint64_t) out_size/* Compute how much output size we need */;
     void* output_buff;
 
+    log_debug("%s: %ld\n", "MGARD output_size", output_size);
+    log_debug("%s: %d\n", "MGARD use_shared_buffer", use_shared_buffer);
     if (use_shared_buffer) {
         // If shared buffer is permitted, serialize to there
         assert(shared_buffer_reserve(fd, output_size));

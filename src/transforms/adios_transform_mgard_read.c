@@ -70,6 +70,9 @@ adios_datablock * adios_transform_mgard_pg_reqgroup_completed(adios_transform_re
     nrow = (int) (completed_pg_reqgroup->orig_varblock->count[0]);
     ncol = (int) (completed_pg_reqgroup->orig_varblock->count[1]);
 
+    log_debug("%s: %d,%d\n", "MGARD now,ncol", nrow, ncol);
+    log_debug("%s: %d\n", "MGARD out_size", raw_size);
+
     void* mgard_out_buff;
     mgard_out_buff = mgard_decompress(iflag, raw_buff, raw_size,  nrow,  ncol); 
 
