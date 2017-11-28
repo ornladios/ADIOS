@@ -41,3 +41,7 @@ transforms_read_method_SOURCES += transforms/adios_transform_lz4_read.c
 # Blosc plugin:
 transforms_write_method_SOURCES += transforms/adios_transform_blosc_write.c
 transforms_read_method_SOURCES += transforms/adios_transform_blosc_read.c
+
+# mgard plugin:
+transforms_write_method_SOURCES += transforms/adios_transform_mgard_write.c
+transforms_read_method_SOURCES += transforms/adios_transform_mgard_read.c
