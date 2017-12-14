@@ -12,6 +12,7 @@
 #include <glib.h>
 #include <zfp.h>
 #include <zmq.h>
+#include <json-c/json.h>
 #include <omp.h>
 
 // see if we have MPI or other tools
@@ -40,12 +41,15 @@ static char *io_method[MAXLEVEL]; //the IO methods for data output for each leve
 static char *io_parameters[MAXLEVEL]; //the IO method parameters
 static char *io_paths[MAXLEVEL]; //the IO method output paths (prefix to filename)
 static int nlevels=2; // Number of levels
+static pipe_fd;
 
 double threshold = 0.1;
 double compr_tolerance = 0.1;
 int save_delta = 1;
 int compress_delta = 1;
 int dec_ratio = 10;
+void * zmq_ipc_req = 0;
+void * zmq_ipc_rep = 0;
 
 GHashTable ** nodes_ght = 0;
 
@@ -761,8 +765,53 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
 
             // ZMQ init
             void * context = zmq_ctx_new ();
-            void * requester = zmq_socket (context, ZMQ_REQ);
-            zmq_connect (requester, "tcp://localhost:5555");
+
+            zmq_ipc_req = zmq_socket (context, ZMQ_REQ);
+            zmq_ipc_rep = zmq_socket (context, ZMQ_REP);
+            int rc = zmq_connect (zmq_ipc_req, "ipc:///tmp/ADIOS_MDTM_pipe");
+            assert (rc == 0);
+ 
+            zmq_bind (zmq_ipc_rep, "ipc:///tmp/MDTM_ADIOS_pipe");
+//
+            char * json_string = "{\"operation\"  : \"init\",       \
+                                   \"mode\"       : \"sender\",     \
+                                   \"pipe_prefix\": \"/tmp/MdtmManPipes/\",      \ 
+                                   \"pipe_names\" : [\"MdtmManPipe0\"], \
+                                   \"msg_type\"   : \"metadata\"}";
+
+            json_object * jobj = json_tokener_parse(json_string);     
+            const char * tmp_str = json_object_to_json_string (jobj);
+
+            printf ("tmp_str = %s\n", tmp_str);	
+
+            mkfifo("/tmp/MdtmManPipes/MdtmManPipe0", S_IRWXU | S_IRWXG | S_IRWXO);
+            if (rc == -1)
+            {
+                printf ("mkfifo() error = %s\n", strerror(errno));
+            }
+
+            rc = zmq_send (zmq_ipc_req, tmp_str, strlen (tmp_str), 0);
+            if (rc == -1)
+            {
+                printf ("zmq_send() error = %s\n", strerror(errno));
+            }
+
+            char buffer_return[10];
+            rc = zmq_recv (zmq_ipc_req, buffer_return, 10, 0);
+            if (rc == -1)
+            {
+                printf ("zm_recv() error = %s\n", strerror(errno));
+            }
+
+            printf ("buffer = %s\n", buffer_return);
+
+            printf ("Sender pipe open.\n");
+
+            pipe_fd = open ("/tmp/MdtmManPipes/MdtmManPipe0", O_WRONLY);
+            if (pipe_fd < 0)
+            {
+                printf ("open pipe error: %s\n", strerror(errno));
+            }
 
             break;
         }
@@ -3165,6 +3214,34 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     do_write (md->level[1].fd, "dpot/L1", data_reduced);
                     free (data_reduced);
+
+                    printf ("size of data to send: %d\n", nvertices_new * 8);
+                    write (pipe_fd,data_reduced, nvertices_new * 8);
+#if 0
+                    /* send terminate */
+                    char * json_terminate_string = "{\"operation\"  : \"terminate\"}"; 
+                    json_object * jobj = json_tokener_parse(json_terminate_string);
+                    const char * tmp_str = json_object_to_json_string (jobj);
+
+                    printf ("tmp_str = %s\n", tmp_str);
+
+                    int rc = zmq_send (zmq_ipc_req, tmp_str, strlen (tmp_str), 0);
+                    if (rc == -1)
+                    {
+                        printf ("zmq_send() error = %s\n", strerror(errno));
+                    }
+
+                    char buffer_return[10];
+                    rc = zmq_recv (zmq_ipc_req, buffer_return, 10, 0);
+                    if (rc == -1)
+                    {
+                        printf ("zm_recv() error = %s\n", strerror(errno));
+                    }
+
+                    printf ("buffer = %s\n", buffer_return);
+#endif
+                    close (pipe_fd);
+//                    remove ("/tmp/MdtmManPipes/MdtmManPipe0");
 
                     if (save_delta)
                     {

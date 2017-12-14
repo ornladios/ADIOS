@@ -909,7 +909,8 @@ elif [ `hostname | cut -c 1-3` == "bde" ]; then
         --with-glib=/home/gary/glib \
         --with-mxml=/home/gary/mxml \
         --with-zfp=/home/gary/zfp \
-        --with-zmq=/home/gary/zmq
+        --with-zmq=/home/gary/zmq \
+        --with-json=/home/gary/json-c
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
