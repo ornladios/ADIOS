@@ -6,7 +6,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
-noinst_PROGRAMS = adios_global adios_global_2files adios_read_gpp adios_read_global test_xgc test_zfp test_f0_zfp adios_read_writeblock adios_read_chunk adios_global_no_xml adios_read_global_no_xml no_xml_write_byid read_no_xml_write_byid adios_global_aggregate_by_color
+noinst_PROGRAMS = adios_global adios_global_2files adios_read_gpp adios_read_global test_xgc read_xgc test_zfp test_f0_zfp adios_read_writeblock adios_read_chunk adios_global_no_xml adios_read_global_no_xml no_xml_write_byid read_no_xml_write_byid adios_global_aggregate_by_color
 
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a 
@@ -20,6 +20,10 @@ adios_read_global_SOURCES = adios_read_global.c
 adios_read_global_LDADD = $(top_builddir)/src/libadios.a 
 adios_read_global_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_global_LDADD += $(ADIOSLIB_LDADD)
+read_xgc_SOURCES = read_xgc.c
+read_xgc_LDADD = $(top_builddir)/src/libadios.a
+read_xgc_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+read_xgc_LDADD += $(ADIOSLIB_LDADD)
 test_xgc_SOURCES = test_xgc.c
 test_xgc_LDADD = $(top_builddir)/src/libadios.a
 test_xgc_LDFLAGS = $(ADIOSLIB_LDFLAGS) 

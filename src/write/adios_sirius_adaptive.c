@@ -41,7 +41,10 @@ static char *io_method[MAXLEVEL]; //the IO methods for data output for each leve
 static char *io_parameters[MAXLEVEL]; //the IO method parameters
 static char *io_paths[MAXLEVEL]; //the IO method output paths (prefix to filename)
 static int nlevels=2; // Number of levels
-static pipe_fd;
+static pipe_field;
+static pipe_R;
+static pipe_Z;
+static pipe_mesh;
 
 double threshold = 0.1;
 double compr_tolerance = 0.1;
@@ -776,7 +779,7 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
             char * json_string = "{\"operation\"  : \"init\",       \
                                    \"mode\"       : \"sender\",     \
                                    \"pipe_prefix\": \"/tmp/MdtmManPipes/\",      \ 
-                                   \"pipe_names\" : [\"MdtmManPipe0\"], \
+                                   \"pipe_names\" : [\"field\", \"R\", \"Z\", \"mesh\"], \
                                    \"msg_type\"   : \"metadata\"}";
 
             json_object * jobj = json_tokener_parse(json_string);     
@@ -784,7 +787,34 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
 
             printf ("tmp_str = %s\n", tmp_str);	
 
-            mkfifo("/tmp/MdtmManPipes/MdtmManPipe0", S_IRWXU | S_IRWXG | S_IRWXO);
+            remove ("/tmp/MdtmManPipes/field");
+            remove ("/tmp/MdtmManPipes/R");
+            remove ("/tmp/MdtmManPipes/Z");
+            remove ("/tmp/MdtmManPipes/mesh");
+
+            // Create a named pipe for field data
+            rc = mkfifo("/tmp/MdtmManPipes/field", S_IRWXU | S_IRWXG | S_IRWXO);
+            if (rc == -1)
+            {
+                printf ("mkfifo() error = %s\n", strerror(errno));
+            }
+
+            // Creat a named pipe for R
+            rc = mkfifo("/tmp/MdtmManPipes/R", S_IRWXU | S_IRWXG | S_IRWXO);
+            if (rc == -1)
+            {
+                printf ("mkfifo() error = %s\n", strerror(errno));
+            }
+
+            // Create a named pipe for Z
+            rc = mkfifo("/tmp/MdtmManPipes/Z", S_IRWXU | S_IRWXG | S_IRWXO);
+            if (rc == -1)
+            {
+                printf ("mkfifo() error = %s\n", strerror(errno));
+            }
+
+            // Create a named pipe for mesh
+            rc = mkfifo("/tmp/MdtmManPipes/mesh", S_IRWXU | S_IRWXG | S_IRWXO);
             if (rc == -1)
             {
                 printf ("mkfifo() error = %s\n", strerror(errno));
@@ -807,11 +837,30 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
 
             printf ("Sender pipe open.\n");
 
-            pipe_fd = open ("/tmp/MdtmManPipes/MdtmManPipe0", O_WRONLY);
-            if (pipe_fd < 0)
+            pipe_field = open ("/tmp/MdtmManPipes/field", O_WRONLY);
+            if (pipe_field < 0)
             {
                 printf ("open pipe error: %s\n", strerror(errno));
             }
+
+            pipe_R = open ("/tmp/MdtmManPipes/R", O_WRONLY);
+            if (pipe_R < 0)
+            {
+                printf ("open pipe error: %s\n", strerror(errno));
+            }
+
+            pipe_Z = open ("/tmp/MdtmManPipes/Z", O_WRONLY);
+            if (pipe_Z < 0)
+            {
+                printf ("open pipe error: %s\n", strerror(errno));
+            }
+
+            pipe_mesh = open ("/tmp/MdtmManPipes/mesh", O_WRONLY);
+            if (pipe_mesh < 0)
+            {
+                printf ("open pipe error: %s\n", strerror(errno));
+            }
+
 
             break;
         }
@@ -3215,9 +3264,14 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     do_write (md->level[1].fd, "dpot/L1", data_reduced);
                     free (data_reduced);
 
-                    printf ("size of data to send: %d\n", nvertices_new * 8);
-                    write (pipe_fd,data_reduced, nvertices_new * 8);
-#if 0
+                    printf ("size of field, R, and Z data to send: %d\n", 
+                            nvertices_new * 8 * 3);
+                    write (pipe_field,data_reduced, nvertices_new * 8);
+                    write (pipe_R,r_reduced, nvertices_new * 8);
+                    write (pipe_Z,z_reduced, nvertices_new * 8);
+printf ("nmes_reduced = %d\n", nmesh_reduced);
+                    write (pipe_mesh,mesh_reduced, nmesh_reduced * 3 * 4);
+#if 1
                     /* send terminate */
                     char * json_terminate_string = "{\"operation\"  : \"terminate\"}"; 
                     json_object * jobj = json_tokener_parse(json_terminate_string);
@@ -3240,8 +3294,15 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     printf ("buffer = %s\n", buffer_return);
 #endif
-                    close (pipe_fd);
-//                    remove ("/tmp/MdtmManPipes/MdtmManPipe0");
+                    close (pipe_field);
+                    close (pipe_R);
+                    close (pipe_Z);
+                    close (pipe_mesh);
+
+//                    remove ("/tmp/MdtmManPipes/field");
+//                    remove ("/tmp/MdtmManPipes/R");
+//                    remove ("/tmp/MdtmManPipes/Z");
+//                    remove ("/tmp/MdtmManPipes/mesh");
 
                     if (save_delta)
                     {
