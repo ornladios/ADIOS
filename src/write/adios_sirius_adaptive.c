@@ -843,17 +843,22 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
                 printf ("open pipe error: %s\n", strerror(errno));
             }
 
+            printf ("field pipe opened.\n");
+
             pipe_R = open ("/tmp/MdtmManPipes/R", O_WRONLY);
             if (pipe_R < 0)
             {
                 printf ("open pipe error: %s\n", strerror(errno));
             }
 
+            printf ("R pipe opened.\n");
+
             pipe_Z = open ("/tmp/MdtmManPipes/Z", O_WRONLY);
             if (pipe_Z < 0)
             {
                 printf ("open pipe error: %s\n", strerror(errno));
             }
+            printf ("Z pipe opened.\n");
 
             pipe_mesh = open ("/tmp/MdtmManPipes/mesh", O_WRONLY);
             if (pipe_mesh < 0)
@@ -862,6 +867,7 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
             }
 
 
+            printf ("Mesh pipe opened.\n");
             break;
         }
 
@@ -3266,11 +3272,28 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     printf ("size of field, R, and Z data to send: %d\n", 
                             nvertices_new * 8 * 3);
+
+#if 0
+                    char a[1024], b[1024], c[1024], d[1024];
+                    for (int char_index = 0; char_index < 1024; char_index++)
+                    {
+                        a[char_index] = 'a';
+                        b[char_index] = 'b';
+                        c[char_index] = 'c';
+                        d[char_index] = 'd';
+                    }
+
+                    write (pipe_field,a, 1024);
+                    write (pipe_R,b, 1024);
+                    write (pipe_Z,c, 1024);
+                    write (pipe_mesh,d, 1024);
+#else
                     write (pipe_field,data_reduced, nvertices_new * 8);
                     write (pipe_R,r_reduced, nvertices_new * 8);
                     write (pipe_Z,z_reduced, nvertices_new * 8);
 printf ("nmes_reduced = %d\n", nmesh_reduced);
                     write (pipe_mesh,mesh_reduced, nmesh_reduced * 3 * 4);
+#endif
 #if 1
                     /* send terminate */
                     char * json_terminate_string = "{\"operation\"  : \"terminate\"}"; 
@@ -3299,10 +3322,10 @@ printf ("nmes_reduced = %d\n", nmesh_reduced);
                     close (pipe_Z);
                     close (pipe_mesh);
 
-//                    remove ("/tmp/MdtmManPipes/field");
-//                    remove ("/tmp/MdtmManPipes/R");
-//                    remove ("/tmp/MdtmManPipes/Z");
-//                    remove ("/tmp/MdtmManPipes/mesh");
+                    remove ("/tmp/MdtmManPipes/field");
+                    remove ("/tmp/MdtmManPipes/R");
+                    remove ("/tmp/MdtmManPipes/Z");
+                    remove ("/tmp/MdtmManPipes/mesh");
 
                     if (save_delta)
                     {

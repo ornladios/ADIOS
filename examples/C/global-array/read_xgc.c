@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <pthread.h>
 
 #define MAX_BUF 1024*1024*32
 
@@ -42,6 +43,7 @@ int main()
     int fd_field, fd_R, fd_Z, fd_mesh;
     int rc;
     char buf[MAX_BUF];
+    pthread_t thread_field, thread_R, thread_Z, thread_mesh;
 
     remove ("/tmp/MdtmManPipes/field");
     remove ("/tmp/MdtmManPipes/R");
@@ -53,12 +55,27 @@ int main()
     create_pipe ("/tmp/MdtmManPipes/R");
     create_pipe ("/tmp/MdtmManPipes/Z");
     create_pipe ("/tmp/MdtmManPipes/mesh");
-
+#if 0
     read_pipe ("/tmp/MdtmManPipes/field");
     read_pipe ("/tmp/MdtmManPipes/R");
     read_pipe ("/tmp/MdtmManPipes/Z");
     read_pipe ("/tmp/MdtmManPipes/mesh");
+#else
+    char field_string[] = "/tmp/MdtmManPipes/field";
+    char R_string[] = "/tmp/MdtmManPipes/R";
+    char Z_string[] = "/tmp/MdtmManPipes/Z";
+    char mesh_string[] = "/tmp/MdtmManPipes/mesh";
 
+    pthread_create (&thread_field, NULL, (void *) &read_pipe, (void *) field_string);
+    pthread_create (&thread_R, NULL, (void *) &read_pipe, (void *) R_string);
+    pthread_create (&thread_Z, NULL, (void *) &read_pipe, (void *) Z_string);
+    pthread_create (&thread_mesh, NULL, (void *) &read_pipe, (void *) mesh_string);
+
+    pthread_join (thread_field, NULL);
+    pthread_join (thread_R, NULL);
+    pthread_join (thread_Z, NULL);
+    pthread_join (thread_mesh, NULL);
+#endif
     return 0;
 }
 
