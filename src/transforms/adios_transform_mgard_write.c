@@ -79,13 +79,15 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
 
     if (fd->group->adios_host_language_fortran == adios_flag_yes)
     {
-        nrow = (int) adios_get_dim_value(&d->dimension);
-        ncol = (int) adios_get_dim_value(&d->next->dimension);
+        //log_debug("%s: Fortran dimension enabled\n", "MGARD");
+        ncol = (int) adios_get_dim_value(&d->dimension);
+        nrow = (int) adios_get_dim_value(&d->next->dimension);
     }
     else
     {
-        ncol = (int) adios_get_dim_value(&d->dimension);
-        nrow = (int) adios_get_dim_value(&d->next->dimension);
+        //log_debug("%s: C dimension enabled\n", "MGARD");
+        nrow = (int) adios_get_dim_value(&d->dimension);
+        ncol = (int) adios_get_dim_value(&d->next->dimension);
     }
 
     struct adios_transform_spec_kv_pair* param;
@@ -96,7 +98,7 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
         param = &(var->transform_spec->params[i]);
         if (adios_verbose_level>7) log_debug("param: %s %s\n", param->key, param->value);
 
-        if (strcmp(param->key, "tol") == 0)
+        if (!strcmp(param->key, "tol") || !strcmp(param->key, "accuracy"))
         {
             tol = atof(param->value);
         }
