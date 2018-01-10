@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "public/adios.h"
 #include "public/adios_read.h"
 #include <iapi.h>
@@ -321,7 +322,7 @@ void onMultiBlock(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int timestep, int b
   int i=0;
   
   char selName[100];
-  sprintf(selName, "block-%d", blockStart, blockEnd);
+  sprintf(selName, "block-%d..%d", blockStart, blockEnd);
 
   uint64_t blockSizeArray[blockEnd-blockStart];
 
@@ -424,7 +425,7 @@ void processData(void* data, uint64_t dataCount, int rank, int timestep, char* s
       defineFastbitVar(1, keyVarName, &var_ids_key, adios_double, &nk, 0, 0);
       defineFastbitVar(1, offsetName, &var_ids_offset, adios_long, &no, 0, 0); 
 
-      printf("bms[0] = %" PRIu64 ", bms[1]=%" PRIu64 " \n", bms[0], bms[1]);
+      printf("bms[0] = %" PRIu32 ", bms[1]=%" PRIu32 " \n", bms[0], bms[1]);
       //var_ids_bms = defineAdiosVar(bmsVarName, adios_unsigned_integer, nb, 0, 0);
       //var_ids_key = defineAdiosVar(keyVarName, adios_double, nk, 0, 0);
       //var_ids_offset = defineAdiosVar(offsetName, adios_long, no, 0, 0);
