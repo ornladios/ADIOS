@@ -95,7 +95,9 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
     /* SZ parameters */
     int use_configfile = 0;
+    int use_zchecker = 0;
     char *sz_configfile = NULL;
+    char *zc_configfile = "zc.config";
     struct adios_transform_spec_kv_pair* param;
     int i = 0;
     if (adios_verbose_level>7) log_debug("param_count: %d\n", var->transform_spec->param_count);
@@ -250,10 +252,13 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             sz.errorBoundMode = PW_REL;
             sz.pw_relBoundRatio = atof(param->value);
         }
-        else if (!strcmp(param->key, "rel") || !strcmp(param->key, "relative"))
+        else if (!strcmp(param->key, "zchecker") || !strcmp(param->key, "zcheck") || !strcmp(param->key, "z-checker") || !strcmp(param->key, "z-check"))
         {
-            sz.errorBoundMode = REL;
-            sz.relBoundRatio = atof(param->value);
+            use_zchecker = (param->value == NULL)? 1 : atof(param->value);
+        }
+        else if (strcmp(param->key, "zc_init") == 0)
+        {
+            zc_configfile = strdup(param->value);
         }
         else
         {
@@ -349,42 +354,67 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     void* output_buff;
 
 #ifdef HAVE_ZCHECKER
-    int zc_type;
-    switch (var->pre_transform_type)
+    log_debug("%s: %s\n", "Z-checker", "Enabled");
+    if (use_zchecker)
     {
-        case adios_double:
-            zc_type = ZC_DOUBLE;
-            break;
-        case adios_real:
-            zc_type = ZC_FLOAT;
-            break;
-        default:
-            adios_error(err_transform_failure, "No supported data type\n");
-            return -1;
-            break;
+        ZC_Init(zc_configfile);
+        int zc_type;
+        switch (var->pre_transform_type)
+        {
+            case adios_double:
+                zc_type = ZC_DOUBLE;
+                break;
+            case adios_real:
+                zc_type = ZC_FLOAT;
+                break;
+            default:
+                adios_error(err_transform_failure, "No supported data type\n");
+                return -1;
+                break;
+        }
+
+        ZC_DataProperty* property = NULL;
+        property = ZC_genProperties(var->name, zc_type, input_buff, r[4], r[3], r[2], r[1], r[0]);
+        ZC_printDataProperty(property);
+        printf("Z-Checker done.\n");
+
+        void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
+        ZC_CompareData* compareResult;
+        compareResult = ZC_compareData(var->name, zc_type, input_buff, hat, r[4], r[3], r[2], r[1], r[0]);
+        ZC_printCompressionResult(compareResult);
+        printf("psnr: %g\n", compareResult->psnr);
+
+        double my_entropy = property->entropy;
+        double my_psnr = compareResult->psnr;
+        int comm_size = 1;
+        int comm_rank = 0;
+        /*
+        printf("comm: %d\n", fd->comm);
+        MPI_Comm comm = MPI_COMM_WORLD;
+        MPI_Comm_size(comm, &comm_size);
+        MPI_Comm_rank(comm, &comm_rank);
+
+        double* all_entropy = malloc(sizeof(double)*comm_size);
+        double* all_psnr = malloc(sizeof(double)*comm_size);
+        MPI_Allgather(&my_entropy, 1, MPI_DOUBLE, all_entropy, comm_size, MPI_DOUBLE, comm);
+        MPI_Allgather(&my_psnr, 1, MPI_DOUBLE, all_psnr, comm_size, MPI_DOUBLE, comm);
+        */
+
+        int64_t m_adios_file = (int64_t) fd;
+        int64_t m_adios_group = (int64_t) fd->group;
+        int64_t varid;
+
+        char zname[255];
+        sprintf(zname, "%s/%s", var->name, "entropy");
+        adios_common_define_attribute_byvalue (m_adios_group, zname,"", adios_double, comm_size, &my_entropy);
+        sprintf(zname, "%s/%s", var->name, "psnr");
+        adios_common_define_attribute_byvalue (m_adios_group, zname,"", adios_double, comm_size, &my_psnr);
+        //common_adios_write_byid (fd, (struct adios_var_struct *) varid, &(property->entropy));
+        //adios_write (fd, "entropy", &(property->entropy));
+        ZC_Finalize();
     }
-
-    ZC_DataProperty* property = NULL;
-    property = ZC_genProperties(var->name, zc_type, input_buff, r[4], r[3], r[2], r[1], r[0]);
-    ZC_printDataProperty(property);
-    printf("Z-Checker done.\n");
-
-    void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
-    ZC_CompareData* compareResult;
-    compareResult = ZC_compareData(var->name, zc_type, input_buff, hat, r[4], r[3], r[2], r[1], r[0]);
-    ZC_printCompressionResult(compareResult);
-    printf("psnr: %g\n", compareResult->psnr);
-
-    int64_t m_adios_file = (int64_t) fd;
-    int64_t m_adios_group = (int64_t) fd->group;
-    int64_t varid;
-
-    varid = adios_common_define_var (m_adios_group, "entropy"
-                                ,"", adios_double
-                                ,"", "", "");
-    common_adios_write_byid (fd, (struct adios_var_struct *) varid, &(property->entropy));
-    //adios_write (fd, "entropy", &(property->entropy));
-
+#else
+    log_debug("%s: %s\n", "Z-checker", "Not available");
 #endif
 
     if (use_shared_buffer) {
