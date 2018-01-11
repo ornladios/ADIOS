@@ -16,9 +16,15 @@
 #include "adios_transforms_hooks_write.h"
 #include "adios_transforms_util.h"
 
+#include "core/common_adios.h"
+
 #ifdef HAVE_SZ
 
 #include "sz.h"
+#ifdef HAVE_ZCHECKER
+#include <ZC_rw.h>
+#include <zc.h>
+#endif
 
 typedef unsigned int uint;
 
@@ -244,6 +250,11 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             sz.errorBoundMode = PW_REL;
             sz.pw_relBoundRatio = atof(param->value);
         }
+        else if (!strcmp(param->key, "rel") || !strcmp(param->key, "relative"))
+        {
+            sz.errorBoundMode = REL;
+            sz.relBoundRatio = atof(param->value);
+        }
         else
         {
             log_warn("An unknown SZ parameter: %s\n", param->key);
@@ -336,6 +347,45 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     // Output
     uint64_t output_size = outsize/* Compute how much output size we need */;
     void* output_buff;
+
+#ifdef HAVE_ZCHECKER
+    int zc_type;
+    switch (var->pre_transform_type)
+    {
+        case adios_double:
+            zc_type = ZC_DOUBLE;
+            break;
+        case adios_real:
+            zc_type = ZC_FLOAT;
+            break;
+        default:
+            adios_error(err_transform_failure, "No supported data type\n");
+            return -1;
+            break;
+    }
+
+    ZC_DataProperty* property = NULL;
+    property = ZC_genProperties(var->name, zc_type, input_buff, r[4], r[3], r[2], r[1], r[0]);
+    ZC_printDataProperty(property);
+    printf("Z-Checker done.\n");
+
+    void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
+    ZC_CompareData* compareResult;
+    compareResult = ZC_compareData(var->name, zc_type, input_buff, hat, r[4], r[3], r[2], r[1], r[0]);
+    ZC_printCompressionResult(compareResult);
+    printf("psnr: %g\n", compareResult->psnr);
+
+    int64_t m_adios_file = (int64_t) fd;
+    int64_t m_adios_group = (int64_t) fd->group;
+    int64_t varid;
+
+    varid = adios_common_define_var (m_adios_group, "entropy"
+                                ,"", adios_double
+                                ,"", "", "");
+    common_adios_write_byid (fd, (struct adios_var_struct *) varid, &(property->entropy));
+    //adios_write (fd, "entropy", &(property->entropy));
+
+#endif
 
     if (use_shared_buffer) {
         // If shared buffer is permitted, serialize to there
