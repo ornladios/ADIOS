@@ -51,6 +51,7 @@ double compr_tolerance = 0.1;
 int save_delta = 1;
 int compress_delta = 1;
 int dec_ratio = 10;
+void * zmq_context = 0;
 void * zmq_ipc_req = 0;
 void * zmq_ipc_rep = 0;
 
@@ -767,10 +768,10 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
             }
 
             // ZMQ init
-            void * context = zmq_ctx_new ();
+            zmq_context = zmq_ctx_new ();
 
-            zmq_ipc_req = zmq_socket (context, ZMQ_REQ);
-            zmq_ipc_rep = zmq_socket (context, ZMQ_REP);
+            zmq_ipc_req = zmq_socket (zmq_context, ZMQ_REQ);
+            zmq_ipc_rep = zmq_socket (zmq_context, ZMQ_REP);
             int rc = zmq_connect (zmq_ipc_req, "ipc:///tmp/ADIOS_MDTM_pipe");
             assert (rc == 0);
  
@@ -3326,6 +3327,10 @@ printf ("nmes_reduced = %d\n", nmesh_reduced);
                     remove ("/tmp/MdtmManPipes/R");
                     remove ("/tmp/MdtmManPipes/Z");
                     remove ("/tmp/MdtmManPipes/mesh");
+
+                    zmq_close(zmq_ipc_req);
+                    zmq_close(zmq_ipc_rep);
+                    zmq_ctx_destroy(zmq_context);
 
                     if (save_delta)
                     {
