@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <pthread.h>
 
-#define MAX_BUF 1024*1024*32
+#define MAX_BUF 1024*32
 
 
 void create_pipe (char * pipe_name)
@@ -22,18 +22,25 @@ void create_pipe (char * pipe_name)
 void read_pipe (char * pipe_name)
 {
     char buf[MAX_BUF];
+printf ("reading %s\n", pipe_name);
     int rc, fd = open(pipe_name, O_RDONLY);
-
     if (fd < 0)
     {
         printf ("open error.\n");
         return -1;
     }
 
-    do
-    {
-        rc = read (fd, buf, MAX_BUF);
-    } while (rc != 0);
+//    while (1)
+//    {
+        if ((rc = read (fd, buf, MAX_BUF)) > 0)
+        {
+            printf ("rc = %d\n", rc);
+        }
+        else
+        {
+ //           break;
+        }
+  //  }
 
     close(fd);
 }
@@ -76,6 +83,12 @@ int main()
     pthread_join (thread_Z, NULL);
     pthread_join (thread_mesh, NULL);
 #endif
+
+    remove ("/tmp/MdtmManPipes/field");
+    remove ("/tmp/MdtmManPipes/R");
+    remove ("/tmp/MdtmManPipes/Z");
+    remove ("/tmp/MdtmManPipes/mesh");
+
     return 0;
 }
 
