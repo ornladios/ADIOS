@@ -9,5 +9,5 @@ adios_lint_SOURCES = adios_lint.c
 adios_lint_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_INT_CFLAGS)
 adios_lint_LDFLAGS = $(ADIOSLIB_INT_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 adios_lint_LDADD = $(top_builddir)/src/libadios_nompi.a 
-adios_lint_LDADD += $(ADIOSLIB_INT_LDADD)
+adios_lint_LDADD += $(ADIOSLIB_SEQ_LDADD)
 
