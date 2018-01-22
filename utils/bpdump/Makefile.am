@@ -8,6 +8,6 @@ bin_PROGRAMS = bpdump
 bpdump_SOURCES = bpdump.c
 bpdump_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_INT_CFLAGS)
 bpdump_LDFLAGS = $(ADIOSLIB_INT_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
-bpdump_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
+bpdump_LDADD = $(top_builddir)/src/libadios_nompi.a
 bpdump_LDADD += $(ADIOSLIB_INT_LDADD)
 
