@@ -13,8 +13,9 @@
  ****************************************************************************/
 
 #include <stdint.h>
-// we want our implementation of the tool to be weak, and exported.
+// we want the internal implementation of the tool to be weak, and exported.
 #define ADIOST_EXPORT __attribute__((visibility("default")))
+#if defined(ADIOST_INTERNAL)
 #if defined(__clang__)
 #define ADIOST_WEAK_PRE 
 #define ADIOST_WEAK_POST __attribute__((weak_import))
@@ -22,6 +23,13 @@
 #define ADIOST_WEAK_PRE __attribute__ (( weak )) 
 #define ADIOST_WEAK_POST 
 #endif
+/* we want external implementations of the tool to be strong, and exported.
+ * That way, the tool definition will override the internal weak definition
+ * at link time. */
+#else // defined(ADIOST_INTERNAL)
+#define ADIOST_WEAK_PRE 
+#define ADIOST_WEAK_POST 
+#endif // defined(ADIOST_INTERNAL)
 
 #include "adios_types.h"
 #include "adios_read.h"

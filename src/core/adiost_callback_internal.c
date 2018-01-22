@@ -5,7 +5,11 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
+// Tell the header file that this we want to declare the adiost_tool()
+// definition as "weak".
+#define ADIOST_INTERNAL
 #include "adiost_callback_internal.h"
+
 #include "adios_version.h"
 #include <stdio.h>
 #include <stdlib.h>
