@@ -5,7 +5,11 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
+// Tell the header file that this we want to declare the adiost_tool()
+// definition as "weak".
+#define ADIOST_INTERNAL
 #include "adiost_callback_internal.h"
+
 #include "adios_version.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -258,9 +262,21 @@ char * adiost_build_dimension_string(struct adios_var_struct *v, int * ndims) {
         tmp = tmp->next;
     }
     delimiter = ']';
-    sprintf(dims, "%s%c", dims, delimiter);
-    sprintf(global_dims, "%s%c", global_dims, delimiter);
-    sprintf(local_offsets, "%s%c", local_offsets, delimiter);
+	if (strlen(dims) > 0) {
+        sprintf(dims, "%s%c", dims, delimiter);
+	} else {
+        sprintf(dims, "[]");
+	}
+	if (strlen(global_dims) > 0) {
+        sprintf(global_dims, "%s%c", global_dims, delimiter);
+	} else {
+        sprintf(global_dims, "[]");
+	}
+	if (strlen(local_offsets) > 0) {
+        sprintf(local_offsets, "%s%c", local_offsets, delimiter);
+	} else {
+        sprintf(local_offsets, "[]");
+	}
     // build the whole thing
     sprintf(tmpstr, "%s;%s;%s", dims, global_dims, local_offsets);
     return strdup(tmpstr);
