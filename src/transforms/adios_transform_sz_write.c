@@ -376,13 +376,13 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         ZC_DataProperty* property = NULL;
         property = ZC_genProperties(var->name, zc_type, input_buff, r[4], r[3], r[2], r[1], r[0]);
         ZC_printDataProperty(property);
-        printf("Z-Checker done.\n");
+        log_debug("Z-Checker done.\n");
 
         void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
         ZC_CompareData* compareResult;
         compareResult = ZC_compareData(var->name, zc_type, input_buff, hat, r[4], r[3], r[2], r[1], r[0]);
-        ZC_printCompressionResult(compareResult);
         /*
+        ZC_printCompressionResult(compareResult);
         printf("psnr: %g\n", compareResult->psnr);
         printf("compressRate: %g\n", compareResult->compressRate);
         printf("compressSize: %g\n", compareResult->compressSize);
