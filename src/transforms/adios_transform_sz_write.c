@@ -382,10 +382,47 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         ZC_CompareData* compareResult;
         compareResult = ZC_compareData(var->name, zc_type, input_buff, hat, r[4], r[3], r[2], r[1], r[0]);
         ZC_printCompressionResult(compareResult);
+        /*
         printf("psnr: %g\n", compareResult->psnr);
+        printf("compressRate: %g\n", compareResult->compressRate);
+        printf("compressSize: %g\n", compareResult->compressSize);
+        printf("compressRatio: %g\n", compareResult->compressRatio);
+        printf("minRelErr: %g\n", compareResult->minRelErr);
+        printf("avgRelErr: %g\n", compareResult->avgRelErr);
+        printf("maxRelErr: %g\n", compareResult->maxRelErr);
+        printf("rmse: %g\n", compareResult->rmse);
+        printf("nrmse: %g\n", compareResult->nrmse);
+        printf("snr: %g\n", compareResult->snr);
+        printf("pearsonCorr: %g\n", compareResult->pearsonCorr);
+        */
+
+        d = var->pre_transform_dimensions;
+        int64_t nelem = 1;
+        for (i=0; i<ndims; i++)
+        {
+            uint dsize = (uint) adios_get_dim_value(&d->dimension);
+            nelem = nelem * dsize;
+            d = d->next;
+        }
+        int64_t nbytes; 
+        switch (var->pre_transform_type)
+        {
+            case adios_double:
+                nbytes = nelem * sizeof(double);
+                break;
+            case adios_real:
+                nbytes = nelem * sizeof(float);
+                break;
+            default:
+                adios_error(err_transform_failure, "No supported data type\n");
+                return -1;
+                break;
+        }
 
         double my_entropy = property->entropy;
         double my_psnr = compareResult->psnr;
+        double my_ratio = (double)nbytes/outsize; //compareResult->compressRatio;
+        //printf("ratio: %g\n", my_ratio);
         int comm_size = 1;
         int comm_rank = 0;
         /*
@@ -406,9 +443,11 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
         char zname[255];
         sprintf(zname, "%s/%s", var->name, "entropy");
-        adios_common_define_attribute_byvalue (m_adios_group, zname,"", adios_double, comm_size, &my_entropy);
+        adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_entropy);
         sprintf(zname, "%s/%s", var->name, "psnr");
-        adios_common_define_attribute_byvalue (m_adios_group, zname,"", adios_double, comm_size, &my_psnr);
+        adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_psnr);
+        sprintf(zname, "%s/%s", var->name, "ratio");
+        adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_ratio);
         //common_adios_write_byid (fd, (struct adios_var_struct *) varid, &(property->entropy));
         //adios_write (fd, "entropy", &(property->entropy));
         ZC_Finalize();
