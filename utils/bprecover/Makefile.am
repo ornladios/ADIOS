@@ -9,5 +9,5 @@ bprecover_SOURCES = bprecover.c
 bprecover_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_INT_CFLAGS)
 bprecover_LDFLAGS = $(ADIOSLIB_INT_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 bprecover_LDADD = $(top_builddir)/src/libadios_nompi.a
-bprecover_LDADD += $(ADIOSLIB_INT_LDADD)
+bprecover_LDADD += $(ADIOSLIB_SEQ_LDADD)
 
