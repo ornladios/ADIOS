@@ -26,6 +26,11 @@
 
 typedef unsigned int uint;
 
+// Variables need to be defined as static variables
+double mgard_tol;
+int mgard_use_zchecker = 0;
+char *mgard_zc_configfile = "zc.config";
+
 uint16_t adios_transform_mgard_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
     //log_debug("function: %s\n", __FUNCTION__);
@@ -49,11 +54,7 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
 
     int iflag = 1; //0 -> float, 1 -> double
     int nrow, ncol;
-    double tol;
     int out_size;
-
-    int use_zchecker = 0;
-    char *zc_configfile = "zc.config";
 
     // Get type info
     switch (var->pre_transform_type)
@@ -107,15 +108,15 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
 
         if (!strcmp(param->key, "tol") || !strcmp(param->key, "accuracy"))
         {
-            tol = atof(param->value);
+            mgard_tol = atof(param->value);
         }
         else if (!strcmp(param->key, "zchecker") || !strcmp(param->key, "zcheck") || !strcmp(param->key, "z-checker") || !strcmp(param->key, "z-check"))
         {
-            use_zchecker = (param->value == NULL)? 1 : atof(param->value);
+            mgard_use_zchecker = (param->value == NULL)? 1 : atof(param->value);
         }
         else if (strcmp(param->key, "zc_init") == 0)
         {
-            zc_configfile = strdup(param->value);
+            mgard_zc_configfile = strdup(param->value);
         }
         else
         {
@@ -124,13 +125,13 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     }
 
     unsigned char* mgard_comp_buff;
-    mgard_comp_buff = mgard_compress(iflag, input_buff, &out_size,  nrow,  ncol, &tol );
+    mgard_comp_buff = mgard_compress(iflag, input_buff, &out_size,  nrow,  ncol, &mgard_tol );
     //out_size = 15671;
     //mgard_comp_buff = malloc(out_size);
     //memset(mgard_comp_buff, 0xFF, out_size);
 
     log_debug("%s: %d,%d\n", "MGARD now,ncol", nrow, ncol);
-    log_debug("%s: %g\n", "MGARD tol", tol);
+    log_debug("%s: %g\n", "MGARD tol", mgard_tol);
     log_debug("%s: %d\n", "MGARD out_size", out_size);
     log_debug("%s: %p\n", "MGARD output buffer", mgard_comp_buff);
 
@@ -151,14 +152,14 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     uint64_t output_size = (uint64_t) out_size/* Compute how much output size we need */;
     void* output_buff;
 
-    log_debug("%s: %ld\n", "MGARD output_size", output_size);
+    log_debug("%s: %llu\n", "MGARD output_size", output_size);
     log_debug("%s: %d\n", "MGARD use_shared_buffer", use_shared_buffer);
 
 #ifdef HAVE_ZCHECKER
     log_debug("%s: %s\n", "Z-checker", "Enabled");
-    if (use_zchecker)
+    if (mgard_use_zchecker)
     {
-        ZC_Init(zc_configfile);
+        ZC_Init(mgard_zc_configfile);
         int zc_type;
         switch (var->pre_transform_type)
         {
@@ -257,11 +258,17 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
 
         char zname[255];
         sprintf(zname, "%s/%s", var->name, "entropy");
-        adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_entropy);
+        //adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_entropy);
+        varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
+        common_adios_write_byid (fd, (struct adios_var_struct *) varid, &my_entropy);
         sprintf(zname, "%s/%s", var->name, "psnr");
-        adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_psnr);
+        //adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_psnr);
+        varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
+        common_adios_write_byid (fd, (struct adios_var_struct *) varid, &my_psnr);
         sprintf(zname, "%s/%s", var->name, "ratio");
-        adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_ratio);
+        //adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_ratio);
+        varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
+        common_adios_write_byid (fd, (struct adios_var_struct *) varid, &my_ratio);
         //common_adios_write_byid (fd, (struct adios_var_struct *) varid, &(property->entropy));
         //adios_write (fd, "entropy", &(property->entropy));
         ZC_Finalize();

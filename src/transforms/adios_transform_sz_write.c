@@ -28,6 +28,13 @@
 
 typedef unsigned int uint;
 
+// Variables need to be defined as static variables
+int sz_use_configfile = 0;
+int sz_use_zchecker = 0;
+char *sz_configfile = NULL;
+char *sz_zc_configfile = "zc.config";
+sz_params sz;
+
 typedef struct
 {
     int r[5];
@@ -68,46 +75,45 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         return -1;
     }
 
-    sz_params sz;
-    memset(&sz, 0, sizeof(sz_params));
-    sz.max_quant_intervals = 65536;
-    sz.quantization_intervals = 0;
-    sz.dataEndianType = LITTLE_ENDIAN_DATA;
-    sz.sysEndianType = LITTLE_ENDIAN_DATA;
-    sz.sol_ID = SZ;
-    sz.layers = 1;
-    sz.sampleDistance = 100;
-    sz.predThreshold = 0.99;
-    sz.offset = 0;
-    sz.szMode = SZ_BEST_COMPRESSION; //SZ_BEST_SPEED; //SZ_BEST_COMPRESSION;
-    sz.gzipMode = 1;
-    sz.errorBoundMode = ABS;
-    sz.absErrBound = 1E-4;
-    sz.relBoundRatio = 1E-3;
-    sz.psnr = 80.0;
-    sz.pw_relBoundRatio = 1E-5;
-    sz.segment_size = (int)pow(5, (double)ndims);
-    sz.pwr_type = SZ_PWR_MIN_TYPE;
-
     unsigned char *bytes;
     size_t outsize;
     size_t r[5] = {0,0,0,0,0};
 
     /* SZ parameters */
-    int use_configfile = 0;
-    int use_zchecker = 0;
-    char *sz_configfile = NULL;
-    char *zc_configfile = "zc.config";
     struct adios_transform_spec_kv_pair* param;
     int i = 0;
     if (adios_verbose_level>7) log_debug("param_count: %d\n", var->transform_spec->param_count);
     for (i=0; i<var->transform_spec->param_count; i++)
     {
+        // Should happen only one time
+        if (i==0)
+        {
+            memset(&sz, 0, sizeof(sz_params));
+            sz.max_quant_intervals = 65536;
+            sz.quantization_intervals = 0;
+            sz.dataEndianType = LITTLE_ENDIAN_DATA;
+            sz.sysEndianType = LITTLE_ENDIAN_DATA;
+            sz.sol_ID = SZ;
+            sz.layers = 1;
+            sz.sampleDistance = 100;
+            sz.predThreshold = 0.99;
+            sz.offset = 0;
+            sz.szMode = SZ_BEST_COMPRESSION; //SZ_BEST_SPEED; //SZ_BEST_COMPRESSION;
+            sz.gzipMode = 1;
+            sz.errorBoundMode = ABS;
+            sz.absErrBound = 1E-4;
+            sz.relBoundRatio = 1E-3;
+            sz.psnr = 80.0;
+            sz.pw_relBoundRatio = 1E-5;
+            sz.segment_size = (int)pow(5, (double)ndims);
+            sz.pwr_type = SZ_PWR_MIN_TYPE;
+        }
+
         param = &(var->transform_spec->params[i]);
         if (adios_verbose_level>7) log_debug("param: %s %s\n", param->key, param->value);
         if (strcmp(param->key, "init") == 0)
         {
-            use_configfile = 1;
+            sz_use_configfile = 1;
             sz_configfile = strdup(param->value);
         }
         else if (strcmp(param->key, "max_quant_intervals") == 0)
@@ -254,11 +260,11 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         }
         else if (!strcmp(param->key, "zchecker") || !strcmp(param->key, "zcheck") || !strcmp(param->key, "z-checker") || !strcmp(param->key, "z-check"))
         {
-            use_zchecker = (param->value == NULL)? 1 : atof(param->value);
+            sz_use_zchecker = (param->value == NULL)? 1 : atof(param->value);
         }
         else if (strcmp(param->key, "zc_init") == 0)
         {
-            zc_configfile = strdup(param->value);
+            sz_zc_configfile = strdup(param->value);
         }
         else
         {
@@ -266,7 +272,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         }
     }
 
-    if (use_configfile)
+    if (sz_use_configfile)
     {
         log_debug("%s: %s\n", "SZ config", sz_configfile);
         SZ_Init(sz_configfile);
@@ -355,9 +361,9 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
 #ifdef HAVE_ZCHECKER
     log_debug("%s: %s\n", "Z-checker", "Enabled");
-    if (use_zchecker)
+    if (sz_use_zchecker)
     {
-        ZC_Init(zc_configfile);
+        ZC_Init(sz_zc_configfile);
         int zc_type;
         switch (var->pre_transform_type)
         {
@@ -422,7 +428,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         double my_entropy = property->entropy;
         double my_psnr = compareResult->psnr;
         double my_ratio = (double)nbytes/outsize; //compareResult->compressRatio;
-        //printf("ratio: %g\n", my_ratio);
+        printf("entropy, psnr, ratio: %g %g %g\n", my_entropy, my_psnr, my_ratio);
         int comm_size = 1;
         int comm_rank = 0;
         /*
@@ -443,11 +449,17 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
         char zname[255];
         sprintf(zname, "%s/%s", var->name, "entropy");
-        adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_entropy);
+        //adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_entropy);
+        varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
+        common_adios_write_byid (fd, (struct adios_var_struct *) varid, &my_entropy);
         sprintf(zname, "%s/%s", var->name, "psnr");
-        adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_psnr);
+        //adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_psnr);
+        varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
+        common_adios_write_byid (fd, (struct adios_var_struct *) varid, &my_psnr);
         sprintf(zname, "%s/%s", var->name, "ratio");
-        adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_ratio);
+        //adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_ratio);
+        varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
+        common_adios_write_byid (fd, (struct adios_var_struct *) varid, &my_ratio);
         //common_adios_write_byid (fd, (struct adios_var_struct *) varid, &(property->entropy));
         //adios_write (fd, "entropy", &(property->entropy));
         ZC_Finalize();
