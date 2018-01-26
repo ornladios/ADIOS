@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <sys/time.h>
+#include <math.h>
 
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
@@ -19,20 +20,21 @@
 #include "core/common_adios.h"
 
 #ifdef HAVE_SZ
-
 #include "sz.h"
+
 #ifdef HAVE_ZCHECKER
 #include <ZC_rw.h>
 #include <zc.h>
 #endif
+#include "zcheck_comm.h"
 
 typedef unsigned int uint;
 
 // Variables need to be defined as static variables
 int sz_use_configfile = 0;
-int sz_use_zchecker = 0;
 char *sz_configfile = NULL;
-char *sz_zc_configfile = "zc.config";
+static int use_zchecker = 0;
+static char *zc_configfile = "zc.config";
 sz_params sz;
 
 typedef struct
@@ -77,7 +79,6 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
     unsigned char *bytes;
     size_t outsize;
-    size_t r[5] = {0,0,0,0,0};
 
     /* SZ parameters */
     struct adios_transform_spec_kv_pair* param;
@@ -260,11 +261,11 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         }
         else if (!strcmp(param->key, "zchecker") || !strcmp(param->key, "zcheck") || !strcmp(param->key, "z-checker") || !strcmp(param->key, "z-check"))
         {
-            sz_use_zchecker = (param->value == NULL)? 1 : atof(param->value);
+            use_zchecker = (param->value == NULL)? 1 : atof(param->value);
         }
         else if (strcmp(param->key, "zc_init") == 0)
         {
-            sz_zc_configfile = strdup(param->value);
+            zc_configfile = strdup(param->value);
         }
         else
         {
@@ -320,6 +321,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             break;
     }
 
+    size_t r[5] = {0,0,0,0,0};
     // r[0] is the fastest changing dimension and r[4] is the lowest changing dimension
     // In C, r[0] is the last dimension. In Fortran, r[0] is the first dimension
     for (i=0; i<ndims; i++)
@@ -331,9 +333,30 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             r[ndims-i-1] = dsize;
         d = d->next;
     }
+#ifdef HAVE_ZCHECKER
+    log_debug("%s: %s\n", "Z-checker", "Enabled");
+    if (use_zchecker)
+    {
+        ZC_CompareData* compareResult;
+        ZC_Init(zc_configfile);
+        //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
+        ZC_DataProperty* dataProperty = ZC_startCmpr(var->name, dtype, input_buff, r[4], r[3], r[2], r[1], r[0]);
+#endif
+        //unsigned char *SZ_compress(int dataType, void *data, size_t *outSize, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
+        bytes = SZ_compress (dtype, (void *) input_buff, &outsize, r[4], r[3], r[2], r[1], r[0]);
+#ifdef HAVE_ZCHECKER
+        //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
+        compareResult = ZC_endCmpr(dataProperty, (int)outsize);
+        //dataProperty = ZC_genProperties(var->name, dtype, input_buff, r[4], r[3], r[2], r[1], r[0]);
 
-    bytes = SZ_compress (dtype, (void *) input_buff, &outsize,
-                         r[4], r[3], r[2], r[1], r[0]);
+        ZC_startDec();
+        void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
+        ZC_endDec(compareResult, "SZ", hat);
+        
+        zcheck_write(dataProperty, compareResult, fd, var);
+        log_debug("Z-Checker done.\n");
+    }
+#endif
 
     unsigned char *raw_buff = (unsigned char*) bytes;
 
@@ -352,121 +375,13 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     }
     log_debug("%s: %d\n", "SZ sum", sum);
      */
+    log_debug("%s: %d\n", "SZ Fortran?", fd->group->adios_host_language_fortran == adios_flag_yes);
     log_debug("%s: %lu %lu %lu %lu %lu\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
     //log_debug("===================\n");
 
     // Output
     uint64_t output_size = outsize/* Compute how much output size we need */;
     void* output_buff;
-
-#ifdef HAVE_ZCHECKER
-    log_debug("%s: %s\n", "Z-checker", "Enabled");
-    if (sz_use_zchecker)
-    {
-        ZC_Init(sz_zc_configfile);
-        int zc_type;
-        switch (var->pre_transform_type)
-        {
-            case adios_double:
-                zc_type = ZC_DOUBLE;
-                break;
-            case adios_real:
-                zc_type = ZC_FLOAT;
-                break;
-            default:
-                adios_error(err_transform_failure, "No supported data type\n");
-                return -1;
-                break;
-        }
-
-        ZC_DataProperty* property = NULL;
-        property = ZC_genProperties(var->name, zc_type, input_buff, r[4], r[3], r[2], r[1], r[0]);
-        ZC_printDataProperty(property);
-        log_debug("Z-Checker done.\n");
-
-        void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
-        ZC_CompareData* compareResult;
-        compareResult = ZC_compareData(var->name, zc_type, input_buff, hat, r[4], r[3], r[2], r[1], r[0]);
-        /*
-        ZC_printCompressionResult(compareResult);
-        printf("psnr: %g\n", compareResult->psnr);
-        printf("compressRate: %g\n", compareResult->compressRate);
-        printf("compressSize: %g\n", compareResult->compressSize);
-        printf("compressRatio: %g\n", compareResult->compressRatio);
-        printf("minRelErr: %g\n", compareResult->minRelErr);
-        printf("avgRelErr: %g\n", compareResult->avgRelErr);
-        printf("maxRelErr: %g\n", compareResult->maxRelErr);
-        printf("rmse: %g\n", compareResult->rmse);
-        printf("nrmse: %g\n", compareResult->nrmse);
-        printf("snr: %g\n", compareResult->snr);
-        printf("pearsonCorr: %g\n", compareResult->pearsonCorr);
-        */
-
-        d = var->pre_transform_dimensions;
-        int64_t nelem = 1;
-        for (i=0; i<ndims; i++)
-        {
-            uint dsize = (uint) adios_get_dim_value(&d->dimension);
-            nelem = nelem * dsize;
-            d = d->next;
-        }
-        int64_t nbytes; 
-        switch (var->pre_transform_type)
-        {
-            case adios_double:
-                nbytes = nelem * sizeof(double);
-                break;
-            case adios_real:
-                nbytes = nelem * sizeof(float);
-                break;
-            default:
-                adios_error(err_transform_failure, "No supported data type\n");
-                return -1;
-                break;
-        }
-
-        double my_entropy = property->entropy;
-        double my_psnr = compareResult->psnr;
-        double my_ratio = (double)nbytes/outsize; //compareResult->compressRatio;
-        printf("entropy, psnr, ratio: %g %g %g\n", my_entropy, my_psnr, my_ratio);
-        int comm_size = 1;
-        int comm_rank = 0;
-        /*
-        printf("comm: %d\n", fd->comm);
-        MPI_Comm comm = MPI_COMM_WORLD;
-        MPI_Comm_size(comm, &comm_size);
-        MPI_Comm_rank(comm, &comm_rank);
-
-        double* all_entropy = malloc(sizeof(double)*comm_size);
-        double* all_psnr = malloc(sizeof(double)*comm_size);
-        MPI_Allgather(&my_entropy, 1, MPI_DOUBLE, all_entropy, comm_size, MPI_DOUBLE, comm);
-        MPI_Allgather(&my_psnr, 1, MPI_DOUBLE, all_psnr, comm_size, MPI_DOUBLE, comm);
-        */
-
-        int64_t m_adios_file = (int64_t) fd;
-        int64_t m_adios_group = (int64_t) fd->group;
-        int64_t varid;
-
-        char zname[255];
-        sprintf(zname, "%s/%s", var->name, "entropy");
-        //adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_entropy);
-        varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
-        common_adios_write_byid (fd, (struct adios_var_struct *) varid, &my_entropy);
-        sprintf(zname, "%s/%s", var->name, "psnr");
-        //adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_psnr);
-        varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
-        common_adios_write_byid (fd, (struct adios_var_struct *) varid, &my_psnr);
-        sprintf(zname, "%s/%s", var->name, "ratio");
-        //adios_common_define_attribute_byvalue (m_adios_group, zname, "", adios_double, comm_size, &my_ratio);
-        varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
-        common_adios_write_byid (fd, (struct adios_var_struct *) varid, &my_ratio);
-        //common_adios_write_byid (fd, (struct adios_var_struct *) varid, &(property->entropy));
-        //adios_write (fd, "entropy", &(property->entropy));
-        ZC_Finalize();
-    }
-#else
-    log_debug("%s: %s\n", "Z-checker", "Not available");
-#endif
 
     if (use_shared_buffer) {
         // If shared buffer is permitted, serialize to there
