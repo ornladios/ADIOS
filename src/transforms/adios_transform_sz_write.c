@@ -361,7 +361,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         
         zcheck_write(dataProperty, compareResult, fd, var);
         log_debug("Z-Checker done.\n");
-        ZC_Finalize();
+        //ZC_Finalize();
     }
 #endif
 
