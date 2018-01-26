@@ -128,6 +128,8 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     unsigned char* mgard_comp_buff;
 #ifdef HAVE_ZCHECKER
     log_debug("%s: %s\n", "Z-checker", "Enabled"); 
+    ZC_DataProperty* dataProperty;
+    ZC_CompareData* compareResult;
     if (use_zchecker)
     {
         ZC_CompareData* compareResult;
@@ -136,10 +138,13 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
         size_t r[5] = {0,0,0,0,0};
         zcheck_dim(fd, var, r);
         ZC_DataProperty* dataProperty = ZC_startCmpr(var->name, zc_type, input_buff, r[4], r[3], r[2], r[1], r[0]);
+    }
 #endif
-        //unsigned char *mgard_compress(int itype_flag, void *data, int *out_size, int nrow, int ncol, void* tol);
-        mgard_comp_buff = mgard_compress(iflag, input_buff, &out_size,  nrow,  ncol, &mgard_tol );
+    //unsigned char *mgard_compress(int itype_flag, void *data, int *out_size, int nrow, int ncol, void* tol);
+    mgard_comp_buff = mgard_compress(iflag, input_buff, &out_size,  nrow,  ncol, &mgard_tol );
 #ifdef HAVE_ZCHECKER
+    if (use_zchecker)
+    {
         compareResult = ZC_endCmpr(dataProperty, (int)out_size);
 
         ZC_startDec();
@@ -156,6 +161,7 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     log_debug("%s: %d\n", "MGARD out_size", out_size);
     log_debug("%s: %p\n", "MGARD output buffer", mgard_comp_buff);
 
+    /*
     FILE *qfile;
     char fname[80];
     sprintf(fname, "input_type%d_%dx%d.dat", iflag, nrow, ncol);
@@ -163,6 +169,7 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     qfile = fopen (fname, "wb");
     fwrite (input_buff, 1, nrow*ncol*8, qfile);
     fclose(qfile);
+    */
 
     double *v = (double*) input_buff;
     log_debug("%s: %g %g %g %g %g ... %g %g %g %g %g\n", "MGARD input_buff",

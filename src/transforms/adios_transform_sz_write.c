@@ -77,8 +77,21 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         return -1;
     }
 
-    unsigned char *bytes;
-    size_t outsize;
+    // Get type info
+    int dtype;
+    switch (var->pre_transform_type)
+    {
+        case adios_double:
+            dtype = SZ_DOUBLE;
+            break;
+        case adios_real:
+            dtype = SZ_FLOAT;
+            break;
+        default:
+            adios_error(err_transform_failure, "No supported data type\n");
+            return -1;
+            break;
+    }
 
     /* SZ parameters */
     struct adios_transform_spec_kv_pair* param;
@@ -90,6 +103,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         if (i==0)
         {
             memset(&sz, 0, sizeof(sz_params));
+            sz.dataType = dtype;
             sz.max_quant_intervals = 65536;
             sz.quantization_intervals = 0;
             sz.dataEndianType = LITTLE_ENDIAN_DATA;
@@ -277,7 +291,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     {
         log_debug("%s: %s\n", "SZ config", sz_configfile);
         SZ_Init(sz_configfile);
-        free(sz_configfile);
+        //free(sz_configfile);
     }
     else
     {
@@ -305,23 +319,10 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         SZ_Init_Params(&sz);
     }
 
-    // Get type info
-    int dtype;
-    switch (var->pre_transform_type)
-    {
-        case adios_double:
-            dtype = SZ_DOUBLE;
-            break;
-        case adios_real:
-            dtype = SZ_FLOAT;
-            break;
-        default:
-            adios_error(err_transform_failure, "No supported data type\n");
-            return -1;
-            break;
-    }
-
+    unsigned char *bytes;
+    size_t outsize;
     size_t r[5] = {0,0,0,0,0};
+
     // r[0] is the fastest changing dimension and r[4] is the lowest changing dimension
     // In C, r[0] is the last dimension. In Fortran, r[0] is the first dimension
     for (i=0; i<ndims; i++)
@@ -333,18 +334,23 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             r[ndims-i-1] = dsize;
         d = d->next;
     }
+
 #ifdef HAVE_ZCHECKER
     log_debug("%s: %s\n", "Z-checker", "Enabled");
+    ZC_DataProperty* dataProperty;
+    ZC_CompareData* compareResult;
     if (use_zchecker)
     {
-        ZC_CompareData* compareResult;
         ZC_Init(zc_configfile);
         //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
-        ZC_DataProperty* dataProperty = ZC_startCmpr(var->name, dtype, input_buff, r[4], r[3], r[2], r[1], r[0]);
+        dataProperty = ZC_startCmpr(var->name, dtype, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+    }
 #endif
-        //unsigned char *SZ_compress(int dataType, void *data, size_t *outSize, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
-        bytes = SZ_compress (dtype, (void *) input_buff, &outsize, r[4], r[3], r[2], r[1], r[0]);
+    //unsigned char *SZ_compress(int dataType, void *data, size_t *outSize, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
+    bytes = SZ_compress (dtype, (void *) input_buff, &outsize, r[4], r[3], r[2], r[1], r[0]);
 #ifdef HAVE_ZCHECKER
+    if (use_zchecker)
+    {
         //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
         compareResult = ZC_endCmpr(dataProperty, (int)outsize);
         //dataProperty = ZC_genProperties(var->name, dtype, input_buff, r[4], r[3], r[2], r[1], r[0]);
