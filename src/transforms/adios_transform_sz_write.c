@@ -337,8 +337,8 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
 #ifdef HAVE_ZCHECKER
     log_debug("%s: %s\n", "Z-checker", "Enabled");
-    ZC_DataProperty* dataProperty;
-    ZC_CompareData* compareResult;
+    ZC_DataProperty* dataProperty = NULL;
+    ZC_CompareData* compareResult = NULL;
     if (use_zchecker)
     {
         ZC_Init(zc_configfile);
@@ -361,8 +361,15 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         
         zcheck_write(dataProperty, compareResult, fd, var);
         log_debug("Z-Checker done.\n");
+        ZC_Finalize();
     }
 #endif
+
+    /*
+    int status;
+    writeDoubleData_inBytes(input_buff, r[1]*r[0], "source.dat", &status);
+    writeByteData(bytes, outsize, "compressed.dat", &status);
+    */
 
     unsigned char *raw_buff = (unsigned char*) bytes;
 
@@ -389,13 +396,16 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     uint64_t output_size = outsize/* Compute how much output size we need */;
     void* output_buff;
 
+    if (adios_verbose_level>7) log_debug("%s: %d\n", "use_shared_buffer", use_shared_buffer);
+    if (adios_verbose_level>7) log_debug("%s: %d\n", "wrote_to_shared_buffer", *wrote_to_shared_buffer);
+    if (adios_verbose_level>7) log_debug("%s: %lu\n", "output_size", output_size);
     if (use_shared_buffer) {
         // If shared buffer is permitted, serialize to there
         assert(shared_buffer_reserve(fd, output_size));
 
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
-        memcpy(output_buff, bytes, outsize);
+        memcpy(output_buff, bytes, output_size);
     } else { // Else, fall back to var->adata memory allocation
         output_buff = bytes;
         //assert(output_buff);

@@ -16,6 +16,8 @@
 #include "adios_transforms_hooks_write.h"
 #include "adios_transforms_util.h"
 
+#include "core/common_adios.h"
+
 #ifdef HAVE_MGARD
 #include "mgard_capi.h"
 
@@ -128,23 +130,24 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     unsigned char* mgard_comp_buff;
 #ifdef HAVE_ZCHECKER
     log_debug("%s: %s\n", "Z-checker", "Enabled"); 
-    ZC_DataProperty* dataProperty;
-    ZC_CompareData* compareResult;
+    ZC_DataProperty* dataProperty = NULL;
+    ZC_CompareData* compareResult = NULL;
     if (use_zchecker)
     {
-        ZC_CompareData* compareResult;
         ZC_Init(zc_configfile);
         int zc_type = zcheck_type(var->pre_transform_type);
         size_t r[5] = {0,0,0,0,0};
         zcheck_dim(fd, var, r);
-        ZC_DataProperty* dataProperty = ZC_startCmpr(var->name, zc_type, input_buff, r[4], r[3], r[2], r[1], r[0]);
+        //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
+        dataProperty = ZC_startCmpr(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
     }
 #endif
     //unsigned char *mgard_compress(int itype_flag, void *data, int *out_size, int nrow, int ncol, void* tol);
-    mgard_comp_buff = mgard_compress(iflag, input_buff, &out_size,  nrow,  ncol, &mgard_tol );
+    mgard_comp_buff = mgard_compress(iflag, (void *) input_buff, &out_size,  nrow,  ncol, &mgard_tol );
 #ifdef HAVE_ZCHECKER
     if (use_zchecker)
     {
+        //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
         compareResult = ZC_endCmpr(dataProperty, (int)out_size);
 
         ZC_startDec();
@@ -153,6 +156,7 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
 
         zcheck_write(dataProperty, compareResult, fd, var);
         log_debug("Z-Checker done.\n");
+        ZC_Finalize();
     }
 #endif
 
