@@ -376,7 +376,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     log_debug("%s: %d\n", "SZ sum", sum);
      */
     log_debug("%s: %d\n", "SZ Fortran?", fd->group->adios_host_language_fortran == adios_flag_yes);
-    log_debug("%s: %lu %lu %lu %lu %lu\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
+    log_debug("%s: %lu %lu %lu %lu %lu\n", "SZ dim", r[4], r[3], r[2], r[1], r[0]);
     //log_debug("===================\n");
 
     // Output
