@@ -153,10 +153,7 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
         ZC_startDec();
         void* hat = mgard_decompress(iflag, mgard_comp_buff, out_size,  nrow,  ncol);         
         ZC_endDec(compareResult, "SZ", hat);
-
-        zcheck_write(dataProperty, compareResult, fd, var);
         log_debug("Z-Checker done.\n");
-        //ZC_Finalize();
     }
 #endif
 
@@ -212,6 +209,17 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     }
 
     *transformed_len = output_size; // Return the size of the data buffer
+
+#ifdef HAVE_ZCHECKER
+    // Have to do this after setting buffer size for adios
+    if (use_zchecker)
+    {
+        zcheck_write(dataProperty, compareResult, fd, var);
+        log_debug("Z-Checker written.\n");
+        ZC_Finalize();
+    }
+#endif
+
     return 1;
 }
 

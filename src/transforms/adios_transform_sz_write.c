@@ -334,7 +334,6 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             r[ndims-i-1] = dsize;
         d = d->next;
     }
-
 #ifdef HAVE_ZCHECKER
     log_debug("%s: %s\n", "Z-checker", "Enabled");
     ZC_DataProperty* dataProperty = NULL;
@@ -349,6 +348,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     //unsigned char *SZ_compress(int dataType, void *data, size_t *outSize, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
     bytes = SZ_compress (dtype, (void *) input_buff, &outsize, r[4], r[3], r[2], r[1], r[0]);
 #ifdef HAVE_ZCHECKER
+    // Have to do this after setting buffer size for adios
     if (use_zchecker)
     {
         //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
@@ -358,10 +358,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         ZC_startDec();
         void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
         ZC_endDec(compareResult, "SZ", hat);
-        
-        zcheck_write(dataProperty, compareResult, fd, var);
         log_debug("Z-Checker done.\n");
-        //ZC_Finalize();
     }
 #endif
 
@@ -398,7 +395,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
     if (adios_verbose_level>7) log_debug("%s: %d\n", "use_shared_buffer", use_shared_buffer);
     if (adios_verbose_level>7) log_debug("%s: %d\n", "wrote_to_shared_buffer", *wrote_to_shared_buffer);
-    if (adios_verbose_level>7) log_debug("%s: %lu\n", "output_size", output_size);
+    if (adios_verbose_level>7) log_debug("%s: %lu\n", "output_size", (size_t)output_size);
     if (use_shared_buffer) {
         // If shared buffer is permitted, serialize to there
         assert(shared_buffer_reserve(fd, output_size));
@@ -424,6 +421,16 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     }
 
     *transformed_len = output_size; // Return the size of the data buffer
+    
+#ifdef HAVE_ZCHECKER
+    // Have to do this after setting buffer size for adios
+    if (use_zchecker)
+    {
+        zcheck_write(dataProperty, compareResult, fd, var);
+        log_debug("Z-Checker written.\n");
+        ZC_Finalize();
+    }
+#endif
     SZ_Finalize();
     return 1;
 }

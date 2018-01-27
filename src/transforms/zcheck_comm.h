@@ -44,8 +44,9 @@ static void zcheck_write(
     struct adios_var_struct *var)
 {
 #ifdef HAVE_ZCHECKER
-    ZC_printDataProperty(dataProperty);
-    ZC_printCompressionResult(compareResult);
+    if (adios_verbose_level>7) ZC_printDataProperty(dataProperty);
+    if (adios_verbose_level>7) ZC_printCompressionResult(compareResult);
+
     /*
     printf("psnr: %g\n", compareResult->psnr);
     printf("compressTime: %g\n", compareResult->compressTime);
@@ -68,7 +69,7 @@ static void zcheck_write(
     double my_ratio = compareResult->compressRatio;
     double my_compressTime = compareResult->compressTime;
     double my_decompressTime = compareResult->decompressTime;
-    printf("entropy, psnr, ratio: %g %g %g\n", my_entropy, my_psnr, my_ratio);
+    log_debug("entropy, psnr, ratio: %g %g %g\n", my_entropy, my_psnr, my_ratio);
     int comm_size = 1;
     int comm_rank = 0;
 
@@ -96,8 +97,6 @@ static void zcheck_write(
     sprintf(zname, "%s/%s", var->name, "decompress_time");
     varid = adios_common_define_var(m_adios_group, zname, "", adios_double, "", "", "");
     common_adios_write_byid(fd, (struct adios_var_struct *)varid, &my_decompressTime);
-
-    ZC_Finalize();
 #else
     log_debug("%s: %s\n", "Z-checker", "Not available");
 #endif
