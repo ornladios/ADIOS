@@ -34,6 +34,15 @@ double mgard_tol;
 static int use_zchecker = 0;
 static char *zc_configfile = "zc.config";
 
+static int check_file(const char* filename){
+    struct stat buffer;
+    int exist = stat(filename,&buffer);
+    if(exist == 0)
+        return 1;
+    else // -1
+        return 0;
+}
+
 uint16_t adios_transform_mgard_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
     //log_debug("function: %s\n", __FUNCTION__);
@@ -137,9 +146,17 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     zcheck_dim(fd, var, r);
     if (use_zchecker)
     {
-        ZC_Init(zc_configfile);
-        //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
-        dataProperty = ZC_startCmpr(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+        if (check_file(zc_configfile))
+        {
+            ZC_Init(zc_configfile);
+            //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
+            dataProperty = ZC_startCmpr(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+        }
+        else
+        {
+            log_warn("Failed to access Z-Check config file (%s). Disabled. \n", zc_configfile);
+            use_zchecker = 0;
+        }
     }
 #endif
     //unsigned char *mgard_compress(int itype_flag, void *data, int *out_size, int nrow, int ncol, void* tol);

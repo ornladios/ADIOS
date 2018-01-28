@@ -10,6 +10,7 @@
 #include <limits.h>
 #include <sys/time.h>
 #include <math.h>
+#include <sys/stat.h>
 
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
@@ -41,6 +42,15 @@ typedef struct
 {
     int r[5];
 } sz_info_t;
+
+static int check_file(const char* filename){
+    struct stat buffer;
+    int exist = stat(filename,&buffer);
+    if(exist == 0)
+        return 1;
+    else // -1
+        return 0;
+}
 
 uint16_t adios_transform_sz_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
@@ -290,8 +300,16 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     if (sz_use_configfile)
     {
         log_debug("%s: %s\n", "SZ config", sz_configfile);
-        SZ_Init(sz_configfile);
         //free(sz_configfile);
+        if (check_file(sz_configfile))
+        {
+            SZ_Init(sz_configfile);
+        }
+        else
+        {
+            adios_error(err_transform_failure, "Failed to access Z-Check config file (%s). Disabled. \n", sz_configfile);
+            return -1;
+        }
     }
     else
     {
@@ -340,9 +358,17 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     ZC_CompareData* compareResult = NULL;
     if (use_zchecker)
     {
-        ZC_Init(zc_configfile);
-        //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
-        dataProperty = ZC_startCmpr(var->name, dtype, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+        if (check_file(zc_configfile))
+        {
+            ZC_Init(zc_configfile);
+            //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
+            dataProperty = ZC_startCmpr(var->name, dtype, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+        }
+        else
+        {
+            log_warn("Failed to access Z-Check config file (%s). Disabled. \n", zc_configfile);
+            use_zchecker = 0;
+        }
     }
 #endif
     //unsigned char *SZ_compress(int dataType, void *data, size_t *outSize, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);

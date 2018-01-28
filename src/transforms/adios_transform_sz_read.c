@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 
 #include "util.h"
 #include "adios_logger.h"
@@ -66,6 +67,29 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
         return NULL;
     }
 
+    sz_params sz;
+    memset(&sz, 0, sizeof(sz_params));
+    sz.dataType = dtype;
+    sz.max_quant_intervals = 65536;
+    sz.quantization_intervals = 0;
+    sz.dataEndianType = LITTLE_ENDIAN_DATA;
+    sz.sysEndianType = LITTLE_ENDIAN_DATA;
+    sz.sol_ID = SZ;
+    sz.layers = 1;
+    sz.sampleDistance = 100;
+    sz.predThreshold = 0.99;
+    sz.offset = 0;
+    sz.szMode = SZ_BEST_COMPRESSION; //SZ_BEST_SPEED; //SZ_BEST_COMPRESSION;
+    sz.gzipMode = 1;
+    sz.errorBoundMode = ABS;
+    sz.absErrBound = 1E-4;
+    sz.relBoundRatio = 1E-3;
+    sz.psnr = 80.0;
+    sz.pw_relBoundRatio = 1E-5;
+    sz.segment_size = (int)pow(5, (double)ndims);
+    sz.pwr_type = SZ_PWR_MIN_TYPE;
+    SZ_Init_Params(&sz);
+
     size_t r[5] = {0,0,0,0,0};
     int i = 0;
     for(i = 0; i < ndims; i++)
@@ -73,6 +97,7 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
         uint64_t dsize = (uint64_t)(completed_pg_reqgroup->orig_varblock->count[i]);
         r[ndims-i-1] = dsize;
     }
+    log_debug("%s: %lu %lu %lu %lu %lu\n", "SZ dim", r[4], r[3], r[2], r[1], r[0]);
 
     void* orig_buff;
     orig_buff = SZ_decompress(dtype, raw_buff, raw_size, r[4], r[3], r[2], r[1], r[0]);
@@ -101,9 +126,10 @@ adios_datablock * adios_transform_sz_pg_reqgroup_completed(adios_transform_read_
     }
     log_debug("%s: %d\n", "SZ sum", sum);
      */
-    log_debug("%s: %lu %lu %lu %lu %lu\n", "SZ dim", r[0], r[1], r[2], r[3], r[4]);
+    log_debug("%s: %lu %lu %lu %lu %lu\n", "SZ dim", r[4], r[3], r[2], r[1], r[0]);
     //log_debug("=====================\n");
 
+    SZ_Finalize();
     return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, orig_buff);
 }
 
