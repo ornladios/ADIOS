@@ -353,7 +353,9 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     {
         //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
         compareResult = ZC_endCmpr(dataProperty, (int)outsize);
-        //dataProperty = ZC_genProperties(var->name, dtype, input_buff, r[4], r[3], r[2], r[1], r[0]);
+        // For entropy
+        ZC_DataProperty* property = ZC_genProperties(var->name, dtype, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+        dataProperty->entropy = property->entropy;
 
         ZC_startDec();
         void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);

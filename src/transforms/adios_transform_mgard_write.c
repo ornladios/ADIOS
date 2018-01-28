@@ -132,12 +132,12 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     log_debug("%s: %s\n", "Z-checker", "Enabled"); 
     ZC_DataProperty* dataProperty = NULL;
     ZC_CompareData* compareResult = NULL;
+    int zc_type = zcheck_type(var->pre_transform_type);
+    size_t r[5] = {0,0,0,0,0};
+    zcheck_dim(fd, var, r);
     if (use_zchecker)
     {
         ZC_Init(zc_configfile);
-        int zc_type = zcheck_type(var->pre_transform_type);
-        size_t r[5] = {0,0,0,0,0};
-        zcheck_dim(fd, var, r);
         //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
         dataProperty = ZC_startCmpr(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
     }
@@ -149,6 +149,9 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     {
         //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
         compareResult = ZC_endCmpr(dataProperty, (int)out_size);
+        // For entropy
+        ZC_DataProperty* property = ZC_genProperties(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+        dataProperty->entropy = property->entropy;
 
         ZC_startDec();
         void* hat = mgard_decompress(iflag, mgard_comp_buff, out_size,  nrow,  ncol);         
