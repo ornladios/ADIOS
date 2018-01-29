@@ -27,6 +27,27 @@
 
 static char mpierrmsg[MPI_MAX_ERROR_STRING];
 
+static int typesize(MPI_Datatype type)
+{
+    switch( type )
+    {
+      case MPI_INT : return sizeof( int );
+                     break;
+      case MPI_CHAR: return sizeof( char );
+                     break;
+      case MPI_REAL : return sizeof( float );
+                     break;
+      case MPI_DOUBLE : return sizeof( double );
+                     break;
+      case MPI_UNSIGNED_LONG_LONG : return sizeof( unsigned long long );
+                     break;
+      case MPI_UINT64_T : return sizeof( uint64_t );
+                     break;
+      default      : return 1 ;
+    }
+    return 1;
+}
+
 int MPI_Init(int *argc, char ***argv) 
 { 
     mpierrmsg[0] = '\0'; 
@@ -61,25 +82,12 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
                int root, MPI_Comm comm)
 {
   int ier = MPI_SUCCESS;
-  size_t n=0, nsent=0, nrecv=0 ;
+  size_t nsent=0, nrecv=0 ;
   if( !sendbuf || !recvbuf )        ier = MPI_ERR_BUFFER ;
   if( comm==MPI_COMM_NULL || root ) ier = MPI_ERR_COMM ;
 
-  switch( sendtype )
-  {
-    case MPI_INT : n = sizeof( int );
-                   break;
-    default      : return MPI_ERR_TYPE ;
-  }
-  nsent = n * sendcnt ;
-
-  switch( recvtype )
-  {
-    case MPI_INT : nrecv = sizeof( int ) ;
-                   break;
-    default      : return MPI_ERR_TYPE ;
-  }
-  nrecv = n * recvcnt ;
+  nsent = sendcnt * typesize(sendtype);
+  nrecv = recvcnt * typesize(recvtype);
 
   if( nrecv!=nsent ) ier = MPI_ERR_COUNT ;
 
@@ -114,25 +122,12 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
                MPI_Comm comm)
 {
   int ier = MPI_SUCCESS;
-  size_t n=0, nsent=0, nrecv=0 ;
+  size_t nsent=0, nrecv=0 ;
   if( !sendbuf || !recvbuf )        ier = MPI_ERR_BUFFER ;
   if( comm==MPI_COMM_NULL || root ) ier = MPI_ERR_COMM ;
 
-  switch( sendtype )
-  {
-    case MPI_INT : n = sizeof( int ) ;
-                   break;
-    default      : return MPI_ERR_TYPE ;
-  }
-  nsent = n * sendcnt ;
-
-  switch( recvtype )
-  {
-    case MPI_INT : nrecv = sizeof( int ) ;
-                   break;
-    default      : return MPI_ERR_TYPE ;
-  }
-  nrecv = n * recvcnt ;
+  nsent = sendcnt * typesize(sendtype);
+  nrecv = recvcnt * typesize(sendtype);
 
   if( nrecv!=nsent ) ier = MPI_ERR_COUNT ;
 
@@ -160,16 +155,10 @@ int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count,
                   MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 {
     int ier = MPI_SUCCESS;
-    size_t elemsize=0, nbytes=0;
+    size_t nbytes=0;
     if( !sendbuf || !recvbuf )        ier = MPI_ERR_BUFFER ;
 
-    switch( datatype )
-    {
-      case MPI_INT : elemsize = sizeof( int ) ;
-                     break;
-      default      : return MPI_ERR_TYPE ;
-    }
-    nbytes = elemsize * count ;
+    nbytes = count * typesize(datatype);
 
     if( nbytes <= 0 ) ier = MPI_ERR_COUNT ;
 
@@ -203,7 +192,7 @@ int MPI_File_get_size(MPI_File fh, MPI_Offset *size) {
 int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
 {
     // FIXME: int count can read only 2GB (*datatype size) array at max
-    uint64_t bytes_to_read = count * datatype;  // datatype should hold the size of the type, not an id
+    uint64_t bytes_to_read = count * typesize(datatype);
     uint64_t bytes_read;
     bytes_read = read (fh, buf, bytes_to_read);
     if (bytes_read != bytes_to_read) {

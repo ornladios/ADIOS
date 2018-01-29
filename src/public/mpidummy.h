@@ -46,7 +46,6 @@ typedef enum mpi_operation MPI_Op;
 #define MPI_SEEK_SET                SEEK_SET
 #define MPI_SEEK_CUR                SEEK_CUR
 #define MPI_SEEK_END                SEEK_END
-#define MPI_BYTE                    1          /* I need the size of the type here */
 #define MPI_INFO_NULL               0
 
 #define MPI_COMM_NULL               0
@@ -55,9 +54,12 @@ typedef enum mpi_operation MPI_Op;
 
 #define MPI_INT                     1
 #define MPI_CHAR                    2
-#define MPI_DOUBLE                  3
-#define MPI_UINT64_T                4
-#define MPI_UNSIGNED_LONG_LONG      8
+#define MPI_FLOAT                   3
+#define MPI_DOUBLE                  4
+#define MPI_UINT64_T                5
+#define MPI_UNSIGNED_LONG_LONG      6
+#define MPI_BYTE                    (MPI_CHAR)
+#define MPI_REAL                    (MPI_FLOAT)
 
 #define MPI_ANY_SOURCE              0
 #define MPI_ANY_TAG                 0
