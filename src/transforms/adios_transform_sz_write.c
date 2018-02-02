@@ -386,6 +386,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         ZC_startDec();
         void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
         ZC_endDec(compareResult, "SZ", hat);
+        free(hat);
         log_debug("Z-Checker done.\n");
     }
 #endif
