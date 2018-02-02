@@ -382,6 +382,7 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         // For entropy
         ZC_DataProperty* property = ZC_genProperties(var->name, dtype, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
         dataProperty->entropy = property->entropy;
+        freeDataProperty(property);
 
         ZC_startDec();
         void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
@@ -432,6 +433,8 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
         memcpy(output_buff, bytes, output_size);
+        // No more need
+        free(bytes);
     } else { // Else, fall back to var->adata memory allocation
         output_buff = bytes;
         //assert(output_buff);
@@ -457,6 +460,8 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
     {
         zcheck_write(dataProperty, compareResult, fd, var);
         log_debug("Z-Checker written.\n");
+        freeDataProperty(dataProperty);
+        freeCompareResult(compareResult);
         ZC_Finalize();
     }
 #endif

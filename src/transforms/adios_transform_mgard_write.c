@@ -169,6 +169,7 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
         // For entropy
         ZC_DataProperty* property = ZC_genProperties(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
         dataProperty->entropy = property->entropy;
+        freeDataProperty(property);
 
         ZC_startDec();
         void* hat = mgard_decompress(iflag, mgard_comp_buff, out_size,  nrow,  ncol);         
@@ -212,6 +213,8 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
         memcpy(output_buff, mgard_comp_buff, (size_t)output_size);
+        // No more need
+        free(mgard_comp_buff);
     } else { // Else, fall back to var->adata memory allocation
         output_buff = mgard_comp_buff;
         //assert(output_buff);
@@ -237,10 +240,11 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     {
         zcheck_write(dataProperty, compareResult, fd, var);
         log_debug("Z-Checker written.\n");
+        freeDataProperty(dataProperty);
+        freeCompareResult(compareResult);
         ZC_Finalize();
     }
 #endif
-
     return 1;
 }
 
