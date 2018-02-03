@@ -3260,16 +3260,16 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     free (newfield);
 #endif
                     do_write (md->level[1].fd, "R/L1", r_reduced);
-                    free (r_reduced);
+                    //free (r_reduced);
 
                     do_write (md->level[1].fd, "Z/L1", z_reduced);
-                    free (z_reduced);
+                    //free (z_reduced);
 
                     do_write (md->level[1].fd, "mesh/L1", mesh_reduced);
-                    free (mesh_reduced);
+                    //free (mesh_reduced);
 
                     do_write (md->level[1].fd, "dpot/L1", data_reduced);
-                    free (data_reduced);
+                    //free (data_reduced);
 
                     printf ("size of field, R, and Z data to send: %d\n", 
                             nvertices_new * 8 * 3);
@@ -3289,12 +3289,34 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     write (pipe_Z,c, 1024);
                     write (pipe_mesh,d, 1024);
 #else
-                    write (pipe_field,data_reduced, nvertices_new * 8);
-                    write (pipe_R,r_reduced, nvertices_new * 8);
-                    write (pipe_Z,z_reduced, nvertices_new * 8);
-printf ("nmes_reduced = %d\n", nmesh_reduced);
-                    write (pipe_mesh,mesh_reduced, nmesh_reduced * 3 * 4);
+                    int pipe_data_header[2];
+                    pipe_data_header[0] = nvertices_new * 8;
+                    pipe_data_header[1] = nmesh_reduced * 3 * 4;
+                    void * context_metadata = zmq_ctx_new ();
+                    void * requester = zmq_socket (context_metadata, ZMQ_REQ);
+                    zmq_connect (requester, "tcp://131.225.2.31:5555");
+
+                    zmq_send (requester, pipe_data_header, 8, 0);
+
+                    zmq_close (requester);
+                    zmq_ctx_destroy (context_metadata);
+
+                    write (pipe_field, data_reduced, nvertices_new * 8);
+                    printf ("write field %d bytes\n", nvertices_new * 8);
+
+                    write (pipe_R, r_reduced, nvertices_new * 8);
+                    printf ("write R %d bytes\n", nvertices_new * 8);
+
+                    write (pipe_Z, z_reduced, nvertices_new * 8);
+                    printf ("write Z %d bytes\n", nvertices_new * 8);
+
+                    int temp_bytes_writen = write (pipe_mesh, mesh_reduced, nmesh_reduced * 3 * 4);
+                    printf ("write mesh %d bytes\n", temp_bytes_writen);
 #endif
+                    free (data_reduced);
+                    free (r_reduced);
+                    free (z_reduced);
+                    free (mesh_reduced);
 #if 1
                     /* send terminate */
                     char * json_terminate_string = "{\"operation\"  : \"terminate\"}"; 
