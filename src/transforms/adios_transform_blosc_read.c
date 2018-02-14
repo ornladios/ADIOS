@@ -87,6 +87,10 @@ adios_datablock * adios_transform_blosc_pg_reqgroup_completed(adios_transform_re
     uint64_t input_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
     char* input_buff = (char*)(completed_pg_reqgroup->subreqs->data);
 
+    // empty chunk in process group
+    if(completed_pg_reqgroup->transform_metadata == NULL)
+        return NULL;
+
     adiosBloscSize_t num_chunks = *((adiosBloscSize_t*)completed_pg_reqgroup->transform_metadata);
     adiosBloscSize_t compressed_size_last_chunk = *((adiosBloscSize_t*)(completed_pg_reqgroup->transform_metadata + sizeof(adiosBloscSize_t)));
 

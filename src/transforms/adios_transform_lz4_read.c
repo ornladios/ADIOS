@@ -87,6 +87,10 @@ adios_datablock * adios_transform_lz4_pg_reqgroup_completed(adios_transform_read
     uint64_t input_size = (uint64_t) completed_pg_reqgroup->raw_var_length;
     char* input_buff = (char*) (completed_pg_reqgroup->subreqs->data);
 
+    // empty chunk in process group
+    if(completed_pg_reqgroup->transform_metadata == NULL)
+        return NULL;
+
     // number of full chunks
     adiosLz4Size_t num_chunks = *((adiosLz4Size_t*) completed_pg_reqgroup->transform_metadata);
     // compressed size of the last chunk
