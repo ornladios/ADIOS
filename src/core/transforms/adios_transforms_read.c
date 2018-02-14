@@ -326,6 +326,17 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     	nsteps = 1;
     }
 
+    /* first element if selection is NULL
+     * sel==NULL means global selection (whole variable)
+     */
+    uint64_t* start = NULL;
+    if(!sel)
+    {
+        const size_t dim_size = sizeof(uint64_t) * raw_varinfo->ndim;
+        start = (uint64_t*)malloc(dim_size);
+        memset(start, 0, dim_size);
+        sel = adios_selection_boundingbox(raw_varinfo->ndim, &start, raw_varinfo->dims);
+    }
     // Precondition checking
     assert(is_transform_type_valid(transinfo->transform_type));
     assert(from_steps >= 0 && from_steps + nsteps <= raw_varinfo->nsteps);
@@ -349,6 +360,12 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     	populate_read_request_for_global_selection(raw_varinfo, transinfo, sel, from_steps, nsteps, new_readreq);
     } else {
     	populate_read_request_for_local_selection(raw_varinfo, transinfo, sel, from_steps, nsteps, new_readreq);
+    }
+    
+    if(start != NULL)
+    {
+        adios_selection_delete(sel);
+        sel == NULL;
     }
 
     // If this read request does not intersect any PGs, then clear the new read request and return NULL
