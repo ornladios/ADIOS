@@ -335,7 +335,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
         const size_t dim_size = sizeof(uint64_t) * raw_varinfo->ndim;
         start = (uint64_t*)malloc(dim_size);
         memset(start, 0, dim_size);
-        sel = adios_selection_boundingbox(raw_varinfo->ndim, &start, raw_varinfo->dims);
+        sel = a2sel_boundingbox(raw_varinfo->ndim, &start, raw_varinfo->dims);
     }
     // Precondition checking
     assert(is_transform_type_valid(transinfo->transform_type));
@@ -364,7 +364,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     
     if(start != NULL)
     {
-        adios_selection_delete(sel);
+        a2sel_free(sel);
         sel == NULL;
     }
 
