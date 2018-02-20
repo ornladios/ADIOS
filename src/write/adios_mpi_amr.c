@@ -2168,6 +2168,17 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
         md->group_comm = MPI_COMM_NULL;
     }
 
+    if (md->g_comm1 != MPI_COMM_NULL)
+    {
+        MPI_Comm_free(&md->g_comm1);
+    }
+
+    if (md->g_comm2 != MPI_COMM_NULL)
+    {
+        MPI_Comm_free(&md->g_comm2);
+    }
+
+
     md->fh = 0;
     md->mfh = 0;
     md->req = 0;
@@ -2709,6 +2720,17 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
     {
         md->group_comm = MPI_COMM_NULL;
     }
+
+    if (md->g_comm1 != MPI_COMM_NULL)
+    {
+        MPI_Comm_free(&md->g_comm1);
+    }
+
+    if (md->g_comm2 != MPI_COMM_NULL)
+    {
+        MPI_Comm_free(&md->g_comm2);
+    }
+
 
     md->fh = 0;
     md->mfh = 0;
