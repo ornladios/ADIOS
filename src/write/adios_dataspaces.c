@@ -810,9 +810,7 @@ void ds_pack_group_info (struct adios_file_struct *fd
         log_error ("ERROR in %s. Calculated group index buffer size as %d, but filled after that with %d bytes\n",
             __func__, *buffer_size, (int)(b-*buffer));
     }
-    // written buffer might be shorter than calculated since we skip time dimensions.
-    // set the correct size now
-    *buffer_size = (int)(b-*buffer);
+
     memcpy (*buffer, buffer_size, sizeof(int));  
 
     
