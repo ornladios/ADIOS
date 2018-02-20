@@ -280,9 +280,9 @@ int adios_transform_blosc_apply(struct adios_file_struct *fd,
             n_chunks = 0;
             compressed_size_last_chunk = 0;
         }
-        /* store size of the chunk behind the bit mask */
+        /* store number of full chunks */
         memcpy((char*)var->transform_metadata, &n_chunks, sizeof(adiosBloscSize_t));
-        /* store the bit mask */
+        /* compressed size (in byte) of the last not full chunk */
         memcpy((char*)var->transform_metadata + sizeof(adiosBloscSize_t), &compressed_size_last_chunk, sizeof(adiosBloscSize_t));
     }
 

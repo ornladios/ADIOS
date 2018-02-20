@@ -1467,6 +1467,8 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
             md->g_num_aggregators = 0;
             md->g_color2 = 0;
 
+            MPI_Comm_free(&new_comm2);
+
             FREE (md->subfile_name);
             FREE (md->g_is_aggregator);
             FREE (md->g_offsets);
@@ -1489,6 +1491,8 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
     {   
         md->group_comm = MPI_COMM_NULL;
     }
+
+    MPI_Comm_free(&md->file_comm);
 
     md->fh = 0;
     md->mfh = 0;
