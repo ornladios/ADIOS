@@ -19,6 +19,10 @@
 #define __USE_LINUX_IOCTL_DEFS
 #include <sys/ioctl.h>
 #include <assert.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 
 // xml parser
 #include <mxml.h>
@@ -584,11 +588,10 @@ int adios_mpi_open (struct adios_file_struct * fd
             {
                 MPI_File_delete (name, MPI_INFO_NULL);  // make sure clean
 
-                err = MPI_File_open (MPI_COMM_SELF, name
-                                    ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                                    ,md->info
-                                    ,&md->fh
-                                    );
+
+                md->b.f = open (name, O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE,
+                                S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+
                 if (next != -1)
                 {
                     MPI_Isend (&flag, 1, MPI_INT, next, current
@@ -607,11 +610,8 @@ int adios_mpi_open (struct adios_file_struct * fd
                               ,md->group_comm, &md->req
                               );
                 }
-                err = MPI_File_open (MPI_COMM_SELF, name
-                                    ,MPI_MODE_WRONLY
-                                    ,md->info
-                                    ,&md->fh
-                                    );
+                md->b.f = open (name, O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE,
+                                S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
             }
             // Wait for Isend to complete before otherwise the request variable may disappear from the stack
             if (next != -1)
@@ -619,17 +619,12 @@ int adios_mpi_open (struct adios_file_struct * fd
                 MPI_Wait(&md->req, &md->status);
             }
 
-            if (err != MPI_SUCCESS)
+            if (md->b.f == -1)
             {
-                char e [MPI_MAX_ERROR_STRING];
-                int len = 0;
-                memset (e, 0, MPI_MAX_ERROR_STRING);
-                MPI_Error_string (err, e, &len);
-                adios_error (err_file_open_error, 
-                        "MPI method, rank %d: open write failed for %s: '%s'\n", 
-                        md->rank, name, e);
+                adios_error(err_file_open_error, 
+                            "MPI method, rank %d, failed to create file %s\n", 
+                            md->rank, name);
                 free (name);
-
                 return 0;
             }
 #if COLLECT_METRICS
@@ -646,31 +641,12 @@ int adios_mpi_open (struct adios_file_struct * fd
 
             if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
             {
-                err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
-                                    ,md->info, &md->fh
-                                    );
-
-                if (err != MPI_SUCCESS)
+                md->b.f = open (name, O_RDWR | O_LARGEFILE);
+                if (md->b.f == -1)
                 {
                     old_file = 0;
-                    MPI_File_close (&md->fh);
-                    err = MPI_File_open (MPI_COMM_SELF, name
-                                        ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                                        ,md->info, &md->fh
-                                        );
-                    if (err != MPI_SUCCESS)
-                    {
-                        char e [MPI_MAX_ERROR_STRING];
-                        int len = 0;
-                        memset (e, 0, MPI_MAX_ERROR_STRING);
-                        MPI_Error_string (err, e, &len);
-                        adios_error (err_file_open_error, 
-                                "MPI method, rank %d: open for append failed for %s: '%s'\n", 
-                                md->rank, name, e);
-                        free (name);
-
-                        return 0;
-                    }
+                    md->b.f = open (name, O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE,
+                                    S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
                 }
                 MPI_Bcast (&old_file, 1, MPI_INT, 0, md->group_comm);
             }
@@ -684,38 +660,15 @@ int adios_mpi_open (struct adios_file_struct * fd
             {
                 if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
                 {
-                    if (err != MPI_SUCCESS)
-                    {
-                        md->b.file_size = 0;
-                    }
-                    else
-                    {
-                        MPI_Offset file_size;
-                        MPI_File_get_size (md->fh, &file_size);
-                        md->b.file_size = file_size;
-                    }
-
-                    adios_init_buffer_read_version (&md->b);
-                    MPI_File_seek (md->fh, md->b.file_size - md->b.length
-                                  ,MPI_SEEK_SET
-                                  );
-                    MPI_File_read (md->fh, md->b.buff, md->b.length, MPI_BYTE
-                                  ,&md->status
-                                  );
+                    struct stat s;
+                    if (fstat (md->b.f, &s) == 0)
+                        md->b.file_size = s.st_size;
+                    adios_posix_read_version (&md->b);
                     adios_parse_version (&md->b, &md->b.version);
 
-                    adios_init_buffer_read_index_offsets (&md->b);
-                    // already in the buffer
+                    adios_posix_read_index_offsets (&md->b);
                     adios_parse_index_offsets_v1 (&md->b);
-
-                    adios_init_buffer_read_process_group_index (&md->b);
-                    MPI_File_seek (md->fh, md->b.pg_index_offset
-                                  ,MPI_SEEK_SET
-                                  );
-                    MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
-                                  ,&md->status
-                                  );
-
+                    adios_posix_read_process_group_index (&md->b);
                     adios_parse_process_group_index_v1 (&md->b, &md->index->pg_root, &md->index->pg_tail);
 
                     // find the largest time index so we can append properly
@@ -733,31 +686,17 @@ int adios_mpi_open (struct adios_file_struct * fd
                               ,md->group_comm
                               );
 
-                    adios_init_buffer_read_vars_index (&md->b);
-                    MPI_File_seek (md->fh, md->b.vars_index_offset
-                                  ,MPI_SEEK_SET
-                                  );
-                    MPI_File_read (md->fh, md->b.buff, md->b.vars_size, MPI_BYTE
-                                  ,&md->status
-                                  );
-                    adios_parse_vars_index_v1 (&md->b, &md->index->vars_root, 
+                    adios_posix_read_vars_index (&md->b);
+                    adios_parse_vars_index_v1 (&md->b, &md->index->vars_root,
                                                md->index->hashtbl_vars,
                                                &md->index->vars_tail);
 
-                    adios_init_buffer_read_attributes_index (&md->b);
-                    MPI_File_seek (md->fh, md->b.attrs_index_offset
-                                  ,MPI_SEEK_SET
-                                  );
-                    MPI_File_read (md->fh, md->b.buff, md->b.attrs_size
-                                  ,MPI_BYTE, &md->status
-                                  );
+                    adios_posix_read_attributes_index (&md->b);
                     adios_parse_attributes_index_v1 (&md->b, &md->index->attrs_root);
 
                     // remember the end of the last PG in file. The new PG written now
                     // will have an offset updated from here. 
                     // md->b.end_of_pgs points to this position
-
-                    MPI_File_close (&md->fh);
                 }
                 else
                 {
@@ -768,23 +707,14 @@ int adios_mpi_open (struct adios_file_struct * fd
             }
             else
             {
-                if (md->rank == 0)
-                    MPI_File_close (&md->fh);
+                // there is no previous data, start from offset 0
             }
 
 
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
             {
-                // we know it exists, because we created it if it didn't
-                // when reading the old file so can just open wronly
-                // but adding the create for consistency with write mode
-                // so it is easier to merge write/append later
-                err = MPI_File_open (MPI_COMM_SELF, name
-                                    ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                                    ,md->info
-                                    ,&md->fh
-                                    );
+                // it is already open on this process (or failed to open)
                 if (next != -1)
                 {
                     MPI_Isend (&flag, 1, MPI_INT, next, current
@@ -803,11 +733,7 @@ int adios_mpi_open (struct adios_file_struct * fd
                               ,md->group_comm, &md->req
                               );
                 }
-                err = MPI_File_open (MPI_COMM_SELF, name
-                                    ,MPI_MODE_WRONLY
-                                    ,md->info
-                                    ,&md->fh
-                                    );
+                md->b.f = open (name, O_WRONLY | O_LARGEFILE);
             }
             // Wait for Isend to complete before otherwise the request variable may disappear from the stack
             if (next != -1)
@@ -815,20 +741,15 @@ int adios_mpi_open (struct adios_file_struct * fd
                 MPI_Wait(&md->req, &md->status);
             }
 
-            if (err != MPI_SUCCESS)
-            {
-                char e [MPI_MAX_ERROR_STRING];
-                int len = 0;
-                memset (e, 0, MPI_MAX_ERROR_STRING);
-                MPI_Error_string (err, e, &len);
-                adios_error (err_file_open_error, 
-                        "MPI method, rank %d: open for append failed for %s: '%s'\n", 
-                        md->rank, name, e);
-                free (name);
 
+            if (md->b.f == -1)
+            {
+                adios_error(err_file_open_error, 
+                        "MPI method, rank %d, failed to create file %s\n", 
+                        md->rank, name);
+                free (name);
                 return 0;
             }
-
             break;
         }
 
@@ -1192,6 +1113,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                 v = v->next;
             }
 
+            if (md && md->fh)
+            {
+#if COLLECT_METRICS
+                MPI_File_sync (md->fh);
+#endif
+                MPI_File_close (&md->fh);
+            }
+
             break;
         }
 
@@ -1200,7 +1129,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
-            int err;
+            int err = err_no_error;
 
 #if COLLECT_METRICS
             gettimeofday (&timing.t19, NULL);
@@ -1295,7 +1224,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             gettimeofday (&timing.t13, NULL);
 #endif
             // everyone writes their data
-            MPI_File_seek (md->fh, fd->current_pg->pg_start_in_file, MPI_SEEK_SET);
+            lseek (md->b.f, fd->current_pg->pg_start_in_file, SEEK_SET);
             // if we need to write > 2 GB, need to do it in parts
             // since count is limited to MAX_MPIWRITE_SIZE (signed 32-bit max).
             uint64_t bytes_written = 0;
@@ -1311,22 +1240,24 @@ void adios_mpi_close (struct adios_file_struct * fd
 
             while (bytes_written < fd->bytes_written)
             {
-                err = MPI_File_write (md->fh, fd->buffer + bytes_written
-                        ,to_write, MPI_BYTE, &md->status
-                        );
-                if (err != MPI_SUCCESS) 
-                {              
-                    char e [MPI_MAX_ERROR_STRING];
-                    int len = 0;
-                    memset (e, 0, MPI_MAX_ERROR_STRING);
-                    MPI_Error_string (err, e, &len);
+                ssize_t wrote = write (md->b.f, fd->buffer+bytes_written, to_write);
+                if (wrote == -1)
+                {
                     adios_error (err_write_error, 
                             "MPI method, rank %d: adios_close(): writing of buffered data "
                             "[%llu..%llu] to file %s failed: '%s'\n",
                             md->rank, bytes_written, bytes_written+to_write-1, 
-                            fd->name, e);       
+                            fd->name, strerror(errno));       
+                    break;
                 }
-                bytes_written += to_write;
+                else if (wrote != to_write)
+                {
+                    adios_error (err_write_error, "Failure to write data completely to file %s by rank %d: "
+                            "Wanted to write %ld bytes to file at once but only %ld was written\n",
+                            fd->name, md->rank, to_write, wrote);
+                }
+
+                bytes_written += wrote;
                 if (fd->bytes_written > bytes_written)
                 {
                     if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
@@ -1347,12 +1278,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                                      ,md->b.pg_index_offset, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
-                MPI_File_seek (md->fh, md->b.pg_index_offset, MPI_SEEK_SET);
-#if 0
-                err = MPI_File_write (md->fh, buffer, buffer_offset, MPI_BYTE
-                                     ,&md->status
-                                     );
-#endif
+                lseek (md->b.f, md->b.pg_index_offset, SEEK_SET);
                 {              
                     uint64_t total_written = 0;
                     uint64_t to_write = buffer_offset;
@@ -1366,38 +1292,33 @@ void adios_mpi_close (struct adios_file_struct * fd
 struct timeval a, b;
 gettimeofday (&a, NULL);
 #endif
-                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                        ssize_t wrote = write (md->b.f, buf_ptr, write_len);
 #if COLLECT_METRICS
 gettimeofday (&b, NULL);
 timeval_subtract (&timing.t8, &b, &a);
 #endif
-                        MPI_Get_count(&md->status, MPI_BYTE, &count);
-                        if (count != write_len)
+                        if (wrote != write_len)
                         {
-                            log_error ("MPI method, rank %d: Need to do multi-write 1 (tried: "
-                                    "%d wrote: %d) errno %d\n",
-                                    md->rank, write_len, count, errno);
-                            err = count;
+                            log_error ("MPI method, rank %d, index write: tried to write",
+                                       " %d wrote %d bytes: %s\n",
+                                       md->rank, write_len, wrote, strerror(errno));
+                            err = err_write_error;
                             break;
                         }
-                        total_written += count;
-                        buf_ptr += count;
-                        to_write -= count;
-                        //err = total_written;
+                        total_written += wrote;
+                        buf_ptr += wrote;
+                        to_write -= wrote;
                     }
                 }              
-                if (err != MPI_SUCCESS) 
+                if (err != err_no_error) 
                 {              
-                    char e [MPI_MAX_ERROR_STRING];
-                    int len = 0;
-                    memset (e, 0, MPI_MAX_ERROR_STRING);
-                    MPI_Error_string (err, e, &len);
                     adios_error (err_write_error, 
                             "MPI method, rank %d: adios_close(): writing of index data "
-                            "of %llu bytes to file %s failed: '%s'\n",
-                            md->rank, buffer_offset, fd->name, e);       
+                            "of %llu bytes to file %s failed'\n",
+                            md->rank, buffer_offset, fd->name);       
                 }
             }
+            adios_posix_close_internal (&md->b);
 #if COLLECT_METRICS
             gettimeofday (&timing.t20, NULL);
             gettimeofday (&timing.t14, NULL);
@@ -1424,7 +1345,7 @@ timeval_subtract (&timing.t8, &b, &a);
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
-            int err;
+            int err = err_no_error;
 
             // figure out the offsets
             // before writing out the buffer and build the index based on target offsets
@@ -1512,12 +1433,7 @@ timeval_subtract (&timing.t8, &b, &a);
             }
 
             /* Write data buffer */
-            MPI_File_seek (md->fh, fd->current_pg->pg_start_in_file, MPI_SEEK_SET);
-#if 0
-            err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                    ,MPI_BYTE, &md->status
-                    );
-#endif
+            lseek (md->b.f, fd->current_pg->pg_start_in_file, SEEK_SET);
             {              
                 uint64_t total_written = 0;
                 uint64_t to_write = fd->bytes_written;
@@ -1527,29 +1443,23 @@ timeval_subtract (&timing.t8, &b, &a);
                 while (total_written < fd->bytes_written)
                 {
                     write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                    err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                    MPI_Get_count(&md->status, MPI_BYTE, &count);
-                    if (count != write_len)
+                    ssize_t wrote = write (md->b.f, buf_ptr, write_len);
+                    if (wrote != write_len)
                     {
-                        err = count;
+                        err = err_write_error;
                         break;
                     }
-                    total_written += count;
-                    buf_ptr += count;
-                    to_write -= count;
-                    //err = total_written;
+                    total_written += wrote;
+                    buf_ptr += wrote;
+                    to_write -= wrote;
                 }
             }              
-            if (err != MPI_SUCCESS) 
+            if (err != err_no_error) 
             {              
-                char e [MPI_MAX_ERROR_STRING];
-                int len = 0;
-                memset (e, 0, MPI_MAX_ERROR_STRING);
-                MPI_Error_string (err, e, &len);
                 adios_error (err_write_error, 
                         "MPI method, rank %d: adios_close(): writing of buffered data "
-                        "of %llu bytes to file %s failed: '%s'\n",
-                        md->rank, fd->bytes_written, fd->name, e);       
+                        "of %llu bytes to file %s failed\n",
+                        md->rank, fd->bytes_written, fd->name );       
             }
 
             /* Rank 0 writes the index */
@@ -1559,12 +1469,7 @@ timeval_subtract (&timing.t8, &b, &a);
                                      ,md->b.pg_index_offset, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
-                MPI_File_seek (md->fh, md->b.pg_index_offset, MPI_SEEK_SET);
-#if 0
-                err = MPI_File_write (md->fh, buffer, buffer_offset, MPI_BYTE
-                                     ,&md->status
-                                     );
-#endif
+                lseek (md->b.f, md->b.pg_index_offset, SEEK_SET);
                 {              
                     uint64_t total_written = 0;
                     uint64_t to_write = buffer_offset;
@@ -1574,36 +1479,31 @@ timeval_subtract (&timing.t8, &b, &a);
                     while (total_written < buffer_offset)
                     {
                         write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                        MPI_Get_count(&md->status, MPI_BYTE, &count);
-                        if (count != write_len)
+                        ssize_t wrote = write (md->b.f, buf_ptr, write_len);
+                        if (wrote != write_len)
                         {
-                            log_error ("MPI method, rank %d: Need to do multi-write 2 (tried: "
-                                    "%d wrote: %d) errno %d\n",
-                                    md->rank, write_len, count, errno);
-                            err = count;
+                            log_error ("MPI method, rank %d, index write: tried to write",
+                                       " %d wrote %d bytes: %s\n",
+                                       md->rank, write_len, wrote, strerror(errno));
+                            err = err_write_error;
                             break;
                         }
-                        total_written += count;
-                        buf_ptr += count;
-                        to_write -= count;
-                        //err = total_written;
+                        total_written += wrote;
+                        buf_ptr += wrote;
+                        to_write -= wrote;
                     }
                 }              
-                if (err != MPI_SUCCESS) 
+                if (err != err_no_error) 
                 {              
-                    char e [MPI_MAX_ERROR_STRING];
-                    int len = 0;
-                    memset (e, 0, MPI_MAX_ERROR_STRING);
-                    MPI_Error_string (err, e, &len);
                     adios_error (err_write_error, 
                             "MPI method, rank %d: adios_close(): writing of index data "
-                            "of %llu bytes to file %s failed: '%s'\n",
-                            md->rank, buffer_offset, fd->name, e);       
+                            "of %llu bytes to file %s failed\n",
+                            md->rank, buffer_offset, fd->name);       
                 }
             }
 
             free (buffer);
+            adios_posix_close_internal (&md->b);
 
             break;
         }
@@ -1614,14 +1514,6 @@ timeval_subtract (&timing.t8, &b, &a);
                     "MPI method: Unknown file mode: %d in adios_close()\n", 
                     fd->mode);
         }
-    }
-
-    if (md && md->fh)
-    {
-#if COLLECT_METRICS
-        MPI_File_sync (md->fh);
-#endif
-        MPI_File_close (&md->fh);
     }
 
 #if COLLECT_METRICS
