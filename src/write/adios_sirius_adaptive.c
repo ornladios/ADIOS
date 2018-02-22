@@ -3297,10 +3297,10 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     zmq_connect (requester, "tcp://131.225.2.31:5555");
 
                     zmq_send (requester, pipe_data_header, 8, 0);
-
+#if 0
                     zmq_close (requester);
                     zmq_ctx_destroy (context_metadata);
-
+#endif
                     write (pipe_field, data_reduced, nvertices_new * 8);
                     printf ("write field %d bytes\n", nvertices_new * 8);
 
@@ -3312,6 +3312,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                     int temp_bytes_writen = write (pipe_mesh, mesh_reduced, nmesh_reduced * 3 * 4);
                     printf ("write mesh %d bytes\n", temp_bytes_writen);
+
 #endif
                     free (data_reduced);
                     free (r_reduced);
@@ -3344,6 +3345,12 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     close (pipe_R);
                     close (pipe_Z);
                     close (pipe_mesh);
+
+                    char temp_buffer[10];
+                    zmq_recv (requester, temp_buffer, 2, 0);
+
+                    zmq_close (requester);
+                    zmq_ctx_destroy (context_metadata);
 
                     remove ("/tmp/MdtmManPipes/field");
                     remove ("/tmp/MdtmManPipes/R");

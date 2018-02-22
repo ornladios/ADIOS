@@ -41,12 +41,15 @@ int main (int argc, char ** argv)
     int step;
     double iotime = 0.0;
 
-    for (step = 0; step < 1; step++)
+    for (step = 0; step < 10; step++)
     {
         char fname[64];
 
         //sprintf (fname, "xgc.3d.080%02d.bp", step);
-        sprintf (fname, "larger_data/xgc.3d.00480.bp");
+//            sprintf (fname, "larger_data/xgc.3d.00400.bp");
+        sprintf (fname, "totalf_itg_tiny/xgc.3d.0800%d.bp",step);
+ 
+
         adios_read_init_method (method, comm, "verbose=3");
 
         ADIOS_FILE * f = adios_read_open_file (fname, method, comm);
@@ -95,7 +98,8 @@ int main (int argc, char ** argv)
         // read mesh
         adios_read_init_method (method, comm, "verbose=3");
 
-        ADIOS_FILE * fmesh = adios_read_open_file ("larger_data/xgc.mesh.bp", method, comm);
+        //ADIOS_FILE * fmesh = adios_read_open_file ("larger_data/xgc.mesh.bp", method, comm);
+        ADIOS_FILE * fmesh = adios_read_open_file ("totalf_itg_tiny/xgc.mesh.bp", method, comm);
         if (fmesh == NULL)
         {
             printf ("%s\n", adios_errmsg());
@@ -172,6 +176,7 @@ int main (int argc, char ** argv)
         adios_init ("test_xgc.xml", comm);
 
         sprintf (fname, "dpot.3d.080%02d.bp", step);
+        printf ("Writing step: %d ....\n", step);
 
         adios_open (&adios_handle, "field", fname, "w", comm);
         adios_groupsize = 6 * 4 + 3 * 8 * NX + 4 * MX * MY;
