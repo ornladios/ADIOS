@@ -3,21 +3,44 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import os
+import sys
 import errno
 import numpy as np
-
+import logging as log
 from threading import Thread
 
 import zmq
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-v", "--verbose", help="set verbosity",
+    action="store_true", dest="verbosity"
+    )
+requiredNamed = parser.add_argument_group('required arguments')
+requiredNamed.add_argument(
+    "-p", "--port", type=int, 
+    help="Set ZMQ port", required=True
+    )
+args = parser.parse_args()
+
+if args.verbosity:
+    log.basicConfig(format="%(levelname)s: %(message)s", level=log.DEBUG)
+else:
+    log.basicConfig(format="%(levelname)s: %(message)s")
+
+log.info("port = {0}".format(args.port))
 
 def read_pipe_data(pipename, bytes_to_read):
-    print('Opening pipe...{0}'.format(pipename) )
+    log.info('Opening pipe...{0}'.format(pipename))
+ 
     pipe_id  = os.open(pipename, os.O_RDONLY)
-    print('Pipe opened...{0}'.format(pipename) )
+
+    log.info('Pipe opened...{0}'.format(pipename))
 
     while True:
         data = os.read(pipe_id, 1024*16)
-        print('Read {0} bytes for {1}'.format(len(data), pipename) )
+        log.info('Read {0} bytes for {1}'.format(len(data), pipename))
 
         global field_data
         global R_data
@@ -36,14 +59,14 @@ def read_pipe_data(pipename, bytes_to_read):
         elif (pipename == mesh):
             mesh_data = np.append(mesh_data, np.frombuffer(data, dtype=np.int32))
         else:
-            print("pipe name is wrong")
+            log.error("pipe name is wrong")
 
         bytes_to_read = bytes_to_read - len(data)
         if bytes_to_read == 0:
             break
 
     os.close(pipe_id)
-    print("pipe closed...{0}.".format(pipename))
+    log.info("pipe closed...{0}.".format(pipename))
    
 def read_pipe_header(pipename):
     pipe_id  = os.open(pipename, os.O_RDONLY)
@@ -73,16 +96,24 @@ def read_pipe_header(pipename):
 step = 0
 context = zmq.Context()
 socket = context.socket(zmq.REP)
-socket.bind("tcp://*:5555")
+socket.bind("tcp://*:{0}".format(args.port))
 
+print("XGC analysis is ready to process data.")
 while True:
-    print('zmq waiting to recv header.')
-    message = socket.recv()
+    try:
+        message = socket.recv()
+    except KeyboardInterrupt:
+        print("All plots are achived into avi.")
+        os.system("ffmpeg -f image2 -framerate 1 -i foo_%01d.png dpot.avi")
+        socket.close()
+        context.term()
+        sys.exit()
+
     header = np.frombuffer(message, dtype=np.int32)
     bytes_to_read = header[0]
     bytes_to_read_mesh = header[1]
 
-    print('To read {0} bytes for R/Z/dpot, and {1} bytes for mesh'.format(bytes_to_read, bytes_to_read_mesh))
+    log.info("To read {0} bytes for R/Z/dpot, and {1} bytes for mesh".format(bytes_to_read, bytes_to_read_mesh))
     field = '/tmp/MdtmManPipes/field'
     R     = '/tmp/MdtmManPipes/R'
     Z     = '/tmp/MdtmManPipes/Z'
@@ -127,7 +158,7 @@ while True:
     figure_name = "foo_" +  str(step) + ".png"
     plt.savefig(figure_name)
 
-    print('filename = {0}'.format(figure_name))
+    print('Plotting {0}'.format(figure_name))
 #    os.remove(field)
 #    os.remove(R)
 #    os.remove(Z)
