@@ -8,9 +8,11 @@ import errno
 import numpy as np
 import logging as log
 from threading import Thread
-
+import cv2
 import zmq
 import argparse
+import time
+import math
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -93,6 +95,11 @@ def read_pipe_header(pipename):
     else:
         print("pipe name is wrong")
 
+def pdist(pt1, pt2):
+    x = pt1[0] - pt2[0]
+    y = pt1[1] - pt2[1]
+    return math.sqrt(math.pow(x, 2) + math.pow(y, 2))
+
 step = 0
 context = zmq.Context()
 socket = context.socket(zmq.REP)
@@ -104,7 +111,8 @@ while True:
         message = socket.recv()
     except KeyboardInterrupt:
         print("All plots are achived into avi.")
-        os.system("ffmpeg -f image2 -framerate 1 -i foo_%01d.png dpot.avi")
+        os.system("ffmpeg -f image2 -framerate 1 -i dpot_%02d.png -s:v 1280x720 -c:v mpeg4 -crf 20 -pix_fmt yuv420p dpot.mp4")
+        os.system("mplayer dpot.mp4")
         socket.close()
         context.term()
         sys.exit()
@@ -148,17 +156,18 @@ while True:
     t4.join()
 
     mesh_data = mesh_data.reshape(mesh_data.size // 3,3)
-    plt.figure()
+    plt.figure(1)
     plt.gca().set_aspect('equal')
     plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-120,120,num=1000))
 #plt.plot(R_data, Z_data)
     plt.title('electrostatic potential')
     plt.xlabel('R')
     plt.ylabel('Z')
-    figure_name = "foo_" +  str(step) + ".png"
+    figure_name = "dpot_" + format(step, '02d') + ".png"
     plt.savefig(figure_name)
 
     print('Plotting {0}'.format(figure_name))
+
 #    os.remove(field)
 #    os.remove(R)
 #    os.remove(Z)
