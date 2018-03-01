@@ -786,8 +786,6 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
             json_object * jobj = json_tokener_parse(json_string);     
             const char * tmp_str = json_object_to_json_string (jobj);
 
-            printf ("tmp_str = %s\n", tmp_str);	
-
             remove ("/tmp/MdtmManPipes/field");
             remove ("/tmp/MdtmManPipes/R");
             remove ("/tmp/MdtmManPipes/Z");
@@ -797,78 +795,78 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
             rc = mkfifo("/tmp/MdtmManPipes/field", S_IRWXU | S_IRWXG | S_IRWXO);
             if (rc == -1)
             {
-                printf ("mkfifo() error = %s\n", strerror(errno));
+                adios_error (err_unspecified, "mkfifo() error = %s\n", strerror(errno));
             }
 
             // Creat a named pipe for R
             rc = mkfifo("/tmp/MdtmManPipes/R", S_IRWXU | S_IRWXG | S_IRWXO);
             if (rc == -1)
             {
-                printf ("mkfifo() error = %s\n", strerror(errno));
+                adios_error (err_unspecified, "mkfifo() error = %s\n", strerror(errno));
             }
 
             // Create a named pipe for Z
             rc = mkfifo("/tmp/MdtmManPipes/Z", S_IRWXU | S_IRWXG | S_IRWXO);
             if (rc == -1)
             {
-                printf ("mkfifo() error = %s\n", strerror(errno));
+                adios_error (err_unspecified, "mkfifo() error = %s\n", strerror(errno));
             }
 
             // Create a named pipe for mesh
             rc = mkfifo("/tmp/MdtmManPipes/mesh", S_IRWXU | S_IRWXG | S_IRWXO);
             if (rc == -1)
             {
-                printf ("mkfifo() error = %s\n", strerror(errno));
+                adios_error (err_unspecified, "mkfifo() error = %s\n", strerror(errno));
             }
 
             rc = zmq_send (zmq_ipc_req, tmp_str, strlen (tmp_str), 0);
             if (rc == -1)
             {
-                printf ("zmq_send() error = %s\n", strerror(errno));
+                adios_error (err_unspecified, "zmq_send() error = %s\n", strerror(errno));
             }
 
             char buffer_return[10];
             rc = zmq_recv (zmq_ipc_req, buffer_return, 10, 0);
             if (rc == -1)
             {
-                printf ("zm_recv() error = %s\n", strerror(errno));
+                adios_error (err_unspecified, "zm_recv() error = %s\n", strerror(errno));
             }
 
-            printf ("buffer = %s\n", buffer_return);
+            log_debug ("buffer = %s\n", buffer_return);
 
-            printf ("Sender pipe open.\n");
+            log_debug ("Sender pipe open.\n");
 
             pipe_field = open ("/tmp/MdtmManPipes/field", O_WRONLY);
             if (pipe_field < 0)
             {
-                printf ("open pipe error: %s\n", strerror(errno));
+                adios_error (err_file_open_error, "open pipe error: %s\n", strerror(errno));
             }
 
-            printf ("field pipe opened.\n");
+            log_debug ("field pipe opened.\n");
 
             pipe_R = open ("/tmp/MdtmManPipes/R", O_WRONLY);
             if (pipe_R < 0)
             {
-                printf ("open pipe error: %s\n", strerror(errno));
+                adios_error (err_file_open_error, "open pipe error: %s\n", strerror(errno));
             }
 
-            printf ("R pipe opened.\n");
+            log_debug ("R pipe opened.\n");
 
             pipe_Z = open ("/tmp/MdtmManPipes/Z", O_WRONLY);
             if (pipe_Z < 0)
             {
-                printf ("open pipe error: %s\n", strerror(errno));
+                adios_error (err_file_open_error, "open pipe error: %s\n", strerror(errno));
             }
-            printf ("Z pipe opened.\n");
+
+            log_debug ("Z pipe opened.\n");
 
             pipe_mesh = open ("/tmp/MdtmManPipes/mesh", O_WRONLY);
             if (pipe_mesh < 0)
             {
-                printf ("open pipe error: %s\n", strerror(errno));
+                adios_error (err_file_open_error, "open pipe error: %s\n", strerror(errno));
             }
 
-
-            printf ("Mesh pipe opened.\n");
+            log_debug ("Mesh pipe opened.\n");
             break;
         }
 
@@ -2107,7 +2105,7 @@ double time_find1 = MPI_Wtime ();
     }
 
 double time3 = MPI_Wtime ();
-printf ("get delta time = %f\n", time3 - time1);
+log_debug ("get delta time = %f\n", time3 - time1);
 
     * pfield_delta = delta;
 }
@@ -2160,7 +2158,7 @@ void get_delta (double * r, double * z, double * field,
 
     * pfield_delta = delta;
     double end_time = MPI_Wtime ();
-    printf ("get delta time = %f\n", end_time - start_time);
+    log_debug ("get delta time = %f\n", end_time - start_time);
 }
 
 double calc_area (double * r, double * z, double * data,
@@ -3271,8 +3269,8 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     do_write (md->level[1].fd, "dpot/L1", data_reduced);
                     //free (data_reduced);
 
-                    printf ("size of field, R, and Z data to send: %d\n", 
-                            nvertices_new * 8 * 3);
+                    log_debug ("size of field, R, and Z data to send: %d\n", 
+                               nvertices_new * 8 * 3);
 
 #if 0
                     char a[1024], b[1024], c[1024], d[1024];
@@ -3324,8 +3322,6 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     json_object * jobj = json_tokener_parse(json_terminate_string);
                     const char * tmp_str = json_object_to_json_string (jobj);
 
-                    printf ("tmp_str = %s\n", tmp_str);
-
                     int rc = zmq_send (zmq_ipc_req, tmp_str, strlen (tmp_str), 0);
                     if (rc == -1)
                     {
@@ -3339,7 +3335,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         printf ("zm_recv() error = %s\n", strerror(errno));
                     }
 
-                    printf ("buffer = %s\n", buffer_return);
+                    log_debug ("buffer = %s\n", buffer_return);
 #endif
                     close (pipe_field);
                     close (pipe_R);
