@@ -158,7 +158,7 @@ while True:
     mesh_data = mesh_data.reshape(mesh_data.size // 3,3)
     plt.figure(1)
     plt.gca().set_aspect('equal')
-    plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-120,120,num=1000))
+    plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-120,110,num=50))
 #plt.plot(R_data, Z_data)
     plt.title('electrostatic potential')
     plt.xlabel('R')
