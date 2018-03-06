@@ -13,6 +13,7 @@ import zmq
 import argparse
 import time
 import math
+import queue as Queue
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -33,12 +34,46 @@ else:
 
 log.info("port = {0}".format(args.port))
 
+field_queue = Queue.Queue()
+R_queue = Queue.Queue()
+Z_queue = Queue.Queue()
+mesh_queue = Queue.Queue()
+
+def plot_xgc():
+    step = 0
+    while True:
+        field_data = field_queue.get()
+        R_data = R_queue.get()
+        Z_data = Z_queue.get()
+        mesh_data = mesh_queue.get()
+
+        mesh_data = mesh_data.reshape(mesh_data.size // 3,3)
+        plt.figure(1)
+        plt.gca().set_aspect('equal')
+        plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-110,105,num=50))
+#plt.plot(R_data, Z_data)
+        plt.title('electrostatic potential')
+        plt.xlabel('R')
+        plt.ylabel('Z')
+        figure_name = "dpot_" + format(step, '02d') + ".png"
+        plt.savefig(figure_name)
+
+        print('Plotting {0}'.format(figure_name))
+
+        step = step + 1
+
+
 def read_pipe_data(pipename, bytes_to_read):
     log.info('Opening pipe...{0}'.format(pipename))
  
     pipe_id  = os.open(pipename, os.O_RDONLY)
 
     log.info('Pipe opened...{0}'.format(pipename))
+
+    global field_queue
+    global R_queue
+    global Z_queue
+    global mesh_queue
 
     while True:
         data = os.read(pipe_id, 1024*16)
@@ -66,6 +101,21 @@ def read_pipe_data(pipename, bytes_to_read):
         bytes_to_read = bytes_to_read - len(data)
         if bytes_to_read == 0:
             break
+
+    if (pipename == field):
+        field_queue.put(field_data)
+        log.info("Put field into the queue.")
+    elif (pipename == R):
+        R_queue.put(R_data)
+        log.info("Put R into the queue.")
+    elif (pipename == Z):
+        Z_queue.put(Z_data)
+        log.info("Put Z into the queue.")
+    elif (pipename == mesh):
+        mesh_queue.put(mesh_data)
+        log.info("Put mesh into the queue.")
+    else:
+        log.error("pipe name is wrong")
 
     os.close(pipe_id)
     log.info("pipe closed...{0}.".format(pipename))
@@ -99,6 +149,9 @@ def pdist(pt1, pt2):
     x = pt1[0] - pt2[0]
     y = pt1[1] - pt2[1]
     return math.sqrt(math.pow(x, 2) + math.pow(y, 2))
+
+p1 = Thread(target=plot_xgc, args=())
+p1.start()
 
 step = 0
 context = zmq.Context()
@@ -150,28 +203,36 @@ while True:
     t4 = Thread(target=read_pipe_data, args=(mesh,bytes_to_read_mesh))
     t4.start()
 
-    t1.join()
-    t2.join()
-    t3.join()
-    t4.join()
+    step = step + 1
+    message = socket.send_string("ok")
 
-    mesh_data = mesh_data.reshape(mesh_data.size // 3,3)
-    plt.figure(1)
-    plt.gca().set_aspect('equal')
-    plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-120,110,num=50))
+#    t1.join()
+#    t2.join()
+#    t3.join()
+#    t4.join()
+#while True:
+#    field_data = field_queue.get()
+#    R_data = R_queue.get()
+#    Z_data = Z_queue.get()
+#    mesh_data = mesh_queue.get()
+
+#    mesh_data = mesh_data.reshape(mesh_data.size // 3,3)
+#    plt.figure(1)
+#    plt.gca().set_aspect('equal')
+#    plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-110,105,num=50))
 #plt.plot(R_data, Z_data)
-    plt.title('electrostatic potential')
-    plt.xlabel('R')
-    plt.ylabel('Z')
-    figure_name = "dpot_" + format(step, '02d') + ".png"
-    plt.savefig(figure_name)
+#    plt.title('electrostatic potential')
+#    plt.xlabel('R')
+#    plt.ylabel('Z')
+#    figure_name = "dpot_" + format(step, '02d') + ".png"
+#    plt.savefig(figure_name)
 
-    print('Plotting {0}'.format(figure_name))
+#    print('Plotting {0}'.format(figure_name))
 
 #    os.remove(field)
 #    os.remove(R)
 #    os.remove(Z)
 #    os.remove(mesh)
 
-    step = step + 1
-    message = socket.send_string("ok")
+#    step = step + 1
+#    message = socket.send_string("ok")
