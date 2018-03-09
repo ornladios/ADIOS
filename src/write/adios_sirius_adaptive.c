@@ -51,6 +51,7 @@ double compr_tolerance = 0.1;
 int save_delta = 1;
 int compress_delta = 1;
 int dec_ratio = 10;
+char * remote_addr = 0;
 void * zmq_context = 0;
 void * zmq_ipc_req = 0;
 void * zmq_ipc_rep = 0;
@@ -662,6 +663,9 @@ static void init_output_parameters(const PairStruct *params)
         } else if (!strcasecmp (p->name, "decimation-ratio"))
         {
             dec_ratio = atoi (p->value);
+        } else if (!strcasecmp (p->name, "remote"))
+        {
+            remote_addr = strdup (p->value);
         } else {
             log_error ("Parameter name %s is not recognized by the SIRIUS "
                        "method\n", p->name);
@@ -3292,7 +3296,11 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     pipe_data_header[1] = nmesh_reduced * 3 * 4;
                     void * context_metadata = zmq_ctx_new ();
                     void * requester = zmq_socket (context_metadata, ZMQ_REQ);
-                    zmq_connect (requester, "tcp://131.225.2.31:5555");
+                    if (!remote_addr)
+                    {
+                        log_error ("Remote is not set in the XML.\n");
+                    }
+                    zmq_connect (requester, remote_addr);
 
                     zmq_send (requester, pipe_data_header, 8, 0);
 #if 0
