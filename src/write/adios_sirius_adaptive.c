@@ -3276,21 +3276,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     log_debug ("size of field, R, and Z data to send: %d\n", 
                                nvertices_new * 8 * 3);
 
-#if 0
-                    char a[1024], b[1024], c[1024], d[1024];
-                    for (int char_index = 0; char_index < 1024; char_index++)
-                    {
-                        a[char_index] = 'a';
-                        b[char_index] = 'b';
-                        c[char_index] = 'c';
-                        d[char_index] = 'd';
-                    }
 
-                    write (pipe_field,a, 1024);
-                    write (pipe_R,b, 1024);
-                    write (pipe_Z,c, 1024);
-                    write (pipe_mesh,d, 1024);
-#else
                     int pipe_data_header[2];
                     pipe_data_header[0] = nvertices_new * 8;
                     pipe_data_header[1] = nmesh_reduced * 3 * 4;
@@ -3303,10 +3289,6 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     zmq_connect (requester, remote_addr);
 
                     zmq_send (requester, pipe_data_header, 8, 0);
-#if 0
-                    zmq_close (requester);
-                    zmq_ctx_destroy (context_metadata);
-#endif
                     write (pipe_field, data_reduced, nvertices_new * 8);
                     printf ("write field %d bytes\n", nvertices_new * 8);
 
@@ -3319,7 +3301,6 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     int temp_bytes_writen = write (pipe_mesh, mesh_reduced, nmesh_reduced * 3 * 4);
                     printf ("write mesh %d bytes\n", temp_bytes_writen);
 
-#endif
                     free (data_reduced);
                     free (r_reduced);
                     free (z_reduced);
