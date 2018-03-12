@@ -23,6 +23,7 @@
         compression-tolerance=0.001;
         thresh_type=absolute;
         thresh=40;
+        storage_hint=0;
         method=MPI;path=data0;parameters;
         method=MPI;path=data1;parameters;
     </method>

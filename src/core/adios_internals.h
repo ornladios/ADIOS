@@ -218,6 +218,8 @@ struct adios_file_struct
     uint64_t attrs_start;    // offset for where to put the attr count
     uint32_t nattrs_written;  // count of attrs to write
 
+    int32_t storage_hint; //needs to be set to 1 if file struct is to be written to Ceph directly.
+
     MPI_Comm comm;          // duplicate of comm received in adios_open()
 };
 void adios_file_struct_init (struct adios_file_struct * fd);

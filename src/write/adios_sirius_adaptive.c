@@ -45,6 +45,7 @@ double compr_tolerance = 0.1;
 int save_delta = 1;
 int compress_delta = 1;
 int dec_ratio = 10;
+int32_t storage_level = 0;
 
 GHashTable ** nodes_ght = 0;
 
@@ -653,6 +654,10 @@ static void init_output_parameters(const PairStruct *params)
         } else if (!strcasecmp (p->name, "decimation-ratio"))
         {
             dec_ratio = atoi (p->value);
+        } 
+        else if (!strcasecmp (p->name, "storage_hint"))
+        {
+            storage_level = atoi (p->value);
         } else {
             log_error ("Parameter name %s is not recognized by the SIRIUS "
                        "method\n", p->name);
@@ -2717,6 +2722,8 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
     int nvertices_new;
     int * mesh_reduced = 0, nmesh_reduced;
     int compr_size = 0;
+
+    fd->storage_hint = storage_level;
 
     for (l = 0; l < nlevels; l++)
     {
