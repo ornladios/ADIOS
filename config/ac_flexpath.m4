@@ -38,6 +38,11 @@ if test "x$ac_flexpath_ok" != "xno"; then
 
     CERCS_REQUIRE_PACKAGE(evpath, evpath.h, libevpath.la)
 
+    if test -z "$cercs_cv_evpath_link_dir" ;then
+        unset cercs_cv_evpath_link_dir
+        CERCS_REQUIRE_PACKAGE(evpath, evpath.h, libevpath.a)
+    fi
+
     if test -n "$cercs_cv_evpath_link_dir" -a -n "$cercs_cv_evpath_include_arg";then
 	if (test -x "$withval/bin/evpath_config") ; then
 	  FP_CONFIG="$withval/bin/evpath_config"
