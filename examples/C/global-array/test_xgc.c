@@ -31,7 +31,7 @@ int main (int argc, char ** argv)
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
     ADIOS_SELECTION * sel;
     void * mesh = NULL;
-    double * data = NULL, * grad = NULL, * R = NULL, * Z = NULL;
+    double * data = NULL, * iden = NULL, * grad = NULL, * R = NULL, * Z = NULL;
     uint64_t start[2], count[2];
 
     MPI_Init (&argc, &argv);
@@ -71,10 +71,11 @@ int main (int argc, char ** argv)
        
 
         data = malloc (count[0] * count[1] * sizeof (double));
+        iden = malloc (count[0] * count[1] * sizeof (double));
         grad = malloc (count[0] * count[1] * sizeof (double));
         R = malloc (count[0] * count[1] * sizeof (double));
         Z = malloc (count[0] * count[1] * sizeof (double));
-        if (data == NULL || grad == NULL || R == NULL || Z == NULL)
+        if (data == NULL || iden == NULL || grad == NULL || R == NULL || Z == NULL)
         {
             fprintf (stderr, "malloc failed.\n");
             return -1;
@@ -83,6 +84,7 @@ int main (int argc, char ** argv)
         /* Read a subset of the temperature array */
         sel = adios_selection_boundingbox (v->ndim, start, count);
         adios_schedule_read (f, sel, "dpot", 0, 1, data);
+        adios_schedule_read (f, sel, "iden", 0, 1, iden);
         adios_perform_reads (f, 1);
         /*
         for (i = 0; i < count[0] * count[1]; i++) {
@@ -179,7 +181,7 @@ int main (int argc, char ** argv)
         printf ("\nWriting step: %d ....\n", step);
 
         adios_open (&adios_handle, "field", fname, "w", comm);
-        adios_groupsize = 6 * 4 + 3 * 8 * NX + 4 * MX * MY;
+        adios_groupsize = 6 * 4 + 4 * 8 * NX + 4 * MX * MY;
         adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 
         adios_write (adios_handle, "NX", &NX);
@@ -190,11 +192,13 @@ int main (int argc, char ** argv)
         adios_write (adios_handle, "mesh", mesh);
         adios_write (adios_handle, "R", R);
         adios_write (adios_handle, "Z", Z);
+        adios_write (adios_handle, "iden", iden);
         adios_write (adios_handle, "dpot", data);
 
         adios_close (adios_handle);
 
         free (data);
+        free (iden);
         free (grad);
         free (mesh);
 

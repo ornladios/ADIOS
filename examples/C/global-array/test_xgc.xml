@@ -8,6 +8,7 @@
     <var name="MY" type="integer"/>
     <global-bounds dimensions="GX" offsets="OX">
        <var name="dpot" gwrite="t" type="double" dimensions="NX" transform="none"/>
+       <var name="iden" gwrite="t" type="double" dimensions="NX" transform="none"/>
        <var name="R" gwrite="g" type="double" dimensions="NX" transform="none"/>
        <var name="Z" gwrite="g" type="double" dimensions="NX" transform="none"/>
     </global-bounds>
@@ -17,7 +18,7 @@
 
     <!--method group="temperature" method="SIRIUS_ADAPTIVE">method=MPI;path=data1;parameters;method=MPI;path=data2;parameters</method-->
     <method group="field" method="SIRIUS_ADAPTIVE">
-        remote=tcp://131.225.2.31:5555;
+        remote=tcp://131.225.2.31:5556;
         decimation-ratio=1.1;
         save-delta=1;
         compress-delta=0;
