@@ -25,7 +25,8 @@ set (WRITE_PROGS1 local_array_time
   blocks
   build_standard_dataset
   test_singlevalue
-  joinedarray)
+  joinedarray
+  zerolength)
 
 set(WRITE_PROGS2 adios_staged_read
                  adios_staged_read_v2 
