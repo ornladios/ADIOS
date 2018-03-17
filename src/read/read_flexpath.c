@@ -228,6 +228,7 @@ pseudo_copy_flexpath_vars(flexpath_var *f)
     while (f != NULL) {
 	flexpath_var *curr_var = new_flexpath_var(f->varname, f->id, f->type_size);
 
+        curr_var->is_attr = f->is_attr;
 	curr_var->num_chunks = 1;
 	curr_var->chunks =  malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
 	memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
