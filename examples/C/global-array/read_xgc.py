@@ -35,7 +35,6 @@ else:
 log.info("port = {0}".format(args.port))
 
 field_queue = Queue.Queue()
-iden_queue = Queue.Queue()
 R_queue = Queue.Queue()
 Z_queue = Queue.Queue()
 mesh_queue = Queue.Queue()
@@ -44,30 +43,18 @@ def plot_xgc():
     step = 0
     while True:
         field_data = field_queue.get()
-        iden_data = iden_queue.get()
         R_data = R_queue.get()
         Z_data = Z_queue.get()
         mesh_data = mesh_queue.get()
 
         mesh_data = mesh_data.reshape(mesh_data.size // 3,3)
         plt.figure(1)
-        plt.tight_layout()
-        plt.subplot(121)
         plt.gca().set_aspect('equal')
         plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-110,105,num=50))
 #plt.plot(R_data, Z_data)
         plt.title('electrostatic potential')
         plt.xlabel('R')
         plt.ylabel('Z')
-
-        plt.subplot(122)
-        plt.gca().set_aspect('equal')
-        plt.tricontourf(R_data, Z_data, mesh_data, iden_data, cmap=plt.cm.jet)
-#plt.plot(R_data, Z_data)
-        plt.title('Ion density')
-        plt.xlabel('R')
-        plt.ylabel('Z')
-
         figure_name = "dpot_" + format(step, '02d') + ".png"
         plt.savefig(figure_name)
 
@@ -84,7 +71,6 @@ def read_pipe_data(pipename, bytes_to_read):
     log.info('Pipe opened...{0}'.format(pipename))
 
     global field_queue
-    global iden_queue
     global R_queue
     global Z_queue
     global mesh_queue
@@ -94,19 +80,15 @@ def read_pipe_data(pipename, bytes_to_read):
         log.info('Read {0} bytes for {1}'.format(len(data), pipename))
 
         global field_data
-        global iden_data
         global R_data
         global Z_data
         global mesh_data
         global field_bytes
-        global iden_bytes
         global R_bytes
         global Z_bytes
         global mesh_bytes
         if (pipename == field):
             field_data = np.append(field_data, np.frombuffer(data, dtype=np.float64))
-        elif (pipename == iden):
-            iden_data = np.append(iden_data, np.frombuffer(data, dtype=np.float64))
         elif (pipename == R):
             R_data = np.append(R_data, np.frombuffer(data, dtype=np.float64))
         elif (pipename == Z):
@@ -123,9 +105,6 @@ def read_pipe_data(pipename, bytes_to_read):
     if (pipename == field):
         field_queue.put(field_data)
         log.info("Put field into the queue.")
-    elif (pipename == iden):
-        iden_queue.put(iden_data)
-        log.info("Put iden into the queue.")
     elif (pipename == R):
         R_queue.put(R_data)
         log.info("Put R into the queue.")
@@ -197,20 +176,17 @@ while True:
 
     log.info("To read {0} bytes for R/Z/dpot, and {1} bytes for mesh".format(bytes_to_read, bytes_to_read_mesh))
     field = '/tmp/MdtmManPipes/field'
-    iden  = '/tmp/MdtmManPipes/iden'
     R     = '/tmp/MdtmManPipes/R'
     Z     = '/tmp/MdtmManPipes/Z'
     mesh  = '/tmp/MdtmManPipes/mesh'
 
     field_data = []
-    iden_data = []
     R_data = []
     Z_data = []
     mesh_data = []
 
     try:
         os.mkfifo(field)
-        os.mkfifo(iden)
         os.mkfifo(R)
         os.mkfifo(Z)
         os.mkfifo(mesh)
@@ -220,14 +196,12 @@ while True:
 
     t1 = Thread(target=read_pipe_data, args=(field,bytes_to_read))
     t1.start()
-    t2 = Thread(target=read_pipe_data, args=(iden,bytes_to_read))
+    t2 = Thread(target=read_pipe_data, args=(R,bytes_to_read))
     t2.start()
-    t3 = Thread(target=read_pipe_data, args=(R,bytes_to_read))
+    t3 = Thread(target=read_pipe_data, args=(Z,bytes_to_read))
     t3.start()
-    t4 = Thread(target=read_pipe_data, args=(Z,bytes_to_read))
+    t4 = Thread(target=read_pipe_data, args=(mesh,bytes_to_read_mesh))
     t4.start()
-    t5 = Thread(target=read_pipe_data, args=(mesh,bytes_to_read_mesh))
-    t5.start()
 
     step = step + 1
     message = socket.send_string("ok")
