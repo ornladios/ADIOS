@@ -183,5 +183,10 @@ while True:
     t4 = Thread(target=read_pipe_data, args=(mesh,bytes_to_read_mesh))
     t4.start()
 
+    t1.join()
+    t2.join()
+    t3.join()
+    t4.join()
+
     step = step + 1
     message = socket.send_string("ok")
