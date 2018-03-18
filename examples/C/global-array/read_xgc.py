@@ -20,6 +20,10 @@ parser.add_argument(
     "-v", "--verbose", help="set verbosity",
     action="store_true", dest="verbosity"
     )
+parser.add_argument(
+    "-m", "--movie", help="make movie",
+    action="store_true", dest="ifmovie"
+    )
 requiredNamed = parser.add_argument_group('required arguments')
 requiredNamed.add_argument(
     "-p", "--port", type=int, 
@@ -120,31 +124,6 @@ def read_pipe_data(pipename, bytes_to_read):
     os.close(pipe_id)
     log.info("pipe closed...{0}.".format(pipename))
    
-def read_pipe_header(pipename):
-    pipe_id  = os.open(pipename, os.O_RDONLY)
-    print('Pipe opened for header...{0}'.format(pipename) )
-    data = os.read(pipe_id, 4)
-    os.close(pipe_id)
-
-    global field_bytes
-    global R_bytes
-    global Z_bytes
-    global mesh_bytes
-    if (pipename == field):
-        field_bytes = np.frombuffer(data, dtype=np.int32)
-        print('To read {0} bytes from {1}..'.format(field_bytes, pipename))
-    elif (pipename == R):
-        R_bytes = np.frombuffer(data, dtype=np.int32)
-        print('To read {0} bytes from {1}..'.format(R_bytes, pipename))
-    elif (pipename == Z):
-        Z_bytes = np.frombuffer(data, dtype=np.int32)
-        print('To read {0} bytes from {1}..'.format(Z_bytes, pipename))
-    elif (pipename == mesh):
-        mesh_bytes = np.frombuffer(data, dtype=np.int32)
-        print('To read {0} bytes from {1}..'.format(mesh_bytes, pipename))
-    else:
-        print("pipe name is wrong")
-
 def pdist(pt1, pt2):
     x = pt1[0] - pt2[0]
     y = pt1[1] - pt2[1]
@@ -163,9 +142,10 @@ while True:
     try:
         message = socket.recv()
     except KeyboardInterrupt:
-        print("All plots are achived into avi.")
-        os.system("ffmpeg -f image2 -framerate 1 -i dpot_%02d.png -s:v 1280x720 -c:v mpeg4 -crf 20 -pix_fmt yuv420p dpot.mp4")
-        os.system("mplayer dpot.mp4")
+        if args.ifmovie:
+            print("All plots are achived into avi.")
+            os.system("ffmpeg -f image2 -framerate 1 -i dpot_%02d.png -s:v 1280x720 -c:v mpeg4 -crf 20 -pix_fmt yuv420p dpot.mp4")
+            os.system("mplayer dpot.mp4")
         socket.close()
         context.term()
         sys.exit()
@@ -205,34 +185,3 @@ while True:
 
     step = step + 1
     message = socket.send_string("ok")
-
-#    t1.join()
-#    t2.join()
-#    t3.join()
-#    t4.join()
-#while True:
-#    field_data = field_queue.get()
-#    R_data = R_queue.get()
-#    Z_data = Z_queue.get()
-#    mesh_data = mesh_queue.get()
-
-#    mesh_data = mesh_data.reshape(mesh_data.size // 3,3)
-#    plt.figure(1)
-#    plt.gca().set_aspect('equal')
-#    plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-110,105,num=50))
-#plt.plot(R_data, Z_data)
-#    plt.title('electrostatic potential')
-#    plt.xlabel('R')
-#    plt.ylabel('Z')
-#    figure_name = "dpot_" + format(step, '02d') + ".png"
-#    plt.savefig(figure_name)
-
-#    print('Plotting {0}'.format(figure_name))
-
-#    os.remove(field)
-#    os.remove(R)
-#    os.remove(Z)
-#    os.remove(mesh)
-
-#    step = step + 1
-#    message = socket.send_string("ok")
