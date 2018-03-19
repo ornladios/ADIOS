@@ -546,6 +546,11 @@ int adios_mpi_open (struct adios_file_struct * fd
                                     ,&md->fh
                                     );
             }
+            // Wait for Isend to complete before otherwise the request variable may disappear from the stack
+            if (next != -1)
+            {
+                MPI_Wait(&md->req, &md->status);
+            }
 
             if (err != MPI_SUCCESS)
             {
@@ -607,6 +612,11 @@ int adios_mpi_open (struct adios_file_struct * fd
                                     ,md->info
                                     ,&md->fh
                                     );
+            }
+            // Wait for Isend to complete before otherwise the request variable may disappear from the stack
+            if (next != -1)
+            {
+                MPI_Wait(&md->req, &md->status);
             }
 
             if (err != MPI_SUCCESS)
@@ -798,6 +808,11 @@ int adios_mpi_open (struct adios_file_struct * fd
                                     ,md->info
                                     ,&md->fh
                                     );
+            }
+            // Wait for Isend to complete before otherwise the request variable may disappear from the stack
+            if (next != -1)
+            {
+                MPI_Wait(&md->req, &md->status);
             }
 
             if (err != MPI_SUCCESS)

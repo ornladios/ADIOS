@@ -35,7 +35,8 @@ check_C=local_array_time \
 	build_standard_dataset \
 	transforms_writeblock_read \
 	test_singlevalue \
-	joinedarray
+	joinedarray \
+	zerolength
 
 test_C=
 
@@ -201,6 +202,11 @@ joinedarray_SOURCES=joinedarray.c
 joinedarray_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 joinedarray_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
 joinedarray.o: joinedarray.c
+
+zerolength_SOURCES=zerolength.c
+zerolength_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+zerolength_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
+zerolength.o: zerolength.c
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1

@@ -37,10 +37,9 @@ int read_scalar ();
 int read_scalar_stepbystep ();
 
 /* Remember (on rank 0) what was written (from all process) to check against it at reading */
-static int nblocks_per_step;
 static int nsteps = 2;
-static uint64_t * block_offset;  // block_offset[ step*nblocks_per_step + i ] is i-th block offset written in "step".
-static uint64_t * block_count;   // block_count [ step*nblocks_per_step + i ] is i-th block size written in "step".
+static uint64_t * block_offset;  // block_offset[ step*size + i ] is i-th block offset written in "step".
+static uint64_t * block_count;   // block_count [ step*size + i ] is i-th block size written in "step".
 static uint64_t * gdims;  // gdims[i] is the global dimension in i-th "step".
 
 
@@ -81,50 +80,50 @@ int write_data ()
     gdims        = (uint64_t*) malloc (sizeof(uint64_t) * nsteps);
 
     adios_init_noxml (comm);
-    adios_set_max_buffer_size (10);
 
     int64_t       m_adios_group;
     int64_t       m_adios_file;
     int64_t       var_t;
 
     adios_declare_group (&m_adios_group, "restart", "", adios_stat_default);
-    adios_select_method (m_adios_group, "MPI", "", "");
+    adios_select_method (m_adios_group, "MPI_AGGREGATE", "num_aggregators=2;num_ost=2", "");
 
     adios_define_var (m_adios_group, "NX", "", adios_integer, 0, 0, 0); 
     adios_define_var (m_adios_group, "G", "", adios_integer, 0, 0, 0);
     adios_define_var (m_adios_group, "O", "", adios_integer, 0, 0, 0);
     var_t = adios_define_var (m_adios_group, "t", "", adios_double, "NX", "G", "O");
 
-    // FIXME: we should be able to set the transform for all processes
     //if (rank)
+        //adios_set_transform (var_t, "blosc");
         adios_set_transform (var_t, "zlib");
 
     for (it =0; it < nsteps; it++) {
 
         if (!rank) printf ("Step %d:\n", it);
-        NX = 10; // +it; // we will change this for rank 0 below
-        G = NX * (size-1);
 
-        block_count [0] = 0;
-        block_offset [0] = 0;
-        for (r = 1; r < size; r++) {
-            block_count  [it*size + r] = NX; 
-            block_offset [it*size + r] = (r-1) * NX; 
-        }
-        gdims [it] = G;
-
-
+        NX = 100; // we will change this for rank 0 below
         t = (double *) malloc (NX*sizeof(double)); 
 
         for (i = 0; i < NX; i++)
             t[i] = rank + it*0.1 + 0.01;
 
+        G = NX * (size-1);
         if (!rank) {
             NX = 0;
             O = 0;
         } else {
             O = (rank-1) * NX;
         }
+
+        // first block is 0 length
+        block_count [it*size] = 0;
+        block_offset [it*size] = 0;
+        for (r = 1; r < size; r++) {
+            block_count  [it*size + r] = NX; 
+            block_offset [it*size + r] = (r-1) * NX; 
+        }
+        gdims [it] = G;
+
 
         printf ("rank %d: size=%d, offset=%d\n", rank, NX, O);
         MPI_Barrier (comm);
@@ -138,9 +137,7 @@ int write_data ()
         adios_write(m_adios_file, "NX", (void *) &NX);
         adios_write(m_adios_file, "G", (void *) &G);
         adios_write(m_adios_file, "O", (void *) &O);
-        // FIXME: we should be able to write zero-size blocks too even if transformed
-        if (NX > 0)
-            adios_write(m_adios_file, "t", t);
+        adios_write(m_adios_file, "t", t);
 
         adios_close (m_adios_file);
         MPI_Barrier (comm);
@@ -159,9 +156,10 @@ void print_written_info()
     printf ("\n------- Information recorded on rank 0 (read will compare to this info)  --------\n");
     for (s = 0; s < nsteps; s++) {
         printf ("Step %d:\n", s);
-        printf ("  Global dim = %lld\n", gdims[s]);
+        printf ("  Global dim = %" PRIu64 "\n", gdims[s]);
         for (r = 0; r < size; r++) {
-                printf ("  rank %d: size=%llu, offset=%llu\n", r, 
+                printf ("  rank %d: size=%" PRIu64 ", offset=%" PRIu64 "\n", 
+                        r, 
                         block_count  [s*size + r],
                         block_offset [s*size + r]
                        );
@@ -175,7 +173,8 @@ int read_data (ADIOS_FILE *f, int step) //uint64_t count, uint64_t offset)
     ADIOS_SELECTION *sel;
     uint64_t count  = block_count [step*size+rank]; 
     uint64_t offset = block_offset [step*size+rank];
-    printf ("rank %d bounding box = %lld elements from offset %lld\n", 
+    printf ("rank %d bounding box = %" PRIu64 
+            " elements from offset %" PRIu64 "\n", 
             rank, count, offset);
 
     double *t = (double *) malloc ((count+1)*sizeof(double)); 
@@ -215,7 +214,7 @@ int read_all ()
             if (!rank) printf ("Step %d:\n", s);
             read_data (f, s);
             MPI_Barrier(comm);
-            if (!rank) printf ("\n", s);
+            if (!rank) printf ("\n");
         }
         adios_read_close (f);
     }

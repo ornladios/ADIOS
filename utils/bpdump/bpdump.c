@@ -861,7 +861,7 @@ int dims_not_max (uint64_t * position, uint64_t * dims, int ranks)
 
     for (i = 0; i < ranks; i++)
     {
-        if (position [i] != dims [i] - 1)
+        if (dims[i] > 0 && position[i] < dims[i] - 1)
             return 1;
     }
 
