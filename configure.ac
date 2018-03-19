@@ -1030,6 +1030,7 @@ AC_CONFIG_FILES([Makefile
                  examples/C/transforms/Makefile
                  examples/C/query/Makefile
                  examples/C/time_aggregation/Makefile
+                 examples/C/strings/Makefile
                  examples/Fortran/Makefile
                  examples/Fortran/scalars/Makefile
                  examples/Fortran/arrays/Makefile
