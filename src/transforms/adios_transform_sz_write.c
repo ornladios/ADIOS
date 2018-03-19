@@ -26,8 +26,8 @@
 #ifdef HAVE_ZCHECKER
 #include <ZC_rw.h>
 #include <zc.h>
-#endif
 #include "zcheck_comm.h"
+#endif
 
 typedef unsigned int uint;
 
