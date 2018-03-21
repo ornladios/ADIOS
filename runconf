@@ -417,7 +417,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export CC=mpicc
         #export FC=mpif90
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
-        export CFLAGS="-g -fPIC -O0 -std=c99 -fopenmp ${EXTRA_CFLAGS}" 
+        export CFLAGS="-g -fPIC -O0 -std=gnu99 -fopenmp ${EXTRA_CFLAGS}" 
         LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
         --enable-dependency-tracking \
         --disable-maintainer-mode \

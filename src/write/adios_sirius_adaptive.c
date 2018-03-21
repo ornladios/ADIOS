@@ -1966,7 +1966,7 @@ double time1 = MPI_Wtime();
                 &r_idx, &z_idx);
 
 double time2 = MPI_Wtime();
-#pragma omp parallel for
+//#pragma omp parallel for
     for (int m = 0; m < nmesh_new; m++)
     {
         int n1 = * (mesh_reduced + m * 3);
@@ -2019,7 +2019,7 @@ void get_delta (double * r, double * z, double * field,
     assert (delta);
     int tid;
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (int i = 0; i < nvertices; i++)
     {
 //        tid = omp_get_thread_num();
