@@ -299,7 +299,7 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
-    BUILD_STAGING=false
+    BUILD_STAGING=true
     #source /opt/modules/default/etc/modules.sh
     TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
     if [ $BUILD_STAGING == "false" ]; then
@@ -307,7 +307,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ################
         # Titan #
         ################
-        #TARGET=pgi
+        TARGET=gnu
         echo "Configure on TITAN (XK7) for $TARGET env."
         export CC=cc
         export FC=ftn
@@ -356,7 +356,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ##########################
         # Titan + staging #
         ##########################
-        #TARGET=pgi
+        TARGET=gnu
         echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
         export CC=cc
         export FC=ftn
@@ -377,7 +377,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module load PrgEnv-$TARGET
         module swap craype-interlagos craype-istanbul
         module swap cray-libsci
-        module load dataspaces # /1.6.0
+        # module load dataspaces # /1.6.0
         unset EXTRA_CFLAGS
         unset EXTRA_LIBS
         unset LDFLAGS
@@ -402,7 +402,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
             # FASTBIT needs libstdc++
             #export EXTRA_LIBS="/opt/gcc/4.8.2/snos/lib64/libstdc++.a"
             #module swap gcc gcc/4.4.4
-            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+            DATASPACES_DIR="/ccs/proj/e2e/qliu/dataspaces_sirius_install"
         elif [ "$TARGET" == "cray" ]; then
             export EXTRA_CFLAGS="-h gnu"
         fi
@@ -410,29 +410,26 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         # NOTE hdf5-parallel module does not work with C++ compiler
         #module load hdf5-parallel
         #module load netcdf-hdf5parallel
-        module load szip
+        #module load szip
         #module load papi
-        module load mxml/2.9
-        module load fastbit
+        module load mxml
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
-        export CFLAGS="-fPIC -g -O2 ${EXTRA_CFLAGS}" 
+        export CFLAGS="-g -fPIC -O0 -std=c99 -fopenmp ${EXTRA_CFLAGS}" 
         LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
         --enable-dependency-tracking \
         --disable-maintainer-mode \
         --with-cray-pmi=/opt/cray/pmi/default \
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
         --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
-        --with-dataspaces=$DATASPACES_DIR \
-        --with-dimes=$DATASPACES_DIR \
+        --with-dataspaces=/ccs/proj/e2e/qliu/dataspaces_sirius_install \
+        --with-dimes=/ccs/proj/e2e/qliu/dataspaces_sirius_install \
         --without-infiniband \
-        $WITHFLEX \
-        --with-fastbit=$FASTBIT_DIR \
-        --with-lustre \
         --disable-timers --disable-timer-events \
-        --with-zlib --with-bzip2 
+        --with-glib=/ccs/proj/e2e/qliu/glib \
+        --with-zfp=/ccs/proj/e2e/qliu/zfp
 
         #--enable-skel-timing
         #--with-fgr=/ccs/proj/e2e/qliu/tap \
