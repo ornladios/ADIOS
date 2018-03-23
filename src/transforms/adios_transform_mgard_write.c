@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
@@ -30,7 +31,7 @@
 typedef unsigned int uint;
 
 // Variables need to be defined as static variables
-double mgard_tol;
+double mgard_tol = 1e-8;
 static int use_zchecker = 0;
 static char *zc_configfile = "zc.config";
 
