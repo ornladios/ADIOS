@@ -140,6 +140,10 @@ cdef extern from "adios.h":
                           char * name,
                           void * var)
 
+    cdef int adios_write_byid (int64_t fd_p,
+                               int64_t vid,
+                               void * var)
+
     cdef int adios_read (int64_t fd_p,
                          char * name,
                          void * buffer,
@@ -507,6 +511,25 @@ cpdef int write (int64_t fd_p, str name, val, dtype=None):
         ptr = <void *> val_.data
 
     return adios_write (fd_p, s2b(name), ptr)
+
+cpdef int write_byid (int64_t fd_p, int64_t vid, val, dtype=None):
+    cdef np.ndarray val_
+    if isinstance(val, (np.ndarray)):
+        if val.flags.contiguous:
+            val_ = val
+        else:
+            val_ = np.array(val, copy=True)
+    else:
+        val_ = np.array(val, dtype=dtype)
+
+    cdef void * ptr
+    if (val_.dtype.char in ('S', 'U')):
+        bstr = val_.tostring()
+        ptr = <void *> PyBytes_AS_STRING(bstr)
+    else:
+        ptr = <void *> val_.data
+
+    return adios_write_byid (fd_p, vid, ptr)
 
 cpdef int write_int (int64_t fd_p, str name, int val):
     return adios_write (fd_p, s2b(name), &val)
@@ -2122,17 +2145,20 @@ cdef class writer(object):
                     val.define(self.gid)
 
         for key, val in extra_vars.iteritems():
-            if self.is_noxml: val.define(self.gid)
+            if self.is_noxml: 
+                val.define(self.gid)
             self.vars[key] = val
 
         for key, val in self.attrs.iteritems():
             if not isinstance(val, attrinfo):
                 extra_attrs[key] = attrinfo(key, val, np.array(val).dtype)
             else:
-                if self.is_noxml: val.define(self.gid)
+                if self.is_noxml: 
+                    val.define(self.gid)
 
         for key, val in extra_attrs.iteritems():
-            if self.is_noxml: val.define(self.gid)
+            if self.is_noxml: 
+                val.define(self.gid)
 
         """
         ## No groupsize anymore (Jun 17, 2016)
