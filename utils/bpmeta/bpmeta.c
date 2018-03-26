@@ -34,6 +34,7 @@
 
 // User arguments
 int verbose=0;   // 1: print summary, 2: print indexes 3: print working info
+int removeZNTB=0; // 1: remove non-transformed,zero blocks from a transformed variable
 int nthreads=1;  // Number of threads to use (main counts as 1 thread)
 char * filename; // process 'filename'.dir/'filename'.NNN subfiles and 
                  //   generate metadata file 'filename'
@@ -43,6 +44,7 @@ struct option options[] = {
     {"help",                 no_argument,          NULL,    'h'},
     {"verbose",              no_argument,          NULL,    'v'},
     {"nsubfiles",            required_argument,    NULL,    'n'},
+    {"ZNTB",                 required_argument,    NULL,    'z'},
 #if HAVE_PTHREAD
     {"nthreads",             required_argument,    NULL,    't'},
 #endif
@@ -50,9 +52,9 @@ struct option options[] = {
 };
 
 #if HAVE_PTHREAD
-static const char *optstring = "hvn:t:";
+static const char *optstring = "hvzn:t:";
 #else
-static const char *optstring = "hvn:";
+static const char *optstring = "hvzn:";
 #endif
 
 // help function
@@ -74,6 +76,10 @@ void display_help() {
             "  --help      | -h       Print this help.\n"
             "  --verbose   | -v       Print log about what this program is doing.\n"
             "                           Use multiple -v to increase logging level.\n"
+            "Other options\n"
+            "  --ZNTB      | -z       Remove from the metadata of a transformed array\n"
+            "                         all zero sized, non-transformed data blocks\n"
+
             "Typical use: bpmeta -t 16 -n 1024 mydata.bp\n"
            );
 }
@@ -90,6 +96,7 @@ int get_nsubfiles (char *filename);
 void print_pg_index ( int tid, struct adios_index_process_group_struct_v1 * pg_root);
 void print_variable_index (int tid, struct adios_index_var_struct_v1 * vars_root);
 void print_attribute_index (int tid,  struct adios_index_attribute_struct_v1 * attrs_root);
+void remove_zero_blocks (int tid, struct adios_index_var_struct_v1 * vars_root);
 
 #if HAVE_PTHREAD
 struct thread_args 
@@ -137,6 +144,10 @@ int main (int argc, char ** argv)
 
             case 'v':
                 verbose++;
+                break;
+
+            case 'z':
+                removeZNTB=1;
                 break;
 
             default:
@@ -418,7 +429,11 @@ int process_subfiles (int tid, int startidx, int endidx)
         print_pg_index (tid, new_pg_root);
 
         adios_posix_read_vars_index (b[idx]);
-        adios_parse_vars_index_v1 (b[idx], &new_vars_root, NULL, NULL);
+        adios_parse_vars_index_v1 (b[idx], &new_vars_root, NULL, NULL);\
+        if (removeZNTB)
+        {
+            remove_zero_blocks(tid, new_vars_root);
+        }
         print_variable_index (tid, new_vars_root);
 
         if (idx == 0)
@@ -659,6 +674,114 @@ void print_variable_index (int tid, struct adios_index_var_struct_v1 * vars_root
     }
     if (verbose==1) {
         printf ("Thread %d: Number of variables: %u\n", tid, nvars);
+    }
+}
+
+int is_zero_non_transformed(struct adios_index_characteristic_struct_v1 * characteristic)
+{
+    if (characteristic->dims.count > 0)
+    {
+        int j;
+        int is_zero_block = 1;
+
+        for (j = 0; j < characteristic->dims.count; j++)
+        {
+            if (characteristic->dims.dims [j * 3 + 0] != 0)
+            {
+                is_zero_block = 0;
+            }
+        }
+        if (is_zero_block &&
+                characteristic->transform.transform_type == adios_transform_none)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* Remove non-transformed, zero size data blocks from variables that are transformed */
+void remove_zero_blocks (int tid, struct adios_index_var_struct_v1 * vars_root)
+{
+    unsigned int nvars=0;
+    if (verbose>1) {
+        //printf (DIVIDER);
+        printf ("Thread %d: Look for non-transformed zero blocks in variables with transformation:\n", tid);
+    }
+    while (vars_root)
+    {
+        int nZNTB=0; // ZNTB = Zero and Non-Transformed Block, which we want to remove
+        int nTB=0; // all transformed blocks for print
+        int first_good_block=-1;
+
+        /*
+         * First, check if the variable has zero blocks and also has transformed blocks
+         */
+        uint64_t i;
+        for (i = 0; i < vars_root->characteristics_count; i++)
+        {
+            if (is_zero_non_transformed(&vars_root->characteristics[i]))
+            {
+                ++nZNTB;
+            }
+            if (vars_root->characteristics[i].transform.transform_type !=
+                    adios_transform_none)
+            {
+                ++nTB;
+            }
+        }
+
+        if (nZNTB > 0)
+        {
+            char name[256];
+            if (!vars_root->var_path || strlen(vars_root->var_path) == 0)
+            {
+                sprintf (name, "%s", vars_root->var_name);
+            }
+            else
+            {
+                sprintf (name, "%s/%s", vars_root->var_path, vars_root->var_name);
+            }
+            printf ("Thread %d: *** Variable %s has %d ZERO, NON-TRANSFORMED blocks and %d transformed blocks among %" PRIu64 " blocks ***\n",
+                    tid, name, nZNTB, nTB, vars_root->characteristics_count);
+        }
+
+        /*
+         * Remove the zero blocks that are not-transformed from the lists
+         * if there is any transformed blocks
+         */
+        if (nZNTB > 0 && nTB > 0)
+        {
+            printf ("Thread %d: Remove zero, non-transformed blocks from index\n", tid);
+            struct adios_index_characteristic_struct_v1 * old_ch = vars_root->characteristics;
+            struct adios_index_characteristic_struct_v1 * new_ch =
+                    (struct adios_index_characteristic_struct_v1 *)
+                    malloc ((vars_root->characteristics_count - nZNTB) *
+                            sizeof(struct adios_index_characteristic_struct_v1));
+            uint64_t oldidx;
+            uint64_t newidx = 0;
+            for (oldidx = 0; oldidx < vars_root->characteristics_count; oldidx++)
+            {
+                if (!is_zero_non_transformed(&old_ch[oldidx]))
+                {
+                    // Retain this block in index
+                    memcpy(&new_ch[newidx], &old_ch[oldidx],
+                            sizeof(struct adios_index_characteristic_struct_v1));
+                    new_ch[newidx].value = old_ch[oldidx].value;
+                    new_ch[newidx].stats = old_ch[oldidx].stats;
+                    new_ch[newidx].transform.transform_metadata = old_ch[oldidx].transform.transform_metadata;
+                    ++newidx;
+                }
+            }
+            vars_root->characteristics = new_ch;
+            vars_root->characteristics_count = newidx;
+            const char * typestr = adios_type_to_string_int (vars_root->type);
+            vars_root->type = adios_byte;
+            printf ("Thread %d: %" PRIu64 " blocks kept in index. Type changed from %s to byte\n",
+                    tid, newidx, typestr);
+        }
+        vars_root = vars_root->next;
+        nvars++;
     }
 }
 
