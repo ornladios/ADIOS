@@ -20,16 +20,18 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 #include "adios.h"
 #include "adios_read.h"
 #include "adios_error.h"
+#include "adios_transform_methods.h"
 
-const static char fname[] = "zerolength.bp";
+static char fname[256];
 const static MPI_Comm  comm = MPI_COMM_WORLD;
 static int rank, size;
 static int nerrors = 0;
 
-int write_data ();
+int write_data (char * transformdef);
 void print_written_info();
 int read_all ();
 int read_stepbystep ();
@@ -42,21 +44,53 @@ static uint64_t * block_offset;  // block_offset[ step*size + i ] is i-th block 
 static uint64_t * block_count;   // block_count [ step*size + i ] is i-th block size written in "step".
 static uint64_t * gdims;  // gdims[i] is the global dimension in i-th "step".
 
+#define VALUE(step, rank, i) (step + rank*0.1 + 0.001*(i%100))
 
 int main (int argc, char ** argv) 
 {
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
-
+    adios_init_noxml (comm);
+    adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "verbose=3");
     nerrors = 0;
-    write_data();
-    if (!rank) {
-        print_written_info(); // this is just for debug to check if rank 0 stores the correct values
+
+    ADIOS_AVAILABLE_TRANSFORM_METHODS * transforms = adios_available_transform_methods();
+    if (transforms) {
+        int i;
+        for (i=0; i<transforms->ntransforms; i++)
+        {
+            if (!rank)
+                printf("=======================================================\n"
+                       "Test with transform \"%s\"\t: %s\n",  transforms->name[i],
+                        transforms->description[i]);
+
+            char transformstr[256];
+            if (!strcmp(transforms->name[i], "zfp"))
+            {
+                snprintf(transformstr, sizeof(transformstr), "zfp:accuracy=0.001");
+            }
+            else
+            {
+                snprintf(transformstr, sizeof(transformstr), "%s", transforms->name[i]);
+            }
+
+            snprintf(fname, sizeof(fname), "zerolength_%s.bp", transforms->name[i]);
+            MPI_Barrier (comm);
+            write_data(transformstr);
+            if (!rank) {
+                print_written_info(); // this is just for debug to check if rank 0 stores the correct values
+            }
+            nerrors += read_all();
+            MPI_Barrier (comm);
+            sleep(1);
+        }
+        adios_available_transform_methods_free(transforms);
     }
-    read_all();
 
     MPI_Barrier (comm);
+    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    adios_finalize (rank);
     MPI_Finalize ();
     free (block_offset);
     free (block_count);
@@ -65,7 +99,7 @@ int main (int argc, char ** argv)
     return nerrors;
 }
 
-int write_data () 
+int write_data (char * transformdef)
 {
     int         NX, G, O; 
     double      *t;
@@ -73,19 +107,18 @@ int write_data ()
     int         it, i, r;
     uint64_t    adios_groupsize, adios_totalsize;
 
-    if (!rank) printf ("------- Write blocks -------\n");
+    if (!rank) printf ("------- Write blocks to file %s -------\n", fname);
     // We will have "nsteps * number of processes" blocks
     block_offset = (uint64_t*) malloc (sizeof(uint64_t) * nsteps * size);
     block_count  = (uint64_t*) malloc (sizeof(uint64_t) * nsteps * size);
     gdims        = (uint64_t*) malloc (sizeof(uint64_t) * nsteps);
 
-    adios_init_noxml (comm);
 
     int64_t       m_adios_group;
     int64_t       m_adios_file;
     int64_t       var_t;
 
-    adios_declare_group (&m_adios_group, "restart", "", adios_stat_default);
+    adios_declare_group (&m_adios_group, transformdef, "", adios_stat_default);
     adios_select_method (m_adios_group, "MPI_AGGREGATE", "num_aggregators=2;num_ost=2", "");
 
     adios_define_var (m_adios_group, "NX", "", adios_integer, 0, 0, 0); 
@@ -93,46 +126,43 @@ int write_data ()
     adios_define_var (m_adios_group, "O", "", adios_integer, 0, 0, 0);
     var_t = adios_define_var (m_adios_group, "t", "", adios_double, "NX", "G", "O");
 
-    //if (rank)
-        //adios_set_transform (var_t, "blosc");
-        adios_set_transform (var_t, "zlib");
+    adios_set_transform (var_t, transformdef);
 
     for (it =0; it < nsteps; it++) {
 
         if (!rank) printf ("Step %d:\n", it);
 
         NX = 100; // we will change this for rank 0 below
-        t = (double *) malloc (NX*sizeof(double)); 
+        t = (double *) malloc (NX*sizeof(double));
 
         for (i = 0; i < NX; i++)
-            t[i] = rank + it*0.1 + 0.01;
+            t[i] = VALUE(it, rank, i);
 
         G = NX * (size-1);
+
+        // first block is 0 length
+        block_count [it*size] = 0;
+        block_offset [it*size] = 0;
+        for (r = 1; r < size; r++) {
+            block_count  [it*size + r] = NX;
+            block_offset [it*size + r] = (r-1) * NX;
+        }
+
         if (!rank) {
             NX = 0;
             O = 0;
         } else {
             O = (rank-1) * NX;
         }
-
-        // first block is 0 length
-        block_count [it*size] = 0;
-        block_offset [it*size] = 0;
-        for (r = 1; r < size; r++) {
-            block_count  [it*size + r] = NX; 
-            block_offset [it*size + r] = (r-1) * NX; 
-        }
         gdims [it] = G;
 
 
         printf ("rank %d: size=%d, offset=%d\n", rank, NX, O);
         MPI_Barrier (comm);
-        if (it==0) 
-            adios_open (&m_adios_file, "restart", fname, "w", comm);
+        if (it==0)
+            adios_open (&m_adios_file, transformdef, fname, "w", comm);
         else
-            adios_open (&m_adios_file, "restart", fname, "a", comm);
-        adios_groupsize = 4 + 4 + 4 + NX * 8;
-        adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
+            adios_open (&m_adios_file, transformdef, fname, "a", comm);
 
         adios_write(m_adios_file, "NX", (void *) &NX);
         adios_write(m_adios_file, "G", (void *) &G);
@@ -145,7 +175,6 @@ int write_data ()
         free(t);
     }
 
-    adios_finalize (rank);
 
     return 0;
 }
@@ -158,11 +187,11 @@ void print_written_info()
         printf ("Step %d:\n", s);
         printf ("  Global dim = %" PRIu64 "\n", gdims[s]);
         for (r = 0; r < size; r++) {
-                printf ("  rank %d: size=%" PRIu64 ", offset=%" PRIu64 "\n", 
-                        r, 
-                        block_count  [s*size + r],
-                        block_offset [s*size + r]
-                       );
+            printf ("  rank %d: size=%" PRIu64 ", offset=%" PRIu64 "\n",
+                    r,
+                    block_count  [s*size + r],
+                    block_offset [s*size + r]
+            );
         }
     }
 }
@@ -183,10 +212,15 @@ int read_data (ADIOS_FILE *f, int step) //uint64_t count, uint64_t offset)
     adios_schedule_read (f, sel, "t", step, 1, t);
     adios_perform_reads (f, 1);
 
-    printf("rank %d array = [", rank);
     for (i = 0; i < count; i++)
-        printf ("%6.2f ", t[i]);
-    printf("]\n");
+    {
+        if (t[i] != VALUE(step, rank, i))
+        {
+           printf ("ERROR: step %d rank %d elemen6 %d expected value %6.3f but is %6.3f\n",
+                   step, rank, i, VALUE(step, rank, i), t[i]);
+           return 1;
+        }
+    }
 
     adios_selection_delete (sel);
     return 0;
@@ -199,7 +233,7 @@ int read_all ()
     int steps = 0;
     int retval = 0;
 
-    adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "verbose=3");
+
     if (!rank)
         printf ("\n--------- Read as file %s  ------------\n", fname);
     f = adios_read_open_file (fname, ADIOS_READ_METHOD_BP, comm);
@@ -212,13 +246,15 @@ int read_all ()
         int s;
         for (s = 0; s < nsteps; s++) {
             if (!rank) printf ("Step %d:\n", s);
-            read_data (f, s);
+            int err = read_data (f, s);
             MPI_Barrier(comm);
+            MPI_Allreduce(&err, &retval, 1, MPI_INT, MPI_MAX, comm);
             if (!rank) printf ("\n");
+            if (retval)
+                break;
         }
         adios_read_close (f);
     }
-    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
     return retval;
 }
 
