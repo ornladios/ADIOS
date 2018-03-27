@@ -153,7 +153,10 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
     char compress_ok = 1;
 
     // compress it
-    int rtn = compress_isobar_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
+    int rtn = -1;
+    // zero sized data will not be compressed
+    if(input_size > 0u)
+        rtn = compress_isobar_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
 
     if(0 != rtn                     // compression failed for some reason, then just copy the buffer
         || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)

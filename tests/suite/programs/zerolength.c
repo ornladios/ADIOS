@@ -68,7 +68,11 @@ int main (int argc, char ** argv)
             char transformstr[256];
             if (!strcmp(transforms->name[i], "zfp"))
             {
-                snprintf(transformstr, sizeof(transformstr), "zfp:accuracy=0.001");
+                snprintf(transformstr, sizeof(transformstr), "zfp:accuracy=0.0001");
+            }
+            else if (!strcmp(transforms->name[i], "sz"))
+            {
+                snprintf(transformstr, sizeof(transformstr), "sz:absolute=0.0001");
             }
             else
             {
@@ -91,12 +95,14 @@ int main (int argc, char ** argv)
     MPI_Barrier (comm);
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
     adios_finalize (rank);
+    int total_errors;
+    MPI_Allreduce(&nerrors, &total_errors, 1, MPI_INT, MPI_SUM, comm);
     MPI_Finalize ();
     free (block_offset);
     free (block_count);
     free (gdims);
-    if (!rank) printf ("----------- Done. Found %d errors -------\n", nerrors);
-    return nerrors;
+    if (!rank) printf ("----------- Done. Found %d errors -------\n", total_errors);
+    return total_errors;
 }
 
 int write_data (char * transformdef)
@@ -196,6 +202,13 @@ void print_written_info()
     }
 }
 
+int close_enough(double v1, double v2, double limit)
+{
+    if (v1-v2 < limit && v2-v1 < limit)
+        return 1;
+    return 0;
+}
+
 int read_data (ADIOS_FILE *f, int step) //uint64_t count, uint64_t offset)
 {
     int i;
@@ -214,9 +227,9 @@ int read_data (ADIOS_FILE *f, int step) //uint64_t count, uint64_t offset)
 
     for (i = 0; i < count; i++)
     {
-        if (t[i] != VALUE(step, rank, i))
+        if (!close_enough(t[i], VALUE(step, rank, i), 0.0001))
         {
-           printf ("ERROR: step %d rank %d elemen6 %d expected value %6.3f but is %6.3f\n",
+           printf ("ERROR: step %d rank %d element %d expected value %9.6f but is %9.6f\n",
                    step, rank, i, VALUE(step, rank, i), t[i]);
            return 1;
         }

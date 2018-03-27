@@ -215,13 +215,18 @@ int adios_transform_zfp_apply(struct adios_file_struct *fd, struct adios_var_str
 
 
 	/* do compression */
-	success = zfp_compression(zbuff, var->data, &outbuffer, &outsize, use_shared_buffer, fd);
+	success = 0;
+	if (insize > 0)
+	    success = zfp_compression(zbuff, var->data, &outbuffer, &outsize, use_shared_buffer, fd);
 
   
 	/* What do do if compresssion fails. For now, just give up. Maybe eventually use raw data. */
 	if(!success)
 	{
-		return 0;
+	    // printf("compression failed, fall back to memory copy\n");
+	    memcpy(outbuffer, var->data, insize);
+	    outsize = insize;
+	    // compress_ok = 0;    // succ sign set to 0
 	}
 
 	

@@ -116,7 +116,10 @@ int adios_transform_bzip2_apply(struct adios_file_struct *fd,
     uint64_t actual_output_size = output_size;
     char compress_ok = 1;
 
-    int rtn = compress_bzip2_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
+    int rtn = -1;
+    // zero sized data will not be compressed
+    if(input_size > 0u)
+        rtn = compress_bzip2_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
 
     if(0 != rtn                     // compression failed for some reason, then just copy the buffer
         || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
