@@ -56,7 +56,7 @@ set(libadiosreadf_nompi_a_CFLAGS "")
 set(transforms_write_method_SOURCES "")
 set(transforms_read_method_SOURCES "")
 
-#include (transforms/Makefile.plugins.cmake)
+include (transforms/Makefile.plugins.cmake)
 
 ##
 ## Core transform framework source files
@@ -97,40 +97,42 @@ set (transforms_read_SOURCES ${transforms_read_HDRS}
                           core/transforms/adios_transforms_reqgroup.c
                           core/transforms/adios_transforms_datablock.c
                           core/transforms/adios_patchdata.c
-                          transforms/adios_transform_alacrity_read.c
-                          transforms/adios_transform_isobar_read.c
-                          transforms/adios_transform_aplod_read.c
-                          transforms/adios_transform_szip_read.c
-                          transforms/adios_transform_bzip2_read.c
-                          transforms/adios_transform_identity_read.c
-                          transforms/adios_transform_zlib_read.c
-                          transforms/adios_transform_zfp_read.c
-                          transforms/adios_transform_sz_read.c
-                          transforms/adios_transform_lz4_read.c
-                          transforms/adios_transform_blosc_read.c
                           core/adios_selection_util.c
                           core/transforms/plugindetect/detect_plugin_read_hook_decls.h
                           core/transforms/plugindetect/detect_plugin_read_hook_reg.h
                           core/adios_read_ext.c
                           ${transforms_read_method_SOURCES})
+#                          transforms/adios_transform_alacrity_read.c
+#                          transforms/adios_transform_isobar_read.c
+#                          transforms/adios_transform_aplod_read.c
+#                          transforms/adios_transform_szip_read.c
+#                          transforms/adios_transform_bzip2_read.c
+#                          transforms/adios_transform_identity_read.c
+#                          transforms/adios_transform_zlib_read.c
+#                          transforms/adios_transform_zfp_read.c
+#                          transforms/adios_transform_sz_read.c
+#                          transforms/adios_transform_lz4_read.c
+#                          transforms/adios_transform_blosc_read.c
+#                          transforms/adios_transform_mgard_read.c
 
 set (transforms_write_SOURCES ${transforms_write_HDRS}
                            core/transforms/adios_transforms_write.c
                            core/transforms/adios_transforms_hooks_write.c
                            core/transforms/adios_transforms_util.c
                            core/transforms/adios_transforms_specparse.c
-                           transforms/adios_transform_alacrity_write.c
-                           transforms/adios_transform_aplod_write.c
-                           transforms/adios_transform_bzip2_write.c
-                           transforms/adios_transform_identity_write.c
-                           transforms/adios_transform_isobar_write.c
-                           transforms/adios_transform_szip_write.c
-                           transforms/adios_transform_zlib_write.c
-                           transforms/adios_transform_zfp_write.c
-                           transforms/adios_transform_sz_write.c
-                           transforms/adios_transform_lz4_write.c
-                           transforms/adios_transform_blosc_write.c
                            ${transforms_write_method_SOURCES})
+#                           transforms/adios_transform_alacrity_write.c
+#                           transforms/adios_transform_aplod_write.c
+#                           transforms/adios_transform_bzip2_write.c
+#                           transforms/adios_transform_identity_write.c
+#                           transforms/adios_transform_isobar_write.c
+#                           transforms/adios_transform_szip_write.c
+#                           transforms/adios_transform_zlib_write.c
+#                           transforms/adios_transform_zfp_write.c
+#                           transforms/adios_transform_sz_write.c
+#                           transforms/adios_transform_lz4_write.c
+#                           transforms/adios_transform_blosc_write.c
+#                           transforms/adios_transform_mgard_write.c
 
 #######Query source files
 set(query_common_HDRS query/common_query.h
