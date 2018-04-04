@@ -30,6 +30,10 @@ set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/
 set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_zfp_write.c)
 set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_zfp_read.c)
 
+# SZ plugin:
+set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_sz_write.c)
+set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_sz_read.c)
+
 # LZ4 plugin:
 set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_lz4_write.c)
 set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_lz4_read.c)
@@ -37,3 +41,7 @@ set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/
 # Blosc plugin:
 set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_blosc_write.c)
 set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_blosc_read.c)
+
+# MGARD plugin:
+set(transforms_write_method_SOURCES ${transforms_write_method_SOURCES} transforms/adios_transform_mgard_write.c)
+set(transforms_read_method_SOURCES ${transforms_read_method_SOURCES} transforms/adios_transform_mgard_read.c)

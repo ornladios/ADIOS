@@ -84,6 +84,8 @@ libadiosreadf_nompi_a_CFLAGS=
 
 transforms_write_method_SOURCES=
 transforms_read_method_SOURCES=
+transforms_write_method_extra_SOURCES=
+transforms_read_method_extra_SOURCES=
 
 include transforms/Makefile.plugins
 
@@ -210,7 +212,9 @@ CLibSources =           core/adios.c \
                         read/read_bp.c \
                         read/read_bp_staged.c \
                         read/read_bp_staged1.c \
-                        write/adios_posix.c 
+                        write/adios_posix.c \
+                        ${transforms_write_method_extra_SOURCES} \
+                        ${transforms_read_method_extra_SOURCES}
 
 CLibParallelSources =   write/adios_mpi.c \
                         write/adios_mpi_lustre.c \
@@ -235,7 +239,9 @@ FortranLibSources =     core/adiosf.c \
                         read/read_bp.c \
                         read/read_bp_staged.c \
                         read/read_bp_staged1.c \
-                        write/adios_posix.c 
+                        write/adios_posix.c  \
+                        ${transforms_write_method_extra_SOURCES} \
+                        ${transforms_read_method_extra_SOURCES}
 
 FortranLibParallelSources =  write/adios_mpi.c \
                         write/adios_mpi_lustre.c \
@@ -536,7 +542,9 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       $(query_C_SOURCES) \
                       core/adios_read_hooks.c \
                       core/util_mpi.c \
-                      read/read_bp.c 
+                      read/read_bp.c  \
+                      ${transforms_write_method_extra_SOURCES} \
+                      ${transforms_read_method_extra_SOURCES}
                                           
 #if HAVE_DATATAP
 #libadiosread_nompi_a_SOURCES += read/read_datatap.c
@@ -576,7 +584,9 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           $(query_F_SOURCES) \
                           core/adios_read_hooks.c \
                           core/util_mpi.c \
-                          read/read_bp.c 
+                          read/read_bp.c  \
+                          ${transforms_write_method_extra_SOURCES} \
+                          ${transforms_read_method_extra_SOURCES}
 #if HAVE_DATASPACES
 #FortranReadSeqLibSource += read/read_dataspaces.c
 #endif
@@ -650,7 +660,9 @@ libadiosread_a_SOURCES = core/bp_utils.c \
                       core/util_mpi.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
-                      read/read_bp_staged1.c 
+                      read/read_bp_staged1.c \
+                      ${transforms_write_method_extra_SOURCES} \
+                      ${transforms_read_method_extra_SOURCES}
 if HAVE_DATASPACES
 libadiosread_a_SOURCES += read/read_dataspaces.c
 endif
@@ -699,7 +711,9 @@ FortranReadLibSource = core/bp_utils.c \
                       core/util_mpi.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
-                      read/read_bp_staged1.c 
+                      read/read_bp_staged1.c \
+                      ${transforms_write_method_extra_SOURCES} \
+                      ${transforms_read_method_extra_SOURCES}
 if HAVE_DATASPACES
 FortranReadLibSource += read/read_dataspaces.c
 endif
@@ -768,7 +782,10 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/util_mpi.c \
                                     $(query_C_SOURCES) \
                                     core/adios_timing.c \
-                                    core/adios_transport_hooks.c 
+                                    core/adios_transport_hooks.c \
+                                    ${transforms_write_method_extra_SOURCES} \
+                                    ${transforms_read_method_extra_SOURCES}   
+
 libadios_internal_nompi_a_LIBADD = $(libcoreonce_a_OBJECTS)
 if BUILD_WRITE
 libadios_internal_nompi_a_SOURCES += core/adios_internals_mxml.c 

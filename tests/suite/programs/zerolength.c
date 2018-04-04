@@ -72,7 +72,11 @@ int main (int argc, char ** argv)
             }
             else if (!strcmp(transforms->name[i], "sz"))
             {
-                snprintf(transformstr, sizeof(transformstr), "sz:absolute=0.0001");
+                snprintf(transformstr, sizeof(transformstr), "sz:absolute=0.0001,zcheck");
+            }
+            else if (!strcmp(transforms->name[i], "mgard"))
+            {
+                snprintf(transformstr, sizeof(transformstr), "mgard:accuracy=0.0001,zcheck");
             }
             else
             {

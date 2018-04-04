@@ -13,6 +13,7 @@ s/comm.Clone()/comm/g
   N
   s/ctypedef struct MPI_Comm:\n[ ]*pass/ctypedef int MPI_Comm\
     int MPI_COMM_WORLD\
+    int MPI_COMM_NULL\
     int MPI_COMM_SELF/
 }
 s/adios_mpi/adios/g

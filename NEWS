@@ -1,3 +1,12 @@
+1.14.0 Release April 2018
+     - added MGARD compression transform from Mark Ainsworth, Brown University
+     - added Z-checker extension to SZ and MGARD compressions
+     - fix: zero size variable-blocks are supported by all transformations
+     - fix: build issues with the profiling interface
+     - fix: free temporary MPI communicators so that applications don't run out of
+            communicators when using ADIOS for many output steps
+     - fix: build issues with Flexpath staging 
+
 1.13.0 Release November 2017
      - added blosc compression transform by René Widera HZDR, Germany
      - TAU now can profile ADIOS in applications, by Kevin Huck of the TAU team
