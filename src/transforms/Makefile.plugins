@@ -1,3 +1,7 @@
+#
+# Plugins that will be compiled without MPI once and added to all versions of the ADIOS libraries
+#
+
 # Identity plugin:
 transforms_write_method_SOURCES += transforms/adios_transform_identity_write.c
 transforms_read_method_SOURCES += transforms/adios_transform_identity_read.c
@@ -30,10 +34,6 @@ transforms_read_method_SOURCES += transforms/adios_transform_alacrity_read.c
 transforms_write_method_SOURCES += transforms/adios_transform_zfp_write.c
 transforms_read_method_SOURCES += transforms/adios_transform_zfp_read.c
 
-# sz plugin:
-transforms_write_method_SOURCES += transforms/adios_transform_sz_write.c
-transforms_read_method_SOURCES += transforms/adios_transform_sz_read.c
-
 # LZ4 plugin:
 transforms_write_method_SOURCES += transforms/adios_transform_lz4_write.c
 transforms_read_method_SOURCES += transforms/adios_transform_lz4_read.c
@@ -42,6 +42,18 @@ transforms_read_method_SOURCES += transforms/adios_transform_lz4_read.c
 transforms_write_method_SOURCES += transforms/adios_transform_blosc_write.c
 transforms_read_method_SOURCES += transforms/adios_transform_blosc_read.c
 
+
+#
+# Plugins that will be compiled separately for the MPI and the non-MPI versions 
+# They must use "#ifndef _NOMPI" around MPI operations or include
+#   adios_mpi.h instead of mpi.h in the source
+#
+# Note: Z-checker uses MPI directly, so plugins that use it must be in this list
+
+# sz plugin:
+transforms_write_method_extra_SOURCES += transforms/adios_transform_sz_write.c
+transforms_read_method_extra_SOURCES += transforms/adios_transform_sz_read.c
+
 # mgard plugin:
-transforms_write_method_SOURCES += transforms/adios_transform_mgard_write.c
-transforms_read_method_SOURCES += transforms/adios_transform_mgard_read.c
+transforms_write_method_extra_SOURCES += transforms/adios_transform_mgard_write.c
+transforms_read_method_extra_SOURCES += transforms/adios_transform_mgard_read.c

@@ -9,6 +9,9 @@
 #include <assert.h>
 #include <limits.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
@@ -22,6 +25,14 @@
 #include "mgard_capi.h"
 
 #ifdef HAVE_ZCHECKER
+#  ifndef _NOMPI
+#    define USE_ZCHECKER 1
+#  else
+#    undef USE_ZCHECKER
+#  endif
+#endif
+
+#ifdef USE_ZCHECKER
 #include <ZC_rw.h>
 #include <zc.h>
 #include "zcheck_comm.h"
@@ -30,7 +41,8 @@
 typedef unsigned int uint;
 
 // Variables need to be defined as static variables
-double mgard_tol;
+static double mgard_tolD = 0.0;
+static float mgard_tolF = 0.0;
 static int use_zchecker = 0;
 static char *zc_configfile = "zc.config";
 
@@ -67,15 +79,18 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     int iflag = 1; //0 -> float, 1 -> double
     int nrow, ncol;
     int out_size;
+    void *tol;
 
     // Get type info
     switch (var->pre_transform_type)
     {
         case adios_double:
             iflag = 1;
+            tol = &mgard_tolD;
             break;
         case adios_real:
             iflag = 0;
+            tol = &mgard_tolF;
             break;
         default:
             adios_error(err_transform_failure, "No supported data type\n");
@@ -87,17 +102,17 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff = var->data;
 
+
     // Get dimension info
     struct adios_dimension_struct* d = var->pre_transform_dimensions;
     int ndims = (uint) count_dimensions(d);
     //log_debug("ndims: %d\n", ndims);
     if (ndims != 2)
     {
-        adios_error(err_transform_failure, "Support only 2 dimension.\n");
-        return -1;
+        log_warn("MGARD compression only supports 2D arrays.\n");
+        ncol = nrow = 0;
     }
-
-    if (fd->group->adios_host_language_fortran == adios_flag_yes)
+    else if (fd->group->adios_host_language_fortran == adios_flag_yes)
     {
         //log_debug("%s: Fortran dimension enabled\n", "MGARD");
         ncol = (int) adios_get_dim_value(&d->dimension);
@@ -120,7 +135,8 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
 
         if (!strcmp(param->key, "tol") || !strcmp(param->key, "accuracy"))
         {
-            mgard_tol = atof(param->value);
+            mgard_tolD = atof(param->value);
+            mgard_tolF = (float) mgard_tolD;
         }
         else if (!strcmp(param->key, "zchecker") || !strcmp(param->key, "zcheck") || !strcmp(param->key, "z-checker") || !strcmp(param->key, "z-check"))
         {
@@ -132,55 +148,87 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
         }
         else
         {
-            log_warn("An unknown SZ parameter: %s\n", param->key);
+            log_warn("An unknown MGARD parameter: %s\n", param->key);
         }
+    }
+    if (mgard_tolD < 1e-8)
+    {
+        log_warn("MGARD compression supports accurary 1e-8 or higher. Will use 1e-8 now\n");
+        mgard_tolD = 1e-8;
+        mgard_tolF = 1.1e-8; // 1e-8 is not exactly represented in float so we need something bit higher
     }
 
     unsigned char* mgard_comp_buff;
-#ifdef HAVE_ZCHECKER
+#ifdef USE_ZCHECKER
     log_debug("%s: %s\n", "Z-checker", "Enabled"); 
     ZC_DataProperty* dataProperty = NULL;
     ZC_CompareData* compareResult = NULL;
-    int zc_type = zcheck_type(var->pre_transform_type);
-    size_t r[5] = {0,0,0,0,0};
-    zcheck_dim(fd, var, r);
-    if (use_zchecker)
-    {
-        if (check_file(zc_configfile))
-        {
-            ZC_Init(zc_configfile);
-            //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
-            dataProperty = ZC_startCmpr(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
-        }
-        else
-        {
-            log_warn("Failed to access Z-Check config file (%s). Disabled. \n", zc_configfile);
-            use_zchecker = 0;
-        }
-    }
 #endif
-    //unsigned char *mgard_compress(int itype_flag, void *data, int *out_size, int nrow, int ncol, void* tol);
-    mgard_comp_buff = mgard_compress(iflag, (void *) input_buff, &out_size,  nrow,  ncol, &mgard_tol );
-#ifdef HAVE_ZCHECKER
-    if (use_zchecker)
-    {
-        //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
-        compareResult = ZC_endCmpr(dataProperty, (int)out_size);
-        // For entropy
-        ZC_DataProperty* property = ZC_genProperties(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
-        dataProperty->entropy = property->entropy;
-        freeDataProperty(property);
 
-        ZC_startDec();
-        void* hat = mgard_decompress(iflag, mgard_comp_buff, out_size,  nrow,  ncol);         
-        ZC_endDec(compareResult, "SZ", hat);
-        free(hat);
-        log_debug("Z-Checker done.\n");
-    }
+    int rtn = -1;
+    // zero sized data will not be compressed
+    // MGARD only works with 2D data
+    if(input_size > 0u && ndims == 2)
+    {
+
+#ifdef USE_ZCHECKER
+        int zc_type = zcheck_type(var->pre_transform_type);
+        size_t r[5] = {0,0,0,0,0};
+        zcheck_dim(fd, var, r);
+        if (use_zchecker)
+        {
+            if (check_file(zc_configfile))
+            {
+                ZC_Init(zc_configfile);
+                //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
+                dataProperty = ZC_startCmpr(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+            }
+            else
+            {
+                log_warn("Failed to access Z-Check config file (%s). Disabled. \n", zc_configfile);
+                use_zchecker = 0;
+            }
+        }
 #endif
+        //unsigned char *mgard_compress(int itype_flag, void *data, int *out_size, int nrow, int ncol, void* tol);
+        mgard_comp_buff = mgard_compress(iflag, (void *) input_buff, &out_size,  nrow,  ncol, tol );
+#ifdef USE_ZCHECKER
+        if (use_zchecker)
+        {
+            //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
+            compareResult = ZC_endCmpr(dataProperty, (int)out_size);
+            // For entropy
+            ZC_DataProperty* property = ZC_genProperties(var->name, zc_type, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+            dataProperty->entropy = property->entropy;
+            freeDataProperty(property);
+
+            ZC_startDec();
+            void* hat = mgard_decompress(iflag, mgard_comp_buff, out_size,  nrow,  ncol);         
+            ZC_endDec(compareResult, "SZ", hat);
+            free(hat);
+            log_debug("Z-Checker done.\n");
+        }
+#endif
+        rtn = 0;
+    }
+
+    if(0 != rtn)  // compression avoided, then just copy the buffer
+    {
+        mgard_comp_buff = (unsigned char *) malloc (input_size);
+        memcpy(mgard_comp_buff, input_buff, input_size);
+        out_size = input_size;
+    }
+
 
     log_debug("%s: %d,%d\n", "MGARD now,ncol", nrow, ncol);
-    log_debug("%s: %g\n", "MGARD tol", mgard_tol);
+    if (iflag)
+    {
+        log_debug("%s: %g\n", "MGARD tol", mgard_tolD);
+    }
+    else
+    {
+        log_debug("%s: %f\n", "MGARD tol", mgard_tolF);
+    }
     log_debug("%s: %d\n", "MGARD out_size", out_size);
     log_debug("%s: %p\n", "MGARD output buffer", mgard_comp_buff);
 
@@ -203,7 +251,7 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
     uint64_t output_size = (uint64_t) out_size/* Compute how much output size we need */;
     void* output_buff;
 
-    log_debug("%s: %llu\n", "MGARD output_size", output_size);
+    log_debug("%s: %" PRIu64 "\n", "MGARD output_size", output_size);
     log_debug("%s: %d\n", "MGARD use_shared_buffer", use_shared_buffer);
 
     if (use_shared_buffer) {
@@ -234,9 +282,9 @@ int adios_transform_mgard_apply(struct adios_file_struct *fd,
 
     *transformed_len = output_size; // Return the size of the data buffer
 
-#ifdef HAVE_ZCHECKER
+#ifdef USE_ZCHECKER
     // Have to do this after setting buffer size for adios
-    if (use_zchecker)
+    if (use_zchecker && !rtn)
     {
         zcheck_write(dataProperty, compareResult, fd, var);
         log_debug("Z-Checker written.\n");

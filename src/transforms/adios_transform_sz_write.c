@@ -24,6 +24,17 @@
 #include "sz.h"
 
 #ifdef HAVE_ZCHECKER
+#warning have zchecker
+#  ifndef _NOMPI
+#    warning mpi version
+#    define USE_ZCHECKER 1
+#  else
+#    warning non-mpi version
+#    undef USE_ZCHECKER
+#  endif
+#endif
+
+#ifdef USE_ZCHECKER
 #include <ZC_rw.h>
 #include <zc.h>
 #include "zcheck_comm.h"
@@ -352,45 +363,62 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
             r[ndims-i-1] = dsize;
         d = d->next;
     }
-#ifdef HAVE_ZCHECKER
+
+#ifdef USE_ZCHECKER
     log_debug("%s: %s\n", "Z-checker", "Enabled");
     ZC_DataProperty* dataProperty = NULL;
     ZC_CompareData* compareResult = NULL;
-    if (use_zchecker)
-    {
-        if (check_file(zc_configfile))
-        {
-            ZC_Init(zc_configfile);
-            //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
-            dataProperty = ZC_startCmpr(var->name, dtype, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
-        }
-        else
-        {
-            log_warn("Failed to access Z-Check config file (%s). Disabled. \n", zc_configfile);
-            use_zchecker = 0;
-        }
-    }
 #endif
-    //unsigned char *SZ_compress(int dataType, void *data, size_t *outSize, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
-    bytes = SZ_compress (dtype, (void *) input_buff, &outsize, r[4], r[3], r[2], r[1], r[0]);
-#ifdef HAVE_ZCHECKER
-    // Have to do this after setting buffer size for adios
-    if (use_zchecker)
+    int rtn = -1;
+    // zero sized data will not be compressed
+    if(input_size > 0u)
     {
-        //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
-        compareResult = ZC_endCmpr(dataProperty, (int)outsize);
-        // For entropy
-        ZC_DataProperty* property = ZC_genProperties(var->name, dtype, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
-        dataProperty->entropy = property->entropy;
-        freeDataProperty(property);
+#ifdef USE_ZCHECKER
+        if (use_zchecker)
+        {
+            if (check_file(zc_configfile))
+            {
+                ZC_Init(zc_configfile);
+                //ZC_DataProperty* ZC_startCmpr(char* varName, int dataType, void* oriData, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
+                dataProperty = ZC_startCmpr(var->name, dtype, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+            }
+            else
+            {
+                log_warn("Failed to access Z-Check config file (%s). Disabled. \n", zc_configfile);
+                use_zchecker = 0;
+            }
+        }
+#endif
+        //unsigned char *SZ_compress(int dataType, void *data, size_t *outSize, size_t r5, size_t r4, size_t r3, size_t r2, size_t r1);
+        bytes = SZ_compress (dtype, (void *) input_buff, &outsize, r[4], r[3], r[2], r[1], r[0]);
+#ifdef USE_ZCHECKER
+        // Have to do this after setting buffer size for adios
+        if (use_zchecker)
+        {
+            //ZC_CompareData* ZC_endCmpr(ZC_DataProperty* dataProperty, int cmprSize);
+            compareResult = ZC_endCmpr(dataProperty, (int)outsize);
+            // For entropy
+            ZC_DataProperty* property = ZC_genProperties(var->name, dtype, (void *) input_buff, r[4], r[3], r[2], r[1], r[0]);
+            dataProperty->entropy = property->entropy;
+            freeDataProperty(property);
 
-        ZC_startDec();
-        void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
-        ZC_endDec(compareResult, "SZ", hat);
-        free(hat);
-        log_debug("Z-Checker done.\n");
-    }
+            ZC_startDec();
+            void *hat = SZ_decompress(dtype, bytes, outsize, r[4], r[3], r[2], r[1], r[0]);
+            ZC_endDec(compareResult, "SZ", hat);
+            free(hat);
+            log_debug("Z-Checker done.\n");
+        }
 #endif
+        rtn = 0;
+    }
+
+    if(0 != rtn)         // compression failed for some reason, then just copy the buffer
+    {
+        // printf("compression failed, fall back to memory copy\n");
+        bytes = (unsigned char *) malloc (input_size);
+        memcpy(bytes, input_buff, input_size);
+        outsize = input_size;
+    }
 
     /*
     int status;
@@ -454,9 +482,9 @@ int adios_transform_sz_apply(struct adios_file_struct *fd,
 
     *transformed_len = output_size; // Return the size of the data buffer
     
-#ifdef HAVE_ZCHECKER
+#ifdef USE_ZCHECKER
     // Have to do this after setting buffer size for adios
-    if (use_zchecker)
+    if (use_zchecker && !rtn)
     {
         zcheck_write(dataProperty, compareResult, fd, var);
         log_debug("Z-Checker written.\n");
