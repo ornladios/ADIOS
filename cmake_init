@@ -686,6 +686,8 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export LZ4_DIR="/usr/lib"
     export SZ_DIR="/opt/SZ/1.4.12.3"
     export BLOSC_DIR="/opt/blosc"
+    export MGARD_DIR="/home/adios/work/Software/MGARD"
+    export ZCHECKER_DIR="/opt/Z-checker/0.1.2"
     export ISOBAR_DIR="/opt/isobar"
     export FLEXPATH_DIR="/opt/chaos"
     export DATASPACES_DIR="/opt/dataspaces"

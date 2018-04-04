@@ -298,6 +298,18 @@
 /* Define to 1 if you have the <blosc.h> header file. */
 #cmakedefine HAVE_BLOSC_H 1
 
+/* Define if you have MGARD. */
+#cmakedefine HAVE_MGARD 1
+
+/* Define to 1 if you have the <mgard_capi.h> header file. */
+#cmakedefine HAVE_MGARD_CAPI_H 1
+
+/* Define if you have ZCHECKER. */
+#cmakedefine HAVE_ZCHECKER 1
+
+/* Define to 1 if you have the <zc.h> header file. */
+#cmakedefine HAVE_ZC_H 1
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
 
