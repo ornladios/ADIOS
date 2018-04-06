@@ -1,6 +1,4 @@
-1.14.0 Release April 2018
-     - added MGARD compression transform from Mark Ainsworth, Brown University
-     - added Z-checker extension to SZ and MGARD compressions
+1.13.1 Release April 2018
      - fix: zero size variable-blocks are supported by all transformations
      - fix: build issues with the profiling interface
      - fix: free temporary MPI communicators so that applications don't run out of

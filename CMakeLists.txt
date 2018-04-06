@@ -1656,7 +1656,7 @@ set(VERSION_MAJOR 1)
 set(VERSION_MINOR 13)
 
 # Micro version number
-set(VERSION_MICRO 0)
+set(VERSION_MICRO 1)
 
 # Version number of package
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO})
