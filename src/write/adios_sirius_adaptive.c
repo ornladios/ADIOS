@@ -831,7 +831,7 @@ static int do_write (int64_t fd_p, const char * name, void * var)
         adios_error (err_invalid_varname, "Bad var name (ignored) in SIRIUS adios_write(): '%s'\n", name);
         return 1;
     }
-
+    fd->storage_hint = storage_level;
     common_adios_write_byid (fd, v, var);
 
     return 0;
@@ -2723,7 +2723,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
     int * mesh_reduced = 0, nmesh_reduced;
     int compr_size = 0;
 
-    fd->storage_hint = storage_level;
+    //fd->storage_hint = storage_level;
 
     for (l = 0; l < nlevels; l++)
     {
@@ -2734,6 +2734,7 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
         md->level[l].varcnt++;
         var = md->level[l].vars;
+        //md->level[l].fd.storage_hint = storage_level;
 
         if (ndims == 0)
         {

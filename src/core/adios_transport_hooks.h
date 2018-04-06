@@ -30,6 +30,14 @@ void adios_##a##_write (struct adios_file_struct * fd \
                        ,const void * data \
                        ,struct adios_method_struct * method \
                        ) {} \
+void adios_##a##_promote (struct adios_file_struct * fd \
+                       ,struct adios_var_struct * v \
+                       ,struct adios_method_struct * method \
+                       ) {} \
+void adios_##a##_demote (struct adios_file_struct * fd \
+                       ,struct adios_var_struct * v \
+                       ,struct adios_method_struct * method \
+                       ) {} \
 void adios_##a##_get_write_buffer (struct adios_file_struct * fd \
                                   ,struct adios_var_struct * v \
                                   ,uint64_t * size \

@@ -404,13 +404,15 @@ void adios_dataspaces_write (struct adios_file_struct * fd
 
     dspaces_define_gdim(ds_var_name, ndims, gdims_in);
 
-    if(fd->storage_hint == 2){
-            dspaces_put_ceph(ds_var_name, version, var_type_size, ndims, lb_in, ub_in, data);
-        }else if(fd->storage_hint == 1){
+    if(fd->storage_hint == 2 || fd->storage_hint == 3 || fd->storage_hint == 4){
+        int tier;
+        tier = fd->storage_hint - 1;
+        dspaces_put_ceph(ds_var_name, version, var_type_size, ndims, lb_in, ub_in, data, tier);
+    }else if(fd->storage_hint == 1){
             dspaces_put_ssd(ds_var_name, version, var_type_size, ndims, lb_in, ub_in, data);
-        }else{
+    }else{
             dspaces_put(ds_var_name, version, var_type_size, ndims, lb_in, ub_in, data);
-        }
+    }
   
     ds_ints_to_str(ndims, didx, didx_str);
     ds_int64s_to_str(ndims, gdims_in, gdims_str);
@@ -922,16 +924,9 @@ void adios_dataspaces_close (struct adios_file_struct * fd
         lb[0] = 0; ub[0] = indexlen-1;
         gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server(); // define 1D global data domain: (ub[0]-lb[0]+1)* number of dataspaces servers
         dspaces_define_gdim(ds_var_name, ndim, gdims);
-        /*
-        if(fd->storage_hint == 2){
-            dspaces_put_ceph(ds_var_name, version, elemsize, ndim, lb, ub, indexbuf);
-        }else if(fd->storage_hint == 1){
-            dspaces_put_ssd(ds_var_name, version, elemsize, ndim, lb, ub, indexbuf);
-        }else{
-            dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, indexbuf);
-        }
-        */
         dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, indexbuf);
+        
+        //dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, indexbuf);
         free (indexbuf);
 
         /* Create and put FILE@fn header into space */
@@ -951,16 +946,9 @@ void adios_dataspaces_close (struct adios_file_struct * fd
         lb[0] = 0; ub[0] = file_info_buf_len-1;
         gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
         dspaces_define_gdim(ds_var_name, ndim, gdims);
-        /*
-        if(fd->storage_hint == 2){
-            dspaces_put_ceph(ds_var_name, version, elemsize, ndim, lb, ub, file_info_buf);
-        }else if(fd->storage_hint == 1){
-            dspaces_put_ssd(ds_var_name, version, elemsize, ndim, lb, ub, file_info_buf);
-        }else{
-            dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, file_info_buf);
-        }
-        */
         dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, file_info_buf);
+        
+        //dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, file_info_buf);
         /* Create and put VERSION@fn version info into space */
         int version_buf[2] = {version, 0}; /* last version put in space; not terminated */
         int version_buf_len = 2; 
@@ -972,15 +960,6 @@ void adios_dataspaces_close (struct adios_file_struct * fd
         lb[0] = 0; ub[0] = version_buf_len-1;
         gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
         dspaces_define_gdim(ds_var_name, ndim, gdims);
-        /*
-        if(fd->storage_hint == 2){
-            dspaces_put_ceph(ds_var_name, 0, elemsize, ndim, lb, ub, version_buf);
-        }else if(fd->storage_hint == 1){
-            dspaces_put_ssd(ds_var_name, 0, elemsize, ndim, lb, ub, version_buf);
-        }else{
-            dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, version_buf);
-        }
-        */
         dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, version_buf);
         dspaces_put_sync(); //wait on previous put to finish
 
@@ -1036,6 +1015,7 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
                 lb[0] = 0; ub[0] = 1;
                 gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
                 dspaces_define_gdim(ds_var_name, ndim, gdims);
+
                 dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, &value); 
                 log_debug("%s: call dspaces_put_sync()\n", __func__);
                 dspaces_put_sync();
