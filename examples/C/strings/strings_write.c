@@ -97,7 +97,7 @@ int main (int argc, char ** argv)
     adios_define_var (m_adios_group, "N","", adios_integer,
                       "1", "JoinedDim", "0");
 
-    adios_define_var (m_adios_group, "Table", "", adios_string,
+    adios_define_var (m_adios_group, "Table", "", adios_string_array,
                       sizeStr, "JoinedDim", "0");
 
     adios_open (&m_adios_file, "strings", filename, "w", comm);
