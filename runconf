@@ -1094,7 +1094,6 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         ${SRCDIR}/configure --prefix=/opt/adios/lean \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
-        --with-lustre \
         --disable-timers --disable-timer-events
 
     fi
