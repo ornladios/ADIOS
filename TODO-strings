@@ -1,0 +1,57 @@
+adios_string or adios_string_array??
+should API type be adios_string, and change it internally to adios_string_array under the API?
+
+adios_internals.c
+
+  static uint16_t adios_calc_var_characteristics_overhead(struct adios_var_struct * v)
+  - how much is metadata for string type?
+  - where do we calculate the total length of the string array?
+
+  void adios_copy_var_written
+  - copy the dimensions and characteristics
+
+  void adios_build_index_v1 
+  - copy the dimensions and characteristics 
+  - add the pointer table to index
+
+  int adios_write_index_v1
+  - serialize index
+
+  uint16_t adios_write_var_characteristics_v1
+  - serialize index into var header in PG
+
+  int adios_generate_var_characteristics_v1 
+  - do we need to generate characteristics?
+  - where do we store the pointer table?
+
+adios_bp_v1.c
+  
+  int adios_parse_var_data_payload_v1
+
+  uint64_t adios_get_type_size
+  -- looks good for adios_string_array type
+
+adios_endianness.c
+
+  void swap_adios_type
+  -- what swapping is required to handle data correctly?
+
+  void swap_adios_type_array
+  -- extend for string array
+
+util.c
+
+  void change_endianness
+  -- support  for string array
+
+bp_utils.c
+
+  bp_close
+  -- free up info allocated at read time
+
+  bp_parse_characteristics
+  -- parse string array characteristics
+
+
+
+
