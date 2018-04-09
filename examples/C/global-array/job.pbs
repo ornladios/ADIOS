@@ -1,9 +1,55 @@
 #!/bin/sh
 #PBS -N test 
 #PBS -j oe
-#PBS -l walltime=00:05:00,nodes=3:ppn=2
+#PBS -l walltime=00:05:00,nodes=3
+#PBS -q debug
+#PBS -A CSC143
 
 cd $PBS_O_WORKDIR
 
-export num_aggregators=4
-mpirun -np 16 ./adios_read_global >& result.dat
+DATASPACES_DIR=/ccs/proj/e2e/qliu/dataspaces_sirius_install
+
+RUNCMD="aprun -n"
+SERVER=$DATASPACES_DIR/bin/dataspaces_server
+
+WRITEPROC=1
+STAGINGPROC=1
+READPROC=0
+let "PROCALL=WRITEPROC+READPROC"
+
+# clean-up previous run
+rm -f log.* core* conf dataspaces.conf
+rm -rf data0 data1
+
+# Prepare config file for DataSpaces
+echo "## Config file for DataSpaces
+ndim = 2
+dims = 100000,100000
+max_versions = 10
+#max_readers =" $READPROC " 
+#lock_type = 2
+" > dataspaces.conf
+
+# Run DataSpaces
+echo "-- Start DataSpaces server "$SERVER" on $STAGINGPROC PEs, -s$STAGINGPROC -c$PROCALL"
+$RUNCMD $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL &> log.server &
+
+## Give some time for the servers to load and startup
+sleep 1s
+while [ ! -f conf ]; do
+    echo "-- File conf is not yet available from server. Sleep more"
+    sleep 1s
+done
+sleep 3s  # wait server to fill up the conf file
+
+## Export the main server config to the environment
+while read line; do
+    export set "${line}"
+done < conf
+
+echo "-- DataSpaces IDs: P2TNID = $P2TNID   P2TPID = $P2TPID"
+
+aprun -n 1 ./test_xgc
+
+wait
+rm -f conf
