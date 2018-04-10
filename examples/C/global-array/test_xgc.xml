@@ -11,8 +11,10 @@
        <var name="R" gwrite="g" type="double" dimensions="NX" transform="none"/>
        <var name="Z" gwrite="g" type="double" dimensions="NX" transform="none"/>
     </global-bounds>
+    <global-bounds dimensions="MY,MX" offsets="0,0">
        <var name="mesh" gwrite="t" type="integer" dimensions="MY,MX" 
             transform="none"/>
+    </global-bounds>
   </adios-group>
 
     <!--method group="temperature" method="SIRIUS_ADAPTIVE">method=MPI;path=data1;parameters;method=MPI;path=data2;parameters</method-->

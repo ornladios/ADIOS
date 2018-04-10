@@ -3083,10 +3083,10 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                     new_ldims[0] = nmesh_reduced;
                     new_ldims[1] = 3;
                     new_local_dimensions = print_dimensions (2, new_ldims);
+                    new_global_dimensions = print_dimensions (2, new_ldims);;
                     new_offsets[0] = 0;
                     new_offsets[1] = 0;
                     new_local_offsets = print_dimensions (2, new_offsets);
-                    new_global_dimensions = "";
 
                     DEFINE_VAR_LEVEL("mesh/L1",1,adios_integer);
 
