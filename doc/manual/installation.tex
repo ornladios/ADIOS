@@ -301,7 +301,8 @@ To build ADIOS with Flexpath, export the following environment variable before r
 \paragraph{If you build ADIOS with autotools} you need to force building static libraries instead of the shared libraries. Besides the steps described above, before running the build, edit the configuration file \verb|korvo_build_config|, find the \verb|configure| and \verb|cmake| commands and add parameters to them:
 \begin{lstlisting}
 korvogithub configure --disable-shared CFLAGS="-fPIC"
-korvogithub cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_SHARED_STATIC=STATIC -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC
+korvogithub cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_SHARED_STATIC=STATIC \
+                  -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC
 \end{lstlisting}
 
 \noindent Note that the PIC flags is necessary (for all external packages) to be able to build the python wrapper later. 
