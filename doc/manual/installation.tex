@@ -267,45 +267,56 @@ DIMES is part of the DataSpaces library.
 
 
 \subsubsection{Flexpath staging method}
- Flexpath transport requires the Georgia Tech EVPath middleware library,
- which is built from several packages, including some from the Chaos
- repository at Georgia Tech and some from GitHub.  Those required packages
- are: \verb+dill+, \verb+cercs_env+, \verb+enet+, \verb+atl+, \verb+ffs+,
- and \verb+evpath+. 
-At present, the easiest way to get EVPath is to build it directly for your environment. In an empty directory do:
+ Flexpath transport requires the Georgia Tech's GTKorvo
+ package at \url{https://gtkorvo.github.io/}. You need to build this package directly for your environment.
+
+\paragraph{If you build ADIOS with CMake} this should be easy as GTKorvo uses CMake to build.
+In an empty directory do:
 \begin{lstlisting}
-   wget http://www.cc.gatech.edu/systems/projects/EVPath/chaos_bootstrap.pl
+  wget https://gtkorvo.github.io/korvo_bootstrap.pl
 \end{lstlisting}
 to download a bootstrapping perl script.  Then to configure a build
-environment compatible with ADIOS 1.13, run the bootstrap script with
-``adios-1.13'' as a version tag:
+environment compatible with ADIOS 1.13.1, run the bootstrap script with
+``adios-1.13.1'' as a version tag:
 \begin{lstlisting}
-  perl ./chaos_bootstrap.pl adios-1.13 [optional install directory]
+  perl ./korvo_bootstrap.pl adios-1.13.1 [install_path]
 \end{lstlisting}
 
-If you leave off the the \verb+[optional install directory]+ argument, the
+\noindent If you leave off the optional \verb+[install_path]+ argument, the
 script will set up an environment for an install target of
 \$HOME/\{lib,bin,include\}.  The bootstrap script will download several
 files.  After bootstrapping, run:
 \begin{lstlisting}
-  perl ./chaos_build.pl 
+  perl ./korvo_build.pl 
 \end{lstlisting}
-to build and install the GaTech packages required by Flexpath.
 
-\noindent To use ADIOS with Flexpath, configure adios with the option:
+\noindent The script does not create the installation directory, so make sure it exists. Moreover, it needs write access to the installation directory, so make sure that it is user writable. 
+
+To build ADIOS with Flexpath, export the following environment variable before running cmake for configuring ADIOS:
+\begin{lstlisting}
+  export FLEXPATH_DIR="/opt/korvo"
+\end{lstlisting}
+
+
+\paragraph{If you build ADIOS with autotools} you need to force building static libraries instead of the shared libraries. Besides the steps described above, before running the build, edit the configuration file \verb|korvo_build_config|, find the \verb|configure| and \verb|cmake| commands and add parameters to them:
+\begin{lstlisting}
+korvogithub configure --disable-shared CFLAGS="-fPIC"
+korvogithub cmake -DBUILD_SHARED_LIBS=OFF -DBUILD_SHARED_STATIC=STATIC -DCMAKE_C_FLAGS=-fPIC -DCMAKE_CXX_FLAGS=-fPIC
+\end{lstlisting}
+
+\noindent Note that the PIC flags is necessary (for all external packages) to be able to build the python wrapper later. 
+
+To build ADIOS with Flexpath, configure adios with the option:
 
 \begin{lstlisting}
 --with-flexpath=DIR  Where DIR is the installation directory of
-                                      the Chaos libraries.
+                                      the Korvo libraries.
 \end{lstlisting}
 
-The default network transport for Flexpath is sockets. Additionally, you can use ENET and NNTI (allowing for Infiniband, Portals, and Gemini), both of which
-are included in the \verb+chaos_build.pl+ script. To use these transports, set the \verb+CMTransport+ environment variable to either \verb+``nnti''+ or \verb+``enet''+ before running your applications with Flexpath.
-
-Additionally, in the ADIOS XML file, we allow for the user to specify a \verb+Queuesize+ parameter specifying how many timesteps the writer can buffer before it blocks. For example,
+\noindent Additionally, in the ADIOS XML file, we allow for the user to specify a \verb+queue size+ parameter specifying how many output steps the writer can buffer before it blocks. For example,
 
 \begin{lstlisting}
-<method group="arrays" method="FLEXPATH">QUEUE_SIZE=10;</method>
+<method group="arrays" method="FLEXPATH">QUEUE_SIZE=10</method>
 \end{lstlisting}
 
 
@@ -422,15 +433,15 @@ make install
 If you just want the read API to be compiled for reading BP files, use the \verb+--disable-write+ option with Automake and \verb+export BUILD_WRITE=OFF+ with CMake.
 
 
-\subsection{Serial NetCDF-3 (optional)}
-
-The bp2ncd converter utility to NetCDF format is built only if NetCDF~is available.
- Currently ADIOS uses the NetCDF-3 library. Use the option \verb+--with-netcdf=<path>+
-or ensure that the \verb+NETCDF_DIR+ environment variable is set before configuring ADIOS with Automake.
-While with CMake, the environment variables should be set before running cmake:
-\begin{lstlisting}
-export SEQ_NC_DIR=<path>
-\end{lstlisting}
+%\subsection{Serial NetCDF-3 (optional)}
+%
+%The bp2ncd converter utility to NetCDF format is built only if NetCDF~is available.
+% Currently ADIOS uses the NetCDF-3 library. Use the option \verb+--with-netcdf=<path>+
+%or ensure that the \verb+NETCDF_DIR+ environment variable is set before configuring ADIOS with Automake.
+%While with CMake, the environment variables should be set before running cmake:
+%\begin{lstlisting}
+%export SEQ_NC_DIR=<path>
+%\end{lstlisting}
 
 \subsection{Serial HDF5 (optional)}
 

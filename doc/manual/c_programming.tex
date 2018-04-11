@@ -210,9 +210,7 @@ Group temperature:
 \end{lstlisting}
 
 There are several ways to verify the binary results. We can either choose bpdump 
-to display the content of the file or use one of the converters (bp2ncd, bp2h5, 
-or bp2ascii), to produce the user's preferred file format (NetCDF, HDF5 or ASCII, 
-respectively) and use its dump utility to output the content in the standard output. 
+to display the content of the file or use one of the converters (bp2h5), to produce the user's preferred file format (HDF5) and use its dump utility to output the content in the standard output. 
 Bpls cannot list the individual arrays written by the processes because the generic 
 read API it uses does not support this (it can see only one of them as the size 
 of /temperature suggest in the listing above). It is suggested to use global arrays 
@@ -353,7 +351,7 @@ the MPI method.
 
 If each process writes out a sub-array that belongs to the same global space, ADIOS 
 provides the way to write out global information so the generic read API can see 
-a single global array (and also the HDF5 or NetCDF file when using our converters). 
+a single global array (and also the HDF5 file when using our converter). 
 This example demonstrates how to write global arrays, where the number of processes 
 becomes a separate dimension. Each process is writing the one dimensional temperature 
 array of size NX and the result is a two dimensional array of size PxNX. Figure 
@@ -431,27 +429,28 @@ $  bpls -latd adios_global.bp -n 10
     (3,0)    30 31 32 33 34 35 36 37 38 39
 
   string     /temperature/description  attr   = "Global array written from 'size' processes"
-The bp2ncd utility can be used to convert the bp file to an NetCDF file:
+%\end{lstlisting}
+%The bp2ncd utility can be used to convert the bp file to an NetCDF file:
+%
+%$ bp2ncd adios_global.bp
+%$ ncdump adios_global.nc 
+%netcdf adios_global {
+%dimensions:
+%        NX = 10 ;
+%        size = 4 ;
+%        rank = 1 ;
+%variables:
+%        double temperature(size, NX) ;
+%                temperature:description = "Global array written from \'size\' processes" ;
+%data:
+%
+% temperature =
+%  0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+%  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+%  20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+%  30, 31, 32, 33, 34, 35, 36, 37, 38, 39 ;
+%}
 
-$ bp2ncd adios_global.bp
-$ ncdump adios_global.nc 
-netcdf adios_global {
-dimensions:
-        NX = 10 ;
-        size = 4 ;
-        rank = 1 ;
-variables:
-        double temperature(size, NX) ;
-                temperature:description = "Global array written from \'size\' processes" ;
-data:
-
- temperature =
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-  20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
-  30, 31, 32, 33, 34, 35, 36, 37, 38, 39 ;
-}
-\end{lstlisting}
 
 \subsection{POSIX transport method (P writers, P Subfiles + 1 Metadata file)}
 

@@ -81,6 +81,20 @@ Linux clusters and Mac OSX.
 
 %
 %
+\section {What's new in version 1.13.1}
+This release contains bug fixes for applications that write compressed arrays where some process writes zero-sized blocks into the global array, and for applications that output many timesteps. Also, the build system for the external library used by the Flexpath staging method has been reworked (and renamed from chaos to {\bf korvo}) and this document updates the build process for ADIOS with Flexpath.
+
+\begin{itemize}
+\item fix: zero size variable-blocks are supported by all transformations
+\item fix: build issues with the profiling interface
+\item fix: free temporary MPI communicators so that applications don't run out of
+	communicators when using ADIOS for many output steps
+\item fix: build issues with Flexpath staging
+	\end{itemize}
+
+
+%
+%
 \section {What's new in version 1.13}
 
 \begin{itemize}
@@ -92,7 +106,6 @@ Linux clusters and Mac OSX.
 \item fix: bpls command-line allows for large integers to dump data from >2GB blocks
 \item support for JoinedArray, where per-writer data blocks are virtually merged into
 	a global array by ADIOS at read time for easier reading. See \verb+examples/C/joined-array+ in the source.
-
 \end{itemize}
 
 %
