@@ -62,6 +62,9 @@ def plot_xgc():
         plt.ylabel('Z')
 
         plt.subplot(122)
+        plt.title('Mesh')
+        plt.xlabel('R')
+        plt.ylabel('Z', labelpad=-5)
         axes = plt.gca()
         axes.set_ylim([0.2,0.7])
         axes.set_xlim([1.8,2.4])
