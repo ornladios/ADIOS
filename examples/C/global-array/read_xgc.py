@@ -52,13 +52,21 @@ def plot_xgc():
         mesh_data = mesh_queue.get()
 
         mesh_data = mesh_data.reshape(mesh_data.size // 3,3)
-        plt.figure(1)
+        plt.figure(step)
+        plt.subplot(121)
         plt.gca().set_aspect('equal')
         plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-110,105,num=50))
 #plt.plot(R_data, Z_data)
         plt.title('electrostatic potential')
         plt.xlabel('R')
         plt.ylabel('Z')
+
+        plt.subplot(122)
+        axes = plt.gca()
+        axes.set_ylim([0.2,0.7])
+        axes.set_xlim([1.8,2.4])
+        plt.triplot(R_data, Z_data, mesh_data, linewidth=0.1)
+
         figure_name = "dpot_" + format(step, '02d') + ".png"
         plt.savefig(figure_name)
 
@@ -145,7 +153,7 @@ while True:
         if args.ifmovie:
             print("All plots are achived into avi.")
             os.system("ffmpeg -f image2 -framerate 1 -i dpot_%02d.png -s:v 1280x720 -c:v mpeg4 -crf 20 -pix_fmt yuv420p dpot.mp4")
-            os.system("mplayer dpot.mp4")
+            os.system("mplayer -vo x11 dpot.mp4")
         socket.close()
         context.term()
         sys.exit()
