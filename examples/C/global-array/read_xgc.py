@@ -53,7 +53,7 @@ def plot_xgc():
 
         mesh_data = mesh_data.reshape(mesh_data.size // 3,3)
         plt.figure(step)
-        plt.subplot(121)
+        plt.subplot(221)
         plt.gca().set_aspect('equal')
         plt.tricontourf(R_data, Z_data, mesh_data, field_data, cmap=plt.cm.jet, levels=np.linspace(-110,105,num=50))
 #plt.plot(R_data, Z_data)
@@ -61,7 +61,7 @@ def plot_xgc():
         plt.xlabel('R')
         plt.ylabel('Z')
 
-        plt.subplot(122)
+        plt.subplot(222)
         plt.title('Mesh')
         plt.xlabel('R')
         plt.ylabel('Z', labelpad=-5)
@@ -69,6 +69,48 @@ def plot_xgc():
         axes.set_ylim([0.2,0.7])
         axes.set_xlim([1.8,2.4])
         plt.triplot(R_data, Z_data, mesh_data, linewidth=0.1)
+
+        grad_data = np.zeros(field_data.size)
+        grad_R_data = np.zeros(field_data.size)
+        grad_Z_data = np.zeros(field_data.size)
+        for m in range(0, mesh_data.size // 3):
+            n1 = int(mesh_data[m][0])
+            n2 = int(mesh_data[m][1])
+            n3 = int(mesh_data[m][2])
+
+            grad_z = field_data[n1] * (Z_data[n2] - Z_data[n3]) + field_data[n2] * (Z_data[n3] - Z_data[n1]) + field_data[n3]* (Z_data[n1] - Z_data[n2])
+            grad_r = field_data[n1] * (R_data[n3] - R_data[n2]) + field_data[n2] * (R_data[n1] - R_data[n3]) + field_data[n3]* (R_data[n2] - R_data[n1])
+            grad_mag = math.sqrt (grad_z*grad_z +  grad_r*grad_r)
+
+            grad_data[n1] = grad_mag
+            grad_data[n2] = grad_mag
+            grad_data[n3] = grad_mag
+
+            grad_R_data[n1] = grad_r
+            grad_R_data[n2] = grad_r
+            grad_R_data[n3] = grad_r
+
+            grad_Z_data[n1] = grad_z
+            grad_Z_data[n2] = grad_z
+            grad_Z_data[n3] = grad_z
+
+        plt.subplot(223)
+        plt.gca().set_aspect('equal')
+        plt.tricontourf(R_data, Z_data, mesh_data, grad_R_data, cmap=plt.cm.jet)
+#plt.plot(R_data, Z_data)
+        plt.title('gradient (R)')
+        plt.xlabel('R')
+        plt.ylabel('Z')
+
+        plt.subplot(224)
+        plt.gca().set_aspect('equal')
+        plt.tricontourf(R_data, Z_data, mesh_data, grad_Z_data, cmap=plt.cm.jet)
+#plt.plot(R_data, Z_data)
+        plt.title('gradient (Z)')
+        plt.xlabel('R')
+        plt.ylabel('Z')
+
+        plt.tight_layout()
 
         figure_name = "dpot_" + format(step, '02d') + ".png"
         plt.savefig(figure_name)
