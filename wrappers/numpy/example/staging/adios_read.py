@@ -25,12 +25,12 @@ f.printself()
 
 i = 0
 while True:
-    print ">>> step:", i
+    print(">>> step:", i)
     v = f.var['temperature']
     v.printself()
 
     val = v.read(nsteps=1)
-    print val
+    print(val)
 
     if (f.advance() < 0):
         break
@@ -40,4 +40,4 @@ f.close()
 
 ad.read_finalize(method)
 
-print ">>> Done."
+print(">>> Done.")

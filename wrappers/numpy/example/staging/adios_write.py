@@ -30,7 +30,7 @@ ad.define_var(g, "temperature", "", ad.DATATYPE.double, "size,NX", "size,NX", "0
 msg = str(datetime.datetime.now())
 ad.define_attribute(g, "datetime", "", ad.DATATYPE.string, msg, "")
 ad.select_method(g, method, init, "")
-print ">>> Method:", method
+print(">>> Method:", method)
 
 ## Writing
 for i in range(5):
@@ -39,7 +39,7 @@ for i in range(5):
     NX = 10
     size = 2
     groupsize =  4 + 4 + 8 * size * NX
-    t = np.array(range(NX*size), dtype=np.float64) + 100*i
+    t = np.array(list(range(NX*size)), dtype=np.float64) + 100*i
     tt = t.reshape((size, NX))
     ad.set_group_size(fd, groupsize)
     ad.write_int(fd, "NX", NX)
@@ -48,4 +48,4 @@ for i in range(5):
     ad.close(fd)
 
 ad.finalize()
-print ">>> Done."
+print(">>> Done.")
