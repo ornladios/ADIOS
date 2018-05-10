@@ -27,6 +27,8 @@ fw['size'] = size
 fw['temperature'] = tt
 fw['temperature'].transform = "zfp:accuracy=0.001"
 fw.attrs['/temperature/description'] = "Global array written from 'size' processes"
+fw.attrs['int_arr'] = [1,2,3]
+fw.attrs['str_arr'] = ["xyz", "abcd", "12345"]
 fw.close()
 
 """ Reading """
