@@ -19,3 +19,4 @@ s/comm.Clone()/comm/g
 s/adios_mpi/adios/g
 s/self.comm.Get_rank()/0/g
 s/self.comm.bcast(ftmp, root=0)/ftmp/g
+s/= MPI_COMM_WORLD/= MPI_COMM_NULL/g
