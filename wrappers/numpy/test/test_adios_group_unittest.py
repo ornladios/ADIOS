@@ -112,8 +112,8 @@ class AdiosTestCase(ut.TestCase):
         self.assertEqual(g2['FieldE/y/sim_unit'][...], 99)
 
         ## Check dirs()
-        self.assertEqual(g.dirs(), ['particles', 'fields'])
-        self.assertEqual(g['fields'].dirs(), ['e_chargeDensity', 'FieldE'])
+        self.assertEqual(sorted(g.dirs()), sorted(['particles', 'fields']))
+        self.assertEqual(sorted(g['fields'].dirs()), sorted(['e_chargeDensity', 'FieldE']))
         self.assertEqual(f.dirs(), ['data'])
 
     def test_softdict1(self):

@@ -87,6 +87,47 @@ class AdiosTestCase(ut.TestCase):
         self.assertTrue(f['unicode_string'].value, unicode_string.encode())
         self.assertTrue(f['bytes_string'].value, bytes_string)
 
+    def test_writer_attr2(self):
+        self.temp = TempFile()
+
+        NX = 10
+        val1 = np.array(list(range(NX)), dtype=np.int32)
+        val2 = np.array(list(range(5)), dtype='f8')
+
+        single_string = "ABCD"
+        three_string = ("AA","BBB","CCCC")
+        single_int = 10
+        five_int = np.array(list(range(5)), dtype=np.int32)
+        single_double = 1.1
+        five_double = np.array(list(range(5)), dtype='double')*1.1
+        unicode_string = u"unicode"
+        bytes_string = u"bytes"
+
+        fw = ad.writer(self.temp.path, method="POSIX1")
+
+        fw.attrs['single_string'] = single_string
+        fw.attrs['three_string'] = three_string
+        fw.attrs['single_int'] = single_int
+        fw.attrs['five_int'] = five_int
+        fw.attrs['single_double'] = single_double
+        fw.attrs['five_double'] = five_double
+        fw.attrs['unicode_string'] = unicode_string
+        fw.attrs['bytes_string'] = bytes_string
+        fw.close()
+
+        f = ad.file(self.temp.path)
+        self.assertEqual(f['single_string'].value, single_string.encode())
+        ##self.assertTrue((f['three_string'].value == three_string).all())
+        self.assertTrue(f['three_string'].value[0], three_string[0].encode())
+        self.assertTrue(f['three_string'].value[1], three_string[1].encode())
+        self.assertTrue(f['three_string'].value[2], three_string[2].encode())
+        self.assertEqual(f['single_int'].value, single_int)
+        self.assertTrue((f['five_int'].value == five_int).all())
+        self.assertEqual(f['single_double'].value, single_double)
+        self.assertTrue((f['five_double'].value == five_double).all())
+        self.assertTrue(f['unicode_string'].value, unicode_string.encode())
+        self.assertTrue(f['bytes_string'].value, bytes_string)
+
     def test_writer_undefined_var(self):
         self.temp = TempFile()
 
