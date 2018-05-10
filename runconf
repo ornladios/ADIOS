@@ -1048,7 +1048,7 @@ elif [ `hostname | cut -c 1-9` == "PC0098504" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export LDFLAGS="-lpthread"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    ${SRCDIR}/configure --prefix=/opt/adios \
+    ${SRCDIR}/configure --prefix=/opt/adios1 \
         --enable-dependency-tracking \
         --enable-timers \
         --disable-timer-events 
@@ -1068,7 +1068,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
 
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
     if [ $BUILD_FULL == "true" ]; then
-        ${SRCDIR}/configure --prefix=/opt/adios \
+        ${SRCDIR}/configure --prefix=/opt/adios1 \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
         --enable-timers \
@@ -1077,23 +1077,24 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-bzip2 \
         --with-lz4 \
         --with-sz=/opt/SZ/1.4.12.3  \
-        --with-zchecker=/opt/Z-checker/0.1.2 \
         --with-blosc=/opt/blosc \
-        --with-mgard=/home/adios/work/Software/MGARD \
         --without-szip \
         --with-isobar=/opt/isobar \
-        --with-flexpath=/opt/chaos \
+        --with-flexpath=/opt/korvo/dev-static \
         --with-dataspaces=/opt/dataspaces --without-infiniband \
         --with-fastbit=/opt/fastbit \
         --with-alacrity=/opt/alacrity \
         --with-hdf5=/opt/hdf5-1.8.17 \
         --with-phdf5=/opt/hdf5-1.8.17-parallel \
         --with-netcdf=/opt/netcdf-4.4.0 
+#        --with-mgard=/home/adios/work/Software/MGARD \
+#        --with-zchecker=/opt/Z-checker/0.1.2 \
 
     else
-        ${SRCDIR}/configure --prefix=/opt/adios/lean \
+        ${SRCDIR}/configure --prefix=/opt/adios1/lean \
         --disable-maintainer-mode \
         --enable-dependency-tracking \
+        --without-infiniband \
         --disable-timers --disable-timer-events
 
     fi

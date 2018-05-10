@@ -88,7 +88,7 @@ transforms_specparse.o: transforms_specparse.c
 group_free_test_SOURCES=group_free_test.c
 group_free_test_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
 group_free_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS) $(ADIOSLIB_EXTRA_LDFLAGS)
-group_free_test_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
+group_free_test_CPPFLAGS = -I$(top_srcdir)/src -I$(top_builddir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
 group_free_test.o: group_free_test.c
 
 query_minmax_SOURCES=query_minmax.c

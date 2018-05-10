@@ -1286,8 +1286,9 @@ void adios_append_group (struct adios_group_struct * group)
         }
         else
         {
+            id = (*root)->group->id + 1;
             root = &(*root)->next;
-            id++;
+
         }
     }
 }

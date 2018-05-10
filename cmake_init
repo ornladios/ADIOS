@@ -679,7 +679,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export CC=mpicc
     export CXX=mpicxx
     export FC=mpif90
-    export INSTALL_PREFIX="/opt/adios"
+    export INSTALL_PREFIX="/opt/adios1"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
     export BZIP2_DIR="/usr/lib"
@@ -689,7 +689,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export MGARD_DIR="/home/adios/work/Software/MGARD"
     export ZCHECKER_DIR="/opt/Z-checker/0.1.2"
     export ISOBAR_DIR="/opt/isobar"
-    export FLEXPATH_DIR="/opt/chaos"
+    export FLEXPATH_DIR="/opt/korvo/dev"
     export DATASPACES_DIR="/opt/dataspaces"
     export FASTBIT_DIR="/opt/fastbit"
     export ALACRITY_DIR="/opt/alacrity"
