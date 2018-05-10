@@ -9,6 +9,7 @@ from __future__ import print_function
 cdef extern from "mpi-compat.h": pass
 cdef extern from "string.h" nogil:
     char   *strdup  (const char *s)
+    size_t strlen   (const char *s)
 
 import numpy as np
 cimport numpy as np
@@ -55,7 +56,7 @@ cpdef bytes s2b(str x):
     if PY_MAJOR_VERSION < 3:
         return <bytes>x
     else:
-        return x.encode()
+        return strdup(x.encode())
 
 def normalize_key(keys):
     if not isinstance(keys, list):
@@ -72,7 +73,8 @@ cdef char ** to_cstring_array(list_str):
     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
     for i in xrange(len(list_str)):
         bstr = s2b(list_str[i])
-        ret[i] = PyBytes_AsString(bstr)
+        #ret[i] = PyBytes_AsString(bstr) ## Not working with python3
+        ret[i] = <char*> strdup(list_str[i].encode())        
     return ret
 
 ## ====================
@@ -1766,25 +1768,28 @@ cdef class attr(object):
         if err == 0:
             if atype == DATATYPE.string:
                 bytes = bytes - 1 ## Remove the NULL terminal
-            self.dtype = adios2npdtype(atype, bytes)
-            if atype == DATATYPE.string_array:
+                ntype = np.dtype((np.string_, bytes))
+                self.value = np.array(<char *>p, dtype=ntype)
+                self.dtype = self.value.dtype
+            elif atype == DATATYPE.string_array:
                 strlist = list()
                 len = <int>(bytes/sizeof(p))
                 for i in range(len):
                     strlist.append((<char **>p)[i])
                 self.value = np.array(strlist)
                 self.dtype = self.value.dtype
-
-            elif self.dtype is None:
-                print ('Warning: No support yet: %s (type=%d, bytes=%d)' % \
-                      (self.name, atype, bytes))
             else:
-                len = <int>(bytes/self.dtype.itemsize)
-                if len == 1:
-                    self.value = np.array(len, dtype=self.dtype)
+                self.dtype = adios2npdtype(atype, bytes)
+                if self.dtype is not None:
+                    len = <int>(bytes/self.dtype.itemsize)
+                    if len == 1:
+                        self.value = np.array(len, dtype=self.dtype)
+                    else:
+                        self.value = np.zeros(len, dtype=self.dtype)
+                    self.value.data = <char *> p
                 else:
-                    self.value = np.zeros(len, dtype=self.dtype)
-                self.value.data = <char *> p
+                    print ('Warning: No support yet: %s (type=%d, bytes=%d)' % \
+                        (self.name, atype, bytes))
         else:
             raise KeyError(name)
 

@@ -9,6 +9,7 @@ from __future__ import print_function
 #cdef extern from "mpi-compat.h": pass
 cdef extern from "string.h" nogil:
     char   *strdup  (const char *s)
+    size_t strlen   (const char *s)
 
 import numpy as np
 cimport numpy as np
@@ -55,7 +56,7 @@ cpdef bytes s2b(str x):
     if PY_MAJOR_VERSION < 3:
         return <bytes>x
     else:
-        return x.encode()
+        return strdup(x.encode())
 
 def normalize_key(keys):
     if not isinstance(keys, list):
@@ -72,7 +73,8 @@ cdef char ** to_cstring_array(list_str):
     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
     for i in xrange(len(list_str)):
         bstr = s2b(list_str[i])
-        ret[i] = PyBytes_AsString(bstr)
+        #ret[i] = PyBytes_AsString(bstr) ## Not working with python3
+        ret[i] = <char*> strdup(list_str[i].encode())        
     return ret
 
 ## ====================
@@ -119,6 +121,7 @@ cdef extern from "adios_types.h":
 cdef extern from "adios.h":
     ctypedef int MPI_Comm
     int MPI_COMM_WORLD
+    int MPI_COMM_NULL
     int MPI_COMM_SELF
 
     ctypedef char* const_char_ptr "const char*"
@@ -474,7 +477,7 @@ cpdef __parse_index(index, ndim):
 cdef MPI_Comm init_comm
 cdef MPI_Comm read_init_comm
 
-cpdef init(str config, MPI_Comm comm = MPI_COMM_WORLD):
+cpdef init(str config, MPI_Comm comm = MPI_COMM_NULL):
     global init_comm
     init_comm = comm
     return adios_init(s2b(config), init_comm)
@@ -482,7 +485,7 @@ cpdef init(str config, MPI_Comm comm = MPI_COMM_WORLD):
 cpdef int64_t open(str group_name,
                    str name,
                    str mode,
-                   MPI_Comm comm = MPI_COMM_WORLD):
+                   MPI_Comm comm = MPI_COMM_NULL):
     cdef int64_t fd
     cdef int result
     result = adios_open(&fd, s2b(group_name), s2b(name), s2b(mode), comm)
@@ -560,7 +563,7 @@ cpdef int finalize(int mype = 0):
 ## ADIOS No-XML API
 ## ====================
 
-cpdef int init_noxml(MPI_Comm comm = MPI_COMM_WORLD):
+cpdef int init_noxml(MPI_Comm comm = MPI_COMM_NULL):
     global init_comm
     init_comm = comm
     return adios_init_noxml(init_comm)
@@ -904,7 +907,7 @@ cpdef str adiostype2string (ADIOS_DATATYPES type):
 
 """ Call adios_read_init_method """
 cpdef int read_init(str method_name = "BP",
-                    MPI_Comm comm = MPI_COMM_WORLD,
+                    MPI_Comm comm = MPI_COMM_NULL,
                     str parameters = ""):
     global read_init_comm
     read_init_comm = comm
@@ -1025,7 +1028,7 @@ cdef class file(dict):
 
     def __init__(self, str fname,
                  str method_name = "BP",
-                 MPI_Comm comm = MPI_COMM_WORLD,
+                 MPI_Comm comm = MPI_COMM_NULL,
                  is_stream = False,
                  ADIOS_LOCKMODE lock_mode = ADIOS_LOCKMODE_ALL,
                  float timeout_sec = 0.0):
@@ -1767,25 +1770,28 @@ cdef class attr(object):
         if err == 0:
             if atype == DATATYPE.string:
                 bytes = bytes - 1 ## Remove the NULL terminal
-            self.dtype = adios2npdtype(atype, bytes)
-            if atype == DATATYPE.string_array:
+                ntype = np.dtype((np.string_, bytes))
+                self.value = np.array(<char *>p, dtype=ntype)
+                self.dtype = self.value.dtype
+            elif atype == DATATYPE.string_array:
                 strlist = list()
                 len = <int>(bytes/sizeof(p))
                 for i in range(len):
                     strlist.append((<char **>p)[i])
                 self.value = np.array(strlist)
                 self.dtype = self.value.dtype
-
-            elif self.dtype is None:
-                print ('Warning: No support yet: %s (type=%d, bytes=%d)' % \
-                      (self.name, atype, bytes))
             else:
-                len = <int>(bytes/self.dtype.itemsize)
-                if len == 1:
-                    self.value = np.array(len, dtype=self.dtype)
+                self.dtype = adios2npdtype(atype, bytes)
+                if self.dtype is not None:
+                    len = <int>(bytes/self.dtype.itemsize)
+                    if len == 1:
+                        self.value = np.array(len, dtype=self.dtype)
+                    else:
+                        self.value = np.zeros(len, dtype=self.dtype)
+                    self.value.data = <char *> p
                 else:
-                    self.value = np.zeros(len, dtype=self.dtype)
-                self.value.data = <char *> p
+                    print ('Warning: No support yet: %s (type=%d, bytes=%d)' % \
+                        (self.name, atype, bytes))
         else:
             raise KeyError(name)
 
@@ -1994,7 +2000,7 @@ cdef class writer(object):
                  bint is_noxml = True,
                  str mode = "w",
                  int stats = adios_stat_default,
-                 MPI_Comm comm = MPI_COMM_WORLD,
+                 MPI_Comm comm = MPI_COMM_NULL,
                  str method = "POSIX1",
                  str method_params = ""):
         self.gid = 0
