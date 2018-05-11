@@ -916,7 +916,7 @@ cpdef int read_init(str method_name = "BP",
 """ Call adios_read_finalize_method """
 cpdef int read_finalize(str method_name = "BP"):
     cdef method = str2adiosreadmethod(method_name)
-    return adios_read_finalize_method (s2b(method))
+    return adios_read_finalize_method (method)
 
 ## dict for handling '/' prefix
 cdef class softdict(dict):
@@ -1385,7 +1385,7 @@ cdef class var(dict):
 
     cpdef advance(self):
         """ Update variable information after the stream advanced """
-        self.vp = adios_inq_var(self.file.fp, self.name)
+        self.vp = adios_inq_var(self.file.fp, s2b(self.name))
         assert self.vp != NULL, 'Not a valid var'
         self.nsteps = self.vp.nsteps
 

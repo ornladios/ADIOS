@@ -1237,7 +1237,7 @@ struct __pyx_opt_args_5adios_read_init {
  * """ Call adios_read_finalize_method """
  * cpdef int read_finalize(str method_name = "BP"):             # <<<<<<<<<<<<<<
  *     cdef method = str2adiosreadmethod(method_name)
- *     return adios_read_finalize_method (s2b(method))
+ *     return adios_read_finalize_method (method)
  */
 struct __pyx_opt_args_5adios_read_finalize {
   int __pyx_n;
@@ -15015,7 +15015,7 @@ static PyObject *__pyx_pf_5adios_90read_init(CYTHON_UNUSED PyObject *__pyx_self,
  * """ Call adios_read_finalize_method """
  * cpdef int read_finalize(str method_name = "BP"):             # <<<<<<<<<<<<<<
  *     cdef method = str2adiosreadmethod(method_name)
- *     return adios_read_finalize_method (s2b(method))
+ *     return adios_read_finalize_method (method)
  */
 
 static PyObject *__pyx_pw_5adios_93read_finalize(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
@@ -15037,7 +15037,7 @@ static int __pyx_f_5adios_read_finalize(CYTHON_UNUSED int __pyx_skip_dispatch, s
  * """ Call adios_read_finalize_method """
  * cpdef int read_finalize(str method_name = "BP"):
  *     cdef method = str2adiosreadmethod(method_name)             # <<<<<<<<<<<<<<
- *     return adios_read_finalize_method (s2b(method))
+ *     return adios_read_finalize_method (method)
  * 
  */
   __pyx_t_1 = __Pyx_PyInt_From_ADIOS_READ_METHOD(__pyx_f_5adios_str2adiosreadmethod(__pyx_v_method_name)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 920, __pyx_L1_error)
@@ -15048,15 +15048,11 @@ static int __pyx_f_5adios_read_finalize(CYTHON_UNUSED int __pyx_skip_dispatch, s
   /* "adios.pyx":921
  * cpdef int read_finalize(str method_name = "BP"):
  *     cdef method = str2adiosreadmethod(method_name)
- *     return adios_read_finalize_method (s2b(method))             # <<<<<<<<<<<<<<
+ *     return adios_read_finalize_method (method)             # <<<<<<<<<<<<<<
  * 
  * ## dict for handling '/' prefix
  */
-  if (!(likely(PyString_CheckExact(__pyx_v_method))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "str", Py_TYPE(__pyx_v_method)->tp_name), 0))) __PYX_ERR(0, 921, __pyx_L1_error)
-  __pyx_t_1 = __pyx_f_5adios_s2b(((PyObject*)__pyx_v_method), 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 921, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = ((ADIOS_READ_METHOD)__Pyx_PyInt_As_ADIOS_READ_METHOD(__pyx_t_1)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 921, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = ((ADIOS_READ_METHOD)__Pyx_PyInt_As_ADIOS_READ_METHOD(__pyx_v_method)); if (unlikely(PyErr_Occurred())) __PYX_ERR(0, 921, __pyx_L1_error)
   __pyx_r = adios_read_finalize_method(__pyx_t_2);
   goto __pyx_L0;
 
@@ -15065,7 +15061,7 @@ static int __pyx_f_5adios_read_finalize(CYTHON_UNUSED int __pyx_skip_dispatch, s
  * """ Call adios_read_finalize_method """
  * cpdef int read_finalize(str method_name = "BP"):             # <<<<<<<<<<<<<<
  *     cdef method = str2adiosreadmethod(method_name)
- *     return adios_read_finalize_method (s2b(method))
+ *     return adios_read_finalize_method (method)
  */
 
   /* function exit code */
@@ -23530,7 +23526,7 @@ static PyObject *__pyx_pf_5adios_3var_4close(struct __pyx_obj_5adios_var *__pyx_
  * 
  *     cpdef advance(self):             # <<<<<<<<<<<<<<
  *         """ Update variable information after the stream advanced """
- *         self.vp = adios_inq_var(self.file.fp, self.name)
+ *         self.vp = adios_inq_var(self.file.fp, s2b(self.name))
  */
 
 static PyObject *__pyx_pw_5adios_3var_7advance(PyObject *__pyx_v_self, CYTHON_UNUSED PyObject *unused); /*proto*/
@@ -23582,16 +23578,26 @@ static PyObject *__pyx_f_5adios_3var_advance(struct __pyx_obj_5adios_var *__pyx_
   /* "adios.pyx":1390
  *     cpdef advance(self):
  *         """ Update variable information after the stream advanced """
- *         self.vp = adios_inq_var(self.file.fp, self.name)             # <<<<<<<<<<<<<<
+ *         self.vp = adios_inq_var(self.file.fp, s2b(self.name))             # <<<<<<<<<<<<<<
  *         assert self.vp != NULL, 'Not a valid var'
  *         self.nsteps = self.vp.nsteps
  */
-  __pyx_t_5 = __Pyx_PyObject_AsString(__pyx_v_self->name); if (unlikely((!__pyx_t_5) && PyErr_Occurred())) __PYX_ERR(0, 1390, __pyx_L1_error)
+  __pyx_t_1 = __pyx_v_self->name;
+  __Pyx_INCREF(__pyx_t_1);
+  __pyx_t_2 = __pyx_f_5adios_s2b(((PyObject*)__pyx_t_1), 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1390, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (unlikely(__pyx_t_2 == Py_None)) {
+    PyErr_SetString(PyExc_TypeError, "expected bytes, NoneType found");
+    __PYX_ERR(0, 1390, __pyx_L1_error)
+  }
+  __pyx_t_5 = __Pyx_PyBytes_AsString(__pyx_t_2); if (unlikely((!__pyx_t_5) && PyErr_Occurred())) __PYX_ERR(0, 1390, __pyx_L1_error)
   __pyx_v_self->vp = adios_inq_var(__pyx_v_self->file->fp, __pyx_t_5);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "adios.pyx":1391
  *         """ Update variable information after the stream advanced """
- *         self.vp = adios_inq_var(self.file.fp, self.name)
+ *         self.vp = adios_inq_var(self.file.fp, s2b(self.name))
  *         assert self.vp != NULL, 'Not a valid var'             # <<<<<<<<<<<<<<
  *         self.nsteps = self.vp.nsteps
  * 
@@ -23606,7 +23612,7 @@ static PyObject *__pyx_f_5adios_3var_advance(struct __pyx_obj_5adios_var *__pyx_
   #endif
 
   /* "adios.pyx":1392
- *         self.vp = adios_inq_var(self.file.fp, self.name)
+ *         self.vp = adios_inq_var(self.file.fp, s2b(self.name))
  *         assert self.vp != NULL, 'Not a valid var'
  *         self.nsteps = self.vp.nsteps             # <<<<<<<<<<<<<<
  * 
@@ -23620,7 +23626,7 @@ static PyObject *__pyx_f_5adios_3var_advance(struct __pyx_obj_5adios_var *__pyx_
  * 
  *     cpdef advance(self):             # <<<<<<<<<<<<<<
  *         """ Update variable information after the stream advanced """
- *         self.vp = adios_inq_var(self.file.fp, self.name)
+ *         self.vp = adios_inq_var(self.file.fp, s2b(self.name))
  */
 
   /* function exit code */
