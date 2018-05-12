@@ -1104,8 +1104,20 @@ cdef class file(dict):
         """
         val = adios_advance_step(self.fp, last, timeout_sec)
         if (val >= 0):
+            self.nvars = self.fp.nvars
+            self.nattrs = self.fp.nattrs
             self.current_step = self.fp.current_step
             self.last_step = self.fp.last_step
+
+            ## Clear and re-populate
+            self.vars.clear()
+            self.attrs.clear()
+
+            for name in [self.fp.attr_namelist[i] for i in range(self.nattrs)]:
+                self.attrs[b2s(name)] = attr(self, b2s(name))
+
+            for name in [self.fp.var_namelist[i] for i in range(self.nvars)]:
+                self.vars[b2s(name)] = var(self, b2s(name))
 
             for v in self.vars.values():
                 v.advance()
