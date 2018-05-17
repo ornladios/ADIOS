@@ -20,6 +20,8 @@
 
 #include "config.h"
 
+#include <stdarg.h>
+#include <stddef.h>
 
 /*
  * The va_copy macro is part of C99, but many compilers don't implement it.
@@ -80,6 +82,8 @@ _mxml_strdup(const char *s)		/* I - String to duplicate */
 }
 #endif /* !HAVE_STRDUP */
 
+/* forward declaration needed for _mxml_strdupf */
+char * _mxml_vstrdupf(const char *, va_list);
 
 /*
  * '_mxml_strdupf()' - Format and duplicate a string.

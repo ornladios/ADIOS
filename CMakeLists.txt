@@ -688,6 +688,7 @@ CHECK_FUNCTION_EXISTS(clock_get_time HAVE_CLOCK_GET_TIME)
 
 # Check if clockid_t type exist
 include(CheckTypeSize)
+SET(CMAKE_EXTRA_INCLUDE_FILES "time.h")
 CHECK_TYPE_SIZE("clockid_t" CLOCKID_T)
 
 # Define if you have CRAY_PMI.

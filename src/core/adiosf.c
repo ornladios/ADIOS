@@ -530,7 +530,7 @@ void FC_FUNC_(adios_declare_group, ADIOS_DECLARE_GROUP)
     *err = adios_errno;
 }
 
-int FC_FUNC_(adios_set_time_aggregation, ADIOS_SET_TIME_AGGREGATION)
+void FC_FUNC_(adios_set_time_aggregation, ADIOS_SET_TIME_AGGREGATION)
         (int64_t * group_id, int64_t * buffersize, int64_t * sync_group_id, int * err)
 {
     adios_errno = err_no_error;
