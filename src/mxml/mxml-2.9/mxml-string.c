@@ -20,6 +20,8 @@
 
 #include "config.h"
 
+#include <stdarg.h>
+#include <stddef.h>
 
 /*
  * The va_copy macro is part of C99, but many compilers don't implement it.
