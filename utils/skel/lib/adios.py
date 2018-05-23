@@ -12,7 +12,7 @@ class adiosConfig:
         doc = xml.dom.minidom.parse (config_file_name)
         nodes = doc.childNodes
         if (nodes.length != 1):
-            print 'malformed adios config file, should contain only a single adios-config element'
+            print('malformed adios config file, should contain only a single adios-config element')
             raise SystemExit
         self.config_node = nodes[0]
 
@@ -47,7 +47,7 @@ class adiosConfig:
 
     def get_buffer (self):
         #return the buffer info
-        print 'implement get_buffer'
+        print('implement get_buffer')
 
     def get_host_language (self):
         return self.host_language
@@ -157,7 +157,7 @@ class var:
             return None
         else:
             # place the dimensions in a list and remove the time-index if it is there.
-            dims = filter (lambda x : x != self.time_index, self.var_node.getAttribute ('dimensions').split(',') )
+            dims = [x for x in self.var_node.getAttribute ('dimensions').split(',') if x != self.time_index]
             cleandims = []
             for d in dims:
 

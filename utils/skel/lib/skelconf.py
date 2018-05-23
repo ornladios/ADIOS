@@ -10,7 +10,7 @@ class skelConfig:
 
         nodes = doc.childNodes
         if (nodes.length != 1):
-            print 'malformed param file, should contain only a single skel-config element'
+            print('malformed param file, should contain only a single skel-config element')
             raise SystemExit
         self.config_node = nodes[0]
 

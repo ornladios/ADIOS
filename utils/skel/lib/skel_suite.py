@@ -35,7 +35,7 @@ def pparse_command_line (parent_parser):
 def gen_suite_with_args (parent_parser):
     args = pparse_command_line (parent_parser)
 
-    print "Generating test suite using %s" % args.yamlfile
+    print("Generating test suite using %s" % args.yamlfile)
 
     suite_gen_file_name = "%s_gen_suite.sh" % args.project
     suite_gen_file = open (suite_gen_file_name, "w")

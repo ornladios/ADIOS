@@ -59,7 +59,7 @@ class test:
 def main(argv=None):
     b = skel_test_plan ("test_plan.yaml")
 
-    print b.get_tests()
+    print(b.get_tests())
 
 
 if __name__ == "__main__":

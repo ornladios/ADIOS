@@ -123,7 +123,7 @@ def generate_submit_scripts_from_yaml (args):
 
     # Only proceed if outfilename does not already exist, or if -f was used
     if os.path.exists (outfilename) and not args.force:
-        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        print("%s exists, aborting. Delete the file or use -f to overwrite." % outfilename)
         return 999
 
     skel_file = open (outfilename, 'w')
@@ -154,7 +154,7 @@ def generate_submit_scripts_with_args (parent_parser):
     try:
         config = adios.adiosConfig (args.project + '_skel.xml')
     except (IOError):
-        print "XXError reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+        print("XXError reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first.")
         return 1
 
 
@@ -164,8 +164,8 @@ def generate_submit_scripts_with_args (parent_parser):
         try:
             params = skelconf.skelConfig (args.project + '_params.xml')
         except (IOError):
-            print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first,"
-            print "then check that " + args.project + "_params.xml exists."
+            print("Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first,")
+            print("then check that " + args.project + "_params.xml exists.")
             return 1
 
         generate_submit_scripts_from_xml (params)

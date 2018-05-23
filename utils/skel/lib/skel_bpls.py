@@ -51,12 +51,12 @@ class bpls:
 
 
     def get_vars (self):
-        return self.vars.keys()
+        return list(self.vars.keys())
 
 
     def get_dims (self, var):
-        print "getting dims for %s" % var
-        if var not in self.vars.keys():
+        print("getting dims for %s" % var)
+        if var not in list(self.vars.keys()):
             return None
         return self.vars[var]['dims']
 
@@ -73,7 +73,7 @@ def main(argv=None):
     b = bpls (test)
 
     for var in b.get_vars():
-        print '%s    %s' % (var, b.get_dims (var) ) 
+        print('%s    %s' % (var, b.get_dims (var) )) 
         
 
 if __name__ == "__main__":
