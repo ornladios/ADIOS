@@ -31,7 +31,7 @@ class skel_bpy:
         return self.doc.get('steps', 1)
 
     def get_vars (self):
-        return filter (lambda x: not x.get_type() ==  'string', self.vars.values() )
+        return [x for x in list(self.vars.values()) if not x.get_type() ==  'string']
 
     def get_var_dict (self):
         return self.vars
@@ -40,7 +40,7 @@ class skel_bpy:
         return self.vars[name]
 
     def get_var_names (self):
-        return self.vars.keys()
+        return list(self.vars.keys())
 
     def get_language (self):
         return self.doc['lang']
@@ -108,12 +108,12 @@ class var:
 
             # Sanity check
             if len(dp) != len(gd):
-                print 'Dimensional mismatch, exiting'
+                print('Dimensional mismatch, exiting')
                 exit(13)
             for i in range(len(dp)):
                 #divides evenly
                 if gd[i] % dp[i] != 0:
-                    print 'irregular decomposition not supported, exiting'
+                    print('irregular decomposition not supported, exiting')
                     exit(17)
 
             # Calculate individual blocks
@@ -150,13 +150,13 @@ class var:
                                     end2 = (k+1) * self.vardict['dims'][2] - 1
                                     self.vardict['decomposition'].append([[start0,end0],[start1,end1],[start2,end2]])
                                 else:
-                                    print "Failed sanity check, more than 3 dimensions specified"
+                                    print("Failed sanity check, more than 3 dimensions specified")
                                     exit (13) 
                         
         # Case 3, no decomposition given
         else:
             #What to do here? PANIC!
-            print "No decomposition found, exiting."
+            print("No decomposition found, exiting.")
             exit(11)
 
 
@@ -358,7 +358,7 @@ class var:
         if size is not None:
             return "%i" % size
         else:
-            print "Unknown type: %s in get_unit_size()" % self.get_type()
+            print("Unknown type: %s in get_unit_size()" % self.get_type())
             sys.exit()
 
 
@@ -435,14 +435,14 @@ class var:
 
 def main(argv=None):
     b = skel_bpy ("test.yaml")
-    print "Num Procs is %d\n" % b.get_num_procs()
+    print("Num Procs is %d\n" % b.get_num_procs())
 
     vardict = b.get_vars()
-    print vardict
+    print(vardict)
 
     for vname in vardict:
         v = vardict [vname]
-        print "%s: %s, %s\n" % (v.get_name(), v.get_type(), v.get_dims() )
+        print("%s: %s, %s\n" % (v.get_name(), v.get_type(), v.get_dims() ))
 
 
 if __name__ == "__main__":

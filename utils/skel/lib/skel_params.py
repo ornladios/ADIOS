@@ -35,7 +35,7 @@ def generate_param_file_with_args (parent_parser):
     try:
         config = adios.adiosConfig (args.project + '_skel.xml')
     except (IOError):
-        print "XXError reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+        print("XXError reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first.")
         return 1
 
  
@@ -43,13 +43,13 @@ def generate_param_file_with_args (parent_parser):
 
     # Only proceed if outfilename does not already exist, or if -f was used
     if os.path.exists (outfilename) and not args.force:
-        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        print("%s exists, aborting. Delete the file or use -f to overwrite." % outfilename)
         return 999
 
     try:
         config = adios.adiosConfig (args.project + '_skel.xml')
     except (IOError):
-        print "Error reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+        print("Error reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first.")
         return 1
 
     generate_param_file (args.project, outfilename, config, args.group, args.bpls)
@@ -60,7 +60,7 @@ def generate_param_file (app, outfile, config, groupname, bplsfile=None):
     param_file = open (outfile, 'w')
 
     if bplsfile is not None:
-        print "Using bpls data in %s" % bplsfile
+        print("Using bpls data in %s" % bplsfile)
         bpdata = skel_bpls.bpls (open (bplsfile, 'r') )
 
     #Write the file header
@@ -164,7 +164,7 @@ def main(argv=None):
 
     # Only proceed if outfilename does not already exist.
     if os.path.exists (outfilename):
-        print "%s exists, aborting. Delete the file or use '-f' to overwrite."
+        print("%s exists, aborting. Delete the file or use '-f' to overwrite.")
         return 999
 
     generate_param_file (args.project, outfilename, config, args.group)

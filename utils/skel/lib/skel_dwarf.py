@@ -82,25 +82,25 @@ def generate_c_write (outfile, config, params, test):
         # same program var (as is done by genarray)
         c_file.write ('\n\n// Scalar declarations')
         declarations = set()
-        for v in filter (lambda x : x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if x.is_scalar()]:
             declarations.add (adios.cFormatter.get_declaration (v, params.get_group (g.get_name() ) ) )
 
         for d in declarations:
             c_file.write (d)
 
         # Now the initializations
-        for v in filter (lambda x : x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if x.is_scalar()]:
             c_file.write (adios.cFormatter.get_initialization (v, params.get_group (g.get_name() ) ) )
 
         c_file.write ('\n\n// Array declarations')
         declarations = set()
-        for v in filter (lambda x : not x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if not x.is_scalar()]:
             declarations.add (adios.cFormatter.get_declaration (v, params.get_group (g.get_name() ) ) )
 
         for d in declarations:
             c_file.write ('\n' + d)
 
-        for v in filter (lambda x : not x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if not x.is_scalar()]:
             c_file.write (adios.cFormatter.get_initialization (v, params.get_group (g.get_name() ) ) )
 
         if measure.use_sleep_before_open():
@@ -213,7 +213,7 @@ def generate_c_write (outfile, config, params, test):
         # free the array memory
         c_file.write ('\n\n// Free the arrays')
         frees = set()
-        for v in filter (lambda x : not x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if not x.is_scalar()]:
             frees.add ('\nfree (' + v.get_gwrite() + ');')
 
         for f in frees:
@@ -290,7 +290,7 @@ def generate_fortran_write (outfile, config, params, test):
         # same program var (as is done by genarray)
         f_file.write ('\n\n! Scalar declarations')
         declarations = set()
-        for v in filter (lambda x : x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if x.is_scalar()]:
             declarations.add (adios.fortranFormatter.get_declaration (v, params.get_group (g.get_name() ) ) )
 
         for d in declarations:
@@ -298,7 +298,7 @@ def generate_fortran_write (outfile, config, params, test):
 
         f_file.write ('\n\n! Array declarations')
         declarations = set()
-        for v in filter (lambda x : not x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if not x.is_scalar()]:
             declarations.add (adios.fortranFormatter.get_declaration (v, params.get_group (g.get_name() ) ) )
 
         for d in declarations:
@@ -328,13 +328,13 @@ def generate_fortran_write (outfile, config, params, test):
         # For now, just do the numerical values first, then come back and do the more
         # complicated ones. This won't cover something like a depends on b, b depends on c,
         # but it will work for the moment
-        for v in filter (lambda x : x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if x.is_scalar()]:
             #split at the spaces, just print the ones where the third element is a number
             init_str = adios.fortranFormatter.get_initialization (v, params.get_group (g.get_name() ) )
             if init_str.split (None, 2)[2].isdigit():
                 f_file.write (init_str)
 
-        for v in filter (lambda x : x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if x.is_scalar()]:
             #split at the spaces, just print the ones where the third element is a number
             init_str = adios.fortranFormatter.get_initialization (v, params.get_group (g.get_name() ) )
             if not init_str.split (None, 2)[2].isdigit():
@@ -343,7 +343,7 @@ def generate_fortran_write (outfile, config, params, test):
         f_file.write ('\n\n! Initialize the arrays')
 
 		# And the vector initializations
-        for v in filter (lambda x : not x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if not x.is_scalar()]:
             f_file.write (adios.fortranFormatter.get_initialization (v, params.get_group (g.get_name() ) ) )
 
 
@@ -527,7 +527,7 @@ def generate_c_read_all (outfile, config, params, test):
         # same program var (as is done by genarray)
         c_file.write ('\n\n// Scalar declarations')
         declarations = set()
-        for v in filter (lambda x : x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if x.is_scalar()]:
             declarations.add (adios.cFormatter.get_declaration (v, params.get_group (g.get_name() ) ) )
 
         for d in declarations:
@@ -535,7 +535,7 @@ def generate_c_read_all (outfile, config, params, test):
 
         c_file.write ('\n\n// Array declarations')
         declarations = set()
-        for v in filter (lambda x : not x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if not x.is_scalar()]:
             declarations.add (adios.cFormatter.get_declaration (v, params.get_group (g.get_name() ) ) )
 
         for d in declarations:
@@ -612,7 +612,7 @@ def generate_c_read_all (outfile, config, params, test):
         # free the array memory
         c_file.write ('\n\n// Free the arrays')
         frees = set()
-        for v in filter (lambda x : not x.is_scalar(), g.get_vars() ):
+        for v in [x for x in g.get_vars() if not x.is_scalar()]:
             frees.add ('\nfree (' + v.get_gwrite() + ');')
 
         for f in frees:

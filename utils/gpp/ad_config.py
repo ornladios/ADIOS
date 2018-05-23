@@ -182,7 +182,7 @@ class var:
             return None
         else:
             # place the dimensions in a list and remove the time-index if it is there.
-            dims = filter (lambda x : x != self.time_index, self.var_node.getAttribute ('dimensions').split(',') )
+            dims = [x for x in self.var_node.getAttribute ('dimensions').split(',') if x != self.time_index]
             cleandims = []
             #print('       get_dimensions of var '+self.get_fullpath())
             for d in dims:

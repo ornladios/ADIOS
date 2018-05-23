@@ -45,7 +45,7 @@ def do_replay_with_args (parent_parser):
         do_replay_from_yaml (args)
         return
 
-    print "No bp file or yaml file specified, exiting"
+    print("No bp file or yaml file specified, exiting")
     return
 
 #    else:
@@ -62,7 +62,7 @@ def do_replay_with_args (parent_parser):
 
 
 def do_replay_from_bpfile (args):
-    print "Replaying using %s" % args.bpfile
+    print("Replaying using %s" % args.bpfile)
     
     # First, call skeldump to get the yamlfile
     sdcmd = "skeldump %s > %s.yaml" % (args.bpfile, args.project)
@@ -76,7 +76,7 @@ def do_replay_from_bpfile (args):
 
 
 def do_replay_from_yaml (args):
-    print "Replaying using %s" % args.yamlfile
+    print("Replaying using %s" % args.yamlfile)
 
     replay_file_name = "%s_replay.sh" % args.project
     replay_file = open (replay_file_name, "w")

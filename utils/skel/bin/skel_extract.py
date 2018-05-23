@@ -46,7 +46,7 @@ def extract (skel_output, dest, select, ranks):
     # check the selected fields
     for field in selected_fields:
         if not field in keys:
-            print 'Invalid selection, field ' + field
+            print('Invalid selection, field ' + field)
             return
 
     #Print the header
@@ -112,7 +112,7 @@ def extract_R (skel_output, select, ranks, iteration):
     # check the selected fields
     for field in selected_fields:
         if not field in keys:
-            print 'Invalid selection, field ' + field
+            print('Invalid selection, field ' + field)
             return
 
     #Print the header
@@ -153,13 +153,13 @@ def extract_R (skel_output, select, ranks, iteration):
 def parse_iteration (filename):
     #assume filename ends with .xml
     if not filename.endswith (".xml"):
-        print "Warning: filename does not meet expectations, should end with .xml"
+        print("Warning: filename does not meet expectations, should end with .xml")
 
     filename = filename [:-4]
 
     iteration = filename.rsplit ("_", 1)[1]
 
-    print iteration
+    print(iteration)
 
     return iteration
 

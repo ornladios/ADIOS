@@ -20,8 +20,8 @@ class skel_settings:
                 continue
             split_line = line.split('=')
             if not len (split_line) == 2:
-                print 'Malformed configuration line: ' + line
-                print 'Ignoring'
+                print('Malformed configuration line: ' + line)
+                print('Ignoring')
                 continue
             self.settings_dict[split_line[0]] = split_line[1]
 
@@ -55,7 +55,7 @@ def create_settings_dir_if_needed():
     if not os.path.exists (skel_settings_dir_name):
         bindir = os.path.dirname (sys.argv[0])
         shutil.copytree (bindir + '/../etc/skel', skel_settings_dir_name)
-        print 'Created ' + skel_settings_dir_name
+        print('Created ' + skel_settings_dir_name)
 
 
 def main(argv=None):

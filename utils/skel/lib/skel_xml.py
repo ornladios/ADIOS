@@ -68,7 +68,7 @@ def create_from_yaml (project,args):
 
     # Only proceed if outfilename does not already exist, or if -f was used
     if os.path.exists (outfilename) and not args.force:
-        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        print("%s exists, aborting. Delete the file or use -f to overwrite." % outfilename)
         return 999
 
     skel_file = open (outfilename, 'w')
@@ -91,7 +91,7 @@ def create_from_xml (project, args):
 
     # Only proceed if outfilename does not already exist, or if -f was used
     if os.path.exists (outfilename) and not args.force:
-        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        print("%s exists, aborting. Delete the file or use -f to overwrite." % outfilename)
         return 999
 
     skel_file = open (outfilename, 'w')
