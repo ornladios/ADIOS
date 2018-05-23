@@ -3,6 +3,15 @@ CYTHON=n
 
 OBJ = adios.so
 
+EXTRALIB :=
+
+ifneq ($(OS),Windows_NT)
+	UNAME_S := $(shell uname -s)
+	ifneq ($(UNAME_S),Darwin)
+		EXTRALIB := -lrt
+	endif
+endif
+
 ifeq ($(CYTHON), y)
 	OBJ := adios.cpp $(OBJ)
 endif
@@ -30,7 +39,7 @@ adios.cpp:  adios.pyx
 	cython --cplus adios.pyx
 
 adios.so:  
-	python setup.py build_ext -lrt
+	python setup.py build_ext $(EXTRALIB)
 
 adios_mpi.cpp:  adios_mpi.pyx
 	cython --cplus adios_mpi.pyx
