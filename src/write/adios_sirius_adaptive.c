@@ -758,7 +758,7 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
                     //it for the time being
                     mkdir (io_paths[l], 0700);
                 }
-                md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 1);
+                md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 2);
                 sprintf (md->level[l].filename, "%s/%s", io_paths[l], fd->name);
                 convert_file_mode (fd->mode, mode);
                
@@ -1525,6 +1525,14 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
                         * (mesh + lastcell * 3 + 2) = n3 - to_offset (nodes_cut, nvertices - nvertices_new, n3);
 ; 
                         lastcell++; 
+                        if (lastcell > nmesh)
+                        {
+                            printf ("The decimated mesh is larger than the orignal mesh. This for example, can be caused the following case.\n");
+                            printf("<82466,20432,82470>, <82466,19974,82469>, <82466,20432,82467>, <82466,19974,82440>.  Since 82466 is connected to 19974, 20432, and 19974 is connected to 20432, my code is thinking there is one more triangle <82466,19974,20432>, and adds it to the decimated mesh, which makes the decimated mesh larger than the original mesh.\n");
+                            printf ("For now, either increase the memeory allocation of the new mesh, int * mesh = malloc (nmesh * 3 * 4), or increase the decimation ratio.\n");
+                            assert (lastcell <= nmesh); //force quit
+                        }
+
                     }
                 }
             }
@@ -1591,7 +1599,11 @@ void build_field (int ** conn, int nvertices, int nvertices_new, int * nodes_cut
         field_new += elems_to_cp;
 
         off += elems_to_cp + 1;
-        prev = nodes_cut[i] + 1;
+
+        if (i < nvertices - nvertices_new)
+        {
+            prev = nodes_cut[i] + 1;
+        }
     }
 }
 
