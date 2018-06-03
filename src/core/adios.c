@@ -466,10 +466,10 @@ void adios_timing_write_xml (int64_t fd_p, const char* filename)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_schema_version (int64_t group_id, char * schema_version)
+int adios_define_schema_version (int64_t group_id, const char * schema_version)
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_schema_version (g, schema_version);
+    return adios_common_define_schema_version (g, (char *)schema_version);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -485,9 +485,9 @@ int adios_define_var_centering (int64_t group_id, const char * varname, const ch
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_mesh_file (int64_t group_id, char * name, char * file)
+int adios_define_mesh_file (int64_t group_id, const char * name, const char * file)
 {
-    return  adios_common_define_mesh_file (group_id, name, file);
+    return  adios_common_define_mesh_file (group_id, (char *)name, (char *)file);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -521,87 +521,87 @@ int adios_define_var_hyperslab ( const char * hyperslab, int64_t group_id, const
 ///////////////////////////////////////////////////////////////////////////////
 int adios_define_mesh_timevarying (const char * timevarying, int64_t group_id, const char * name)
 {
-    return adios_common_define_mesh_timeVarying (timevarying, group_id, name);
+    return adios_common_define_mesh_timeVarying ((char *)timevarying, group_id, name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int adios_define_mesh_timesteps (const char * timesteps, int64_t group_id, const char * name)
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_mesh_timeSteps (timesteps, g, name);
+    return adios_common_define_mesh_timeSteps ((char *)timesteps, g, name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int adios_define_mesh_timescale (const char * timescale, int64_t group_id, const char * name)
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_mesh_timeScale (timescale, g, name);
+    return adios_common_define_mesh_timeScale ((char *)timescale, g, (char *)name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int adios_define_mesh_timeseriesformat (const char * timeseries, int64_t group_id, const char * name)
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_mesh_timeSeriesFormat (timeseries, g, name);
+    return adios_common_define_mesh_timeSeriesFormat ((char *)timeseries, g, (char *)name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int adios_define_mesh_group (const char * group, int64_t group_id, const char * name)
 {
-    return adios_common_define_mesh_group (group_id, name, group);
+    return adios_common_define_mesh_group (group_id, (char *)name, (char *)group);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_mesh_uniform (char * dimensions,
-                               char * origin,
-                               char * spacing,
-                               char * maximum,
-                               char * nspace,
+int adios_define_mesh_uniform (const char * dimensions,
+                               const char * origin,
+                               const char * spacing,
+                               const char * maximum,
+                               const char * nspace,
                                int64_t group_id,
                                const char * name
                               )
 {
 //    struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_mesh_uniform (dimensions, origin, spacing, maximum, nspace, name, group_id);
+    return adios_common_define_mesh_uniform ((char *)dimensions, (char *)origin, (char *)spacing, (char *)maximum, (char *)nspace, (char *)name, group_id);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_mesh_rectilinear (char * dimensions,
-                                   char * coordinates,
-                                   char * nspace,
+int adios_define_mesh_rectilinear (const char * dimensions,
+                                   const char * coordinates,
+                                   const char * nspace,
                                    int64_t group_id,
                                    const char * name
                                   )
 {
 //    struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_mesh_rectilinear (dimensions, coordinates, nspace, name, group_id);
+    return adios_common_define_mesh_rectilinear ((char *)dimensions, (char *)coordinates, (char *)nspace, (char *)name, group_id);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_mesh_structured (char * dimensions,
-                                  char * points,
-                                  char * nspace,
+int adios_define_mesh_structured (const char * dimensions,
+                                  const char * points,
+                                  const char * nspace,
                                   int64_t group_id,
                                   const char * name
                                  )
 {
 //    struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_mesh_structured (dimensions, nspace, points, name, group_id);
+    return adios_common_define_mesh_structured ((char *)dimensions, (char *)nspace, (char *)points, (char *)name, group_id);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_mesh_unstructured (char * points,
-                                    char * data,
-                                    char * count,
-                                    char * cell_type,
-                                    char * npoints,
-                                    char * nspace,
+int adios_define_mesh_unstructured (const char * points,
+                                    const char * data,
+                                    const char * count,
+                                    const char * cell_type,
+                                    const char * npoints,
+                                    const char * nspace,
                                     int64_t group_id,
                                     const char * name
                                    )
 {
 //    struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_mesh_unstructured (points, data, count, cell_type, nspace, npoints, name, group_id);
+    return adios_common_define_mesh_unstructured ((char *)points, (char *)data, (char *)count, (char *)cell_type, (char *)nspace, (char *)npoints, (char *)name, group_id);
 }
 
 ADIOS_AVAILABLE_WRITE_METHODS * adios_available_write_methods()

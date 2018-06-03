@@ -518,7 +518,7 @@ mesh from the attributes stored in ADIOS files.
 This function defines which version of schema is used for visualization in ADIOS.
 
 \begin{lstlisting}[alsolanguage=C,caption={},label={}]
-int adios_define_schema_version (int64_t group_id, char * schema_version)
+int adios_define_schema_version (int64_t group_id, const char * schema_version)
 \end{lstlisting}
 
 Input:
@@ -792,7 +792,7 @@ call adios_define_mesh_group ("experiment", m_adios_group, "uniformmesh")
 This API indicates a external file where mesh is defined.
 
 \begin{lstlisting}[alsolanguage=C,caption={},label={}]
-int adios_define_mesh_file(int64_t group_id, char * name, char * file)
+int adios_define_mesh_file(int64_t group_id, const char * name, const char * file)
 \end{lstlisting}
 
 Input:
@@ -812,11 +812,11 @@ call adios_define_mesh_file (m_adios_group, "uniformmesh", "uniformmesh.bp")
 This function defines a uniform mesh. For not requried attributes in this function, please use 0 instead.
 
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
-int adios_define_mesh_uniform (char * dimensions,
-                               char * origin,
-                               char * spacing,
-                               char * maximum,
-                               char * nspace,
+int adios_define_mesh_uniform (const char * dimensions,
+                               const char * origin,
+                               const char * spacing,
+                               const char * maximum,
+                               const char * nspace,
                                int64_t group_id,
                                const char * name)
 \end{lstlisting}
@@ -843,9 +843,9 @@ call adios_define_mesh_uniform ("10,10,10", "0,1,0.5", "0.5, 0.3, 1", 0,
 This function defines a rectilinear mesh. For not requried attributes in this function, please use 0 instead.
 
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
-int adios_define_mesh_rectilinear (char * dimensions,
-                                   char * coordinates,
-                                   char * nspace,
+int adios_define_mesh_rectilinear (const char * dimensions,
+                                   const char * coordinates,
+                                   const char * nspace,
                                    int64_t group_id,
                                    const char * name)
 \end{lstlisting}
@@ -870,9 +870,9 @@ call adios_define_mesh_rectilinear ("10,10,10", "X,Y", "2", m_adios_group,
 This function defines a structured mesh. For not requried attributes in this function, please use 0 instead.
 
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
-int adios_define_mesh_structured (char * dimensions,
-                                  char * points,
-                                  char * nspace,
+int adios_define_mesh_structured (const char * dimensions,
+                                  const char * points,
+                                  const char * nspace,
                                   int64_t group_id,
                                   const char * name)
 \end{lstlisting}
@@ -897,12 +897,12 @@ call adios_define_mesh_structured ("10,10,10", "X,Y", "2", m_adios_group,
 This function defines a unstructured mesh. For not requried attributes in this function, please use 0 instead.
 
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
-int adios_define_mesh_unstructured (char * points,
-                                    char * data,
-                                    char * count,
-                                    char * cell_type,
-                                    char * npoints,
-                                    char * nspace,
+int adios_define_mesh_unstructured (const char * points,
+                                    const char * data,
+                                    const char * count,
+                                    const char * cell_type,
+                                    const char * npoints,
+                                    const char * nspace,
                                     int64_t group_id,
                                     const char * name)
 \end{lstlisting}
