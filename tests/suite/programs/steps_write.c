@@ -15,7 +15,6 @@ int main (int argc, char ** argv)
 {
 	char        filename [256];
 	int         rank, size, i, j, step, block;
-        int         Offset; 
 
 	int         NX = 2; // number of records written per step per process
         int         Width=20;

@@ -21,7 +21,6 @@
 /*************************************************************/
 int main(int argc, char **argv)
 {
-    char filename[256];
     int rank, size, i;
     int NX = 40;
     int NY = 1;

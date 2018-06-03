@@ -115,7 +115,6 @@ int write_data (char * transformdef)
     double      *t;
     /* ADIOS variables declarations for matching gwrite_temperature.ch */
     int         it, i, r;
-    uint64_t    adios_groupsize, adios_totalsize;
 
     if (!rank) printf ("------- Write blocks to file %s -------\n", fname);
     // We will have "nsteps * number of processes" blocks
@@ -191,7 +190,7 @@ int write_data (char * transformdef)
 
 void print_written_info()
 {
-    int s, r, b;
+    int s, r;
     printf ("\n------- Information recorded on rank 0 (read will compare to this info)  --------\n");
     for (s = 0; s < nsteps; s++) {
         printf ("Step %d:\n", s);

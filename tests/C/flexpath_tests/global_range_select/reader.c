@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv)
 {
-    int rank, j;
+    int rank;
     int NX, NY;
     int writer_size;
     double *t;

@@ -383,7 +383,6 @@ int read_points ()
 
     ADIOS_SELECTION *pts;
     uint64_t start[100];
-    uint64_t count[100];
     ADIOS_SELECTION *box;
     uint64_t boxstart[3];
     uint64_t boxcount[3];

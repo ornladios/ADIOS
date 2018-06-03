@@ -164,7 +164,6 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
  */
 int get_time_from_pglist(struct bp_index_pg_struct_v1 * pgs, int step)
 {
-    int i = 0;
     int prev_ti = 0, counter = 0;
 
     while (pgs != NULL)
@@ -361,7 +360,6 @@ int bp_open (const char * fname,
     // Broadcast the index which may be bigger than 2GB, so do it in chunks
     uint64_t bytes_sent = 0;
     int32_t to_send = 0;
-    int r, err;
 
     while (bytes_sent < footer_size)
     {
