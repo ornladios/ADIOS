@@ -193,7 +193,7 @@ void adios_timing_write_xml (int64_t fd_p, const char* filename);
 // no-xml schema API
 // Define adios schema version
 // The function implements the same as "schema version="1.1 ""in xml
-int adios_define_schema_version (int64_t group_id, char * schema_version);
+int adios_define_schema_version (int64_t group_id, const char * schema_version);
 
 // Assign mesh to a variable
 // The function implements the same as "var name="Var1" mesh="meshname" " in xml 
@@ -202,8 +202,8 @@ int adios_define_var_mesh(int64_t group_id, const char * varname, const char * m
 // Define centering of the variable value onto the mesh, centering is "cell" or "point"
 int adios_define_var_centering(int64_t group_id, const char * varname, const char * centering);
 
-// Define a external file where mesh variables are written 
-int adios_define_mesh_file(int64_t group_id, char * name, char * file);
+// Define a external file where mesh variables are written
+int adios_define_mesh_file(int64_t group_id, const char * name, const char * file);
 
 // The time-­steps points to time variables using steps, starting from step 0
 int adios_define_var_timesteps (const char * timesteps, int64_t group_id, const char * name);
@@ -237,38 +237,38 @@ int adios_define_mesh_group (const char * group, int64_t group_id, const char * 
 
 // Defines a uniform mesh
 // For not requried attributes in this function, please use 0 instead
-int adios_define_mesh_uniform (char * dimensions, 
-                               char * origin, 
-                               char * spacing, 
-                               char * maximum, 
-                               char * nspace,
+int adios_define_mesh_uniform (const char * dimensions,
+                               const char * origin,
+                               const char * spacing,
+                               const char * maximum,
+                               const char * nspace,
                                int64_t group_id,
                                const char * name);
 
 // Defines a rectilinear mesh
 // For not requried attributes in this function, please use 0 instead
-int adios_define_mesh_rectilinear (char * dimensions, 
-                                   char * coordinates,
-                                   char * nspace,
+int adios_define_mesh_rectilinear (const char * dimensions,
+                                   const char * coordinates,
+                                   const char * nspace,
                                    int64_t group_id,
                                    const char * name);
 
 // Defines a structured mesh
 // For not requried attributes in this function, please use 0 instead
-int adios_define_mesh_structured (char * dimensions, 
-                                  char * points,
-                                  char * nspace,
+int adios_define_mesh_structured (const char * dimensions,
+                                  const char * points,
+                                  const char * nspace,
                                   int64_t group_id,
                                   const char * name);
 
 // Define an unstructured mesh
 // For not requried attributes in this function, please use 0 instead
-int adios_define_mesh_unstructured (char * points,
-                                    char * data, 
-                                    char * count, 
-                                    char * cell_type,
-                                    char * npoints,
-                                    char * nspace,
+int adios_define_mesh_unstructured (const char * points,
+                                    const char * data,
+                                    const char * count,
+                                    const char * cell_type,
+                                    const char * npoints,
+                                    const char * nspace,
                                     int64_t group_id,
                                     const char * name);
 
