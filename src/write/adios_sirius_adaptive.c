@@ -1642,6 +1642,33 @@ void find_clst (double * r, double * z, int node,
     }
 }
 
+void test_delta_1 (double * r, double * z, double * field,
+                int nvertices, int * mesh, int nmesh,
+                double * r_reduced, double * z_reduced,
+                double * field_reduced, int nvertices_new,
+                int * mesh_reduced, int nmesh_new,
+                double * field_delta, double ** pfield_full
+               )
+{
+    double * field_full = (double *) malloc (nvertices * 8);
+    assert (field_full);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        if (i % dec_ratio == 0)
+        {
+            field_full[i] = field_reduced[i / dec_ratio];
+        }
+        else
+        {
+            field_full[i] = field_delta[i / dec_ratio * (dec_ratio - 1) + i % dec_ratio];
+        }
+    }
+
+    * pfield_full = field_full;
+}
+
+
 void test_delta (double * r, double * z, double * field,
                 int nvertices, int * mesh, int nmesh,
                 double * r_reduced, double * z_reduced,
@@ -1956,7 +1983,7 @@ int find_possible_nodes (double min_r, double max_r,
     return next_node;
 }
 
-void get_delta1 (double * r, double * z, double * field,
+void get_delta1_test (double * r, double * z, double * field,
                  int nvertices, int * mesh, int nmesh,
                  double * r_reduced, double * z_reduced,
                  double * field_reduced, int nvertices_new,
@@ -2018,6 +2045,44 @@ double time3 = MPI_Wtime ();
 printf ("get delta time = %f\n", time3 - time1);
 
     * pfield_delta = delta;
+}
+
+void get_delta_1 (double * r, double * z, double * field,
+                 int nvertices, int * mesh, int nmesh,
+                 double * r_reduced, double * z_reduced,
+                 double * field_reduced, int nvertices_new,
+                 int * mesh_reduced, int nmesh_new,
+                 double ** pfield_delta
+                )
+{
+    double start_time = MPI_Wtime ();
+    double * delta = (double *) malloc ((nvertices - nvertices_new) * 8);
+    assert (delta);
+
+    for (int i = 0; i < nvertices_new; i++)
+    {
+        if (i < nvertices_new - 1)
+        {
+            for (int j = 0; j < dec_ratio - 1; j++)
+            {
+                delta[(dec_ratio - 1) * i + j]
+                    = (double)(j + 1)/(double)dec_ratio * field[dec_ratio * i] + (double)(dec_ratio - j - 1)/(double)dec_ratio* field[dec_ratio * (i + 1)];
+            }
+        }
+        else // i == nvertices_new - 1
+        {
+            for (int j = 0; j < dec_ratio - 1 + nvertices - dec_ratio * nvertices_new; j++)
+            {
+                delta[(dec_ratio - 1) * i + j] = field[dec_ratio * i + j];
+            }
+
+        }
+    }
+
+    * pfield_delta = delta;
+    double end_time = MPI_Wtime ();
+    log_debug ("get delta time = %f\n", end_time - start_time);
+
 }
 
 void get_delta (double * r, double * z, double * field,
@@ -3070,7 +3135,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                         if (save_delta)
                         {
-                            get_delta ((double *) R->data, 
+                            if (dec_type == 0)
+                            {
+                                get_delta ((double *) R->data,
                                        (double *) Z->data, 
                                        (double *) data,
                                        nelems, (int *) mesh->data, 
@@ -3079,14 +3146,38 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                        nvertices_new, mesh_reduced, 
                                        nmesh_reduced, &delta
                                       );
+                            } else if (dec_type == 1)
+                            {
+                                get_delta_1 ((double *) R->data,
+                                       (double *) Z->data,
+                                       (double *) data,
+                                       nelems, (int *) mesh->data,
+                                       mesh_ldims[0],
+                                       r_reduced, z_reduced, data_reduced,
+                                       nvertices_new, mesh_reduced,
+                                       nmesh_reduced, &delta
+                                      );
+                            }
 
                             if (compress_delta)
                             {
-                                compr_size = compress (delta, 
+                                if (dec_type == 0)
+                                {
+                                    compr_size = compress (delta, 
                                                        nelems, 
                                                        compr_tolerance, 
                                                        &delta_compr
                                                       );
+                                }
+                                else if (dec_type == 1)
+                                {
+                                    compr_size = compress (delta,
+                                                    nelems - nvertices_new,
+                                                    compr_tolerance,
+                                                    &delta_compr
+                                                   );
+                                }
+
                             }
                         }
 #ifdef TEST_REDUCTION
@@ -3094,11 +3185,23 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         {
                             if (compress_delta)
                             {
-                                decompress (delta, nelems, compr_tolerance,
+                                if (dec_type == 0)
+                                {
+                                    decompress (delta, nelems, compr_tolerance,
                                             delta_compr, compr_size);
+                                }
+                                else if (dec_type == 1)
+                                {
+                                    decompress (delta, 
+                                            nelems - nvertices_new, 
+                                            compr_tolerance,
+                                            delta_compr, compr_size);
+                                }
                             }
 
-                            test_delta ((double *) R->data,
+                            if (dec_type == 0)
+                            {
+                                test_delta ((double *) R->data,
                                        (double *) Z->data,
                                        (double *) data,
                                        nelems, (int *) mesh->data, mesh_ldims[0],
@@ -3106,6 +3209,18 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                        nvertices_new, mesh_reduced, nmesh_reduced,
                                        delta, &test_field
                                       );
+                            }
+                            else if (dec_type == 1)
+                            {
+                                test_delta_1 ((double *) R->data,
+                                       (double *) Z->data,
+                                       (double *) data,
+                                       nelems, (int *) mesh->data, mesh_ldims[0],
+                                       r_reduced, z_reduced, data_reduced,
+                                       nvertices_new, mesh_reduced, nmesh_reduced,
+                                       delta, &test_field
+                                      ); 
+                            }
                         }
 #endif
                     }
