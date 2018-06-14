@@ -1278,7 +1278,7 @@ int intersect (int ** conn, int n1, int n2, int * n3_list)
     return c;
 }
 
-void prep_mesh (int ** conn, int nvertices, int nvertices_new)
+void prep_mesh (int ** conn, int nvertices)
                 
 {
     for (int i = 0; i < nvertices; i++)
@@ -1443,6 +1443,21 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
     * mesh_new = mesh;
 
     return lastcell;
+}
+
+int update_nnodes_cut (int ** conn, int nvertices)
+{
+   int next = 0;
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        if (conn[i][0] == -1)
+        {
+            next++;
+        }
+    }
+
+    return next;
 }
 
 int * build_nodes_cut_list (int ** conn, int nvertices, int nvertices_new)
@@ -2630,10 +2645,10 @@ double t2 = MPI_Wtime();
     }
 #endif
 
-    * nvertices_new = nvertices - vertices_cut;
-    //printf ("nvertices_old = %d, nvertices_new = %d\n", nvertices, * nvertices_new);
+    prep_mesh (conn, nvertices);
 
-    prep_mesh (conn, nvertices, * nvertices_new);
+    vertices_cut = update_nnodes_cut (conn, nvertices);
+    * nvertices_new = nvertices - vertices_cut;
 
     r_new = (double *) malloc ((* nvertices_new) * 8);
     z_new = (double *) malloc ((* nvertices_new) * 8);
