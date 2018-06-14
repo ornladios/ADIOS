@@ -41,12 +41,13 @@ int main (int argc, char ** argv)
     int step;
     double iotime = 0.0;
 
-    for (step = 0; step < 1; step++)
+    for (step = 0; step < 20; step++)
     {
         char fname[64];
 
         //sprintf (fname, "xgc.3d.080%02d.bp", step);
-        sprintf (fname, "totalf_itg_tiny/xgc.3d.08000.bp");
+        sprintf (fname, "2X_upsampling/xgc.3d.080%02d.bp",step);
+
         adios_read_init_method (method, comm, "verbose=3");
 
         ADIOS_FILE * f = adios_read_open_file (fname, method, comm);
@@ -95,7 +96,7 @@ int main (int argc, char ** argv)
         // read mesh
         adios_read_init_method (method, comm, "verbose=3");
 
-        ADIOS_FILE * fmesh = adios_read_open_file ("totalf_itg_tiny/xgc.mesh.bp", method, comm);
+        ADIOS_FILE * fmesh = adios_read_open_file ("2X_upsampling/xgc.mesh.bp", method, comm);
         if (fmesh == NULL)
         {
             printf ("%s\n", adios_errmsg());
