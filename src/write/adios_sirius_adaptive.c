@@ -27,6 +27,7 @@
 #include "core/util.h"
 
 #include "pqueue.h"
+#include "triangle.h"
 
 #include "mpi.h"
 
@@ -45,6 +46,7 @@ double compr_tolerance = 0.1;
 int save_delta = 1;
 int compress_delta = 1;
 int dec_ratio = 10;
+int dec_type = 0;
 int32_t storage_level = 0;
 
 GHashTable ** nodes_ght = 0;
@@ -651,6 +653,9 @@ static void init_output_parameters(const PairStruct *params)
         } else if (!strcasecmp (p->name, "compression-tolerance"))
         {
             compr_tolerance = atof (p->value);
+        } else if (!strcasecmp (p->name, "decimation-type"))
+        {
+            dec_type = atoi (p->value);
         } else if (!strcasecmp (p->name, "decimation-ratio"))
         {
             dec_ratio = atoi (p->value);
@@ -2098,6 +2103,94 @@ double calc_area (double * r, double * z, double * data,
 
 }
 
+void decimate_1 (double * rorg, double * zorg, double * fieldorg,
+                 int nvertices, int * mesh, int nmesh,
+                 double ** r_reduced, double ** z_reduced,
+                 double ** field_reduced, int * nvertices_new,
+                 int ** mesh_reduced, int * nmesh_new
+                )
+{
+    double * r, * z, * field;
+    double * r_new, * z_new, * field_new;
+    int * mesh_new, i;
+    int vertices_cut = 0;
+
+    * nvertices_new = nvertices / dec_ratio;
+  
+    r = (double *) malloc ((* nvertices_new) * 8);
+    z = (double *) malloc ((* nvertices_new) * 8);
+    field = (double *) malloc ((* nvertices_new) * 8);
+    assert (r && z && field);
+
+    for (i = 0; i < * nvertices_new; i++)
+    {
+        r[i] = rorg[dec_ratio * i];
+        z[i] = zorg[dec_ratio * i];
+        field[i] = fieldorg[dec_ratio * i];
+    }
+
+    int *triangle_node;
+    double * node_rz = (double *) malloc ((* nvertices_new) * 2 * 8);
+    assert (node_rz);
+
+    for (i = 0; i < * nvertices_new; i++)
+    {
+        node_rz[2 * i] = r[i];
+        node_rz[2 * i + 1] = z[i];
+    }
+/*
+    r8mat_transpose_print (2, * nvertices_new, node_rz, "  The nodes:" );
+*/
+    printf ("entering decimate_1\n");
+/*
+    i4mat_transpose_print ( 3, * nmesh_new, triangle_node, 
+    "  The Delaunay triangles:" );
+*/
+    struct triangulateio * in = (struct triangulateio *) malloc (sizeof (struct triangulateio));
+    struct triangulateio * out = (struct triangulateio *) malloc (sizeof (struct triangulateio));
+    assert (in && out);
+
+    in->pointlist = node_rz;
+    in->pointattributelist = 0;
+    in->pointmarkerlist = 0;
+    in->numberofpoints = * nvertices_new;
+    in->numberofpointattributes = 0;
+
+    in->triangleattributelist = 0;
+    in->trianglearealist = 0;
+    in->neighborlist = 0;
+    in->numberofsegments = 0;
+    in->segmentlist = 0;
+    in->segmentmarkerlist = 0;
+    in->numberofholes = 0;
+    in->holelist = 0;
+    in->numberofregions = 0;
+    in->regionlist = 0;
+
+    out->pointlist = 0;
+    out->pointattributelist = 0;
+    out->pointmarkerlist = 0;
+    out->trianglelist = 0;
+    out->triangleattributelist = 0;
+    out->neighborlist = 0;
+    out->segmentlist = 0;
+    out->segmentmarkerlist = 0;
+    out->edgelist = 0;
+    out->edgemarkerlist = 0;
+
+    triangulate("z", in, out, 0);
+    free (node_rz);
+
+    * r_reduced = r;
+    * z_reduced = z;
+    * field_reduced = field;
+    * nmesh_new = out->numberoftriangles;
+    * mesh_reduced = out->trianglelist;
+    
+    free (in);
+    free (out);
+}
+
 void decimate (double * rorg, double * zorg, double * fieldorg, 
                int nvertices, int * mesh, int nmesh,
                double ** r_reduced, double ** z_reduced, 
@@ -2947,12 +3040,28 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 #endif
 
                         // Decimation for level 0
-                        decimate ((double *) R->data, (double *) Z->data, (double *) data, 
-                                  nelems, (int *) mesh->data, mesh_ldims[0],
-                                  &r_reduced, &z_reduced, &data_reduced, 
-                                  &nvertices_new, &mesh_reduced, 
-                                  &nmesh_reduced
-                                 );
+                        if (dec_type == 0)
+                        {
+                            decimate ((double *) R->data, (double *) Z->data, (double *) data, 
+                                   nelems, (int *) mesh->data, mesh_ldims[0],
+                                   &r_reduced, &z_reduced, &data_reduced, 
+                                   &nvertices_new, &mesh_reduced, 
+                                   &nmesh_reduced
+                                  );
+                        } else if (dec_type == 1) 
+                        {
+                            decimate_1 ((double *) R->data, 
+                                        (double *) Z->data, 
+                                        (double *) data,
+                                        nelems, (int *) mesh->data, 
+                                        mesh_ldims[0],
+                                        &r_reduced, &z_reduced, 
+                                        &data_reduced,
+                                        &nvertices_new, 
+                                        &mesh_reduced,
+                                        &nmesh_reduced
+                                       );
+                        }
 
                         calc_area (r_reduced, z_reduced, data_reduced,
                                    nvertices_new, mesh_reduced,
