@@ -157,7 +157,8 @@ libadios_a_SOURCES = core/adios.c \
                      write/adios_mpi_amr.c \
                      write/adios_posix.c \
                      write/adios_var_merge.c \
-                     write/adios_sirius_adaptive.c 
+                     write/adios_sirius_adaptive.c \
+                     write/triangle.c
 if HAVE_BGQ
 libadios_a_SOURCES += write/adios_mpi_bgq.c 
 endif

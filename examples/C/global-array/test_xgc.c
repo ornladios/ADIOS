@@ -47,7 +47,7 @@ int main (int argc, char ** argv)
 
         //sprintf (fname, "xgc.3d.080%02d.bp", step);
 //            sprintf (fname, "larger_data/xgc.3d.00400.bp");
-        sprintf (fname, "totalf_itg_tiny/xgc.3d.080%02d.bp",step);
+        sprintf (fname, "2X_upsampling/xgc.3d.080%02d.bp",step);
  
 
         adios_read_init_method (method, comm, "verbose=3");
@@ -99,7 +99,7 @@ int main (int argc, char ** argv)
         adios_read_init_method (method, comm, "verbose=3");
 
         //ADIOS_FILE * fmesh = adios_read_open_file ("larger_data/xgc.mesh.bp", method, comm);
-        ADIOS_FILE * fmesh = adios_read_open_file ("totalf_itg_tiny/xgc.mesh.bp", method, comm);
+        ADIOS_FILE * fmesh = adios_read_open_file ("2X_upsampling/xgc.mesh.bp", method, comm);
         if (fmesh == NULL)
         {
             printf ("%s\n", adios_errmsg());

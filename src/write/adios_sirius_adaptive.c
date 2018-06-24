@@ -29,13 +29,14 @@
 #include "core/util.h"
 
 #include "pqueue.h"
+#include "triangle.h"
 
 #include "mpi.h"
 
 #define MAXLEVEL 10
 #define MAX_NODE_DEGREE 100
 //#define DUMP_FEATURE
-//#define TEST_REDUCTION
+#define TEST_REDUCTION
 
 static char *io_method[MAXLEVEL]; //the IO methods for data output for each level
 static char *io_parameters[MAXLEVEL]; //the IO method parameters
@@ -51,6 +52,7 @@ double compr_tolerance = 0.1;
 int save_delta = 1;
 int compress_delta = 1;
 int dec_ratio = 10;
+int dec_type = 0;
 char * remote_addr = 0;
 void * zmq_context = 0;
 void * zmq_ipc_req = 0;
@@ -660,6 +662,9 @@ static void init_output_parameters(const PairStruct *params)
         } else if (!strcasecmp (p->name, "compression-tolerance"))
         {
             compr_tolerance = atof (p->value);
+        } else if (!strcasecmp (p->name, "decimation-type"))
+        {
+            dec_type = atoi (p->value);
         } else if (!strcasecmp (p->name, "decimation-ratio"))
         {
             dec_ratio = atoi (p->value);
@@ -758,7 +763,7 @@ int adios_sirius_adaptive_open (struct adios_file_struct * fd
                     //it for the time being
                     mkdir (io_paths[l], 0700);
                 }
-                md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 1);
+                md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 2);
                 sprintf (md->level[l].filename, "%s/%s", io_paths[l], fd->name);
                 convert_file_mode (fd->mode, mode);
                
@@ -1381,7 +1386,7 @@ int intersect (int ** conn, int n1, int n2, int * n3_list)
     return c;
 }
 
-void prep_mesh (int ** conn, int nvertices, int nvertices_new)
+void prep_mesh (int ** conn, int nvertices)
                 
 {
     for (int i = 0; i < nvertices; i++)
@@ -1519,12 +1524,18 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
                     if (g_hash_table_insert (ght, key_str, 0) == TRUE)
                     {
                         * (mesh + lastcell * 3) = n1 - to_offset (nodes_cut, nvertices - nvertices_new, n1);
-;
                         * (mesh + lastcell * 3 + 1) = n2 - to_offset (nodes_cut, nvertices - nvertices_new, n2);
-
                         * (mesh + lastcell * 3 + 2) = n3 - to_offset (nodes_cut, nvertices - nvertices_new, n3);
-; 
+
                         lastcell++; 
+                        if (lastcell > nmesh)
+                        {
+                            printf ("The decimated mesh is larger than the orignal mesh. This for example, can be caused the following case.\n");
+                            printf("<82466,20432,82470>, <82466,19974,82469>, <82466,20432,82467>, <82466,19974,82440>.  Since 82466 is connected to 19974, 20432, and 19974 is connected to 20432, my code is thinking there is one more triangle <82466,19974,20432>, and adds it to the decimated mesh, which makes the decimated mesh larger than the original mesh.\n");
+                            printf ("For now, either increase the memeory allocation of the new mesh, int * mesh = malloc (nmesh * 3 * 4), or increase the decimation ratio.\n");
+                            assert (lastcell <= nmesh); //force quit
+                        }
+
                     }
                 }
             }
@@ -1541,6 +1552,21 @@ int build_mesh (int ** conn, int nvertices, int nvertices_new,
     * mesh_new = mesh;
 
     return lastcell;
+}
+
+int update_nnodes_cut (int ** conn, int nvertices)
+{
+   int next = 0;
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        if (conn[i][0] == -1)
+        {
+            next++;
+        }
+    }
+
+    return next;
 }
 
 int * build_nodes_cut_list (int ** conn, int nvertices, int nvertices_new)
@@ -1591,7 +1617,11 @@ void build_field (int ** conn, int nvertices, int nvertices_new, int * nodes_cut
         field_new += elems_to_cp;
 
         off += elems_to_cp + 1;
-        prev = nodes_cut[i] + 1;
+
+        if (i < nvertices - nvertices_new)
+        {
+            prev = nodes_cut[i] + 1;
+        }
     }
 }
 
@@ -1734,6 +1764,32 @@ void find_clst (double * r, double * z, int node,
             * n_clst = n3;
         }
     }
+}
+
+void test_delta_1 (double * r, double * z, double * field,
+                int nvertices, int * mesh, int nmesh,
+                double * r_reduced, double * z_reduced,
+                double * field_reduced, int nvertices_new,
+                int * mesh_reduced, int nmesh_new,
+                double * field_delta, double ** pfield_full
+               )
+{
+    double * field_full = (double *) malloc (nvertices * 8);
+    assert (field_full);
+
+    for (int i = 0; i < nvertices; i++)
+    {
+        if (i % dec_ratio == 0)
+        {
+            field_full[i] = field_reduced[i / dec_ratio];
+        }
+        else
+        {
+            field_full[i] = field_delta[i / dec_ratio * (dec_ratio - 1) + i % dec_ratio];
+        }
+    }
+
+    * pfield_full = field_full;
 }
 
 void test_delta (double * r, double * z, double * field,
@@ -2050,7 +2106,7 @@ int find_possible_nodes (double min_r, double max_r,
     return next_node;
 }
 
-void get_delta1 (double * r, double * z, double * field,
+void get_delta_test (double * r, double * z, double * field,
                  int nvertices, int * mesh, int nmesh,
                  double * r_reduced, double * z_reduced,
                  double * field_reduced, int nvertices_new,
@@ -2112,6 +2168,44 @@ double time3 = MPI_Wtime ();
 log_debug ("get delta time = %f\n", time3 - time1);
 
     * pfield_delta = delta;
+}
+
+void get_delta_1 (double * r, double * z, double * field,
+                 int nvertices, int * mesh, int nmesh,
+                 double * r_reduced, double * z_reduced,
+                 double * field_reduced, int nvertices_new,
+                 int * mesh_reduced, int nmesh_new,
+                 double ** pfield_delta
+                )
+{
+    double start_time = MPI_Wtime ();
+    double * delta = (double *) malloc ((nvertices - nvertices_new) * 8);
+    assert (delta);
+
+    for (int i = 0; i < nvertices_new; i++)
+    {
+        if (i < nvertices_new - 1)
+        {
+            for (int j = 0; j < dec_ratio - 1; j++)
+            {
+                delta[(dec_ratio - 1) * i + j]
+                    = (double)(j + 1)/(double)dec_ratio * field[dec_ratio * i] + (double)(dec_ratio - j - 1)/(double)dec_ratio* field[dec_ratio * (i + 1)];
+            }
+        }
+        else // i == nvertices_new - 1
+        {
+            for (int j = 0; j < dec_ratio - 1 + nvertices - dec_ratio * nvertices_new; j++)
+            {
+                delta[(dec_ratio - 1) * i + j] = field[dec_ratio * i + j];
+            }
+
+        }
+    }
+
+    * pfield_delta = delta;
+    double end_time = MPI_Wtime ();
+    log_debug ("get delta time = %f\n", end_time - start_time);
+
 }
 
 void get_delta (double * r, double * z, double * field,
@@ -2195,6 +2289,94 @@ double calc_area (double * r, double * z, double * data,
 
     //printf ("ntaggedCells = %d, new surface = %f\n", ntaggedCells, surface_size);
 
+}
+
+void decimate_1 (double * rorg, double * zorg, double * fieldorg,
+                 int nvertices, int * mesh, int nmesh,
+                 double ** r_reduced, double ** z_reduced,
+                 double ** field_reduced, int * nvertices_new,
+                 int ** mesh_reduced, int * nmesh_new
+                )
+{
+    double * r, * z, * field;
+    double * r_new, * z_new, * field_new;
+    int * mesh_new, i;
+    int vertices_cut = 0;
+
+    * nvertices_new = nvertices / dec_ratio;
+  
+    r = (double *) malloc ((* nvertices_new) * 8);
+    z = (double *) malloc ((* nvertices_new) * 8);
+    field = (double *) malloc ((* nvertices_new) * 8);
+    assert (r && z && field);
+
+    for (i = 0; i < * nvertices_new; i++)
+    {
+        r[i] = rorg[dec_ratio * i];
+        z[i] = zorg[dec_ratio * i];
+        field[i] = fieldorg[dec_ratio * i];
+    }
+
+    int *triangle_node;
+    double * node_rz = (double *) malloc ((* nvertices_new) * 2 * 8);
+    assert (node_rz);
+
+    for (i = 0; i < * nvertices_new; i++)
+    {
+        node_rz[2 * i] = r[i];
+        node_rz[2 * i + 1] = z[i];
+    }
+/*
+    r8mat_transpose_print (2, * nvertices_new, node_rz, "  The nodes:" );
+*/
+    printf ("entering decimate_1\n");
+/*
+    i4mat_transpose_print ( 3, * nmesh_new, triangle_node, 
+    "  The Delaunay triangles:" );
+*/
+    struct triangulateio * in = (struct triangulateio *) malloc (sizeof (struct triangulateio));
+    struct triangulateio * out = (struct triangulateio *) malloc (sizeof (struct triangulateio));
+    assert (in && out);
+
+    in->pointlist = node_rz;
+    in->pointattributelist = 0;
+    in->pointmarkerlist = 0;
+    in->numberofpoints = * nvertices_new;
+    in->numberofpointattributes = 0;
+
+    in->triangleattributelist = 0;
+    in->trianglearealist = 0;
+    in->neighborlist = 0;
+    in->numberofsegments = 0;
+    in->segmentlist = 0;
+    in->segmentmarkerlist = 0;
+    in->numberofholes = 0;
+    in->holelist = 0;
+    in->numberofregions = 0;
+    in->regionlist = 0;
+
+    out->pointlist = 0;
+    out->pointattributelist = 0;
+    out->pointmarkerlist = 0;
+    out->trianglelist = 0;
+    out->triangleattributelist = 0;
+    out->neighborlist = 0;
+    out->segmentlist = 0;
+    out->segmentmarkerlist = 0;
+    out->edgelist = 0;
+    out->edgemarkerlist = 0;
+ 
+    triangulate("z", in, out, 0);
+    free (node_rz);
+
+    * r_reduced = r;
+    * z_reduced = z;
+    * field_reduced = field;
+    * nmesh_new = out->numberoftriangles;
+    * mesh_reduced = out->trianglelist;
+    
+    free (in);
+    free (out);
 }
 
 void decimate (double * rorg, double * zorg, double * fieldorg, 
@@ -2571,10 +2753,10 @@ double t2 = MPI_Wtime();
     }
 #endif
 
-    * nvertices_new = nvertices - vertices_cut;
-    //printf ("nvertices_old = %d, nvertices_new = %d\n", nvertices, * nvertices_new);
+    prep_mesh (conn, nvertices);
 
-    prep_mesh (conn, nvertices, * nvertices_new);
+    vertices_cut = update_nnodes_cut (conn, nvertices);
+    * nvertices_new = nvertices - vertices_cut;
 
     r_new = (double *) malloc ((* nvertices_new) * 8);
     z_new = (double *) malloc ((* nvertices_new) * 8);
@@ -3043,12 +3225,28 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 #endif
 
                         // Decimation for level 0
-                        decimate ((double *) R->data, (double *) Z->data, (double *) data, 
+                        if (dec_type == 0)
+                        {
+                            decimate ((double *) R->data, (double *) Z->data, (double *) data, 
                                   nelems, (int *) mesh->data, mesh_ldims[0],
                                   &r_reduced, &z_reduced, &data_reduced, 
                                   &nvertices_new, &mesh_reduced, 
                                   &nmesh_reduced
                                  );
+                        } else if (dec_type == 1) 
+                        {
+                            decimate_1 ((double *) R->data, 
+                                        (double *) Z->data, 
+                                        (double *) data,
+                                        nelems, (int *) mesh->data, 
+                                        mesh_ldims[0],
+                                        &r_reduced, &z_reduced, 
+                                        &data_reduced,
+                                        &nvertices_new, 
+                                        &mesh_reduced,
+                                        &nmesh_reduced
+                                       );
+                        }
 
                         calc_area (r_reduced, z_reduced, data_reduced,
                                    nvertices_new, mesh_reduced,
@@ -3057,7 +3255,9 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
 
                         if (save_delta)
                         {
-                            get_delta ((double *) R->data, 
+                            if (dec_type == 0)
+                            {
+                                get_delta ((double *) R->data, 
                                        (double *) Z->data, 
                                        (double *) data,
                                        nelems, (int *) mesh->data, 
@@ -3066,14 +3266,37 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                        nvertices_new, mesh_reduced, 
                                        nmesh_reduced, &delta
                                       );
+                            } else if (dec_type == 1)
+                            {
+                                get_delta_1 ((double *) R->data,
+                                       (double *) Z->data,
+                                       (double *) data,
+                                       nelems, (int *) mesh->data,
+                                       mesh_ldims[0],
+                                       r_reduced, z_reduced, data_reduced,
+                                       nvertices_new, mesh_reduced,
+                                       nmesh_reduced, &delta
+                                      );
+                            }
 
                             if (compress_delta)
                             {
-                                compr_size = compress (delta, 
+                                if (dec_type == 0)
+                                {
+                                    compr_size = compress (delta, 
                                                        nelems, 
                                                        compr_tolerance, 
                                                        &delta_compr
                                                       );
+                                } 
+                                else if (dec_type == 1)
+                                {
+                                    compr_size = compress (delta,
+                                                    nelems - nvertices_new,
+                                                    compr_tolerance,
+                                                    &delta_compr
+                                                   );
+                                }
                             }
                         }
 #ifdef TEST_REDUCTION
@@ -3081,11 +3304,24 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                         {
                             if (compress_delta)
                             {
-                                decompress (delta, nelems, compr_tolerance,
+                                if (dec_type == 0)
+                                {
+                                    decompress (delta, nelems, 
+                                            compr_tolerance,
                                             delta_compr, compr_size);
+                                } 
+                                else if (dec_type == 1)
+                                {
+                                    decompress (delta, 
+                                            nelems - nvertices_new, 
+                                            compr_tolerance,
+                                            delta_compr, compr_size);
+                                }
                             }
 
-                            test_delta ((double *) R->data,
+                            if (dec_type == 0)
+                            {
+                                test_delta ((double *) R->data,
                                        (double *) Z->data,
                                        (double *) data,
                                        nelems, (int *) mesh->data, mesh_ldims[0],
@@ -3093,6 +3329,17 @@ void adios_sirius_adaptive_write (struct adios_file_struct * fd
                                        nvertices_new, mesh_reduced, nmesh_reduced,
                                        delta, &test_field
                                       );
+                            } else if (dec_type == 1)
+                            {
+                                test_delta_1 ((double *) R->data,
+                                       (double *) Z->data,
+                                       (double *) data,
+                                       nelems, (int *) mesh->data, mesh_ldims[0],
+                                       r_reduced, z_reduced, data_reduced,
+                                       nvertices_new, mesh_reduced, nmesh_reduced,
+                                       delta, &test_field
+                                      ); 
+                            }
                         }
 #endif
                     }

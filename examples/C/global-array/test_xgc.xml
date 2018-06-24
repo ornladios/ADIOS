@@ -17,10 +17,11 @@
 
     <!--method group="temperature" method="SIRIUS_ADAPTIVE">method=MPI;path=data1;parameters;method=MPI;path=data2;parameters</method-->
     <method group="field" method="SIRIUS_ADAPTIVE">
-        remote=tcp://131.225.2.31:5555;
-        decimation-ratio=1.1;
-        save-delta=0;
-        compress-delta=0;
+        remote=tcp://131.225.2.31:5565;
+        decimation-type=1;
+        decimation-ratio=2;
+        save-delta=1;
+        compress-delta=1;
         compression-tolerance=0.001;
         thresh_type=absolute;
         thresh=40;
