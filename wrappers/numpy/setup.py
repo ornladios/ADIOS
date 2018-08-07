@@ -41,8 +41,16 @@ out = check_output(["adios_config", "-l", "-s"]).decode("utf-8")
 for path in out.strip().split(" "):
     if path.startswith('-L'):
         m1.library_dirs.append(path.replace('-L', '', 1))
-    if path.startswith('-l'):
+    elif path.startswith('-l'):
         m1.libraries.append(path.replace('-l', '', 1))
+    elif path.endswith('.so'):
+        m1.extra_objects.append(path)
+    elif path.endswith('.a'):
+        m1.extra_objects.append(path)
+    elif path.endswith('.dylib'):
+        m1.extra_objects.append(path)
+    else:
+        print ("[INFO] Ignored option:", path)
 
 class adios_test(Command):
     user_options = []
