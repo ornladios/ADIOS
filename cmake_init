@@ -70,13 +70,13 @@ if [ `hostname | cut -c 1-4` == "rhea" ]; then
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
+    TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
     BUILD_STAGING=true
     if [ $BUILD_STAGING == "false" ]; then
     
         ################
         # Titan #
         ################
-        TARGET=pgi
         echo "Configure on TITAN (XK7) for $TARGET env."
         #export CFLAGS="-Wall -g" 
         source /opt/modules/default/etc/modules.sh
@@ -110,7 +110,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ##########################
         # Titan + staging #
         ##########################
-        TARGET=pgi
         echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
         source /opt/modules/default/etc/modules.sh
         module unload szip

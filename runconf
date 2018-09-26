@@ -204,7 +204,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
     #export CC=mpicc
     #export FC=mpif90
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
-    export CFLAGS="-fPIC -g ${EXTRA_CFLAGS}" 
+    export CFLAGS="-fPIC -g -O2 ${EXTRA_CFLAGS}" 
     if [ $BUILD_FULL == "true" ]; then
         LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
         --enable-dependency-tracking \
