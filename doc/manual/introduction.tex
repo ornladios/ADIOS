@@ -81,6 +81,20 @@ Linux clusters and Mac OSX.
 
 %
 %
+\section {What's new in version 1.13.2}
+This release contains bug fixes for applications.
+
+\begin{itemize}
+	\item fix: \verb|MPI_COMM_NULL| accepted in serial codes linked against parallel adios library
+	\item fix: const correctness in C strings
+	\item fix: ADIOS builds and runs with python3 and python2
+	\item fix: zero-length string attributes and string arrays are accepted
+	\item fix: build issues on OSX and about \verb|clockid_t|
+\end{itemize}
+
+
+%
+%
 \section {What's new in version 1.13.1}
 This release contains bug fixes for applications that write compressed arrays where some process writes zero-sized blocks into the global array, and for applications that output many timesteps. Also, the build system for the external library used by the Flexpath staging method has been reworked (and renamed from chaos to {\bf korvo}) and this document updates the build process for ADIOS with Flexpath.
 
