@@ -1,3 +1,10 @@
+1.13.2 Bug fix release Oct 2018
+     - fix: MPI_COMM_NULL accepted in serial codes linked against parallel adios library
+     - fix: const correctness in C strings
+     - fix: builds and runs with python3 and python2 
+     - fix: zero-length string attributes and string arrays are accepted
+     - fix: build issues on OSX and about clockid_t
+
 1.13.1 Release April 2018
      - fix: zero size variable-blocks are supported by all transformations
      - fix: build issues with the profiling interface
