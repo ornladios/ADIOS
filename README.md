@@ -1,5 +1,7 @@
-ADIOS (Adaptable I/O System) 
-----------------------------
+ADIOS (Adaptable I/O System) 1.x
+--------------------------------
+
+Note: The Exascale Computing Program's ADIOS 2.x repository is at https://github.com/ornladios/ADIOS2
 
 Please look at the examples/ directory for the example codes on how to 
 use ADIOS. If you need more detailed information, please, read the User's 
