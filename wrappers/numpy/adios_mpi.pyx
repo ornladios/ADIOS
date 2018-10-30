@@ -1064,7 +1064,8 @@ cdef class file(dict):
 
     def __del__(self):
         """ Close file on destruction. """
-        self.close()
+        if self.fp != NULL:
+            self.close()
 
     def __enter__(self):
         """ Enter for with statement """
@@ -1387,7 +1388,8 @@ cdef class var(dict):
                 self.attrs[name.replace('/' + self.name + '/', '')] = self.file.attrs[name]
 
     def __del__(self):
-        self.close()
+        if self.vp != NULL:
+            self.close()
 
     cpdef close(self):
         """ Close and free variable information """
