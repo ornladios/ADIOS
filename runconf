@@ -888,7 +888,8 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
         --enable-dependency-tracking \
         --with-glib=/home/qliu/glib \
         --with-mxml=/home/qliu/mxml \
-        --with-zfp=/home/qliu/zfp
+        --with-zfp=/home/qliu/zfp \
+        --with-mgard=/home/qliu/MGARD
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
