@@ -238,7 +238,8 @@ FortranLibMPISources =  write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
                      write/adios_var_merge.c \
-                     write/adios_sirius_adaptive.c
+                     write/adios_sirius_adaptive.c \
+                     write/triangle.c
 if HAVE_BGQ
 FortranLibMPISources += write/adios_mpi_bgq.c  
 endif
