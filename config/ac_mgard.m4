@@ -24,7 +24,7 @@ AM_CONDITIONAL(HAVE_MGARD,true)
 AC_ARG_WITH(mgard,
         [  --with-mgard=DIR      Location of MGARD library],
         [MGARD_LDFLAGS="-L$withval/lib";
-         MGARD_LIBS="-lmgard -lz -lm -lstdc++ -std=c++11 -pthread";
+         MGARD_LIBS="-lmgard -lz -lm -lstdc++ -std=c++11 -L/home/qliu/blosc/lib -lblosc -pthread";
          MGARD_CPPFLAGS="-I$withval/include";],
         [with_mgard=no])
 

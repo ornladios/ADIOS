@@ -69,12 +69,18 @@ int main (int argc, char ** argv)
 
         ADIOS_VARINFO * v = adios_inq_var (f, "dpot");
         //ADIOS_VARINFO * v = adios_inq_var (f, "f0_f");
-
+#if 0
         start[0] = 0;
         count[0] = v->dims[0]; 
 
         start[1] = rank;
         count[1] = 4;
+#endif
+        start[0] = 0;
+        count[0] = v->dims[0];
+
+        start[1] = rank;
+        count[1] = 32;
        
 
         data = malloc (count[0] * count[1] * sizeof (double));
@@ -109,10 +115,12 @@ int main (int argc, char ** argv)
 #if 1
         int iflag = 1; //0 -> float, 1 -> double
         int out_size;
+        double start_io_time = MPI_Wtime ();
         unsigned char* mgard_comp_buff = mgard_compress (iflag, data, &out_size,
                                                count[1], count[0],  &tolerance );
 
-        printf ("In size:  %10ld  Out size: %10d  Compression ratio: %f\n", v->dims[0]*8, out_size, (double) v->dims[0]*8/out_size);
+        double end_io_time = MPI_Wtime ();
+        printf ("In size:  %10ld  Out size: %10d  Compression ratio: %f time: %f\n", count[0]*count[1]*8, out_size, (double) count[0]*count[1]*8/out_size, end_io_time - start_io_time);
 #endif
     }
 
