@@ -1,12 +1,12 @@
 AM_CPPFLAGS = $(all_includes)
-AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_srcdir)/src -I$(top_srcdir)/src/public $(ZFP_CPPFLAGS) $(MGARD_CPPFLAGS)
+AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_srcdir)/src -I$(top_srcdir)/src/public $(ZFP_CPPFLAGS) $(MGARD_CPPFLAGS) $(BLOSC_CPPFLAGS) $(SZ_CPPFLAGS)
 
 AUTOMAKE_OPTIONS = no-dependencies
 
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
-noinst_PROGRAMS = adios_global adios_global_2files adios_read_gpp adios_read_global test_xgc test_mgard test_zfp test_f0_zfp adios_read_writeblock adios_read_chunk adios_global_no_xml adios_read_global_no_xml no_xml_write_byid read_no_xml_write_byid adios_global_aggregate_by_color
+noinst_PROGRAMS = adios_global adios_global_2files adios_read_gpp adios_read_global test_xgc test_mgard test_blosc test_sz test_zfp test_f0_zfp adios_read_writeblock adios_read_chunk adios_global_no_xml adios_read_global_no_xml no_xml_write_byid read_no_xml_write_byid adios_global_aggregate_by_color
 
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a 
@@ -28,6 +28,14 @@ test_mgard_SOURCES = test_mgard.c
 test_mgard_LDADD = $(top_builddir)/src/libadios.a
 test_mgard_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 test_mgard_LDADD += $(ADIOSLIB_LDADD)
+test_blosc_SOURCES = test_blosc.c
+test_blosc_LDADD = $(top_builddir)/src/libadios.a
+test_blosc_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+test_blosc_LDADD += $(ADIOSLIB_LDADD)
+test_sz_SOURCES = test_sz.c
+test_sz_LDADD = $(top_builddir)/src/libadios.a
+test_sz_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+test_sz_LDADD += $(ADIOSLIB_LDADD)
 test_zfp_SOURCES = test_zfp.c
 test_zfp_LDADD = $(top_builddir)/src/libadios.a
 test_zfp_LDFLAGS = $(ADIOSLIB_LDFLAGS)
