@@ -112,13 +112,19 @@ void swap_adios_type(void *data, enum ADIOS_DATATYPES type)
 
 void swap_adios_type_array(void *data, enum ADIOS_DATATYPES type, uint64_t payload_size)
 {
-    uint64_t size = adios_get_type_size (type, "");
-    uint64_t num_elements = payload_size / size;
+    if(type == adios_string) {
+        return;
+    }
+    else
+    {
+        uint64_t size = adios_get_type_size (type, "");
+        uint64_t num_elements = payload_size / size;
 
-    uint64_t i = 0;
-    for(i = 0; i < num_elements; i ++) {
-        swap_adios_type((char *)data + i*size, type);
-    }    
+        uint64_t i = 0;
+        for(i = 0; i < num_elements; i ++) {
+            swap_adios_type((char *)data + i*size, type);
+        }
+    }
 }
 
 void swap_ptr(void * data, int size)
