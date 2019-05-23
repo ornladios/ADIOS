@@ -92,7 +92,7 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   if( nrecv!=nsent ) ier = MPI_ERR_COUNT ;
 
   if( ier == MPI_SUCCESS ) memcpy( recvbuf, sendbuf, nsent );
-  else snprintf(mpierrmsg, ier, "could not gather data\n" );
+  else snprintf(mpierrmsg, MPI_MAX_ERROR_STRING, "could not gather data\n" );
 
   return ier ;
 }
@@ -132,7 +132,7 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   if( nrecv!=nsent ) ier = MPI_ERR_COUNT ;
 
   if( ier == MPI_SUCCESS ) memcpy( sendbuf, recvbuf, nsent );
-  else snprintf(mpierrmsg, ier, "could not scatter data\n" );
+  else snprintf(mpierrmsg, MPI_MAX_ERROR_STRING, "could not scatter data\n" );
 
   return ier ;
 }
@@ -163,7 +163,7 @@ int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count,
     if( nbytes <= 0 ) ier = MPI_ERR_COUNT ;
 
     if( ier == MPI_SUCCESS ) memcpy( recvbuf, sendbuf, nbytes );
-    else snprintf(mpierrmsg, ier, "could not allreduce data\n" );
+    else snprintf(mpierrmsg, MPI_MAX_ERROR_STRING, "could not allreduce data\n" );
 
     return ier ;
 }
