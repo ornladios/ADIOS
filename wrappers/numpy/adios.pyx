@@ -1613,7 +1613,7 @@ cdef class var(dict):
         adios_selection_delete(sel)
 
         if (var.ndim == 0):
-            return np.asscalar(var)
+            return var.item()
         else:
             return var
 
