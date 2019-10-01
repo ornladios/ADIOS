@@ -146,7 +146,7 @@ static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 			zbuff->error = true;
 			return;
 		}
-	       	zfp_stream_set_accuracy(zbuff->zstream, tol, zbuff->type);
+	       	zfp_stream_set_accuracy(zbuff->zstream, tol);
 	}
 	else if (zbuff->mode == 1) 	// precision
 	{
@@ -172,7 +172,7 @@ static void zfp_initialize(void* array, struct zfp_buffer* zbuff)
 		tol = (uint) ct;
 
 
-		zfp_stream_set_precision(zbuff->zstream, tol, zbuff->type);
+		zfp_stream_set_precision(zbuff->zstream, tol);
 	}
 	else if (zbuff->mode == 2) 	// rate
 	{
