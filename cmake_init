@@ -684,6 +684,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export BZIP2_DIR="/usr/lib"
     export LZ4_DIR="/usr/lib"
     export SZ_DIR="/opt/SZ/1.4.12.3"
+    export ZFP_DIR="/opt/zfp"
     export BLOSC_DIR="/opt/blosc"
     export MGARD_DIR="/home/adios/work/Software/MGARD"
     export ZCHECKER_DIR="/opt/Z-checker/0.1.2"
@@ -692,10 +693,10 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export DATASPACES_DIR="/opt/dataspaces"
     export FASTBIT_DIR="/opt/fastbit"
     export ALACRITY_DIR="/opt/alacrity"
-    export SEQ_HDF5_DIR=/opt/hdf5-1.8.17
-    export SEQ_HDF5_LIBS="-L/opt/hdf5-1.8.17/lib -lhdf5_hl -lhdf5 -lm"
-    export PAR_HDF5_DIR=/opt/hdf5-1.8.17-parallel
-    export PAR_HDF5_LIBS="-L/opt/hdf5-1.8.17-parallel/lib -lhdf5_hl -lhdf5 -lm"
+    export SEQ_HDF5_DIR=/opt/hdf5-serial
+    export SEQ_HDF5_LIBS="-L/opt/hdf5-serial/lib -lhdf5_hl -lhdf5 -lm"
+    export PAR_HDF5_DIR=/opt/hdf5-parallel
+    export PAR_HDF5_LIBS="-L/opt/hdf5-parallel/lib -lhdf5_hl -lhdf5 -lm"
     export SEQ_NC_DIR=/opt/netcdf-4.4.0
     export SEQ_NC_LIBS="-L/opt/netcdf-4.4.0/lib -lnetcdf"
     cmake $SRCDIR

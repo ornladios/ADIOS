@@ -1,5 +1,5 @@
-set(ZFP_SRCDIR "zfp-0.5.0")
-include_directories(${PROJECT_SOURCE_DIR}/src/zfp/${ZFP_SRCDIR}/inc)
+set(ZFP_SRCDIR "zfp-0.5.5")
+include_directories(${PROJECT_SOURCE_DIR}/src/zfp/${ZFP_SRCDIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/src/zfp/${ZFP_SRCDIR})
 include_directories(${PROJECT_BINARY_DIR}/src/zfp)
 link_directories(${PROJECT_BINARY_DIR}/src/zfp)
@@ -25,6 +25,26 @@ if(BUILD_ZFP)
         ${ZFP_SRCDIR}/src/decode3d.c
         ${ZFP_SRCDIR}/src/encode3f.c
         ${ZFP_SRCDIR}/src/encode3d.c
+        ${ZFP_SRCDIR}/src/decode1i.c
+        ${ZFP_SRCDIR}/src/decode1l.c
+        ${ZFP_SRCDIR}/src/decode2i.c
+        ${ZFP_SRCDIR}/src/decode2l.c
+        ${ZFP_SRCDIR}/src/decode3i.c
+        ${ZFP_SRCDIR}/src/decode3l.c
+        ${ZFP_SRCDIR}/src/decode4d.c
+        ${ZFP_SRCDIR}/src/decode4f.c
+        ${ZFP_SRCDIR}/src/decode4i.c
+        ${ZFP_SRCDIR}/src/decode4l.c
+        ${ZFP_SRCDIR}/src/encode1i.c
+        ${ZFP_SRCDIR}/src/encode1l.c
+        ${ZFP_SRCDIR}/src/encode2i.c
+        ${ZFP_SRCDIR}/src/encode2l.c
+        ${ZFP_SRCDIR}/src/encode3i.c
+        ${ZFP_SRCDIR}/src/encode3l.c
+        ${ZFP_SRCDIR}/src/encode4d.c
+        ${ZFP_SRCDIR}/src/encode4f.c
+        ${ZFP_SRCDIR}/src/encode4i.c
+        ${ZFP_SRCDIR}/src/encode4l.c
         ${ZFP_SRCDIR}/src/zfp.c 
        )
     set(libzfp_a_CPPFLAGS "${AM_CPPFLAGS}")

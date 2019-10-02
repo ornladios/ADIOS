@@ -22,7 +22,7 @@ endif BUILD_MXML
 
 if BUILD_ZFP
     SUBDIRS += zfp 
-    ZFP_BUILDDIR=zfp/zfp-0.5.0/src
+    ZFP_BUILDDIR=zfp/zfp-0.5.5/src
     ZFP_LIB=libzfp_a
     ZFP_OBJECTS = ${ZFP_BUILDDIR}/${ZFP_LIB}-bitstream.${OBJEXT} \
               ${ZFP_BUILDDIR}/${ZFP_LIB}-decode1f.${OBJEXT} \
@@ -37,6 +37,26 @@ if BUILD_ZFP
               ${ZFP_BUILDDIR}/${ZFP_LIB}-decode3d.${OBJEXT} \
               ${ZFP_BUILDDIR}/${ZFP_LIB}-encode3f.${OBJEXT} \
               ${ZFP_BUILDDIR}/${ZFP_LIB}-encode3d.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode1i.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode1l.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode2i.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode2l.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode3i.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode3l.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode4d.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode4f.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode4i.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-decode4l.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode1i.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode1l.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode2i.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode2l.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode3i.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode3l.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode4d.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode4f.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode4i.${OBJEXT} \
+              ${ZFP_BUILDDIR}/${ZFP_LIB}-encode4l.${OBJEXT} \
               ${ZFP_BUILDDIR}/${ZFP_LIB}-zfp.${OBJEXT} 
 endif BUILD_ZFP
 

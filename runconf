@@ -1077,6 +1077,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-bzip2 \
         --with-lz4 \
         --with-sz=/opt/SZ/1.4.12.3  \
+        --with-zfp \
         --with-blosc=/opt/blosc \
         --without-szip \
         --with-isobar=/opt/isobar \
@@ -1084,8 +1085,8 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-dataspaces=/opt/dataspaces --without-infiniband \
         --with-fastbit=/opt/fastbit \
         --with-alacrity=/opt/alacrity \
-        --with-hdf5=/opt/hdf5-1.8.17 \
-        --with-phdf5=/opt/hdf5-1.8.17-parallel \
+        --with-hdf5=/opt/hdf5-serial \
+        --with-phdf5=/opt/hdf5-parallel \
         --with-netcdf=/opt/netcdf-4.4.0 
 #        --with-mgard=/home/adios/work/Software/MGARD \
 #        --with-zchecker=/opt/Z-checker/0.1.2 \

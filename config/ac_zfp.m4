@@ -32,7 +32,7 @@ AC_ARG_WITH(zfp,
 if test "x$with_zfp" == "xno"; then
    AM_CONDITIONAL(HAVE_ZFP,false)
 
-elif test "x$with_zfp" == "xbuiltin"; then
+elif test "x$with_zfp" == "xbuiltin" -o "x$with_zfp" == "xyes"; then
    AM_CONDITIONAL(BUILD_ZFP,true)
 
 else
@@ -50,7 +50,7 @@ else
 	fi
 
 	if test -z "${ZFP_CPPFLAGS}"; then
-		ZFP_CPPFLAGS="-I$with_zfp/inc"
+		ZFP_CPPFLAGS="-I$with_zfp/include"
 	fi
 
 

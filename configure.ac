@@ -198,7 +198,7 @@ dnl config/ac_zfp.m4 sets BUILD_ZFP if none of the above options were given
 if test -z "${BUILD_ZFP_TRUE}"; then
     AC_MSG_NOTICE([Build the included ZFP source. Use --without-zfp to turn this off, --with-zfp=path to use an external library.])
     AM_CONDITIONAL(HAVE_ZFP,true)
-    ZFP_CPPFLAGS="${CPPFLAGS} -I\$(top_srcdir)/src/zfp/zfp-0.5.0/inc"
+    ZFP_CPPFLAGS="${CPPFLAGS} -I\$(top_srcdir)/src/zfp/zfp-0.5.5/include"
     ZFP_BUILD_LDFLAGS=
     ZFP_LDFLAGS=
     ZFP_LIBS=
