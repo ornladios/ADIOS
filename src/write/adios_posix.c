@@ -699,6 +699,10 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
     int32_t to_write;
     uint64_t bytes_written = 0;
 
+    int rank = 0;
+#ifdef HAVE_MPI
+    rank = p->rank;
+#endif
     // use offsets set at the end of previous append step
     // fd->current_pg->pg_start_in_file needs to be correctly set before
     // calling adios_build_index_v1()
@@ -736,14 +740,14 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
         if (wrote == -1)
         {
             adios_error (err_write_error, "Failure to write data to file %s by rank %d: %s\n",
-                    fd->name, p->rank, strerror(errno));
+                    fd->name, rank, strerror(errno));
             break;
         }
         else if (wrote != to_write)
         {
             adios_error (err_write_error, "Failure to write data completely to file %s by rank %d: "
                     "Wanted to write %ld bytes to file at once but only %ld was written\n",
-                    fd->name, p->rank, to_write, wrote);
+                    fd->name, rank, to_write, wrote);
         }
 
     }
