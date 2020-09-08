@@ -26,8 +26,9 @@ ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C])])
 if test -z "${HAVE_MPI_TRUE}"; then
     AC_LANG(C++)
     ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C++])])
+else
+    AC_DEFINE(HAVE_MPI,0,[Don not have MPI to build parallel libraries])
 fi
-AM_CONDITIONAL([HAVE_MPI], [test -z "${HAVE_MPI_TRUE}"])
 
 AC_ARG_ENABLE(fortran,
     [AS_HELP_STRING([--disable-fortran],[disable building Fortran libraries.])])
