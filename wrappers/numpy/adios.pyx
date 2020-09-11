@@ -1765,7 +1765,7 @@ cdef class attr(object):
         """ The attribute's value """
         def __get__(self):
             if (self.value.ndim == 0):
-                return np.asscalar(self.value)
+                return self.value.item()
             else:
                 return self.value
 
@@ -1812,7 +1812,7 @@ cdef class attr(object):
     def __getitem__(self, args):
         val = self.value[args]
         if (val.ndim == 0):
-            return np.asscalar(val)
+            return val.item()
         else:
             return val
 
