@@ -18,8 +18,9 @@
 #include "core/adios_transport_hooks.h"
 #include "core/adios_internals.h"
 #include "core/util.h"
-#include "netcdf_par.h"
 #include "netcdf.h"
+#include "netcdf_par.h"
+
 
 #include "nssi/io_timer.h"
 
