@@ -120,11 +120,12 @@ else
         AC_TRY_COMPILE(
             [#include "mpi.h"
              #include "netcdf.h"
+             #include "netcdf_par.h"
             ],
             [int ncid;
              MPI_Info info;
              MPI_Comm comm;
-             nc_create_par("a.nc", NC_NOCLOBBER|NC_MPIIO|NC_NETCDF4, comm, info, ncid);
+             nc_create_par("a.nc", NC_NOCLOBBER|NC_MPIIO|NC_NETCDF4, comm, info, &ncid);
              nc_close(ncid);
             ],
             [AC_MSG_RESULT(yes)],
